@@ -8,389 +8,428 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#060606;--fg:#d4d0c8;--fg-dim:#504e48;--mono:'JetBrains Mono',monospace;--sans:'DM Sans',sans-serif}
+  :root{--bg:#080808;--fg:#b8b4ac;--fg-dim:#333130;--mono:'JetBrains Mono',monospace;--sans:'DM Sans',sans-serif}
   *{margin:0;padding:0;box-sizing:border-box}
   html{font-size:16px}
   body{background:var(--bg);color:var(--fg);font-family:var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased;height:100vh}
-  body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat;background-size:200px}
-  #laser{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
-  .page{position:relative;z-index:1;height:100vh;display:flex;flex-direction:column;justify-content:space-between}
-  .top{padding:2rem 2.5rem;display:flex;justify-content:space-between;align-items:center;opacity:0;animation:fadeIn 1.2s .3s forwards}
-  .mark{font-family:var(--mono);font-size:.65rem;font-weight:300;letter-spacing:.2em;text-transform:uppercase;color:var(--fg-dim)}
-  .status{display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.6rem;font-weight:300;letter-spacing:.15em;text-transform:uppercase;color:var(--fg-dim)}
-  .status::before{content:'';width:5px;height:5px;border-radius:50%;background:#5fff5f;box-shadow:0 0 6px #5fff5f;animation:blink 3s ease-in-out infinite}
+  canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+  #paintLayer{z-index:0}
+  #animLayer{z-index:1}
+  .page{position:relative;z-index:2;height:100vh;display:flex;flex-direction:column;justify-content:space-between}
+  .top{padding:2.2rem 2.8rem;display:flex;justify-content:space-between;align-items:center;opacity:0;animation:fi 1.4s .4s forwards}
+  .mark{font-family:var(--mono);font-size:.55rem;font-weight:300;letter-spacing:.25em;text-transform:uppercase;color:var(--fg-dim)}
+  .status{display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.5rem;font-weight:300;letter-spacing:.18em;text-transform:uppercase;color:var(--fg-dim)}
+  .status::before{content:'';width:4px;height:4px;border-radius:50%;background:#6c8;box-shadow:0 0 4px #6c8;animation:bk 3.5s ease-in-out infinite}
   .center{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:0 2rem;text-align:center}
-  .name{font-family:var(--sans);font-weight:300;font-size:clamp(3rem,10vw,9rem);letter-spacing:-.04em;line-height:.9;color:var(--fg);opacity:0;animation:revealName 1s .6s forwards;margin-bottom:.15em}
-  .name span{display:block;font-style:italic;opacity:.5}
-  .tagline{font-family:var(--mono);font-size:.65rem;font-weight:300;letter-spacing:.3em;text-transform:uppercase;color:var(--fg-dim);margin-top:2.5rem;opacity:0;animation:fadeIn 1s 1.2s forwards}
-  .ln-link{display:inline-flex;align-items:center;gap:.6rem;font-family:var(--mono);font-size:.6rem;font-weight:300;letter-spacing:.2em;text-transform:uppercase;color:var(--fg-dim);text-decoration:none;margin-top:3rem;padding:.8rem 0;border-bottom:1px solid transparent;transition:all .5s ease;opacity:0;animation:fadeIn 1s 1.5s forwards}
+  .name{font-family:var(--sans);font-weight:300;font-size:clamp(2.8rem,9.5vw,8rem);letter-spacing:-.045em;line-height:.88;color:var(--fg);opacity:0;animation:rn 1.2s .7s forwards;margin-bottom:.1em}
+  .name span{display:block;font-style:italic;opacity:.4}
+  .tagline{font-family:var(--mono);font-size:.55rem;font-weight:300;letter-spacing:.4em;text-transform:uppercase;color:var(--fg-dim);margin-top:2.8rem;opacity:0;animation:fi 1s 1.3s forwards}
+  .ln-link{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.5rem;font-weight:300;letter-spacing:.22em;text-transform:uppercase;color:var(--fg-dim);text-decoration:none;margin-top:2.8rem;padding:.6rem 0;border-bottom:1px solid transparent;transition:all .5s ease;opacity:0;animation:fi 1s 1.6s forwards}
   .ln-link:hover{color:var(--fg);border-bottom-color:var(--fg-dim)}
-  .ln-link svg{width:14px;height:14px;transition:transform .3s ease}
+  .ln-link svg{width:11px;height:11px;transition:transform .3s ease}
   .ln-link:hover svg{transform:translate(2px,-2px)}
-  .bottom{padding:2rem 2.5rem;display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--mono);font-size:.55rem;font-weight:300;letter-spacing:.2em;text-transform:uppercase;color:var(--fg-dim);opacity:0;animation:fadeIn 1s 1.8s forwards}
-  .pac-trigger{cursor:pointer;transition:color .3s;display:inline-flex;align-items:center;gap:.4rem}
-  .pac-trigger:hover{color:#ffcc00}
-  .pac-icon{width:10px;height:10px;background:#ffcc00;border-radius:50%;clip-path:polygon(50% 50%,100% 15%,100% 85%,50% 50%,0% 100%,0% 0%);opacity:.6;transition:opacity .3s}
-  .pac-trigger:hover .pac-icon{opacity:1}
-  .pac-overlay{position:fixed;inset:0;z-index:10000;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
-  .pac-overlay.active{display:flex}
-  .pac-overlay canvas{border:1px solid #222}
-  .pac-close{position:absolute;top:1.5rem;right:2rem;font-family:var(--mono);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#666;background:none;border:none;cursor:pointer;transition:color .3s;padding:.5rem}
-  .pac-close:hover{color:#fff}
-  .pac-score{font-family:var(--mono);font-size:.7rem;letter-spacing:.15em;color:#ffcc00;margin-bottom:1rem}
-  .pac-hint{font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;color:#444;margin-top:1rem}
-  @keyframes fadeIn{to{opacity:1}}
-  @keyframes revealName{from{opacity:0;transform:translateY(20px);letter-spacing:.02em}to{opacity:1;transform:translateY(0);letter-spacing:-.04em}}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+  .bottom{padding:2.2rem 2.8rem;display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--mono);font-size:.45rem;font-weight:300;letter-spacing:.22em;text-transform:uppercase;color:var(--fg-dim);opacity:0;animation:fi 1s 1.9s forwards}
+  .pt{cursor:pointer;transition:color .4s;display:inline-flex;align-items:center;gap:.3rem}
+  .pt:hover{color:var(--fg)}
+  .pi{width:7px;height:7px;background:var(--fg-dim);border-radius:50%;clip-path:polygon(50% 50%,100% 15%,100% 85%,50% 50%,0% 100%,0% 0%);transition:background .3s}
+  .pt:hover .pi{background:var(--fg)}
+  .po{position:fixed;inset:0;z-index:10000;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
+  .po.active{display:flex}
+  .pc{position:absolute;top:1.5rem;right:2rem;font-family:var(--mono);font-size:.55rem;letter-spacing:.15em;text-transform:uppercase;color:#444;background:none;border:none;cursor:pointer;transition:color .3s;padding:.5rem}
+  .pc:hover{color:#fff}
+  .ps{font-family:var(--mono);font-size:.6rem;letter-spacing:.15em;color:#ffcc00;margin-bottom:1rem}
+  .ph{font-family:var(--mono);font-size:.45rem;letter-spacing:.1em;color:#2a2a2a;margin-top:1rem}
+  @keyframes fi{to{opacity:1}}
+  @keyframes rn{from{opacity:0;transform:translateY(14px);letter-spacing:.01em}to{opacity:1;transform:translateY(0);letter-spacing:-.045em}}
+  @keyframes bk{0%,100%{opacity:1}50%{opacity:.15}}
   @media(max-width:600px){.top,.bottom{padding:1.5rem}.bottom{flex-direction:column;align-items:center;gap:1rem;text-align:center}}
 </style>
 </head>
 <body>
-<canvas id="laser"></canvas>
+<canvas id="paintLayer"></canvas>
+<canvas id="animLayer"></canvas>
 <div class="page">
   <header class="top">
-    <div class="mark">JN — 2026</div>
-    <div class="status">Available</div>
+    <div class="mark">James Norman</div>
+    <div class="status">Available for consultancy</div>
   </header>
   <main class="center">
     <h1 class="name">James<span>Norman</span></h1>
     <p class="tagline">Security Consulting · Producer · DJ</p>
     <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener" class="ln-link">
-      LinkedIn
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg>
+      LinkedIn <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg>
     </a>
   </main>
   <footer class="bottom">
     <div>BEng · CEng · MIET · RSES</div>
-    <div class="pac-trigger" onclick="openPac()"><div class="pac-icon"></div>Play</div>
+    <div class="pt" onclick="openPac()"><div class="pi"></div>Play</div>
     <div>&copy; 2026</div>
   </footer>
 </div>
-<div class="pac-overlay" id="pacOverlay">
-  <button class="pac-close" onclick="closePac()">ESC — Close</button>
-  <div class="pac-score" id="pacScore">Score: 0</div>
-  <canvas id="pacCanvas" width="420" height="460"></canvas>
-  <div class="pac-hint">Arrow keys or swipe to move</div>
+<div class="po" id="pacOverlay">
+  <button class="pc" onclick="closePac()">ESC — Close</button>
+  <div class="ps" id="pacScore">Score: 0</div>
+  <canvas id="pacCanvas"></canvas>
+  <div class="ph">Arrow keys or swipe to move</div>
 </div>
 
 <script>
+const pC = document.getElementById('paintLayer');
+const pX = pC.getContext('2d');
+const aC = document.getElementById('animLayer');
+const aX = aC.getContext('2d');
+let W, H;
+
+function resize() { W = pC.width = aC.width = window.innerWidth; H = pC.height = aC.height = window.innerHeight; renderPaint(); }
+
+// rng + noise
+function rng(s){return function(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const PM=new Uint8Array(512);{const p=new Uint8Array(256);for(let i=0;i<256;i++)p[i]=i;const r=rng(42);for(let i=255;i>0;i--){let j=r()*i|0;[p[i],p[j]]=[p[j],p[i]]}for(let i=0;i<512;i++)PM[i]=p[i&255]}
+const GR=[[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]];
+function N(x,y){const F=.5*(Math.sqrt(3)-1),G2=(3-Math.sqrt(3))/6;let s=(x+y)*F,i=Math.floor(x+s),j=Math.floor(y+s),t=(i+j)*G2,x0=x-(i-t),y0=y-(j-t);let i1=x0>y0?1:0,j1=x0>y0?0:1,x1=x0-i1+G2,y1=y0-j1+G2,x2=x0-1+2*G2,y2=y0-1+2*G2;let ii=i&255,jj=j&255;let g0=PM[ii+PM[jj]]%12,g1=PM[ii+i1+PM[jj+j1]]%12,g2=PM[ii+1+PM[jj+1]]%12;let n0=0,n1=0,n2=0,t0=.5-x0*x0-y0*y0,t1=.5-x1*x1-y1*y1,t2=.5-x2*x2-y2*y2;if(t0>0){t0*=t0;n0=t0*t0*(GR[g0][0]*x0+GR[g0][1]*y0)}if(t1>0){t1*=t1;n1=t1*t1*(GR[g1][0]*x1+GR[g1][1]*y1)}if(t2>0){t2*=t2;n2=t2*t2*(GR[g2][0]*x2+GR[g2][1]*y2)}return 70*(n0+n1+n2)}
+
+// ── Rich, deep palette — oil paint tones, not neon ──
+const PALETTE = [
+  { r: 200, g: 30, b: 80 },   // deep rose
+  { r: 20, g: 140, b: 190 },  // cerulean
+  { r: 220, g: 120, b: 10 },  // burnt orange
+  { r: 30, g: 180, b: 100 },  // viridian
+  { r: 140, g: 40, b: 180 },  // amethyst
+  { r: 200, g: 170, b: 20 },  // ochre
+  { r: 180, g: 20, b: 40 },   // cadmium red
+  { r: 20, g: 100, b: 160 },  // prussian blue
+];
+
+function renderPaint() {
+  pX.clearRect(0, 0, W, H);
+  const cy = H * 0.48;
+  const rand = rng(331);
+
+  // ── PALETTE KNIFE SMEARS ──
+  // Dense, overlapping, opaque horizontal strokes
+  // Multiple passes: back (wide, dark) → front (narrow, vivid)
+
+  const strokes = [];
+
+  // background wash — wide, muted
+  for (let i = 0; i < 8; i++) {
+    const col = PALETTE[Math.floor(rand() * PALETTE.length)];
+    strokes.push({
+      y: cy + (rand() - 0.5) * H * 0.12,
+      r: col.r, g: col.g, b: col.b,
+      thickness: 40 + rand() * 60,
+      x1: -W * 0.05, x2: W * 1.05,
+      seed: rand() * 999,
+      alpha: 0.15 + rand() * 0.15,
+      layer: 0,
+    });
+  }
+
+  // mid layer — the meat of the paint
+  for (let i = 0; i < 22; i++) {
+    const col = PALETTE[Math.floor(rand() * PALETTE.length)];
+    const spread = rand();
+    strokes.push({
+      y: cy + (rand() - 0.5) * H * 0.13,
+      r: col.r, g: col.g, b: col.b,
+      thickness: 12 + rand() * 35,
+      x1: W * (rand() * 0.15 - 0.05),
+      x2: W * (0.85 + rand() * 0.2),
+      seed: rand() * 999,
+      alpha: 0.5 + rand() * 0.4,
+      layer: 1,
+    });
+  }
+
+  // top detail — thinner, more opaque, sharper
+  for (let i = 0; i < 14; i++) {
+    const col = PALETTE[Math.floor(rand() * PALETTE.length)];
+    strokes.push({
+      y: cy + (rand() - 0.5) * H * 0.1,
+      r: col.r, g: col.g, b: col.b,
+      thickness: 4 + rand() * 14,
+      x1: W * (rand() * 0.3),
+      x2: W * (0.7 + rand() * 0.3),
+      seed: rand() * 999,
+      alpha: 0.7 + rand() * 0.3,
+      layer: 2,
+    });
+  }
+
+  // Sort by layer then thickness
+  strokes.sort((a, b) => a.layer - b.layer || b.thickness - a.thickness);
+
+  for (const s of strokes) {
+    pX.save();
+
+    // Each stroke: multiple sub-strokes stacked vertically
+    // with noise offset to simulate palette knife texture
+    const subCount = Math.max(2, Math.ceil(s.thickness / 5));
+
+    for (let sub = 0; sub < subCount; sub++) {
+      const t = sub / subCount;
+      const vertOffset = (t - 0.5) * s.thickness;
+
+      // Opacity peaks in center, falls at edges — thick paint body
+      const edgeFade = 1 - Math.pow(Math.abs(t - 0.5) * 2, 1.5);
+      const subAlpha = s.alpha * edgeFade;
+      if (subAlpha < 0.02) continue;
+
+      // Colour variation within stroke — slight hue shift
+      const hueShift = N(s.seed + sub * 0.5, t * 3) * 20;
+      const valShift = N(s.seed + sub * 0.3 + 10, t * 2) * 30;
+      const cr = Math.min(255, Math.max(0, s.r + hueShift + valShift));
+      const cg = Math.min(255, Math.max(0, s.g + hueShift * 0.5));
+      const cb = Math.min(255, Math.max(0, s.b - hueShift * 0.3 + valShift * 0.5));
+
+      pX.strokeStyle = `rgba(${cr|0},${cg|0},${cb|0},${subAlpha})`;
+      pX.lineWidth = s.thickness / subCount + 1;
+      pX.lineCap = 'butt';
+      pX.beginPath();
+
+      let x = s.x1;
+      const step = 3;
+      let first = true;
+
+      while (x <= s.x2) {
+        const nx = (x - s.x1) / (s.x2 - s.x1);
+        // noise-driven path — low freq for broad sweep, high for texture
+        const yOff = N(nx * 2.5 + s.seed, sub * 0.2) * s.thickness * 0.35
+                   + N(nx * 8 + s.seed + 5, sub * 0.4) * s.thickness * 0.1
+                   + N(nx * 25 + s.seed + 10, sub * 0.6) * s.thickness * 0.03;
+
+        // taper at ends
+        const taper = Math.sin(nx * Math.PI);
+        const finalY = s.y + vertOffset + yOff;
+
+        if (first) { pX.moveTo(x, finalY); first = false; }
+        else pX.lineTo(x, finalY);
+        x += step;
+      }
+      pX.stroke();
+    }
+
+    // ── Impasto highlight — thin bright line on top edge ──
+    if (s.layer >= 1 && s.alpha > 0.5) {
+      pX.strokeStyle = `rgba(${Math.min(255,s.r+60)|0},${Math.min(255,s.g+60)|0},${Math.min(255,s.b+60)|0},${s.alpha * 0.3})`;
+      pX.lineWidth = 1 + rand() * 1.5;
+      pX.beginPath();
+      let x = s.x1, first = true;
+      while (x <= s.x2) {
+        const nx = (x - s.x1) / (s.x2 - s.x1);
+        const yOff = N(nx * 2.5 + s.seed, 0.05) * s.thickness * 0.35
+                   + N(nx * 8 + s.seed + 5, 0.1) * s.thickness * 0.1;
+        const ey = s.y - s.thickness * 0.4 + yOff;
+        if (first) { pX.moveTo(x, ey); first = false; }
+        else pX.lineTo(x, ey);
+        x += 3;
+      }
+      pX.stroke();
+    }
+
+    // ── Shadow underneath — depth ──
+    if (s.layer >= 1 && s.thickness > 15) {
+      pX.strokeStyle = `rgba(0,0,0,${s.alpha * 0.12})`;
+      pX.lineWidth = s.thickness * 0.3;
+      pX.beginPath();
+      let x = s.x1, first = true;
+      while (x <= s.x2) {
+        const nx = (x - s.x1) / (s.x2 - s.x1);
+        const yOff = N(nx * 2.5 + s.seed, -0.1) * s.thickness * 0.35;
+        const sy = s.y + s.thickness * 0.5 + yOff + 3;
+        if (first) { pX.moveTo(x, sy); first = false; }
+        else pX.lineTo(x, sy);
+        x += 4;
+      }
+      pX.stroke();
+    }
+
+    pX.restore();
+  }
+
+  // ── Soft ambient glow behind paint — very subtle ──
+  const gc = document.createElement('canvas');
+  gc.width = W; gc.height = H;
+  const gx = gc.getContext('2d');
+  gx.filter = 'blur(40px)';
+  gx.globalAlpha = 0.25;
+  gx.drawImage(pC, 0, 0);
+  gx.filter = 'blur(80px)';
+  gx.globalAlpha = 0.15;
+  gx.drawImage(pC, 0, 0);
+
+  pX.save();
+  pX.globalCompositeOperation = 'destination-over';
+  pX.drawImage(gc, 0, 0);
+  pX.restore();
+}
+
+resize();
+window.addEventListener('resize', resize);
+
 /* ═══════════════════════════════════════════════
-   NEON RAINBOW STREAK + BASS WAVEFORM + LIGHTNING
+   ANIMATED — audio waveforms + electricity
    ═══════════════════════════════════════════════ */
-const c=document.getElementById('laser');
-const gl=c.getContext('webgl')||c.getContext('experimental-webgl');
-let W,H;
-function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;if(gl)gl.viewport(0,0,W,H)}
-resize();window.addEventListener('resize',resize);
+let time = 0;
 
-if(gl){
-const vert=`attribute vec2 pos;void main(){gl_Position=vec4(pos,0.,1.);}`;
-const frag=`
-precision highp float;
-uniform float u_time;
-uniform vec2 u_res;
+function renderAnim() {
+  aX.clearRect(0, 0, W, H);
+  const cy = H * 0.48;
+  time += 0.01;
 
-// ── noise ──
-vec3 mod289(vec3 x){return x-floor(x/289.)*289.;}
-vec2 mod289v(vec2 x){return x-floor(x/289.)*289.;}
-vec3 permute(vec3 x){return mod289(((x*34.)+1.)*x);}
-float snoise(vec2 v){
-  const vec4 C=vec4(.211324865,.366025403,-.577350269,.024390243);
-  vec2 i=floor(v+dot(v,C.yy));vec2 x0=v-i+dot(i,C.xx);
-  vec2 i1=(x0.x>x0.y)?vec2(1.,0.):vec2(0.,1.);
-  vec4 x12=x0.xyxy+C.xxzz;x12.xy-=i1;i=mod289v(i);
-  vec3 p=permute(permute(i.y+vec3(0.,i1.y,1.))+i.x+vec3(0.,i1.x,1.));
-  vec3 m=max(.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.);
-  m=m*m;m=m*m;
-  vec3 x_=2.*fract(p*C.www)-1.;vec3 h=abs(x_)-.5;
-  vec3 ox=floor(x_+.5);vec3 a0=x_-ox;
-  m*=1.79284291-.85373472*(a0*a0+h*h);
-  vec3 g;g.x=a0.x*x0.x+h.x*x0.y;g.yz=a0.yz*x12.xz+h.yz*x12.yw;
-  return 130.*dot(m,g);
-}
+  aX.save();
+  aX.globalCompositeOperation = 'lighter';
 
-vec3 hsv2rgb(vec3 c){
-  vec4 K=vec4(1.,2./3.,1./3.,3.);
-  vec3 p=abs(fract(c.xxx+K.xyz)*6.-K.www);
-  return c.z*mix(K.xxx,clamp(p-K.xxx,0.,1.),c.y);
-}
+  // ══════ MULTI-LAYER AUDIO WAVEFORMS ══════
+  // 8 waveform layers — the primary visual motion element
+  const waveforms = [
+    // Sub bass — big slow movement
+    { freq: 0.3, amp: 35, speed: 0.4, r: 200, g: 30, b: 80, a: 0.08, w: 3 },
+    { freq: 0.5, amp: 28, speed: 0.6, r: 20, g: 140, b: 190, a: 0.07, w: 2.5 },
+    // Bass
+    { freq: 0.9, amp: 20, speed: 0.9, r: 220, g: 120, b: 10, a: 0.10, w: 2 },
+    { freq: 1.3, amp: 15, speed: 1.3, r: 30, g: 180, b: 100, a: 0.09, w: 1.5 },
+    // Mid
+    { freq: 2.2, amp: 10, speed: 1.8, r: 140, g: 40, b: 180, a: 0.08, w: 1.2 },
+    { freq: 3.5, amp: 7, speed: 2.5, r: 200, g: 170, b: 20, a: 0.06, w: 1 },
+    // High detail
+    { freq: 5.0, amp: 4, speed: 3.2, r: 180, g: 20, b: 40, a: 0.05, w: 0.8 },
+    { freq: 8.0, amp: 2.5, speed: 4.5, r: 20, g: 100, b: 160, a: 0.04, w: 0.6 },
+  ];
 
-// ── lightning bolt function ──
-float bolt(vec2 uv, float cx, float cy, float t, float seed){
-  float y=uv.y;
-  float target=cy;
-  float d=abs(y-target);
-  if(d>.18) return 0.;
+  // kick transient — shared across waveforms
+  const kickPhase = (time * 1.2) % Math.PI;
+  const kickAmp = Math.exp(-kickPhase * 2);
 
-  // jagged x-displacement — builds a zigzag path
-  float zag=0.;
-  zag+=snoise(vec2(y*25.+seed, t*3.+seed))*0.04;
-  zag+=snoise(vec2(y*60.+seed, t*5.+seed*2.))*0.015;
-  zag+=snoise(vec2(y*120.+seed, t*8.+seed*3.))*0.006;
+  for (const wv of waveforms) {
+    // Main waveform
+    aX.strokeStyle = `rgba(${wv.r},${wv.g},${wv.b},${wv.a})`;
+    aX.lineWidth = wv.w;
+    aX.beginPath();
 
-  float xd=abs(uv.x - cx - zag);
+    for (let x = 0; x <= W; x += 3) {
+      const nx = x / W;
+      const env = Math.pow(Math.sin(nx * Math.PI), 0.6); // wide envelope
 
-  // sharp bright core
-  float core=exp(-xd*xd*80000.);
-  // inner glow
-  float glow=exp(-xd*xd*8000.);
-  // outer bloom
-  float bloom=exp(-xd*xd*800.);
+      let y = 0;
+      // fundamental
+      y += Math.sin(nx * Math.PI * 2 * wv.freq - time * wv.speed) * wv.amp;
+      // sub harmonic
+      y += Math.sin(nx * Math.PI * 2 * wv.freq * 0.5 - time * wv.speed * 0.7 + 0.3) * wv.amp * 0.4;
+      // third harmonic — adds grit
+      y += Math.sin(nx * Math.PI * 2 * wv.freq * 3 - time * wv.speed * 2.1) * wv.amp * 0.08;
+      // kick
+      y += kickAmp * Math.sin(nx * 30 - time * 8) * wv.amp * 0.5;
+      // noise texture
+      y += N(nx * 10 + time * wv.speed * 0.3, wv.freq) * wv.amp * 0.15;
 
-  // fade at extremes of bolt length
-  float fade=smoothstep(.18,.0,d)*smoothstep(0.,.02,d);
+      y *= env;
 
-  return (core*1.5+glow*.6+bloom*.15)*fade;
-}
+      if (x === 0) aX.moveTo(x, cy + y);
+      else aX.lineTo(x, cy + y);
+    }
+    aX.stroke();
 
-void main(){
-  vec2 uv=gl_FragCoord.xy/u_res;
-  float t=u_time;
-  vec3 col=vec3(0.);
+    // Mirrored (reflection)
+    aX.strokeStyle = `rgba(${wv.r},${wv.g},${wv.b},${wv.a * 0.35})`;
+    aX.lineWidth = wv.w * 0.8;
+    aX.beginPath();
 
-  // ══════ BASS WAVEFORM ══════
-  float cy=.48+snoise(vec2(t*.04,3.))*.015;
-
-  // bass-heavy waveform: low freq sine + sub harmonics + noise
-  float bassFreq=2.5;
-  float wave=sin(uv.x*bassFreq*6.2832-t*1.8)*.035;
-  wave+=sin(uv.x*bassFreq*2.*6.2832-t*2.5+.5)*.018;
-  wave+=sin(uv.x*bassFreq*.5*6.2832-t*1.1+1.)*.025;
-  // add "kick" transient
-  float kick=exp(-mod(t*2.,3.14)*.8)*sin(uv.x*40.-t*12.)*.02;
-  wave+=kick;
-
-  // paint warp
-  float w1=snoise(vec2(uv.x*2.-t*.15,t*.07))*.06;
-  float w2=snoise(vec2(uv.x*7.-t*.28,t*.1+5.))*.025;
-  float w3=snoise(vec2(uv.x*18.-t*.4,t*.05+10.))*.01;
-  float warp=w1+w2+w3+wave;
-
-  float dist=abs(uv.y-cy+warp);
-
-  // ══════ NEON GLOW LAYERS — extra thick ══════
-  float L0=exp(-dist*dist*2000.);   // white hot core
-  float L1=exp(-dist*dist*400.);    // neon inner
-  float L2=exp(-dist*dist*80.);     // saturated mid
-  float L3=exp(-dist*dist*22.);     // wide colour
-  float L4=exp(-dist*dist*6.);      // atmospheric
-  float L5=exp(-dist*dist*1.8);     // deep haze
-
-  // ══════ RICH RAINBOW HUE ══════
-  float hue=fract(
-    uv.x*.4 - t*.035
-    + snoise(vec2(uv.x*1.5-t*.08,.5))*.22
-    + snoise(vec2(uv.x*4.-t*.12,2.))*.1
-  );
-
-  // neon palette — cycle through magenta, cyan, green, orange, violet
-  vec3 neon1=hsv2rgb(vec3(hue,.95,1.));
-  vec3 neon2=hsv2rgb(vec3(fract(hue+.12),.85,1.));
-  vec3 neon3=hsv2rgb(vec3(fract(hue+.28),.75,.95));
-  vec3 neon4=hsv2rgb(vec3(fract(hue+.45),.6,.8));
-  vec3 neon5=hsv2rgb(vec3(fract(hue+.6),.5,.6));
-  vec3 white=mix(neon1,vec3(1.),.75);
-
-  col+=white*L0*1.6;
-  col+=neon1*L1*.9;
-  col+=neon2*L2*.5;
-  col+=neon3*L3*.3;
-  col+=neon4*L4*.15;
-  col+=neon5*L5*.06;
-
-  // ══════ PAINT SPATTER ══════
-  float sp1=snoise(vec2(uv.x*35.+t*.08,uv.y*35.));
-  float sp2=snoise(vec2(uv.x*70.-t*.06,uv.y*70.+3.));
-  float sp3=snoise(vec2(uv.x*120.+t*.12,uv.y*120.-7.));
-  float m1=smoothstep(.01,.06,dist)*smoothstep(.2,.04,dist);
-  float m2=smoothstep(.03,.1,dist)*smoothstep(.28,.06,dist);
-  col+=neon1*max(sp1,0.)*m1*.22;
-  col+=neon2*max(sp2,0.)*m2*.12;
-  col+=neon3*max(sp3,0.)*m2*.08;
-
-  // ══════ NEON FILAMENTS ══════
-  for(float i=0.;i<6.;i++){
-    float seed=i*5.3;
-    float off=snoise(vec2(uv.x*(8.+i*5.)-t*(.18+i*.05),seed));
-    float spread=.012+snoise(vec2(uv.x*2.+seed,t*.04))*.008;
-    float fil=exp(-pow((uv.y-cy+warp+off*spread)*140.,2.));
-    float fh=fract(hue+i*.08+snoise(vec2(uv.x*3.+seed,t*.025))*.06);
-    col+=hsv2rgb(vec3(fh,.95,1.))*fil*.18;
+    for (let x = 0; x <= W; x += 4) {
+      const nx = x / W;
+      const env = Math.pow(Math.sin(nx * Math.PI), 0.6);
+      let y = Math.sin(nx * Math.PI * 2 * wv.freq - time * wv.speed) * wv.amp * 0.5;
+      y += Math.sin(nx * Math.PI * 2 * wv.freq * 0.5 - time * wv.speed * 0.7 + 0.3) * wv.amp * 0.2;
+      y *= -env;
+      if (x === 0) aX.moveTo(x, cy + y);
+      else aX.lineTo(x, cy + y);
+    }
+    aX.stroke();
   }
 
-  // ══════ GHOST STREAKS (parallel neon lines) ══════
-  for(float j=-2.;j<=2.;j+=1.){
-    if(j==0.) continue;
-    float off=j*(.03+snoise(vec2(t*.025,j*8.))*.012);
-    float gw=snoise(vec2(uv.x*4.+j*3.-t*.1,j*5.))*.008;
-    float gDist=abs(uv.y-cy-off+warp*.6+gw);
-    float gCore=exp(-gDist*gDist*3000.);
-    float gGlow=exp(-gDist*gDist*300.);
-    float gBloom=exp(-gDist*gDist*40.);
-    float gh=fract(hue+.15*j+.1);
-    vec3 gc=hsv2rgb(vec3(gh,.9,1.));
-    col+=mix(gc,vec3(1.),.5)*gCore*.25;
-    col+=gc*gGlow*.15;
-    col+=gc*gBloom*.05;
+  // ══════ COMPOSITE WAVEFORM — bright, tighter ══════
+  // Sum of all frequencies rendered as a single brighter line
+  aX.lineWidth = 1.5;
+  for (let pass = 0; pass < 2; pass++) {
+    aX.strokeStyle = pass === 0
+      ? 'rgba(255,255,255,0.06)'
+      : 'rgba(255,255,255,0.12)';
+    aX.lineWidth = pass === 0 ? 3 : 1;
+    aX.beginPath();
+
+    for (let x = 0; x <= W; x += 2) {
+      const nx = x / W;
+      const env = Math.pow(Math.sin(nx * Math.PI), 0.6);
+      let y = 0;
+      for (const wv of waveforms) {
+        y += Math.sin(nx * Math.PI * 2 * wv.freq - time * wv.speed) * wv.amp * 0.12;
+      }
+      y += kickAmp * Math.sin(nx * 30 - time * 8) * 4;
+      y *= env;
+      if (x === 0) aX.moveTo(x, cy + y);
+      else aX.lineTo(x, cy + y);
+    }
+    aX.stroke();
   }
 
-  // ══════ LIGHTNING BOLTS ══════
-  // multiple bolts that flash and move
-  for(float b=0.;b<4.;b++){
-    float seed=b*17.3;
-    // bolt flashes on and off
-    float flash=step(.7, snoise(vec2(t*1.5+seed, b*3.)));
-    if(flash<.5) continue;
+  // ══════ HORIZONTAL ELECTRICITY — subtle ══════
+  for (let i = 0; i < 2; i++) {
+    const seed = i * 23.7;
+    const flash = N(time * 0.6 + seed, i * 9);
+    if (flash < 0.35) continue;
+    const alpha = Math.min((flash - 0.35) * 1.5, 0.7);
 
-    float bx=fract(snoise(vec2(t*.3+seed,b*5.))*.5+.5);
-    float intensity=snoise(vec2(t*2.+seed,b*7.))*.5+.5;
+    const boltY = cy + N(seed + 3, time * 0.2) * H * 0.03;
+    const segs = 100;
+    const segLen = (W + 40) / segs;
 
-    float bv=bolt(uv, bx, cy, t, seed);
+    // bloom + core
+    const passes = [
+      { w: 6, a: alpha * 0.06, blur: 20 },
+      { w: 1, a: alpha * 0.5, blur: 2 },
+    ];
 
-    // bolt colour — electric white-blue with rainbow tint
-    float bh=fract(hue+b*.2);
-    vec3 boltCol=mix(vec3(.7,.8,1.), hsv2rgb(vec3(bh,.4,1.)), .3);
-    col+=boltCol*bv*intensity*1.2;
+    for (const pass of passes) {
+      aX.strokeStyle = `rgba(220,230,255,${pass.a})`;
+      aX.lineWidth = pass.w;
+      aX.shadowColor = `rgba(200,215,255,${pass.a})`;
+      aX.shadowBlur = pass.blur;
+      aX.beginPath();
 
-    // bloom around bolt
-    float bDist=length(uv-vec2(bx,cy));
-    col+=hsv2rgb(vec3(bh,.6,1.))*exp(-bDist*bDist*8.)*bv*.08;
+      let cx2 = -20, ccy = boltY;
+      aX.moveTo(cx2, ccy);
+      for (let s = 0; s < segs; s++) {
+        cx2 += segLen;
+        const jag = N(cx2 * 0.005 + time * 1.8 + seed, time + s * 0.2 + seed) * 16
+                  + N(cx2 * 0.018 + time * 3 + seed, s + seed) * 5;
+        ccy = boltY + jag;
+        aX.lineTo(cx2, ccy);
+      }
+      aX.stroke();
+    }
+    aX.shadowBlur = 0;
   }
 
-  // ══════ KICK FLASH ══════
-  float kickPulse=exp(-mod(t*2.,3.14)*1.5)*.06;
-  col+=neon1*L2*kickPulse*2.;
+  aX.restore();
 
-  col*=.5;
+  // ── vignette ──
+  const vig = aX.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, H * 0.9);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.35)');
+  aX.fillStyle = vig;
+  aX.fillRect(0, 0, W, H);
 
-  // slight vignette
-  float vig=1.-dot((uv-.5)*1.2,(uv-.5)*1.2);
-  col*=vig;
-
-  gl_FragColor=vec4(col,1.);
-}`;
-
-function compile(src,type){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s}
-const prog=gl.createProgram();
-gl.attachShader(prog,compile(vert,gl.VERTEX_SHADER));
-gl.attachShader(prog,compile(frag,gl.FRAGMENT_SHADER));
-gl.linkProgram(prog);gl.useProgram(prog);
-const buf=gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER,buf);
-gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-const loc=gl.getAttribLocation(prog,'pos');
-gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
-const uTime=gl.getUniformLocation(prog,'u_time');
-const uRes=gl.getUniformLocation(prog,'u_res');
-let t=0;
-(function frame(){gl.uniform1f(uTime,t);gl.uniform2f(uRes,W,H);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);t+=.016;requestAnimationFrame(frame)})();
+  requestAnimationFrame(renderAnim);
 }
+renderAnim();
 
 /* ═══════════════════════════════════════
    PAC-MAN
    ═══════════════════════════════════════ */
-const overlay=document.getElementById('pacOverlay');
-const pacCanvas=document.getElementById('pacCanvas');
-const pctx=pacCanvas.getContext('2d');
-const scoreEl=document.getElementById('pacScore');
-let pacGame=null;
-
-function openPac(){overlay.classList.add('active');startPacGame()}
-function closePac(){overlay.classList.remove('active');if(pacGame)cancelAnimationFrame(pacGame);pacGame=null}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('active'))closePac()});
-
-function startPacGame(){
-  const TILE=20,COLS=21,ROWS=21;
-  pacCanvas.width=COLS*TILE;pacCanvas.height=ROWS*TILE;
-  const MAP=[
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],
-    [0,3,0,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,0,3,0],
-    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-    [0,1,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,1,0],
-    [0,1,1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,1,0],
-    [0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0],
-    [2,2,2,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,2,2,2],
-    [0,0,0,0,1,0,1,0,0,4,4,4,0,0,1,0,1,0,0,0,0],
-    [1,1,1,1,1,1,1,0,4,4,4,4,4,0,1,1,1,1,1,1,1],
-    [0,0,0,0,1,0,1,0,4,4,4,4,4,0,1,0,1,0,0,0,0],
-    [2,2,2,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,2,2,2],
-    [0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0],
-    [0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],
-    [0,1,0,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,0,1,0],
-    [0,3,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,3,0],
-    [0,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,0],
-    [0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],
-    [0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0],
-    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  ];
-  let dots=[],powers=[];
-  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
-    if(MAP[r][c]===1)dots.push({x:c,y:r});
-    if(MAP[r][c]===3)powers.push({x:c,y:r});
-  }
-  let score=0,pac={x:10,y:15,dir:0,nextDir:0,mouth:0,mouthDir:1};
-  let ghosts=[
-    {x:9,y:9,dir:0,color:'#ff0000',scared:false,sx:1,sy:1,mode:'scatter'},
-    {x:10,y:9,dir:1,color:'#00ffff',scared:false,sx:19,sy:1,mode:'scatter'},
-    {x:11,y:9,dir:2,color:'#ffb8ff',scared:false,sx:1,sy:19,mode:'scatter'},
-    {x:10,y:10,dir:3,color:'#ffb852',scared:false,sx:19,sy:19,mode:'scatter'},
-  ];
-  let powerTimer=0,gameOver=false,gameWon=false;
-  const dirs=[{x:1,y:0},{x:0,y:1},{x:-1,y:0},{x:0,y:-1}];
-  function canMove(x,y){if(y<0||y>=ROWS)return false;let wx=(x%COLS+COLS)%COLS;return MAP[y][wx]!==0}
-  let inputDir=-1;
-  function handleKey(e){if(e.key==='ArrowRight')inputDir=0;if(e.key==='ArrowDown')inputDir=1;if(e.key==='ArrowLeft')inputDir=2;if(e.key==='ArrowUp')inputDir=3;e.preventDefault()}
-  document.addEventListener('keydown',handleKey);
-  let touchStart=null;
-  pacCanvas.addEventListener('touchstart',e=>{touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY}});
-  pacCanvas.addEventListener('touchend',e=>{if(!touchStart)return;let dx=e.changedTouches[0].clientX-touchStart.x,dy=e.changedTouches[0].clientY-touchStart.y;if(Math.abs(dx)>Math.abs(dy))inputDir=dx>0?0:2;else inputDir=dy>0?1:3;touchStart=null});
-  let tick=0;const MI=7,GI=9;
-  function moveGhost(g){
-    let possible=[];
-    for(let d=0;d<4;d++){if(d===(g.dir+2)%4)continue;let nx=g.x+dirs[d].x,ny=g.y+dirs[d].y;nx=(nx%COLS+COLS)%COLS;if(ny>=0&&ny<ROWS&&MAP[ny][nx]!==0)possible.push({d,x:nx,y:ny})}
-    if(!possible.length){let nd=(g.dir+2)%4;g.dir=nd;g.x=(g.x+dirs[nd].x%COLS+COLS)%COLS;g.y+=dirs[nd].y;return}
-    let tx=g.scared?Math.random()*COLS|0:(g.mode==='chase'?pac.x:g.sx);
-    let ty=g.scared?Math.random()*ROWS|0:(g.mode==='chase'?pac.y:g.sy);
-    let best=possible[0],bd=1e9;
-    for(let p of possible){let dd=(p.x-tx)**2+(p.y-ty)**2;if(dd<bd){bd=dd;best=p}}
-    g.dir=best.d;g.x=best.x;g.y=best.y;
-  }
-  function update(){
-    tick++;
-    ghosts.forEach(g=>{if(!g.scared)g.mode=(tick/200|0)%2?'chase':'scatter'});
-    if(powerTimer>0){powerTimer--;if(!powerTimer)ghosts.forEach(g=>g.scared=false)}
-    if(tick%MI===0){
-      if(inputDir>=0){let nx=pac.x+dirs[inputDir].x,ny=pac.y+dirs[inputDir].y;nx=(nx%COLS+COLS)%COLS;if(canMove(nx,ny))pac.dir=inputDir;inputDir=-1}
-      let nx=pac.x+dirs[pac.dir].x,ny=pac.y+dirs[pac.dir].y;nx=(nx%COLS+COLS)%COLS;if(canMove(nx,ny)){pac.x=nx;pac.y=ny}
-    }
-    dots=dots.filter(d=>{if(d.x===pac.x&&d.y===pac.y){score+=10;return false}return true});
-    powers=powers.filter(d=>{if(d.x===pac.x&&d.y===pac.y){score+=50;powerTimer=300;ghosts.forEach(g=>g.scared=true);return false}return true});
-    if(!dots.length&&!powers.length)gameWon=true;
-    if(tick%GI===0)ghosts.forEach(moveGhost);
-    ghosts.forEach(g=>{if(g.x===pac.x&&g.y===pac.y){if(g.scared){score+=200;g.x=10;g.y=9;g.scared=false}else gameOver=true}});
-    pac.mouth+=pac.mouthDir*.08;if(pac.mouth>.4)pac.mouthDir=-1;if(pac.mouth<.02)pac.mouthDir=1;
-  }
-  function draw(){
-    pctx.fillStyle='#000';pctx.fillRect(0,0,pacCanvas.width,pacCanvas.height);
-    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
-      if(MAP[r][c]===0){pctx.fillStyle='#0a0a18';pctx.fillRect(c*TILE,r*TILE,TILE,TILE);
-        pctx.strokeStyle='#2244aa';pctx.lineWidth=1;
-        [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy])=>{let nr=r+dy,nc=c+dx;if(nr<0||nr>=ROWS||nc<0||nc>=COLS)return;if(MAP[nr][nc]!==0){if(dx!==0){pctx.beginPath();pctx.moveTo(c*TILE+(dx===1?TILE:0),r*TILE);pctx.lineTo(c*TILE+(dx===1?TILE:0),r*TILE+TILE);pctx.stroke()}else{pctx.beginPath();pctx.moveTo(c*TILE,r*TILE+(dy===1?TILE:0));pctx.lineTo(c*TILE+TILE,r*TILE+(dy===1?TILE:0));pctx.stroke()}}})}}
-    dots.forEach(d=>{pctx.fillStyle='#ffcc00';pctx.beginPath();pctx.arc(d.x*TILE+TILE/2,d.y*TILE+TILE/2,2.5,0,Math.PI*2);pctx.fill()});
-    if(Math.sin(tick*.1)>.2)powers.forEach(d=>{pctx.fillStyle='#ffcc00';pctx.beginPath();pctx.arc(d.x*TILE+TILE/2,d.y*TILE+TILE/2,6,0,Math.PI*2);pctx.fill()});
-    let px=pac.x*TILE+TILE/2,py=pac.y*TILE+TILE/2,angle=[0,Math.PI/2,Math.PI,Math.PI*1.5][pac.dir];
-    pctx.fillStyle='#ffcc00';pctx.beginPath();pctx.arc(px,py,TILE/2-.5,angle+pac.mouth,angle+Math.PI*2-pac.mouth);pctx.lineTo(px,py);pctx.fill();
-    ghosts.forEach(g=>{let gx=g.x*TILE+TILE/2,gy=g.y*TILE+TILE/2;pctx.fillStyle=g.scared?'#2222ff':g.color;pctx.beginPath();pctx.arc(gx,gy-2,TILE/2-1,Math.PI,0);pctx.lineTo(gx+TILE/2-1,gy+TILE/2-2);for(let i=0;i<3;i++){pctx.lineTo(gx+TILE/2-1-(i+.5)*(TILE-2)/3,gy+TILE/2-6);pctx.lineTo(gx+TILE/2-1-(i+1)*(TILE-2)/3,gy+TILE/2-2)}pctx.fill();if(!g.scared){[[-3,-3],[3,-3]].forEach(([ox,oy])=>{pctx.fillStyle='#fff';pctx.beginPath();pctx.arc(gx+ox,gy+oy,3,0,Math.PI*2);pctx.fill();pctx.fillStyle='#00f';pctx.beginPath();pctx.arc(gx+ox+dirs[g.dir].x,gy+oy+dirs[g.dir].y,1.5,0,Math.PI*2);pctx.fill()})}else{pctx.fillStyle='#fff';[[-3,-3],[3,-3]].forEach(([ox,oy])=>{pctx.beginPath();pctx.arc(gx+ox,gy+oy,2,0,Math.PI*2);pctx.fill()})}});
-    if(gameOver){pctx.fillStyle='rgba(0,0,0,.7)';pctx.fillRect(0,0,pacCanvas.width,pacCanvas.height);pctx.fillStyle='#ff0000';pctx.font='700 28px "DM Sans"';pctx.textAlign='center';pctx.fillText('GAME OVER',pacCanvas.width/2,pacCanvas.height/2);pctx.fillStyle='#666';pctx.font='14px "JetBrains Mono"';pctx.fillText('Click to restart',pacCanvas.width/2,pacCanvas.height/2+30)}
-    if(gameWon){pctx.fillStyle='rgba(0,0,0,.7)';pctx.fillRect(0,0,pacCanvas.width,pacCanvas.height);pctx.fillStyle='#ffcc00';pctx.font='700 28px "DM Sans"';pctx.textAlign='center';pctx.fillText('YOU WIN!',pacCanvas.width/2,pacCanvas.height/2)}
-    scoreEl.textContent='Score: '+score;
-  }
-  function gameLoop(){if(!overlay.classList.contains('active'))return;if(!gameOver&&!gameWon)update();draw();pacGame=requestAnimationFrame(gameLoop)}
-  pacCanvas.onclick=()=>{if(gameOver||gameWon)startPacGame()};
-  gameLoop();
-}
+const ov=document.getElementById('pacOverlay');const pc=document.getElementById('pacCanvas');const px=pc.getContext('2d');const se=document.getElementById('pacScore');let pg=null;
+function openPac(){ov.classList.add('active');startPac()}function closePac(){ov.classList.remove('active');if(pg)cancelAnimationFrame(pg);pg=null}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ov.classList.contains('active'))closePac()});
+function startPac(){const T=20,C=21,R=21;pc.width=C*T;pc.height=R*T;const M=[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],[0,3,0,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,0,3,0],[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],[0,1,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,1,0],[0,1,1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,1,0],[0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0],[2,2,2,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,2,2,2],[0,0,0,0,1,0,1,0,0,4,4,4,0,0,1,0,1,0,0,0,0],[1,1,1,1,1,1,1,0,4,4,4,4,4,0,1,1,1,1,1,1,1],[0,0,0,0,1,0,1,0,4,4,4,4,4,0,1,0,1,0,0,0,0],[2,2,2,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,2,2,2],[0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],[0,1,0,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,0,1,0],[0,3,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,3,0],[0,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,0],[0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],[0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0],[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];let dt=[],pw=[];for(let r=0;r<R;r++)for(let c=0;c<C;c++){if(M[r][c]===1)dt.push({x:c,y:r});if(M[r][c]===3)pw.push({x:c,y:r})}let sc=0,p={x:10,y:15,d:0,mo:0,md:1},gh=[{x:9,y:9,d:0,c:'#ff0000',s:false,sx:1,sy:1,m:'s'},{x:10,y:9,d:1,c:'#00ffff',s:false,sx:19,sy:1,m:'s'},{x:11,y:9,d:2,c:'#ffb8ff',s:false,sx:1,sy:19,m:'s'},{x:10,y:10,d:3,c:'#ffb852',s:false,sx:19,sy:19,m:'s'}],pt=0,go=false,gw=false;const ds=[{x:1,y:0},{x:0,y:1},{x:-1,y:0},{x:0,y:-1}];function cm(x,y){if(y<0||y>=R)return false;return M[y][(x%C+C)%C]!==0}let iD=-1;document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')iD=0;if(e.key==='ArrowDown')iD=1;if(e.key==='ArrowLeft')iD=2;if(e.key==='ArrowUp')iD=3});let ts=null;pc.addEventListener('touchstart',e=>{ts={x:e.touches[0].clientX,y:e.touches[0].clientY}});pc.addEventListener('touchend',e=>{if(!ts)return;let dx=e.changedTouches[0].clientX-ts.x,dy=e.changedTouches[0].clientY-ts.y;iD=Math.abs(dx)>Math.abs(dy)?(dx>0?0:2):(dy>0?1:3);ts=null});let tk=0;function mg(g){let ps=[];for(let d=0;d<4;d++){if(d===(g.d+2)%4)continue;let nx=g.x+ds[d].x,ny=g.y+ds[d].y;nx=(nx%C+C)%C;if(ny>=0&&ny<R&&M[ny][nx]!==0)ps.push({d,x:nx,y:ny})}if(!ps.length){let nd=(g.d+2)%4;g.d=nd;g.x=(g.x+ds[nd].x%C+C)%C;g.y+=ds[nd].y;return}let tx=g.s?Math.random()*C|0:(g.m==='c'?p.x:g.sx),ty=g.s?Math.random()*R|0:(g.m==='c'?p.y:g.sy);let b=ps[0],bd=1e9;for(let pp of ps){let dd=(pp.x-tx)**2+(pp.y-ty)**2;if(dd<bd){bd=dd;b=pp}}g.d=b.d;g.x=b.x;g.y=b.y}function upd(){tk++;gh.forEach(g=>{if(!g.s)g.m=(tk/200|0)%2?'c':'s'});if(pt>0){pt--;if(!pt)gh.forEach(g=>g.s=false)}if(tk%7===0){if(iD>=0){let nx=p.x+ds[iD].x,ny=p.y+ds[iD].y;nx=(nx%C+C)%C;if(cm(nx,ny))p.d=iD;iD=-1}let nx=p.x+ds[p.d].x,ny=p.y+ds[p.d].y;nx=(nx%C+C)%C;if(cm(nx,ny)){p.x=nx;p.y=ny}}dt=dt.filter(d=>{if(d.x===p.x&&d.y===p.y){sc+=10;return false}return true});pw=pw.filter(d=>{if(d.x===p.x&&d.y===p.y){sc+=50;pt=300;gh.forEach(g=>g.s=true);return false}return true});if(!dt.length&&!pw.length)gw=true;if(tk%9===0)gh.forEach(mg);gh.forEach(g=>{if(g.x===p.x&&g.y===p.y){if(g.s){sc+=200;g.x=10;g.y=9;g.s=false}else go=true}});p.mo+=p.md*.08;if(p.mo>.4)p.md=-1;if(p.mo<.02)p.md=1}function drw(){px.fillStyle='#000';px.fillRect(0,0,pc.width,pc.height);for(let r=0;r<R;r++)for(let c=0;c<C;c++){if(M[r][c]===0){px.fillStyle='#080810';px.fillRect(c*T,r*T,T,T);px.strokeStyle='#151540';px.lineWidth=1;[[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy])=>{let nr=r+dy,nc=c+dx;if(nr<0||nr>=R||nc<0||nc>=C)return;if(M[nr][nc]!==0){if(dx!==0){px.beginPath();px.moveTo(c*T+(dx===1?T:0),r*T);px.lineTo(c*T+(dx===1?T:0),r*T+T);px.stroke()}else{px.beginPath();px.moveTo(c*T,r*T+(dy===1?T:0));px.lineTo(c*T+T,r*T+(dy===1?T:0));px.stroke()}}})}}dt.forEach(d=>{px.fillStyle='#ffcc00';px.beginPath();px.arc(d.x*T+T/2,d.y*T+T/2,2,0,Math.PI*2);px.fill()});if(Math.sin(tk*.1)>.2)pw.forEach(d=>{px.fillStyle='#ffcc00';px.beginPath();px.arc(d.x*T+T/2,d.y*T+T/2,5,0,Math.PI*2);px.fill()});let ppx=p.x*T+T/2,ppy=p.y*T+T/2,a=[0,Math.PI/2,Math.PI,Math.PI*1.5][p.d];px.fillStyle='#ffcc00';px.beginPath();px.arc(ppx,ppy,T/2-.5,a+p.mo,a+Math.PI*2-p.mo);px.lineTo(ppx,ppy);px.fill();gh.forEach(g=>{let gx=g.x*T+T/2,gy=g.y*T+T/2;px.fillStyle=g.s?'#2222ff':g.c;px.beginPath();px.arc(gx,gy-2,T/2-1,Math.PI,0);px.lineTo(gx+T/2-1,gy+T/2-2);for(let i=0;i<3;i++){px.lineTo(gx+T/2-1-(i+.5)*(T-2)/3,gy+T/2-6);px.lineTo(gx+T/2-1-(i+1)*(T-2)/3,gy+T/2-2)}px.fill();if(!g.s){[[-3,-3],[3,-3]].forEach(([ox,oy])=>{px.fillStyle='#fff';px.beginPath();px.arc(gx+ox,gy+oy,3,0,Math.PI*2);px.fill();px.fillStyle='#00f';px.beginPath();px.arc(gx+ox+ds[g.d].x,gy+oy+ds[g.d].y,1.5,0,Math.PI*2);px.fill()})}else{px.fillStyle='#fff';[[-3,-3],[3,-3]].forEach(([ox,oy])=>{px.beginPath();px.arc(gx+ox,gy+oy,2,0,Math.PI*2);px.fill()})}});if(go){px.fillStyle='rgba(0,0,0,.75)';px.fillRect(0,0,pc.width,pc.height);px.fillStyle='#ff0000';px.font='700 22px "DM Sans"';px.textAlign='center';px.fillText('GAME OVER',pc.width/2,pc.height/2);px.fillStyle='#444';px.font='11px "JetBrains Mono"';px.fillText('Click to restart',pc.width/2,pc.height/2+22)}if(gw){px.fillStyle='rgba(0,0,0,.75)';px.fillRect(0,0,pc.width,pc.height);px.fillStyle='#ffcc00';px.font='700 22px "DM Sans"';px.textAlign='center';px.fillText('YOU WIN',pc.width/2,pc.height/2)}se.textContent='Score: '+sc}function gl(){if(!ov.classList.contains('active'))return;if(!go&&!gw)upd();drw();pg=requestAnimationFrame(gl)}pc.onclick=()=>{if(go||gw)startPac()};gl()}
 </script>
 </body>
 </html>
