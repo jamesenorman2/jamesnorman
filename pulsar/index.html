@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulsar — James Norman</title>
+<meta name="description" content="A ridge-line music visualiser by James Norman. Drop in a track and watch it draw itself.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#000;
+    --ink:rgba(222,208,178,.92);
+    --dim:#3a3530;
+    --mid:#6a6050;
+    --hi:#b8a888;
+  }
+  html,body{height:100%}
+  body{background:var(--bg);overflow:hidden;-webkit-font-smoothing:antialiased;
+    font-family:'IBM Plex Mono',monospace;color:var(--mid)}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+  .ui{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:space-between;
+    pointer-events:none;transition:opacity .8s}
+  .ui *{pointer-events:auto}
+  body.hide-ui .ui{opacity:0}
+  body.hide-ui .ui *{pointer-events:none}
+  .top,.bottom{padding:2.5rem 3rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;
+    font-size:.6rem;font-weight:300;letter-spacing:.3em;text-transform:uppercase}
+  .top{opacity:0;animation:fi 2s .5s forwards}
+  .bottom{align-items:flex-end;opacity:0;animation:fi 2s 1.2s forwards}
+  a,button{color:var(--dim);text-decoration:none;background:none;border:none;font:inherit;
+    letter-spacing:inherit;text-transform:inherit;cursor:pointer;transition:color .6s}
+  a:hover,button:hover,button:focus-visible,a:focus-visible{color:var(--hi);outline:none}
+  button[aria-pressed="true"]{color:var(--hi)}
+  .title{font-family:'Syne',sans-serif;font-weight:500;font-size:.8rem;letter-spacing:.35em;color:var(--mid)}
+  .controls{display:flex;gap:1.8rem;flex-wrap:wrap}
+  .status{max-width:40ch;text-align:right;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .drop{position:fixed;inset:1.5rem;border:1px dashed var(--mid);display:flex;align-items:center;justify-content:center;
+    font-size:.7rem;letter-spacing:.4em;text-transform:uppercase;color:var(--hi);opacity:0;pointer-events:none;transition:opacity .3s}
+  body.dragging .drop{opacity:1}
+  input[type=file]{display:none}
+  @keyframes fi{to{opacity:1}}
+  @media(max-width:700px){
+    .top,.bottom{padding:1.25rem 1rem;font-size:.55rem;letter-spacing:.2em}
+    .bottom{flex-direction:column;align-items:center;gap:1rem}
+    .controls{gap:1.2rem;justify-content:center}
+    .status{text-align:center;max-width:100%}
+  }
+</style>
+</head>
+<body>
+<canvas id="plot"></canvas>
+
+<div class="ui">
+  <header class="top">
+    <a href="../">&larr; James Norman</a>
+    <div class="title">Pulsar</div>
+  </header>
+  <footer class="bottom">
+    <div class="controls">
+      <button id="loadBtn" title="Load an audio file from your device (L)">Load track</button>
+      <button id="playBtn" title="Play / pause (Space)" disabled>Play</button>
+      <button id="micBtn" title="Use your microphone (M)" aria-pressed="false">Mic</button>
+      <button id="uiBtn" title="Hide interface (H)">Hide</button>
+      <a href="https://soundcloud.com/jamesnormal" target="_blank" rel="noopener">SoundCloud &nearr;</a>
+    </div>
+    <div class="status" id="status">Drop a track anywhere</div>
+  </footer>
+</div>
+<div class="drop">Release to play</div>
+<input type="file" id="file" accept="audio/*">
+
+<script>
+(() => {
+'use strict';
+
+/* ─── Config ─────────────────────────────────────────────── */
+const ROWS = 72;            // number of ridge lines
+const POINTS = 160;         // samples per line
+const ROW_RATE = 28;        // new lines per second (how fast the history scrolls)
+const FFT = 2048;
+const MIN_HZ = 30, MAX_HZ = 9000;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ─── Canvas ─────────────────────────────────────────────── */
+const cv = document.getElementById('plot');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+addEventListener('resize', resize);
+resize();
+
+/* ─── History: ring buffer of rows ───────────────────────── */
+const history = Array.from({ length: ROWS }, () => new Float32Array(POINTS));
+let head = 0;               // index of the newest row
+let rowClock = 0;
+
+/* Envelope: strong in the middle, quiet at the edges — the classic look. */
+const envelope = new Float32Array(POINTS);
+for (let i = 0; i < POINTS; i++) {
+  const d = (i / (POINTS - 1) - 0.5) * 2;           // -1..1
+  envelope[i] = 0.06 + 0.94 * Math.exp(-(d * d) / (2 * 0.2 * 0.2));
+}
+
+/* ─── Audio ──────────────────────────────────────────────── */
+let actx = null, analyser = null, freq = null;
+let audioEl = null, elSource = null, micStream = null, micSource = null;
+let binMap = null;          // which FFT bin each point reads (per side, slightly offset)
+
+function ensureAudio() {
+  if (actx) return;
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = actx.createAnalyser();
+  analyser.fftSize = FFT;
+  analyser.smoothingTimeConstant = 0.55;
+  analyser.minDecibels = -90;
+  analyser.maxDecibels = -15;
+  freq = new Uint8Array(analyser.frequencyBinCount);
+
+  // Map each point to a frequency on a log scale, low in the centre, high at the edges.
+  // Left and right halves sample slightly different frequencies so the line isn't a mirror image.
+  const nyq = actx.sampleRate / 2, bins = analyser.frequencyBinCount;
+  binMap = new Float32Array(POINTS);
+  for (let i = 0; i < POINTS; i++) {
+    const t = i / (POINTS - 1);
+    const d = Math.abs(t - 0.5) * 2;                // 0 centre → 1 edge
+    const skew = t < 0.5 ? 0.93 : 1.07;
+    const hz = MIN_HZ * Math.pow(MAX_HZ / MIN_HZ, d) * skew;
+    binMap[i] = Math.min(bins - 1, (hz / nyq) * bins);
+  }
+}
+
+function sampleAudio(row) {
+  analyser.getByteFrequencyData(freq);
+  for (let i = 0; i < POINTS; i++) {
+    const b = binMap[i], b0 = b | 0, f = b - b0;
+    const v = (freq[b0] * (1 - f) + freq[Math.min(b0 + 1, freq.length - 1)] * f) / 255;
+    row[i] = Math.pow(v, 1.6);                      // expand dynamics so peaks pop
+  }
+}
+
+/* Idle: drifting pulsar-like bumps when nothing is playing. */
+const rand = (() => { let s = 1337; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+function sampleIdle(row, t) {
+  row.fill(0);
+  const n = 3 + ((rand() * 4) | 0);
+  for (let k = 0; k < n; k++) {
+    const c = 0.5 + (rand() - 0.5) * 0.32 + Math.sin(t * 0.3 + k) * 0.03;
+    const w = 0.008 + rand() * 0.03;
+    const a = (0.15 + rand() * 0.55) * (0.6 + 0.4 * Math.sin(t * 0.7 + k * 1.7));
+    for (let i = 0; i < POINTS; i++) {
+      const x = i / (POINTS - 1) - c;
+      row[i] += a * Math.exp(-(x * x) / (2 * w * w));
+    }
+  }
+  for (let i = 0; i < POINTS; i++) row[i] += rand() * 0.05;
+}
+
+function isLive() {
+  return !!micStream || (audioEl && !audioEl.paused);
+}
+
+/* ─── Render ─────────────────────────────────────────────── */
+const tmp = new Float32Array(POINTS);
+const INK = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim();
+let last = performance.now();
+
+function frame(now) {
+  const dt = Math.min((now - last) / 1000, 0.1);
+  last = now;
+  const rate = isLive() ? ROW_RATE : (reduceMotion ? 3 : 10);
+
+  rowClock += dt * rate;
+  while (rowClock >= 1) {
+    rowClock -= 1;
+    head = (head + 1) % ROWS;
+    const row = history[head];
+    if (isLive()) sampleAudio(row); else sampleIdle(row, now / 1000);
+    // light smoothing across points
+    for (let i = 0; i < POINTS; i++) {
+      tmp[i] = (row[Math.max(i - 1, 0)] + row[i] * 2 + row[Math.min(i + 1, POINTS - 1)]) / 4;
+    }
+    for (let i = 0; i < POINTS; i++) row[i] = tmp[i] * envelope[i];
+  }
+
+  draw(rowClock);
+  requestAnimationFrame(frame);
+}
+
+function draw(phase) {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  const gutter = W < 700 ? 16 : 48;
+  const plotW = Math.min(W - gutter * 2, H * 0.6);
+  const plotH = Math.min(H * 0.66, plotW * 1.25);
+  const x0 = (W - plotW) / 2;
+  const y0 = (H - plotH) / 2 + plotH * 0.06;
+  const gap = plotH / ROWS;
+  const amp = gap * 9;
+  const lw = Math.max(1, plotW / 420);
+
+  ctx.lineWidth = lw;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = INK;
+
+  // oldest at the top, newest at the bottom; each line hides the ones behind it
+  for (let r = 0; r < ROWS; r++) {
+    const row = history[(head + 1 + r) % ROWS];
+    const baseY = y0 + (r - phase) * gap;          // scroll smoothly between row ticks
+    const fade = Math.min(1, (r + 1 - phase) / 6);  // ease the oldest lines in
+    if (fade <= 0) continue;
+    ctx.globalAlpha = fade;
+
+    ctx.beginPath();
+    ctx.moveTo(x0, baseY);
+    for (let i = 0; i < POINTS; i++) {
+      ctx.lineTo(x0 + (i / (POINTS - 1)) * plotW, baseY - row[i] * amp);
+    }
+    // fill black underneath to occlude lines further back
+    ctx.lineTo(x0 + plotW, baseY + gap * 2);
+    ctx.lineTo(x0, baseY + gap * 2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(x0, baseY);
+    for (let i = 0; i < POINTS; i++) {
+      ctx.lineTo(x0 + (i / (POINTS - 1)) * plotW, baseY - row[i] * amp);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ─── UI wiring ──────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const statusEl = $('status'), playBtn = $('playBtn'), micBtn = $('micBtn'), fileInput = $('file');
+const setStatus = s => { statusEl.textContent = s; statusEl.title = s; };
+let trackName = '';
+
+function stopMic() {
+  if (!micStream) return;
+  micStream.getTracks().forEach(t => t.stop());
+  micSource && micSource.disconnect();
+  micStream = micSource = null;
+  micBtn.setAttribute('aria-pressed', 'false');
+}
+
+function loadFile(file) {
+  if (!file || !file.type.startsWith('audio/')) { setStatus('That isn’t an audio file'); return; }
+  ensureAudio();
+  stopMic();
+  if (!audioEl) {
+    audioEl = new Audio();
+    audioEl.loop = true;
+    elSource = actx.createMediaElementSource(audioEl);
+    elSource.connect(analyser);
+    analyser.connect(actx.destination);
+    audioEl.addEventListener('play', () => { playBtn.textContent = 'Pause'; });
+    audioEl.addEventListener('pause', () => { playBtn.textContent = 'Play'; });
+  } else if (audioEl.src) {
+    URL.revokeObjectURL(audioEl.src);
+  }
+  audioEl.src = URL.createObjectURL(file);   // stays on this device; nothing is uploaded
+  playBtn.disabled = false;
+  trackName = file.name.replace(/\.[^.]+$/, '');
+  setStatus(trackName);
+  actx.resume();
+  audioEl.play().catch(() => setStatus('Press play to start'));
+}
+
+function togglePlay() {
+  if (!audioEl || !audioEl.src) return;
+  actx.resume();
+  if (audioEl.paused) { stopMic(); audioEl.play(); } else audioEl.pause();
+}
+
+async function toggleMic() {
+  if (micStream) { stopMic(); setStatus(trackName || 'Drop a track anywhere'); return; }
+  ensureAudio();
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    if (audioEl) audioEl.pause();
+    micStream = stream;
+    micSource = actx.createMediaStreamSource(stream);
+    micSource.connect(analyser);            // analyser only, not the speakers, to avoid feedback
+    await actx.resume();
+    micBtn.setAttribute('aria-pressed', 'true');
+    setStatus('Listening');
+  } catch (e) {
+    setStatus('Microphone unavailable');
+  }
+}
+
+function toggleUI() { document.body.classList.toggle('hide-ui'); }
+
+$('loadBtn').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => { loadFile(fileInput.files[0]); fileInput.value = ''; });
+playBtn.addEventListener('click', togglePlay);
+micBtn.addEventListener('click', toggleMic);
+$('uiBtn').addEventListener('click', toggleUI);
+cv.addEventListener('click', () => document.body.classList.remove('hide-ui'));
+
+addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === ' ') { e.preventDefault(); togglePlay(); }
+  else if (k === 'h') toggleUI();
+  else if (k === 'm') toggleMic();
+  else if (k === 'l') fileInput.click();
+  else if (k === 'f') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+  else if (k === 'escape') document.body.classList.remove('hide-ui');
+});
+
+let dragDepth = 0;
+addEventListener('dragenter', e => { e.preventDefault(); dragDepth++; document.body.classList.add('dragging'); });
+addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('dragging'); } });
+addEventListener('dragover', e => e.preventDefault());
+addEventListener('drop', e => {
+  e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging');
+  loadFile(e.dataTransfer.files[0]);
+});
+
+// prefill history so the first frame isn't empty
+for (let r = 0; r < ROWS; r++) {
+  head = (head + 1) % ROWS;
+  sampleIdle(history[head], r * 0.1);
+  for (let i = 0; i < POINTS; i++) history[head][i] *= envelope[i];
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
