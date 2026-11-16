@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safer Streets Remix — James Norman</title>
+<meta name="description" content="Crime Prevention Through Environmental Design, as an instrument: change the street and hear it go from uneasy to settled.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .stage{position:relative;border:1px solid var(--line);aspect-ratio:16/9;width:100%;background:#000}
+  .stage canvas{position:absolute;inset:0;width:100%;height:100%}
+  .feel{position:absolute;left:1rem;top:1rem;font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:var(--mid)}
+  .feel b{display:block;font-family:'Syne',sans-serif;font-weight:600;font-size:1.3rem;letter-spacing:.02em;color:var(--fg);text-transform:none;margin-top:.2rem}
+  .mixer{display:grid;gap:1.2rem 2rem;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-top:1.5rem}
+  .mixer .val{float:right;color:var(--mid)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:transparent;border:0;padding:0}
+  input[type=range]::-webkit-slider-runnable-track{height:1px;background:var(--fg)}
+  input[type=range]::-moz-range-track{height:1px;background:var(--fg)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#000;border:1px solid var(--fg);margin-top:-7px;border-radius:0}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;background:#000;border:1px solid var(--fg);border-radius:0}
+  .hint{font-size:.7rem;color:var(--dim);margin-top:.3rem}
+  .actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.5rem}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <nav class="nav" aria-label="Site">
+    <a class="home" href="/">James Norman</a>
+    <ul>
+      <li><a href="/visualiser/">Visualiser</a></li>
+      <li><a href="/music/">Music</a></li>
+      <li><a href="/security/" aria-current="page">Security</a></li>
+      <li><a href="/night-shift/">Night Shift</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="kicker">Crime Prevention Through Environmental Design</div>
+  <h1>Safer Streets Remix</h1>
+  <p class="lede">How a place is designed changes how it feels, and how likely it is to be targeted. Remix this street with the five faders and listen: the music follows the street from uneasy to settled.</p>
+
+  <section style="margin-top:2rem">
+    <div class="stage">
+      <canvas id="street" aria-label="A line drawing of a street that changes as you move the faders"></canvas>
+      <div class="feel" aria-live="polite">How it feels<b id="feel">Uneasy</b></div>
+    </div>
+
+    <div class="mixer">
+      <div>
+        <label for="light">Lighting <span class="val" id="v-light"></span></label>
+        <input type="range" id="light" min="0" max="100" value="15">
+        <div class="hint">Even, white light. Faces readable at a distance.</div>
+      </div>
+      <div>
+        <label for="sight">Sightlines <span class="val" id="v-sight"></span></label>
+        <input type="range" id="sight" min="0" max="100" value="10">
+        <div class="hint">Windows and active frontages overlooking the street.</div>
+      </div>
+      <div>
+        <label for="plant">Planting <span class="val" id="v-plant"></span></label>
+        <input type="range" id="plant" min="0" max="100" value="10">
+        <div class="hint">Low, managed planting that hides nobody.</div>
+      </div>
+      <div>
+        <label for="care">Maintenance <span class="val" id="v-care"></span></label>
+        <input type="range" id="care" min="0" max="100" value="5">
+        <div class="hint">Clean walls, fixed glass, no litter. Someone cares.</div>
+      </div>
+      <div>
+        <label for="space">Defined space <span class="val" id="v-space"></span></label>
+        <input type="range" id="space" min="0" max="100" value="10">
+        <div class="hint">Clear boundaries, entrances and ownership.</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="soundBtn">Sound on</button>
+      <button class="ghost" id="neglect">Neglected</button>
+      <button class="ghost" id="fix">Fixed</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>The four principles</h2>
+    <div class="grid">
+      <div class="card"><div class="kicker">Lighting · Sightlines · Planting</div><h2 style="margin-top:.6rem">Natural surveillance</h2><p class="small">People behave differently when they could be seen. Light, windows and clear lines of sight put eyes on the street without a single camera.</p></div>
+      <div class="card"><div class="kicker">Defined space</div><h2 style="margin-top:.6rem">Access control</h2><p class="small">Paths, gateways and landscaping guide people where you want them to go, and make it obvious when someone is somewhere they shouldn’t be.</p></div>
+      <div class="card"><div class="kicker">Defined space</div><h2 style="margin-top:.6rem">Territorial reinforcement</h2><p class="small">Clear boundaries and a sense of ownership tell everyone this place belongs to someone, and that they’re looking after it.</p></div>
+      <div class="card"><div class="kicker">Maintenance</div><h2 style="margin-top:.6rem">Maintenance</h2><p class="small">Broken glass and graffiti signal that nobody is watching. Quick repairs signal the opposite, and stop the slide.</p></div>
+    </div>
+    <p class="small" style="margin-top:1.5rem">Want this kind of thinking applied to your site? <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">Talk to James &nearr;</a></p>
+  </section>
+</main>
+
+<footer class="wrap site">
+  <span>&copy; 2026 James Norman</span>
+  <span><a href="/security/">More security tools</a></span>
+</footer>
+
+<script src="/assets/konami.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const ids = ['light', 'sight', 'plant', 'care', 'space'];
+const v = {};
+const read = () => ids.forEach(k => { v[k] = $(k).value / 100; $('v-' + k).textContent = $(k).value; });
+read();
+const score = () => ids.reduce((s, k) => s + v[k], 0) / ids.length;
+
+/* ─── Drawing ─────────────────────────────────────────── */
+const cv = $('street'), ctx = cv.getContext('2d');
+let W = 0, H = 0;
+function resize() {
+  const r = cv.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
+  W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
+}
+addEventListener('resize', resize); resize();
+
+const lerp = (a, b, t) => a + (b - a) * t;
+const rand = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+const graffiti = Array.from({ length: 14 }, () => ({ side: rand() < 0.5 ? -1 : 1, u: rand() * 0.7, y: 0.25 + rand() * 0.5, w: 0.03 + rand() * 0.05, seed: rand() }));
+const litter = Array.from({ length: 22 }, () => ({ u: rand(), off: rand() * 2 - 1 }));
+const windows = [];
+for (let side of [-1, 1]) for (let c = 0; c < 6; c++) for (let rr = 0; rr < 4; rr++) windows.push({ side, c, rr, t: rand(), lit: rand() });
+
+function draw(t) {
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  const vx = W / 2, vy = H * 0.42;
+  const depth = u => 1 - Math.pow(1 - u, 1.8);          // perspective-ish spacing
+  // a point on a wall: side -1/1, u depth 0 near → 1 far, h 0 ground → 1 roof
+  const wall = (side, u, h) => {
+    const d = depth(u);
+    const xNear = side < 0 ? W * 0.06 : W * 0.94, xFar = side < 0 ? vx - W * 0.09 : vx + W * 0.09;
+    const x = lerp(xNear, xFar, d);
+    const gNear = H * 0.98, gFar = vy + H * 0.06, rNear = H * 0.04, rFar = vy - H * 0.12;
+    return [x, lerp(lerp(gNear, gFar, d), lerp(rNear, rFar, d), h)];
+  };
+  const ground = (off, u) => {                          // off -1..1 across the path
+    const d = depth(u);
+    return [lerp(vx + off * W * 0.2, vx + off * W * 0.02, d), lerp(H * 0.98, vy + H * 0.06, d)];
+  };
+  const base = 0.3 + 0.7 * v.light;                      // darker streets read dimmer
+  ctx.lineWidth = 1.2; ctx.lineJoin = 'round';
+  const stroke = a => { ctx.strokeStyle = `rgba(255,255,255,${(a * base).toFixed(3)})`; };
+
+  // light pools
+  for (const side of [-1, 1]) for (const u of [0.12, 0.45, 0.72]) {
+    const [x, y] = ground(side * 0.95, u), s = 1 - depth(u) * 0.85;
+    const r = H * 0.35 * s;
+    const g = ctx.createRadialGradient(x, y - r * 0.2, 0, x, y - r * 0.2, r);
+    g.addColorStop(0, `rgba(255,255,255,${0.22 * v.light})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y - r * 0.2, r, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // walls
+  for (const side of [-1, 1]) {
+    stroke(0.9); ctx.beginPath();
+    let p = wall(side, 0, 0); ctx.moveTo(...p);
+    for (const [u, h] of [[1, 0], [1, 1], [0, 1]]) ctx.lineTo(...wall(side, u, h));
+    ctx.stroke();
+  }
+  // windows (sightlines)
+  windows.forEach(w => {
+    if (w.t > v.sight) return;
+    const u0 = w.c / 6 + 0.02, u1 = u0 + 0.1, h0 = 0.18 + w.rr * 0.2, h1 = h0 + 0.12;
+    const q = [wall(w.side, u0, h0), wall(w.side, u1, h0), wall(w.side, u1, h1), wall(w.side, u0, h1)];
+    ctx.beginPath(); ctx.moveTo(...q[0]); q.slice(1).forEach(pt => ctx.lineTo(...pt)); ctx.closePath();
+    if (w.lit < v.sight * 0.8) { ctx.fillStyle = `rgba(255,255,255,${0.55 * base})`; ctx.fill(); }
+    stroke(0.8); ctx.stroke();
+    if (w.lit > 0.85 && v.care < 0.4) {              // broken glass
+      stroke(0.8); ctx.beginPath(); ctx.moveTo(...q[0]); ctx.lineTo(...q[2]); ctx.moveTo(...q[1]); ctx.lineTo(...q[3]); ctx.stroke();
+    }
+  });
+  // graffiti (maintenance)
+  graffiti.forEach((gr, i) => {
+    if (i / graffiti.length < v.care) return;
+    stroke(0.75); ctx.beginPath();
+    for (let k = 0; k <= 12; k++) {
+      const u = gr.u + (k / 12) * gr.w, h = gr.y + 0.05 * Math.sin(k * 2.3 + gr.seed * 9);
+      const pt = wall(gr.side, u, h); k ? ctx.lineTo(...pt) : ctx.moveTo(...pt);
+    }
+    ctx.stroke();
+  });
+
+  // path edges and paving (defined space)
+  stroke(0.9); ctx.beginPath(); ctx.moveTo(...ground(-1, 0)); ctx.lineTo(...ground(-1, 1)); ctx.moveTo(...ground(1, 0)); ctx.lineTo(...ground(1, 1)); ctx.stroke();
+  const pav = Math.round(v.space * 16);
+  for (let k = 1; k <= pav; k++) { const u = k / 17; stroke(0.35); ctx.beginPath(); ctx.moveTo(...ground(-1, u)); ctx.lineTo(...ground(1, u)); ctx.stroke(); }
+  if (v.space > 0.45) {                                   // a gateway marks the threshold
+    const a = (v.space - 0.45) / 0.55, u = 0.18;
+    const [lx, ly] = ground(-1.05, u), [rx, ry] = ground(1.05, u), top = H * 0.2 * (1 - depth(u) * 0.8);
+    stroke(a); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx, ly - top); ctx.lineTo(rx, ry - top); ctx.lineTo(rx, ry); ctx.stroke();
+  }
+
+  // litter (maintenance)
+  litter.forEach((l, i) => {
+    if (i / litter.length < v.care) return;
+    const [x, y] = ground(l.off * 0.9, l.u * 0.7), s = 3 * (1 - depth(l.u * 0.7) * 0.8);
+    stroke(0.7); ctx.strokeRect(x - s, y - s, s * 2, s * 1.2);
+  });
+
+  // lamp posts
+  for (const side of [-1, 1]) for (const u of [0.12, 0.45, 0.72]) {
+    const [x, y] = ground(side * 0.95, u), h = H * 0.42 * (1 - depth(u) * 0.85);
+    stroke(0.9); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - h); ctx.lineTo(x - side * h * 0.12, y - h); ctx.stroke();
+    if (v.light > 0.1) { ctx.fillStyle = `rgba(255,255,255,${0.3 + 0.7 * v.light})`; ctx.beginPath(); ctx.arc(x - side * h * 0.12, y - h + 3, 2.5 * (1 - depth(u) * 0.6), 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  // a walker heading up the street
+  const wu = (t / 14000) % 1, [fx, fy] = ground(0.15, wu * 0.85), fs = H * 0.13 * (1 - depth(wu * 0.85) * 0.85);
+  const swing = Math.sin(t / 180) * 0.25;
+  stroke(1); ctx.lineWidth = 1.4; ctx.beginPath();
+  ctx.arc(fx, fy - fs * 0.88, fs * 0.08, 0, Math.PI * 2);
+  ctx.moveTo(fx, fy - fs * 0.8); ctx.lineTo(fx, fy - fs * 0.4);
+  ctx.moveTo(fx, fy - fs * 0.4); ctx.lineTo(fx - fs * 0.12 * (1 + swing), fy);
+  ctx.moveTo(fx, fy - fs * 0.4); ctx.lineTo(fx + fs * 0.12 * (1 - swing), fy);
+  ctx.moveTo(fx, fy - fs * 0.7); ctx.lineTo(fx - fs * 0.14, fy - fs * 0.5);
+  ctx.moveTo(fx, fy - fs * 0.7); ctx.lineTo(fx + fs * 0.14, fy - fs * 0.5);
+  ctx.stroke(); ctx.lineWidth = 1.2;
+
+  // hedges (planting) drawn last so tall ones hide the walker
+  for (const side of [-1, 1]) {
+    const tall = 0.02 + (1 - v.plant) * 0.2;
+    ctx.beginPath();
+    for (let k = 0; k <= 60; k++) {
+      const u = k / 60 * 0.8, [x, y] = ground(side * 1.12, u), s = 1 - depth(u) * 0.85;
+      const top = y - H * tall * s * (0.85 + 0.15 * Math.sin(k * 3.1));
+      k ? ctx.lineTo(x, top) : ctx.moveTo(x, top);
+    }
+    for (let k = 60; k >= 0; k--) { const [x, y] = ground(side * 1.12, k / 60 * 0.8); ctx.lineTo(x, y); }
+    ctx.closePath(); ctx.fillStyle = '#000'; ctx.fill(); stroke(0.85); ctx.stroke();
+  }
+}
+
+/* ─── Feel + sound ────────────────────────────────────── */
+const WORDS = [[0.25, 'Threatening'], [0.5, 'Uneasy'], [0.75, 'Getting there'], [1.01, 'Safe and cared for']];
+let audio = null;
+function startAudio() {
+  const ac = new (window.AudioContext || window.webkitAudioContext)();
+  const master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+  const tense = ac.createGain(), calm = ac.createGain(), pulse = ac.createGain(), knock = ac.createGain();
+  [tense, calm, pulse, knock].forEach(g => { g.gain.value = 0; g.connect(master); });
+  // tense: a dissonant cluster that wobbles
+  const tlp = ac.createBiquadFilter(); tlp.type = 'lowpass'; tlp.frequency.value = 900; tlp.connect(tense);
+  const trem = ac.createGain(); trem.gain.value = 0.6; trem.connect(tlp);
+  const lfo = ac.createOscillator(), lfoAmt = ac.createGain(); lfo.frequency.value = 5.3; lfoAmt.gain.value = 0.4; lfo.connect(lfoAmt); lfoAmt.connect(trem.gain); lfo.start();
+  [65.4, 138.6, 185, 196, 277.2].forEach(f => { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = (Math.random() - 0.5) * 30; const g = ac.createGain(); g.gain.value = 0.06; o.connect(g); g.connect(trem); o.start(); });
+  // calm: an open major chord
+  [130.8, 196, 329.6, 493.9, 587.3].forEach(f => { const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = ac.createGain(); g.gain.value = 0.07; o.connect(g); g.connect(calm); o.start(); });
+  // rhythm: a steady heartbeat when safe, irregular knocks when not
+  let next = ac.currentTime + 0.1, s = 0;
+  const beat = 60 / 76 / 2;
+  const hit = (t, f, g, len) => { const o = ac.createOscillator(), e = ac.createGain(); o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.4, t + len); e.gain.setValueAtTime(0.8, t); e.gain.exponentialRampToValueAtTime(0.001, t + len); o.connect(e); e.connect(g); o.start(t); o.stop(t + len + 0.05); };
+  const timer = setInterval(() => {
+    while (next < ac.currentTime + 0.15) {
+      if (s % 2 === 0) hit(next, 90, pulse, 0.25);
+      if (Math.random() < 0.18) hit(next + Math.random() * beat, 60 + Math.random() * 200, knock, 0.12);
+      next += beat; s++;
+    }
+  }, 30);
+  audio = {
+    set(sc) {
+      const t = ac.currentTime;
+      tense.gain.setTargetAtTime((1 - sc) * 0.9, t, 0.4);
+      calm.gain.setTargetAtTime(sc * 0.9, t, 0.4);
+      pulse.gain.setTargetAtTime(Math.max(0, sc - 0.35) * 0.5, t, 0.4);
+      knock.gain.setTargetAtTime(Math.max(0, 0.6 - sc) * 0.6, t, 0.4);
+      tlp.frequency.setTargetAtTime(500 + (1 - sc) * 1500, t, 0.4);
+    },
+    toggle(on) { master.gain.setTargetAtTime(on ? 0.5 : 0, ac.currentTime, 0.2); }
+  };
+}
+
+let soundOn = false;
+function update() {
+  read();
+  const sc = score();
+  $('feel').textContent = WORDS.find(([max]) => sc < max)[1];
+  if (audio) audio.set(sc);
+}
+ids.forEach(k => $(k).addEventListener('input', update));
+$('soundBtn').addEventListener('click', () => {
+  if (!audio) { try { startAudio(); } catch (e) { $('soundBtn').hidden = true; return; } }
+  soundOn = !soundOn; audio.toggle(soundOn); audio.set(score());
+  $('soundBtn').textContent = soundOn ? 'Sound off' : 'Sound on';
+});
+const preset = val => { ids.forEach(k => $(k).value = val); update(); };
+$('neglect').addEventListener('click', () => preset(5));
+$('fix').addEventListener('click', () => preset(95));
+update();
+
+const loop = t => { draw(t); requestAnimationFrame(loop); };
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music — James Norman</title>
+<meta name="description" content="Music by James Norman: producer and DJ.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .threat{display:grid;gap:1.2rem;grid-template-columns:1fr;align-items:end}
+  @media(min-width:800px){.threat{grid-template-columns:1.2fr 1fr}}
+  .level{font-family:'Syne',sans-serif;font-weight:600;font-size:clamp(2.4rem,8vw,5rem);line-height:1;letter-spacing:-.02em;transition:color .6s}
+  .bars{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:1rem}
+  .bars span{height:10px;border:1px solid var(--line);transition:background .5s,border-color .5s}
+  .bars span.on{background:var(--fg);border-color:var(--fg)}
+  .bars-labels{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;font-size:.5rem;letter-spacing:.15em;color:var(--dim);margin-top:.4rem}
+  .player iframe{width:100%;height:450px;border:0;display:block;filter:grayscale(1) invert(.92) contrast(1.1)}
+  .battle{display:grid;gap:1rem;grid-template-columns:1fr}
+  @media(min-width:800px){.battle{grid-template-columns:1fr auto 1fr}}
+  .vs{align-self:center;justify-self:center;font-family:'Syne',sans-serif;font-size:1.4rem;color:var(--dim)}
+  .agent .name{font-family:'Syne',sans-serif;font-weight:600;letter-spacing:.2em;font-size:1rem}
+  .agent .pick{margin:.9rem 0;font-size:.85rem}
+  .agent .pitch{color:var(--mid);font-size:.82rem;min-height:4.5em}
+  .agent .row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;align-items:center}
+  .meter{height:4px;background:var(--line);margin-top:1rem}
+  .meter i{display:block;height:100%;background:var(--fg);width:50%;transition:width .6s}
+  .exchange{margin-top:1.5rem;font-size:.8rem;border-left:1px solid var(--line);padding-left:1rem}
+  .exchange p{margin:.5rem 0}
+  .exchange b{font-weight:400;letter-spacing:.2em;font-size:.65rem;color:var(--mid);margin-right:.6rem}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <nav class="nav" aria-label="Site">
+    <a class="home" href="/">James Norman</a>
+    <ul>
+      <li><a href="/visualiser/">Visualiser</a></li>
+      <li><a href="/music/" aria-current="page">Music</a></li>
+      <li><a href="/security/">Security</a></li>
+      <li><a href="/night-shift/">Night Shift</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="wrap">
+  <h1>Music</h1>
+  <p class="lede">Producer and DJ. Everything here plays straight from SoundCloud. Fly through any of it in the <a href="/visualiser/">visualiser</a>.</p>
+
+  <section aria-labelledby="threat-h">
+    <div class="threat">
+      <div>
+        <div class="kicker" id="threat-h">Dancefloor threat level</div>
+        <div class="level" id="level" aria-live="polite">LOW</div>
+        <div class="bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="bars-labels" aria-hidden="true"><span>LOW</span><span>MODERATE</span><span>SUBSTANTIAL</span><span>SEVERE</span><span>CRITICAL</span></div>
+      </div>
+      <p class="small">Measured live from the energy of the track that’s playing. <span class="muted">It’s a joke about the music, not a real threat level: for the actual UK national threat level, see <a href="https://www.mi5.gov.uk/threat-levels" target="_blank" rel="noopener">MI5</a>.</span></p>
+    </div>
+  </section>
+
+  <section class="player" aria-label="SoundCloud player">
+    <div id="playerBox"></div>
+    <p class="small" style="margin-top:.8rem"><a id="scLink" target="_blank" rel="noopener">Open on SoundCloud &nearr;</a></p>
+  </section>
+
+  <section aria-labelledby="battle-h">
+    <div class="kicker">Agent DJ battle</div>
+    <h2 id="battle-h" style="margin-top:.4rem">Two AI agents. One track each. You decide.</h2>
+    <p class="small" id="battleDate">Every night the Night Shift agents pick two of my tracks and argue their case.</p>
+    <div id="battle" hidden>
+      <div class="battle" style="margin-top:1.5rem">
+        <article class="card agent" data-side="a"></article>
+        <div class="vs">VS</div>
+        <article class="card agent" data-side="b"></article>
+      </div>
+      <div class="meter" aria-hidden="true"><i id="meter"></i></div>
+      <div class="exchange" id="exchange"></div>
+    </div>
+    <p class="small" id="battleEmpty" hidden>The first battle drops after the next Night Shift. Check back tomorrow.</p>
+  </section>
+</main>
+
+<footer class="wrap site">
+  <span>&copy; 2026 James Norman</span>
+  <span><a href="https://soundcloud.com/jamesnormal" target="_blank" rel="noopener">SoundCloud</a> · <a href="/night-shift/">Night Shift log</a></span>
+</footer>
+
+<script src="/assets/config.js"></script>
+<script src="/assets/konami.js"></script>
+<script src="https://w.soundcloud.com/player/api.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const LEVELS = ['LOW', 'MODERATE', 'SUBSTANTIAL', 'SEVERE', 'CRITICAL'];
+const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;
+
+/* ─── SoundCloud player ─────────────────────────────────── */
+let widget = null, playing = false, pos = 0, posAt = 0, duration = 0, wave = null, lo = 0, hi = 1, soundId = null;
+
+function mountPlayer(url, autoPlay) {
+  const iframe = document.createElement('iframe');
+  iframe.title = 'SoundCloud player';
+  iframe.allow = 'autoplay';
+  iframe.src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url) +
+    '&color=%23000000&auto_play=' + (autoPlay ? 'true' : 'false') +
+    '&hide_related=true&show_comments=false&show_reposts=false&visual=false';
+  const box = $('playerBox');
+  box.innerHTML = '';
+  box.append(iframe);
+  $('scLink').href = url;
+  if (typeof SC === 'undefined') return;
+  widget = SC.Widget(iframe);
+  const E = SC.Widget.Events;
+  widget.bind(E.PLAY, () => { playing = true; readSound(); });
+  widget.bind(E.PAUSE, () => { playing = false; });
+  widget.bind(E.FINISH, () => { playing = false; });
+  widget.bind(E.PLAY_PROGRESS, e => { pos = e.currentPosition; posAt = performance.now(); });
+}
+
+function readSound() {
+  widget.getCurrentSound(s => {
+    if (!s || s.id === soundId) return;
+    soundId = s.id;
+    duration = s.duration || s.full_duration || 0;
+    loadWave(s.waveform_url);
+  });
+}
+
+// SoundCloud publishes each track's loudness over time; we read the energy around the playhead.
+async function loadWave(url) {
+  wave = null;
+  if (!url) return;
+  try {
+    const j = await (await fetch(url.replace(/\.png(\?.*)?$/, '.json'))).json();
+    const h = j.height || 140;
+    wave = j.samples.map(v => v / h);
+    const sorted = [...wave].sort((a, b) => a - b);
+    lo = sorted[Math.floor(sorted.length * 0.05)];
+    hi = sorted[Math.floor(sorted.length * 0.98)] || 1;
+  } catch (e) { wave = null; }
+}
+
+/* ─── Threat level ──────────────────────────────────────── */
+let energy = 0, shown = -1;
+function tick() {
+  let target = 0;
+  if (playing) {
+    if (wave && duration) {
+      const now = pos + (performance.now() - posAt);
+      const idx = Math.floor((now / duration) * wave.length);
+      let sum = 0, n = 0;
+      for (let k = -12; k <= 0; k++) {               // a few seconds around the playhead
+        const v = wave[Math.max(0, Math.min(wave.length - 1, idx + k))];
+        sum += Math.max(0, Math.min(1, (v - lo) / (hi - lo || 1))); n++;
+      }
+      target = sum / n;
+    } else {
+      target = 0.5;                                   // playing, but no waveform available
+    }
+  }
+  energy += (target - energy) * 0.05;
+  const lvl = Math.min(4, Math.floor(energy * 5.2));
+  if (lvl !== shown) {
+    shown = lvl;
+    $('level').textContent = LEVELS[lvl];
+    document.querySelectorAll('.bars span').forEach((s, i) => s.classList.toggle('on', i <= lvl));
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ─── Agent DJ battle ───────────────────────────────────── */
+function voterId() {
+  let id = null;
+  try { id = localStorage.getItem('jn-voter'); } catch (e) {}
+  if (!id) {
+    id = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+    try { localStorage.setItem('jn-voter', id); } catch (e) {}
+  }
+  return id;
+}
+function votedFor(shiftId) { try { return localStorage.getItem('jn-voted-' + shiftId); } catch (e) { return null; } }
+
+function setMeter(a, b) {
+  const total = a + b;
+  $('meter').style.width = (total ? (a / total) * 100 : 50) + '%';
+  document.querySelector('[data-side="a"] .count').textContent = a + (a === 1 ? ' vote' : ' votes');
+  document.querySelector('[data-side="b"] .count').textContent = b + (b === 1 ? ' vote' : ' votes');
+}
+
+function renderAgent(el, side, agent, shift) {
+  el.innerHTML = '';
+  const name = document.createElement('div'); name.className = 'name'; name.textContent = agent.agent || (side === 'a' ? 'AGENT A' : 'AGENT B');
+  const pick = document.createElement('div'); pick.className = 'pick';
+  const track = agent.track;
+  if (track && SC_URL_RE.test(track.url)) {
+    const a = document.createElement('a'); a.href = track.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = track.title;
+    pick.append('Picks: ', a);
+  } else {
+    pick.textContent = 'Picks: ' + (track && track.title ? track.title : 'a mystery track');
+  }
+  const pitch = document.createElement('p'); pitch.className = 'pitch'; pitch.textContent = agent.pitch || '';
+  const row = document.createElement('div'); row.className = 'row';
+  const play = document.createElement('button'); play.className = 'ghost'; play.textContent = 'Play';
+  play.disabled = !(track && SC_URL_RE.test(track.url));
+  play.addEventListener('click', () => { mountPlayer(track.url, true); $('playerBox').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+  const vote = document.createElement('button'); vote.textContent = 'Vote'; vote.dataset.vote = side;
+  const count = document.createElement('span'); count.className = 'count small';
+  row.append(play, vote, count);
+  el.append(name, pick, pitch, row);
+
+  vote.addEventListener('click', async () => {
+    document.querySelectorAll('[data-vote]').forEach(b => b.disabled = true);
+    try {
+      const res = await JN.rpc('jn_vote', { p_shift: shift.id, p_side: side, p_voter: voterId() });
+      if (res.ok) {
+        setMeter(res.a, res.b);
+        try { localStorage.setItem('jn-voted-' + shift.id, side); } catch (e) {}
+        vote.textContent = 'Voted';
+      }
+    } catch (e) { document.querySelectorAll('[data-vote]').forEach(b => b.disabled = false); }
+  });
+}
+
+async function loadBattle() {
+  try {
+    const rows = await JN.get('jn_night_shift?select=id,created_at,log,votes_a,votes_b&order=id.desc&limit=10');
+    const shift = rows.find(r => r.log && r.log.battle && r.log.battle.a && r.log.battle.b);
+    if (!shift) { $('battleEmpty').hidden = false; return; }
+    const b = shift.log.battle;
+    renderAgent(document.querySelector('[data-side="a"]'), 'a', b.a, shift);
+    renderAgent(document.querySelector('[data-side="b"]'), 'b', b.b, shift);
+    setMeter(shift.votes_a, shift.votes_b);
+    const prior = votedFor(shift.id);
+    if (prior) document.querySelectorAll('[data-vote]').forEach(btn => { btn.disabled = true; if (btn.dataset.vote === prior) btn.textContent = 'Voted'; });
+    const ex = $('exchange'); ex.innerHTML = '';
+    (b.exchange || []).forEach(line => {
+      const p = document.createElement('p');
+      const who = document.createElement('b'); who.textContent = (line.speaker === 'a' ? b.a.agent : b.b.agent) || line.speaker;
+      p.append(who, line.line || '');
+      ex.append(p);
+    });
+    const d = new Date(shift.created_at);
+    $('battleDate').textContent = 'Battle from the Night Shift of ' + d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) + '.';
+    $('battle').hidden = false;
+  } catch (e) {
+    $('battleEmpty').textContent = 'The battle couldn’t load right now.';
+    $('battleEmpty').hidden = false;
+  }
+}
+
+/* ─── Start ─────────────────────────────────────────────── */
+mountPlayer(JN.soundcloud, false);   // your whole profile, so visitors can browse
+loadBattle();
+})();
+</script>
+</body>
+</html>

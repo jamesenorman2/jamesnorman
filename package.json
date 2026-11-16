@@ -1,0 +1,9 @@
+{
+  "name": "jamesnorman-site",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.9.0",
+    "zod": "^4.6.7"
+  }
+}

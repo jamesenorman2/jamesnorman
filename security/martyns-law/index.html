@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Martyn’s Law Checker — James Norman</title>
+<meta name="description" content="A quick, plain-English check of whether the Terrorism (Protection of Premises) Act 2025 (Martyn’s Law) applies to your premises or event, and which tier.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  form{display:grid;gap:1.8rem;max-width:640px;margin-top:2rem}
+  fieldset{border:0}
+  legend{font-size:.65rem;letter-spacing:.25em;text-transform:uppercase;color:var(--mid);margin-bottom:.7rem}
+  .opts{display:flex;gap:.5rem;flex-wrap:wrap}
+  .opts label{margin:0;cursor:pointer}
+  .opts input{position:absolute;opacity:0;width:1px;height:1px}
+  .opts span{display:inline-block;border:1px solid var(--line);padding:.6rem .9rem;font-size:.75rem;letter-spacing:.1em;text-transform:none;color:var(--fg);transition:border-color .3s,background .3s}
+  .opts input:checked + span{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .opts input:focus-visible + span{outline:1px solid var(--fg);outline-offset:3px}
+  .help{font-size:.75rem;color:var(--dim);margin-top:.5rem;max-width:60ch}
+  .result{max-width:760px;margin-top:3rem;border:1px solid var(--fg);padding:1.6rem}
+  .tier{font-family:'Syne',sans-serif;font-weight:600;font-size:clamp(1.8rem,5vw,2.8rem);line-height:1.05;margin:.4rem 0 1rem}
+  .result ul{margin:.8rem 0 0 1.1rem;font-size:.85rem}
+  .result li{margin:.35rem 0}
+  .result h2{margin-top:1.6rem}
+  .note{font-size:.72rem;color:var(--mid);border-top:1px solid var(--line);margin-top:1.6rem;padding-top:1rem}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <nav class="nav" aria-label="Site">
+    <a class="home" href="/">James Norman</a>
+    <ul>
+      <li><a href="/visualiser/">Visualiser</a></li>
+      <li><a href="/music/">Music</a></li>
+      <li><a href="/security/" aria-current="page">Security</a></li>
+      <li><a href="/night-shift/">Night Shift</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="kicker">Terrorism (Protection of Premises) Act 2025</div>
+  <h1>Martyn’s Law readiness check</h1>
+  <p class="lede">Named after Martyn Hett, who was killed in the Manchester Arena attack in 2017. The law asks venues and events to be ready to protect people. Answer four questions to see roughly where you stand. It takes a minute.</p>
+
+  <form id="check" novalidate>
+    <fieldset>
+      <legend>1. Is this a building or venue, or a one-off event?</legend>
+      <div class="opts">
+        <label><input type="radio" name="kind" value="premises" checked><span>Premises (building or site)</span></label>
+        <label><input type="radio" name="kind" value="event"><span>An event</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset id="q-use">
+      <legend>2. Is it used for one of the activities the Act lists?</legend>
+      <div class="opts">
+        <label><input type="radio" name="use" value="yes" checked><span>Yes</span></label>
+        <label><input type="radio" name="use" value="no"><span>No</span></label>
+        <label><input type="radio" name="use" value="unsure"><span>Not sure</span></label>
+      </div>
+      <p class="help">The Act lists the uses that count. They include, for example, shops, restaurants and bars, entertainment and leisure venues, sports grounds, places of worship, visitor attractions, health and education settings. Check the full list in the Act or the Home Office guidance.</p>
+    </fieldset>
+
+    <fieldset id="q-worship">
+      <legend>3. Is it mainly a place of worship?</legend>
+      <div class="opts">
+        <label><input type="radio" name="worship" value="no" checked><span>No</span></label>
+        <label><input type="radio" name="worship" value="yes"><span>Yes</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span id="peopleLabel">4. How many people could reasonably be there at the same time?</span></legend>
+      <input type="number" id="people" min="0" step="1" inputmode="numeric" placeholder="e.g. 450" aria-labelledby="peopleLabel">
+      <p class="help">Think about your busiest realistic moment, not your licensed capacity on paper.</p>
+    </fieldset>
+
+    <fieldset id="q-entry" hidden>
+      <legend>5. Is entry controlled, for example by tickets, wristbands or checks at the door?</legend>
+      <div class="opts">
+        <label><input type="radio" name="entry" value="yes" checked><span>Yes</span></label>
+        <label><input type="radio" name="entry" value="no"><span>No</span></label>
+      </div>
+    </fieldset>
+
+    <div><button type="submit">Check</button></div>
+  </form>
+
+  <div class="result" id="result" hidden aria-live="polite"></div>
+
+  <section>
+    <h2>The law in one minute</h2>
+    <div class="grid">
+      <div class="card"><div class="kicker">200–799 people</div><h2 style="margin-top:.6rem">Standard tier</h2><p class="small">Tell the regulator, and have simple, practised procedures: evacuation, invacuation, lockdown and how you’ll warn people. Focused on people and planning, not expensive kit.</p></div>
+      <div class="card"><div class="kicker">800+ people, and qualifying events</div><h2 style="margin-top:.6rem">Enhanced tier</h2><p class="small">Everything in the standard tier, plus public protection measures that reduce vulnerability, documented and shared with the regulator, with a designated senior individual responsible.</p></div>
+      <div class="card"><div class="kicker">Regulator</div><h2 style="margin-top:.6rem">The SIA</h2><p class="small">The Security Industry Authority regulates the new duties, with an implementation period of at least two years after Royal Assent in April 2025 before they apply.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap site">
+  <span>&copy; 2026 James Norman</span>
+  <span><a href="/security/">More security tools</a></span>
+</footer>
+
+<script src="/assets/konami.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const form = $('check');
+const val = name => (form.querySelector(`input[name="${name}"]:checked`) || {}).value;
+const GUIDANCE = 'https://www.gov.uk/government/publications/the-terrorism-protection-of-premises-act-2025';
+const PROTECTUK = 'https://www.protectuk.police.uk/';
+const LINKEDIN = 'https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/';
+
+function sync() {
+  const event = val('kind') === 'event';
+  $('q-use').hidden = event;
+  $('q-worship').hidden = event;
+  $('q-entry').hidden = !event;
+  $('peopleLabel').textContent = event
+    ? '4. How many people could reasonably be at the event at the same time?'
+    : '4. How many people could reasonably be there at the same time?';
+}
+form.addEventListener('change', sync);
+sync();
+
+const li = items => '<ul>' + items.map(i => `<li>${i}</li>`).join('') + '</ul>';
+const STANDARD = li([
+  'Notify the Security Industry Authority (SIA) about the premises.',
+  'Have public protection procedures that are reasonably practicable: <b>evacuation</b>, <b>invacuation</b> (bringing people inside to safety), <b>lockdown</b>, and <b>how you’ll communicate</b> with people during an attack.',
+  'Make sure staff know them. Training and rehearsal matter more than equipment.'
+]);
+const ENHANCED = li([
+  'Everything in the standard tier.',
+  'Public protection <b>measures</b> that reduce vulnerability, so far as reasonably practicable: for example monitoring the site, managing how people move, and physical safety and security.',
+  'Document what you’ve done and why, and give it to the SIA.',
+  'If the responsible person isn’t an individual, designate a <b>senior individual</b> to be accountable.'
+]);
+const PEN_STD = 'Maximum penalty set out in the guidance: up to £10,000, plus up to £500 a day for continued non-compliance.';
+const PEN_ENH = 'Maximum penalty set out in the guidance: the greater of £18 million or 5% of qualifying worldwide revenue, plus up to £50,000 a day for continued non-compliance.';
+
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const n = parseInt($('people').value, 10);
+  const out = $('result');
+  if (!Number.isFinite(n) || n < 0) { out.hidden = false; out.innerHTML = '<p>Enter roughly how many people could be there at the same time.</p>'; $('people').focus(); return; }
+  const event = val('kind') === 'event';
+  let kicker, tier, body;
+
+  if (event) {
+    if (n >= 800 && val('entry') === 'yes') {
+      kicker = 'Likely in scope'; tier = 'Enhanced tier (qualifying event)';
+      body = `<p>Events where 800 or more people are expected at the same time, with controlled entry, are expected to be <b>qualifying events</b> under the enhanced duty.</p><h2>What that means</h2>${ENHANCED}<p class="small" style="margin-top:.8rem">${PEN_ENH}</p>`;
+    } else if (n >= 800) {
+      kicker = 'Check carefully'; tier = 'Possibly in scope';
+      body = `<p>Large events without controlled entry may not be qualifying events, but the venue they’re held at could still be in scope as premises. Check the guidance, or get advice.</p>`;
+    } else {
+      kicker = 'Probably out of scope'; tier = 'Not a qualifying event';
+      body = `<p>Under 800 people at the same time is below the threshold for a qualifying event. The premises hosting it may still have duties of their own.</p>`;
+    }
+  } else if (val('use') === 'no') {
+    kicker = 'Probably out of scope'; tier = 'Not in scope';
+    body = `<p>Only premises used for the activities listed in the Act are covered. If none apply, the duties shouldn’t either. Double-check the list: it’s broader than many people expect.</p>`;
+  } else if (n < 200) {
+    kicker = 'Probably out of scope'; tier = 'Below the threshold';
+    body = `<p>Premises where fewer than 200 people are reasonably expected at the same time are outside the Act. Good planning is still worth it: <a href="${PROTECTUK}" target="_blank" rel="noopener">ProtectUK</a> has free guidance and training.</p>`;
+  } else if (n < 800 || val('worship') === 'yes') {
+    kicker = val('use') === 'unsure' ? 'Likely in scope, if the use qualifies' : 'Likely in scope';
+    tier = 'Standard tier';
+    body = (val('worship') === 'yes' && n >= 800 ? '<p>Places of worship stay in the standard tier even when 800 or more people are expected.</p>' : '<p>Premises where 200 to 799 people are reasonably expected at the same time.</p>') +
+      `<h2>What that means</h2>${STANDARD}<p class="small" style="margin-top:.8rem">${PEN_STD}</p>`;
+  } else {
+    kicker = val('use') === 'unsure' ? 'Likely in scope, if the use qualifies' : 'Likely in scope';
+    tier = 'Enhanced tier';
+    body = `<p>Premises where 800 or more people are reasonably expected at the same time.</p><h2>What that means</h2>${ENHANCED}<p class="small" style="margin-top:.8rem">${PEN_ENH}</p>`;
+  }
+
+  out.innerHTML = `<div class="kicker">${kicker}</div><div class="tier">${tier}</div>${body}
+    <p style="margin-top:1.6rem"><a class="btn" href="${LINKEDIN}" target="_blank" rel="noopener">Talk to James about getting ready</a></p>
+    <p class="note">A quick guide, not legal advice. The Act, its commencement dates and the Home Office statutory guidance are the authority: <a href="${GUIDANCE}" target="_blank" rel="noopener">read the official guidance on GOV.UK &nearr;</a>. Some premises have special rules this check doesn’t cover.</p>`;
+  out.hidden = false;
+  out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+})();
+</script>
+</body>
+</html>
