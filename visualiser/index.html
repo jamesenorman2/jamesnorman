@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visualiser — James Norman</title>
+<meta name="description" content="A ridge-line music visualiser by James Norman.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#000;
+    --ink:#fff;
+    --dim:#3a3530;
+    --mid:#6a6050;
+    --hi:#b8a888;
+  }
+  html,body{height:100%}
+  body{background:var(--bg);overflow:hidden;-webkit-font-smoothing:antialiased;
+    font-family:'IBM Plex Mono',monospace;color:var(--mid)}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .ui{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:space-between;
+    pointer-events:none;transition:opacity .8s}
+  .ui *{pointer-events:auto}
+  body.hide-ui .ui{opacity:0}
+  body.hide-ui .ui *{pointer-events:none}
+  .top,.bottom{padding:2.5rem 3rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;
+    font-size:.6rem;font-weight:300;letter-spacing:.3em;text-transform:uppercase}
+  .top{opacity:0;animation:fi 2s .5s forwards}
+  .bottom{align-items:flex-end;opacity:0;animation:fi 2s 1.2s forwards}
+  a,button{color:var(--dim);text-decoration:none;background:none;border:none;font:inherit;
+    letter-spacing:inherit;text-transform:inherit;cursor:pointer;transition:color .6s}
+  a:hover,button:hover,button:focus-visible,a:focus-visible{color:var(--hi);outline:none}
+  button[aria-pressed="true"]{color:var(--hi)}
+  button:disabled{opacity:.4;cursor:default}
+  .now{font-family:'Syne',sans-serif;font-weight:500;font-size:.75rem;letter-spacing:.25em;color:var(--mid);
+    max-width:45ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+  .now:empty{display:none}
+  .controls{display:flex;gap:1.8rem;flex-wrap:wrap}
+  .status{max-width:40ch;text-align:right;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tap{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);padding:1.2rem 2rem;
+    font-size:.75rem;letter-spacing:.5em;text-transform:uppercase;color:var(--hi);background:rgba(0,0,0,.75);
+    border:1px solid var(--dim);opacity:0;pointer-events:none;transition:opacity .6s}
+  body.needs-tap .tap{opacity:1;pointer-events:auto}
+  .hint{position:fixed;left:50%;bottom:6.5rem;transform:translateX(-50%);font-size:.55rem;letter-spacing:.35em;
+    text-transform:uppercase;color:var(--mid);white-space:nowrap;opacity:0;pointer-events:none;animation:hint 7s 2s forwards}
+  @keyframes hint{0%{opacity:0}15%{opacity:1}75%{opacity:1}100%{opacity:0}}
+  body.hide-ui .hint{display:none}
+  .drop{position:fixed;inset:1.5rem;border:1px dashed var(--mid);display:flex;align-items:center;justify-content:center;
+    font-size:.7rem;letter-spacing:.4em;text-transform:uppercase;color:var(--hi);opacity:0;pointer-events:none;transition:opacity .3s}
+  body.dragging .drop{opacity:1}
+  /* SoundCloud's player does the playing; it stays out of sight and the visualiser is the interface */
+  #sc{position:fixed;left:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
+  input[type=file]{display:none}
+  @keyframes fi{to{opacity:1}}
+  @media(max-width:700px){
+    .top,.bottom{padding:1.25rem 1rem;font-size:.55rem;letter-spacing:.2em}
+    .now{font-size:.65rem;max-width:60vw}
+    .bottom{flex-direction:column;align-items:center;gap:1rem}
+    .controls{gap:1.2rem;justify-content:center}
+    .status{text-align:center;max-width:100%}
+  }
+</style>
+</head>
+<body>
+<canvas id="plot"></canvas>
+
+<div class="ui">
+  <header class="top">
+    <a href="../">&larr; James Norman</a>
+    <a class="now" id="now" target="_blank" rel="noopener"></a>
+  </header>
+  <footer class="bottom">
+    <div class="controls">
+      <button id="playBtn" title="Play / pause (Space)" disabled>Play</button>
+      <button id="loadBtn" title="Play an audio file from your device instead (L)">Load file</button>
+      <button id="micBtn" title="Use your microphone (M)" aria-pressed="false">Mic</button>
+      <button id="uiBtn" title="Hide interface (H)">Hide</button>
+    </div>
+    <div class="status" id="status">Loading</div>
+  </footer>
+</div>
+<div class="hint" id="hint">Move to steer &middot; scroll to change speed</div>
+<button class="tap" id="tap">&#9654; Play</button>
+<div class="drop">Release to play</div>
+<input type="file" id="file" accept="audio/*">
+
+<script>
+(() => {
+'use strict';
+
+/* ─── Settings ───────────────────────────────────────────── */
+// Where the admin page's chosen song is kept (read-only key; safe to be public).
+const SETTINGS_URL = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1/jn_site_settings?key=eq.now_playing&select=value';
+const SETTINGS_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
+// If no song has been chosen, play the latest uploads from this profile.
+const DEFAULT_SOUNDCLOUD = 'https://soundcloud.com/jamesnormal';
+const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;
+
+const ROWS = 72;            // number of ridge lines
+const POINTS = 160;         // samples per line
+const ROW_RATE = 28;        // new lines per second while music plays
+const FFT = 2048;
+const MIN_HZ = 30, MAX_HZ = 9000;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ─── Canvas ─────────────────────────────────────────────── */
+const cv = document.getElementById('plot');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+addEventListener('resize', resize);
+resize();
+
+/* ─── History: ring buffer of rows ───────────────────────── */
+const history = Array.from({ length: ROWS }, () => new Float32Array(POINTS));
+let head = 0, rowClock = 0;
+
+const envelope = new Float32Array(POINTS);
+for (let i = 0; i < POINTS; i++) {
+  const d = (i / (POINTS - 1) - 0.5) * 2;
+  envelope[i] = 0.06 + 0.94 * Math.exp(-(d * d) / (2 * 0.2 * 0.2));
+}
+
+/* Seeded random, so a given moment of a song always draws the same shape. */
+function seeded(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+let idleSeed = 1;
+
+function bumps(row, rnd, level, kick) {
+  row.fill(0);
+  const n = 3 + ((rnd() * 4) | 0);
+  for (let k = 0; k < n; k++) {
+    const c = 0.5 + (rnd() - 0.5) * 0.34;
+    const w = 0.008 + rnd() * 0.03;
+    const a = (0.2 + rnd() * 0.8) * level + kick * rnd();
+    for (let i = 0; i < POINTS; i++) {
+      const x = i / (POINTS - 1) - c;
+      row[i] += a * Math.exp(-(x * x) / (2 * w * w));
+    }
+  }
+  for (let i = 0; i < POINTS; i++) row[i] = Math.min(row[i] + rnd() * 0.05 * (0.4 + level), 1.4);
+}
+
+/* ─── Source 1: SoundCloud ───────────────────────────────── */
+let sc = null, scPlaying = false, scPos = 0, scPosAt = 0, scDuration = 0;
+let scSoundId = null, wave = null, waveLo = 0, waveHi = 1, scReady = false;
+
+async function chosenTrack() {
+  const q = new URLSearchParams(location.search).get('track');   // ?track= lets the admin page preview
+  if (q && SC_URL_RE.test(q)) return q;
+  try {
+    const r = await fetch(SETTINGS_URL, { headers: { apikey: SETTINGS_KEY }, cache: 'no-store' });
+    const j = await r.json();
+    const url = j && j[0] && j[0].value && j[0].value.url;
+    if (url && SC_URL_RE.test(url)) return url;
+  } catch (e) { /* fall through to default */ }
+  return DEFAULT_SOUNDCLOUD;
+}
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function startSoundCloud() {
+  const url = await chosenTrack();
+  try { await loadScript('https://w.soundcloud.com/player/api.js'); }
+  catch (e) { setStatus('SoundCloud unavailable'); return; }
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'sc';
+  iframe.title = 'SoundCloud player';
+  iframe.allow = 'autoplay; encrypted-media';
+  iframe.src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url) +
+    '&auto_play=true&hide_related=true&show_comments=false&show_reposts=false&visual=false';
+  document.body.appendChild(iframe);
+
+  const E = SC.Widget.Events;
+  sc = SC.Widget(iframe);
+  sc.bind(E.READY, () => {
+    scReady = true;
+    playBtn.disabled = false;
+    readSound();
+    if (source === 'idle') sc.play();
+    // browsers block sound until the visitor interacts; ask for a tap if it didn't start
+    setTimeout(() => { if (!scPlaying && source === 'idle') { document.body.classList.add('needs-tap'); setStatus('Tap to play'); } }, 1800);
+  });
+  sc.bind(E.PLAY, () => {
+    scPlaying = true;
+    document.body.classList.remove('needs-tap');
+    if (audioEl && !audioEl.paused) audioEl.pause();
+    stopMic();
+    lastMedia = 'sc';
+    readSound();
+    setStatus('Playing from SoundCloud');
+    playBtn.textContent = 'Pause';
+  });
+  sc.bind(E.PAUSE, () => { scPlaying = false; if (lastMedia === 'sc') { playBtn.textContent = 'Play'; setStatus('Paused'); } });
+  sc.bind(E.FINISH, () => { scPlaying = false; });
+  sc.bind(E.PLAY_PROGRESS, e => { scPos = e.currentPosition; scPosAt = performance.now(); });
+  sc.bind(E.ERROR, () => setStatus('Couldn’t load that SoundCloud track'));
+}
+
+function readSound() {
+  sc.getCurrentSound(s => {
+    if (!s || s.id === scSoundId) return;
+    scSoundId = s.id;
+    scDuration = s.duration || s.full_duration || 0;
+    nowEl.textContent = s.title || '';
+    nowEl.href = s.permalink_url || DEFAULT_SOUNDCLOUD;
+    nowEl.title = 'Listen on SoundCloud';
+    loadWave(s.waveform_url);
+  });
+}
+
+// SoundCloud publishes each track's loudness over time; it drives the lines in sync with playback.
+async function loadWave(url) {
+  wave = null;
+  if (!url) return;
+  try {
+    const r = await fetch(url.replace(/\.png(\?.*)?$/, '.json'));
+    const j = await r.json();
+    const h = j.height || 140;
+    wave = j.samples.map(v => v / h);
+    const sorted = [...wave].sort((a, b) => a - b);
+    waveLo = sorted[Math.floor(sorted.length * 0.05)];
+    waveHi = sorted[Math.floor(sorted.length * 0.98)] || 1;
+  } catch (e) { wave = null; }  // fall back to a steady pulse
+}
+
+function sampleSoundCloud(row) {
+  const pos = scPos + (scPlaying ? performance.now() - scPosAt : 0);
+  let level, kick, seed;
+  if (wave && scDuration) {
+    const n = wave.length;
+    const idx = Math.max(0, Math.min(n - 1, Math.floor((pos / scDuration) * n)));
+    const norm = v => Math.max(0, Math.min(1, (v - waveLo) / (waveHi - waveLo || 1)));
+    let prev = 0;
+    for (let k = 1; k <= 8; k++) prev += norm(wave[Math.max(0, idx - k)]);
+    level = norm(wave[idx]);
+    kick = Math.max(0, level - prev / 8) * 3;
+    seed = idx * 7919 + (scSoundId | 0);
+  } else {
+    const beat = (pos / 500) % 1;            // ~120 bpm pulse
+    level = 0.4 + 0.35 * Math.exp(-beat * 6);
+    kick = Math.exp(-beat * 8) * 0.5;
+    seed = Math.floor(pos / 36);
+  }
+  bumps(row, seeded(seed), 0.25 + level * 0.9, kick);
+}
+
+/* ─── Source 2 & 3: local file / microphone (real frequency analysis) ── */
+let actx = null, analyser = null, freq = null, binMap = null;
+let audioEl = null, micStream = null, micSource = null;
+let lastMedia = 'sc';
+
+function ensureAudio() {
+  if (actx) return;
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = actx.createAnalyser();
+  analyser.fftSize = FFT;
+  analyser.smoothingTimeConstant = 0.55;
+  analyser.minDecibels = -90;
+  analyser.maxDecibels = -15;
+  freq = new Uint8Array(analyser.frequencyBinCount);
+  const nyq = actx.sampleRate / 2, bins = analyser.frequencyBinCount;
+  binMap = new Float32Array(POINTS);
+  for (let i = 0; i < POINTS; i++) {
+    const t = i / (POINTS - 1);
+    const d = Math.abs(t - 0.5) * 2;
+    const skew = t < 0.5 ? 0.93 : 1.07;
+    const hz = MIN_HZ * Math.pow(MAX_HZ / MIN_HZ, d) * skew;
+    binMap[i] = Math.min(bins - 1, (hz / nyq) * bins);
+  }
+}
+
+function sampleAnalyser(row) {
+  analyser.getByteFrequencyData(freq);
+  for (let i = 0; i < POINTS; i++) {
+    const b = binMap[i], b0 = b | 0, f = b - b0;
+    const v = (freq[b0] * (1 - f) + freq[Math.min(b0 + 1, freq.length - 1)] * f) / 255;
+    row[i] = Math.pow(v, 1.6);
+  }
+}
+
+function sampleIdle(row) {
+  bumps(row, seeded(idleSeed++), 0.5, 0.1);
+}
+
+/* ─── Which source is driving the picture ────────────────── */
+let source = 'idle';
+function currentSource() {
+  if (micStream) return 'mic';
+  if (audioEl && !audioEl.paused) return 'file';
+  if (scPlaying) return 'sc';
+  return 'idle';
+}
+
+/* ─── Flight: camera, steering, speed ────────────────────── */
+// The ridge lines are a landscape in 3D. New lines appear at the horizon and
+// rush towards you; nearer lines move faster than far ones (parallax).
+const NEAR = 0.22, FAR = 14, SPAN = FAR - NEAR;
+const ROW_W = 4;              // width of the active part of each line (world units)
+const AMP = 0.5;              // height of the tallest peaks
+const CAM_X = 1.6, CAM_LO = 0.1, CAM_HI = 1.6;
+const cam = { x: 0, y: 0.62, tx: 0, ty: 0.62, roll: 0, speed: 1, tspeed: 1 };
+const keys = new Set();
+
+function steerTo(clientX, clientY) {
+  cam.tx = ((clientX / W) - 0.5) * 2 * CAM_X;
+  cam.ty = CAM_LO + (1 - clientY / H) * (CAM_HI - CAM_LO);
+}
+addEventListener('pointermove', e => {
+  if (e.pointerType === 'mouse' || e.buttons) steerTo(e.clientX, e.clientY);
+});
+addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') steerTo(e.clientX, e.clientY); });
+addEventListener('wheel', e => {
+  cam.tspeed = Math.max(0.3, Math.min(3, cam.tspeed * (e.deltaY > 0 ? 0.9 : 1.1)));
+}, { passive: true });
+
+function updateCamera(dt) {
+  const step = dt * 1.6;
+  if (keys.has('arrowleft') || keys.has('a')) cam.tx -= step * CAM_X;
+  if (keys.has('arrowright') || keys.has('d')) cam.tx += step * CAM_X;
+  if (keys.has('arrowup') || keys.has('w')) cam.ty += step;
+  if (keys.has('arrowdown') || keys.has('s')) cam.ty -= step;
+  cam.tx = Math.max(-CAM_X, Math.min(CAM_X, cam.tx));
+  cam.ty = Math.max(CAM_LO, Math.min(CAM_HI, cam.ty));
+
+  const k = 1 - Math.exp(-dt * 2.5);
+  const prevX = cam.x;
+  cam.x += (cam.tx - cam.x) * k;
+  cam.y += (cam.ty - cam.y) * k;
+  cam.speed += (cam.tspeed - cam.speed) * k;
+  const vx = (cam.x - prevX) / Math.max(dt, 1e-3);
+  const targetRoll = reduceMotion ? 0 : Math.max(-0.35, Math.min(0.35, -vx * 0.12));
+  cam.roll += (targetRoll - cam.roll) * k;
+}
+
+/* ─── Render ─────────────────────────────────────────────── */
+const tmp = new Float32Array(POINTS);
+const INK = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim();
+let last = performance.now();
+
+function frame(now) {
+  const dt = Math.min((now - last) / 1000, 0.1);
+  last = now;
+  source = currentSource();
+  updateCamera(dt);
+  const base = source !== 'idle' ? ROW_RATE : (reduceMotion ? 3 : 10);
+
+  rowClock += dt * base * cam.speed;
+  while (rowClock >= 1) {
+    rowClock -= 1;
+    head = (head + 1) % ROWS;
+    const row = history[head];
+    if (source === 'sc') sampleSoundCloud(row);
+    else if (source === 'file' || source === 'mic') sampleAnalyser(row);
+    else sampleIdle(row);
+    for (let i = 0; i < POINTS; i++) {
+      tmp[i] = (row[Math.max(i - 1, 0)] + row[i] * 2 + row[Math.min(i + 1, POINTS - 1)]) / 4;
+    }
+    for (let i = 0; i < POINTS; i++) row[i] = tmp[i] * envelope[i];
+  }
+
+  draw(rowClock);
+  requestAnimationFrame(frame);
+}
+
+const sx = new Float32Array(POINTS), sy = new Float32Array(POINTS);
+
+function draw(phase) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  // bank into turns
+  ctx.translate(W / 2, H / 2);
+  ctx.rotate(cam.roll);
+  ctx.translate(-W / 2, -H / 2);
+
+  const f = Math.max(W * 0.55, H * 0.75);          // focal length
+  const horizon = H * 0.34;
+  const gap = SPAN / ROWS;
+  const pad = Math.hypot(W, H);                      // overdraw so rolled edges stay covered
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = INK;
+  ctx.fillStyle = '#000';
+
+  // far to near, so nearer lines hide the ones behind them
+  for (let a = 0; a < ROWS; a++) {
+    const z = FAR - (a + phase) * gap;
+    if (z <= NEAR) continue;
+    const row = history[(head - a + ROWS) % ROWS];
+    const s = f / z;
+    const groundY = horizon + cam.y * s;
+
+    for (let i = 0; i < POINTS; i++) {
+      const x = (i / (POINTS - 1) - 0.5) * ROW_W;
+      sx[i] = W / 2 + (x - cam.x) * s;
+      sy[i] = horizon + (cam.y - row[i] * AMP) * s;
+    }
+
+    // solid black below the line
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.moveTo(-pad, groundY);
+    for (let i = 0; i < POINTS; i++) ctx.lineTo(sx[i], sy[i]);
+    ctx.lineTo(W + pad, groundY);
+    ctx.lineTo(W + pad, H + pad);
+    ctx.lineTo(-pad, H + pad);
+    ctx.closePath();
+    ctx.fill();
+
+    // white line: fades into the distance at the top, and as it passes the ship
+    const farFade = Math.min(1, (FAR - z) / (SPAN * 0.4));
+    const nearFade = Math.min(1, (z - NEAR) / 0.35);
+    ctx.globalAlpha = Math.max(0, Math.min(farFade, nearFade));
+    ctx.lineWidth = Math.min(3, Math.max(0.6, 0.35 * s / 100));
+    ctx.beginPath();
+    ctx.moveTo(-pad, groundY);
+    for (let i = 0; i < POINTS; i++) ctx.lineTo(sx[i], sy[i]);
+    ctx.lineTo(W + pad, groundY);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ─── UI wiring ──────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const statusEl = $('status'), playBtn = $('playBtn'), micBtn = $('micBtn'), fileInput = $('file'), nowEl = $('now');
+const setStatus = s => { statusEl.textContent = s; statusEl.title = s; };
+
+function stopMic() {
+  if (!micStream) return;
+  micStream.getTracks().forEach(t => t.stop());
+  micSource && micSource.disconnect();
+  micStream = micSource = null;
+  micBtn.setAttribute('aria-pressed', 'false');
+}
+
+function loadFile(file) {
+  if (!file || !file.type.startsWith('audio/')) { setStatus('That isn’t an audio file'); return; }
+  ensureAudio();
+  stopMic();
+  if (sc && scPlaying) sc.pause();
+  if (!audioEl) {
+    audioEl = new Audio();
+    audioEl.loop = true;
+    actx.createMediaElementSource(audioEl).connect(analyser);
+    analyser.connect(actx.destination);
+    audioEl.addEventListener('play', () => { playBtn.textContent = 'Pause'; });
+    audioEl.addEventListener('pause', () => { if (lastMedia === 'file') playBtn.textContent = 'Play'; });
+  } else if (audioEl.src) {
+    URL.revokeObjectURL(audioEl.src);
+  }
+  audioEl.src = URL.createObjectURL(file);   // stays on this device; nothing is uploaded
+  lastMedia = 'file';
+  playBtn.disabled = false;
+  document.body.classList.remove('needs-tap');
+  nowEl.textContent = file.name.replace(/\.[^.]+$/, '');
+  nowEl.removeAttribute('href');
+  setStatus('Playing a local file');
+  actx.resume();
+  audioEl.play().catch(() => setStatus('Press play to start'));
+}
+
+function togglePlay() {
+  stopMic();
+  if (lastMedia === 'file' && audioEl && audioEl.src) {
+    actx.resume();
+    audioEl.paused ? audioEl.play() : audioEl.pause();
+  } else if (sc && scReady) {
+    scPlaying ? sc.pause() : sc.play();
+  }
+}
+
+async function toggleMic() {
+  if (micStream) { stopMic(); setStatus('Mic off'); return; }
+  ensureAudio();
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    if (audioEl) audioEl.pause();
+    if (sc && scPlaying) sc.pause();
+    micStream = stream;
+    micSource = actx.createMediaStreamSource(stream);
+    micSource.connect(analyser);            // not to the speakers, to avoid feedback
+    await actx.resume();
+    micBtn.setAttribute('aria-pressed', 'true');
+    playBtn.textContent = 'Play';
+    setStatus('Listening');
+  } catch (e) {
+    setStatus('Microphone unavailable');
+  }
+}
+
+function toggleUI() { document.body.classList.toggle('hide-ui'); }
+
+function tapToPlay() {
+  if (document.body.classList.contains('needs-tap') && sc) { sc.play(); return true; }
+  return false;
+}
+
+$('tap').addEventListener('click', tapToPlay);
+$('loadBtn').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => { loadFile(fileInput.files[0]); fileInput.value = ''; });
+playBtn.addEventListener('click', togglePlay);
+micBtn.addEventListener('click', toggleMic);
+$('uiBtn').addEventListener('click', toggleUI);
+cv.addEventListener('click', () => { if (!tapToPlay()) document.body.classList.remove('hide-ui'); });
+
+addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+addEventListener('blur', () => keys.clear());
+addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (['arrowleft','arrowright','arrowup','arrowdown','w','a','s','d'].includes(k)) { e.preventDefault(); keys.add(k); return; }
+  if (k === '+' || k === '=') { cam.tspeed = Math.min(3, cam.tspeed * 1.2); return; }
+  if (k === '-' || k === '_') { cam.tspeed = Math.max(0.3, cam.tspeed / 1.2); return; }
+  if (k === ' ') { e.preventDefault(); if (!tapToPlay()) togglePlay(); }
+  else if (k === 'h') toggleUI();
+  else if (k === 'm') toggleMic();
+  else if (k === 'l') fileInput.click();
+  else if (k === 'f') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+  else if (k === 'escape') document.body.classList.remove('hide-ui');
+});
+
+let dragDepth = 0;
+addEventListener('dragenter', e => { e.preventDefault(); dragDepth++; document.body.classList.add('dragging'); });
+addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('dragging'); } });
+addEventListener('dragover', e => e.preventDefault());
+addEventListener('drop', e => {
+  e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging');
+  loadFile(e.dataTransfer.files[0]);
+});
+
+for (let r = 0; r < ROWS; r++) {
+  head = (head + 1) % ROWS;
+  sampleIdle(history[head]);
+  for (let i = 0; i < POINTS; i++) history[head][i] *= envelope[i];
+}
+if (matchMedia('(pointer: coarse)').matches) $('hint').textContent = 'Drag to steer';
+requestAnimationFrame(frame);
+startSoundCloud();
+})();
+</script>
+</body>
+</html>
