@@ -1,7 +1,4 @@
 {
-  "crons": [
-    { "path": "/api/night-shift", "schedule": "0 5 * * *" }
-  ],
   "functions": {
     "api/night-shift.js": { "maxDuration": 120 }
   }

@@ -1,0 +1,4 @@
+{
+  "_help": "nowPlaying: a SoundCloud track link the visualiser should play, e.g. https://soundcloud.com/jamesnormal/track-name. Leave it as null to play your latest uploads.",
+  "nowPlaying": null
+}

@@ -1,50 +1,27 @@
-// The Night Shift: a crew of AI agents that works the site every night.
+// The Night Shift: a crew of AI agents that works the site once a day.
 //   PATROL  – fetches every page and times it (plain code, no AI needed)
 //   ANALYST – writes a control-room handover from the patrol report
 //   DJ      – picks a track of the day and sets up a two-agent DJ battle
-// Runs from Vercel Cron (GET with the CRON_SECRET bearer token) or from the
-// admin page (POST with the admin password). Results are posted to the site's
-// database with SHIFT_TOKEN, and shown on /night-shift/ and /music/.
+//
+// No database: the shift runs when the first visitor of the day asks for it,
+// and Vercel's CDN keeps the result until 05:00 UTC, when the next shift starts.
+// The track list is read live from the public SoundCloud feed.
 //
 // Environment variables (Vercel → Settings → Environment Variables):
 //   ANTHROPIC_API_KEY  your Claude API key (without it, Patrol still runs)
-//   CRON_SECRET        Vercel Cron sends it in the Authorization header
-//   SHIFT_TOKEN        secret that lets this function write the shift log
 //   SITE_URL           optional, defaults to https://www.jamesnorman.co.uk
+//   SOUNDCLOUD_URL     optional, defaults to https://soundcloud.com/jamesnormal
 
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
 
-const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
-const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
 const SITE = (process.env.SITE_URL || 'https://www.jamesnorman.co.uk').replace(/\/$/, '');
+const SOUNDCLOUD = (process.env.SOUNDCLOUD_URL || 'https://soundcloud.com/jamesnormal').replace(/\/$/, '');
 const PAGES = ['/', '/visualiser/', '/music/', '/security/', '/security/layers/', '/security/cpted/',
-  '/security/martyns-law/', '/night-shift/', '/admin/', '/assets/site.css', '/assets/flight.js'];
+  '/security/martyns-law/', '/night-shift/', '/site.json', '/assets/site.css', '/assets/flight.js'];
 const AGENTS = { a: 'VANTAGE', b: 'LOWLIGHT' };
-
-async function db(path, body) {
-  const r = await fetch(`${DB}/${path}`, {
-    method: body ? 'POST' : 'GET',
-    headers: { apikey: DB_KEY, 'Content-Type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined
-  });
-  if (!r.ok) throw new Error(`Database ${r.status}`);
-  return r.json();
-}
-
-async function authorised(req) {
-  const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.authorization === `Bearer ${secret}`) return 'cron';
-  if (req.method === 'POST') {
-    const password = req.body && typeof req.body.password === 'string' ? req.body.password : '';
-    if (password) {
-      const res = await db('rpc/jn_admin_login', { p_password: password });
-      if (res && res.ok) return 'admin';
-    }
-  }
-  return null;
-}
+const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;
 
 async function patrol() {
   return Promise.all(PAGES.map(async path => {
@@ -57,6 +34,29 @@ async function patrol() {
       return { path, status: e.name === 'TimeoutError' ? 'timeout' : 'unreachable', ok: false, ms: null };
     }
   }));
+}
+
+const decode = s => s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+  .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").trim();
+
+// Public SoundCloud podcast-style feed: find the user id on the profile page, then read the RSS.
+async function soundcloudTracks() {
+  try {
+    const page = await (await fetch(SOUNDCLOUD, { signal: AbortSignal.timeout(8000) })).text();
+    const id = (page.match(/soundcloud:\/\/users:(\d+)/) || page.match(/"urn":"soundcloud:users:(\d+)"/) || [])[1];
+    if (!id) return [];
+    const rss = await (await fetch(`https://feeds.soundcloud.com/users/soundcloud:users:${id}/sounds.rss`, { signal: AbortSignal.timeout(8000) })).text();
+    const tracks = [];
+    for (const item of rss.split('<item>').slice(1)) {
+      const title = decode((item.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '');
+      const url = decode((item.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || '').split('?')[0];
+      if (title && SC_URL_RE.test(url)) tracks.push({ title: title.slice(0, 200), url });
+      if (tracks.length >= 100) break;
+    }
+    return tracks;
+  } catch (e) {
+    return [];
+  }
 }
 
 const Pick = z.object({ track_number: z.number().int(), pitch: z.string() });
@@ -83,11 +83,11 @@ You play three roles in one report:
 Keep everything light, witty and kind. Never describe attack methods or anything that could help someone cause harm. Only use track numbers that appear in the list.`;
 
 async function runAgents(patrolReport, tracks) {
-  if (!process.env.ANTHROPIC_API_KEY) return { note: 'Analyst and DJ off duty tonight: no Claude API key is set yet.' };
+  if (!process.env.ANTHROPIC_API_KEY) return { note: 'Analyst and DJ off duty: no Claude API key is set yet.' };
   const client = new Anthropic();
   const list = tracks.length
     ? tracks.map((t, i) => `${i + 1}. ${t.title}`).join('\n')
-    : '(no tracks synced yet; use track_number 0 for every pick and say the crate is empty)';
+    : '(the track list could not be read tonight; use track_number 0 for every pick and joke that the crate is empty)';
   const user = `Shift date: ${new Date().toUTCString()}
 
 PATROL REPORT (path, HTTP status, response time):
@@ -104,11 +104,11 @@ ${list}`;
       system: SYSTEM,
       messages: [{ role: 'user', content: user }]
     });
-    if (response.stop_reason === 'refusal') return { note: 'The analyst declined to write tonight’s report.' };
+    if (response.stop_reason === 'refusal') return { note: 'The analyst declined to write this report.' };
     const out = response.parsed_output;
-    if (!out) return { note: 'The analyst’s report came back unreadable tonight.' };
+    if (!out) return { note: 'The analyst’s report came back unreadable.' };
 
-    const track = n => (Number.isInteger(n) && n >= 1 && n <= tracks.length) ? { title: tracks[n - 1].title, url: tracks[n - 1].url } : null;
+    const track = n => (Number.isInteger(n) && n >= 1 && n <= tracks.length) ? tracks[n - 1] : null;
     const result = { analyst: { status: out.analyst.status, handover: out.analyst.handover.slice(0, 1200) } };
     const dj = track(out.dj.track_number);
     if (dj) result.dj = { track: dj, reason: out.dj.reason.slice(0, 300) };
@@ -123,35 +123,36 @@ ${list}`;
     return result;
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError) return { note: 'Analyst off duty: the Claude API key was rejected.' };
-    if (e instanceof Anthropic.RateLimitError) return { note: 'Analyst off duty: Claude was busy, try again later.' };
+    if (e instanceof Anthropic.RateLimitError) return { note: 'Analyst off duty: Claude was busy.' };
     if (e instanceof Anthropic.APIError) return { note: `Analyst off duty: Claude API error ${e.status}.` };
     return { note: 'Analyst off duty: something went wrong.' };
   }
 }
 
+// seconds until the next 05:00 UTC, when the next shift starts
+function untilNextShift(now = new Date()) {
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 5));
+  if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
+  return Math.max(60, Math.round((next - now) / 1000));
+}
+
 export default async function handler(req, res) {
-  if (req.method !== 'GET' && req.method !== 'POST') { res.setHeader('Allow', 'GET, POST'); return res.status(405).json({ ok: false }); }
-  let who;
-  try { who = await authorised(req); } catch (e) { return res.status(503).json({ ok: false, error: 'Database unavailable' }); }
-  if (!who) return res.status(401).json({ ok: false, error: 'Not authorised' });
-  if (!process.env.SHIFT_TOKEN) return res.status(500).json({ ok: false, error: 'SHIFT_TOKEN is not set' });
+  if (req.method !== 'GET') { res.setHeader('Allow', 'GET'); return res.status(405).json({ ok: false }); }
+  // only the plain URL is cached, so refuse variants that would dodge the cache and re-run the crew
+  if (new URL(req.url, 'http://x').search) return res.status(400).json({ ok: false, error: 'No parameters' });
 
-  const started = new Date().toISOString();
-  const report = await patrol();
-  let tracks = [];
-  try {
-    const [row] = await db('jn_site_settings?key=eq.catalogue&select=value');
-    if (row && Array.isArray(row.value)) tracks = row.value.slice(0, 200);
-  } catch (e) { /* no catalogue yet */ }
-
+  const started = new Date();
+  const [report, tracks] = await Promise.all([patrol(), soundcloudTracks()]);
   const agents = await runAgents(report, tracks);
-  const log = { started_at: started, finished_at: new Date().toISOString(), trigger: who, patrol: report, ...agents };
-
-  try {
-    const posted = await db('rpc/jn_post_shift', { p_token: process.env.SHIFT_TOKEN, p_log: log });
-    if (!posted.ok) return res.status(500).json({ ok: false, error: posted.error || 'Could not save the shift' });
-    return res.status(200).json({ ok: true, id: posted.id, status: agents.analyst ? agents.analyst.status : null, note: agents.note || null });
-  } catch (e) {
-    return res.status(503).json({ ok: false, error: 'Could not save the shift' });
-  }
+  const shift = {
+    ok: true,
+    started_at: started.toISOString(),
+    finished_at: new Date().toISOString(),
+    patrol: report,
+    tracks_found: tracks.length,
+    ...agents
+  };
+  const ttl = untilNextShift(started);
+  res.setHeader('Cache-Control', `public, max-age=0, s-maxage=${ttl}, stale-while-revalidate=600`);
+  return res.status(200).json(shift);
 }

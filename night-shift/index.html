@@ -41,9 +41,9 @@
 </header>
 
 <main class="wrap">
-  <div class="kicker">AI agents on duty · 05:00 UTC nightly</div>
+  <div class="kicker">AI agents on duty · new shift daily at 05:00 UTC</div>
   <h1>Night Shift</h1>
-  <p class="lede">While I sleep, a crew of AI agents works this site like a control room. Patrol checks every page. Analyst writes the handover. DJ picks the track of the day and sets up tomorrow’s battle on the <a href="/music/">Music</a> tab.</p>
+  <p class="lede">While I sleep, a crew of AI agents works this site like a control room. Patrol checks every page. Analyst writes the handover. DJ picks the track of the day and sets up today’s battle on the <a href="/music/">Music</a> tab.</p>
 
   <div class="crew">
     <div class="card"><b>PATROL</b><span class="small">Walks every page on the site, timing each response and noting anything out of place.</span></div>
@@ -52,7 +52,7 @@
   </div>
 
   <section id="log" aria-live="polite">
-    <p class="small">Loading the log…</p>
+    <p class="small">Crew clocking on… the first visit of the day can take up to a minute.</p>
   </section>
 </main>
 
@@ -114,10 +114,10 @@ function renderShift(row) {
 (async () => {
   const log = document.getElementById('log');
   try {
-    const rows = await JN.get('jn_night_shift?select=id,created_at,log&order=id.desc&limit=7');
+    const shift = await JN.shift();
     log.innerHTML = '';
-    if (!rows.length) { log.append(el('p', 'small', 'No shifts logged yet. The crew clocks on at 05:00 UTC.')); return; }
-    rows.forEach(r => log.append(renderShift(r)));
+    log.append(renderShift({ created_at: shift.started_at, log: shift }));
+    log.append(el('p', 'small muted', 'A new shift starts at 05:00 UTC each day.'));
   } catch (e) {
     log.innerHTML = '';
     log.append(el('p', 'small', 'The log couldn’t load right now.'));
