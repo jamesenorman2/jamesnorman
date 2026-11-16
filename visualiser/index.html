@@ -92,7 +92,9 @@
 'use strict';
 
 /* ─── Settings ───────────────────────────────────────────── */
-// The chosen song lives in /site.json ("nowPlaying"); edit that file to change it.
+// Where the admin page's chosen song is kept (read-only key; safe to be public).
+const SETTINGS_URL = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1/jn_site_settings?key=eq.now_playing&select=value';
+const SETTINGS_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
 // If no song has been chosen, play the latest uploads from this profile.
 const DEFAULT_SOUNDCLOUD = 'https://soundcloud.com/jamesnormal';
 const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;
@@ -159,11 +161,12 @@ let sc = null, scPlaying = false, scPos = 0, scPosAt = 0, scDuration = 0;
 let scSoundId = null, wave = null, waveLo = 0, waveHi = 1, scReady = false;
 
 async function chosenTrack() {
-  const q = new URLSearchParams(location.search).get('track');   // ?track=<SoundCloud link> plays that track
+  const q = new URLSearchParams(location.search).get('track');   // ?track= lets the admin page preview
   if (q && SC_URL_RE.test(q)) return q;
   try {
-    const r = await fetch('/site.json', { cache: 'no-store' });
-    const url = (await r.json()).nowPlaying;
+    const r = await fetch(SETTINGS_URL, { headers: { apikey: SETTINGS_KEY }, cache: 'no-store' });
+    const j = await r.json();
+    const url = j && j[0] && j[0].value && j[0].value.url;
     if (url && SC_URL_RE.test(url)) return url;
   } catch (e) { /* fall through to default */ }
   return DEFAULT_SOUNDCLOUD;

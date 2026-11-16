@@ -25,6 +25,8 @@
   .agent .pick{margin:.9rem 0;font-size:.85rem}
   .agent .pitch{color:var(--mid);font-size:.82rem;min-height:4.5em}
   .agent .row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;align-items:center}
+  .meter{height:4px;background:var(--line);margin-top:1rem}
+  .meter i{display:block;height:100%;background:var(--fg);width:50%;transition:width .6s}
   .exchange{margin-top:1.5rem;font-size:.8rem;border-left:1px solid var(--line);padding-left:1rem}
   .exchange p{margin:.5rem 0}
   .exchange b{font-weight:400;letter-spacing:.2em;font-size:.65rem;color:var(--mid);margin-right:.6rem}
@@ -66,17 +68,18 @@
 
   <section aria-labelledby="battle-h">
     <div class="kicker">Agent DJ battle</div>
-    <h2 id="battle-h" style="margin-top:.4rem">Two AI agents. One track each. You be the judge.</h2>
-    <p class="small" id="battleDate">Every day the Night Shift agents pick two of my tracks and argue their case.</p>
+    <h2 id="battle-h" style="margin-top:.4rem">Two AI agents. One track each. You decide.</h2>
+    <p class="small" id="battleDate">Every night the Night Shift agents pick two of my tracks and argue their case.</p>
     <div id="battle" hidden>
       <div class="battle" style="margin-top:1.5rem">
         <article class="card agent" data-side="a"></article>
         <div class="vs">VS</div>
         <article class="card agent" data-side="b"></article>
       </div>
+      <div class="meter" aria-hidden="true"><i id="meter"></i></div>
       <div class="exchange" id="exchange"></div>
     </div>
-    <p class="small" id="battleEmpty" hidden></p>
+    <p class="small" id="battleEmpty" hidden>The first battle drops after the next Night Shift. Check back tomorrow.</p>
   </section>
 </main>
 
@@ -171,7 +174,25 @@ function tick() {
 requestAnimationFrame(tick);
 
 /* ─── Agent DJ battle ───────────────────────────────────── */
-function renderAgent(el, side, agent) {
+function voterId() {
+  let id = null;
+  try { id = localStorage.getItem('jn-voter'); } catch (e) {}
+  if (!id) {
+    id = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+    try { localStorage.setItem('jn-voter', id); } catch (e) {}
+  }
+  return id;
+}
+function votedFor(shiftId) { try { return localStorage.getItem('jn-voted-' + shiftId); } catch (e) { return null; } }
+
+function setMeter(a, b) {
+  const total = a + b;
+  $('meter').style.width = (total ? (a / total) * 100 : 50) + '%';
+  document.querySelector('[data-side="a"] .count').textContent = a + (a === 1 ? ' vote' : ' votes');
+  document.querySelector('[data-side="b"] .count').textContent = b + (b === 1 ? ' vote' : ' votes');
+}
+
+function renderAgent(el, side, agent, shift) {
   el.innerHTML = '';
   const name = document.createElement('div'); name.className = 'name'; name.textContent = agent.agent || (side === 'a' ? 'AGENT A' : 'AGENT B');
   const pick = document.createElement('div'); pick.className = 'pick';
@@ -184,26 +205,38 @@ function renderAgent(el, side, agent) {
   }
   const pitch = document.createElement('p'); pitch.className = 'pitch'; pitch.textContent = agent.pitch || '';
   const row = document.createElement('div'); row.className = 'row';
-  const play = document.createElement('button'); play.textContent = 'Play ' + (agent.agent || '') + '’s pick';
+  const play = document.createElement('button'); play.className = 'ghost'; play.textContent = 'Play';
   play.disabled = !(track && SC_URL_RE.test(track.url));
   play.addEventListener('click', () => { mountPlayer(track.url, true); $('playerBox').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
-  row.append(play);
+  const vote = document.createElement('button'); vote.textContent = 'Vote'; vote.dataset.vote = side;
+  const count = document.createElement('span'); count.className = 'count small';
+  row.append(play, vote, count);
   el.append(name, pick, pitch, row);
+
+  vote.addEventListener('click', async () => {
+    document.querySelectorAll('[data-vote]').forEach(b => b.disabled = true);
+    try {
+      const res = await JN.rpc('jn_vote', { p_shift: shift.id, p_side: side, p_voter: voterId() });
+      if (res.ok) {
+        setMeter(res.a, res.b);
+        try { localStorage.setItem('jn-voted-' + shift.id, side); } catch (e) {}
+        vote.textContent = 'Voted';
+      }
+    } catch (e) { document.querySelectorAll('[data-vote]').forEach(b => b.disabled = false); }
+  });
 }
 
 async function loadBattle() {
   try {
-    const shift = await JN.shift();
-    const b = shift.battle;
-    if (!b || !b.a || !b.b) {
-      $('battleEmpty').textContent = shift.note
-        ? 'No battle today. ' + shift.note
-        : 'No battle today: the DJs couldn’t find enough tracks.';
-      $('battleEmpty').hidden = false;
-      return;
-    }
-    renderAgent(document.querySelector('[data-side="a"]'), 'a', b.a);
-    renderAgent(document.querySelector('[data-side="b"]'), 'b', b.b);
+    const rows = await JN.get('jn_night_shift?select=id,created_at,log,votes_a,votes_b&order=id.desc&limit=10');
+    const shift = rows.find(r => r.log && r.log.battle && r.log.battle.a && r.log.battle.b);
+    if (!shift) { $('battleEmpty').hidden = false; return; }
+    const b = shift.log.battle;
+    renderAgent(document.querySelector('[data-side="a"]'), 'a', b.a, shift);
+    renderAgent(document.querySelector('[data-side="b"]'), 'b', b.b, shift);
+    setMeter(shift.votes_a, shift.votes_b);
+    const prior = votedFor(shift.id);
+    if (prior) document.querySelectorAll('[data-vote]').forEach(btn => { btn.disabled = true; if (btn.dataset.vote === prior) btn.textContent = 'Voted'; });
     const ex = $('exchange'); ex.innerHTML = '';
     (b.exchange || []).forEach(line => {
       const p = document.createElement('p');
@@ -211,8 +244,8 @@ async function loadBattle() {
       p.append(who, line.line || '');
       ex.append(p);
     });
-    const d = new Date(shift.started_at);
-    $('battleDate').textContent = 'Today’s battle, set up by the Night Shift on ' + d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) + '. Play both and pick your winner.';
+    const d = new Date(shift.created_at);
+    $('battleDate').textContent = 'Battle from the Night Shift of ' + d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) + '.';
     $('battle').hidden = false;
   } catch (e) {
     $('battleEmpty').textContent = 'The battle couldn’t load right now.';
