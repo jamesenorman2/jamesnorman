@@ -154,7 +154,7 @@ const CREW = [
     if (!c.ok) return ['Couldn’t check GOV.UK', 'warn'];
     return [(c.changed ? 'UPDATED since last shift' : 'No change') + (c.updated ? ' · last updated ' + new Date(c.updated).toLocaleDateString() : ''), c.changed ? 'warn' : ''];
   }],
-  ['INTEL', 'Reads the UK national threat level as published by MI5.', L => {
+  ['INTEL', 'Reads the UK national threat level as published on GOV.UK.', L => {
     const i = (L.jobs || {}).intel; if (!i) return ['–'];
     return [i.ok ? 'UK national threat level: ' + i.level : 'Couldn’t read it this shift', i.ok ? '' : 'warn'];
   }],

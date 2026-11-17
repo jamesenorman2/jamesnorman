@@ -53,7 +53,7 @@
 <main class="wrap">
   <div class="kicker">Crime Prevention Through Environmental Design</div>
   <h1>Safer Streets</h1>
-  <p class="lede">A street at night, from above. Ground that is lit and can be seen from a window is naturally overlooked: people behave differently when they could be seen. Everything else is a blind spot. Switch on each CPTED principle and watch what it does.</p>
+  <p class="lede">A street at night, in 3D. Ground that is lit and can be seen from a window is naturally overlooked: people behave differently when they could be seen. Everything else is a blind spot. Switch on each CPTED principle and watch what it does.</p>
 
   <div class="layout">
     <div>
@@ -225,121 +225,187 @@ function analyse() {
   drawStatic();
 }
 
-/* ─── Drawing ─────────────────────────────────────────────── */
+/* ─── Drawing: an isometric view of the street ───────────── */
 const cv = $('plan'), ctx = cv.getContext('2d');
 const base = document.createElement('canvas'), bx = base.getContext('2d');
-let W = 0, H = 0, S = 1, OX = 0, OY = 0, DPR = 1, score = 0;
+let W = 0, H = 0, DPR = 1, TW = 10, OX = 0, OY = 0, ZS = 5, score = 0;
+// buildings: x0, y0, x1, y1, storeys, name
+const BLOCKS = [[3, 3, 19, 10, 2, 'HOUSES'], [23, 3, 40, 10, 2, 'HOUSES'], [44, 3, 60, 10, 2, 'HOUSES'], [3, 18, 27, 30, 3, 'FLATS'], [34, 18, 61, 21, 1, 'SHOPS']];
+const STOREY = 1.15;                                  // storey height in grid units
 function resize() {
   const r = cv.getBoundingClientRect(); DPR = Math.min(devicePixelRatio || 1, 2);
   W = r.width; H = r.height; cv.width = base.width = W * DPR; cv.height = base.height = H * DPR;
-  S = Math.min(W / GW, H / GH); OX = (W - S * GW) / 2; OY = (H - S * GH) / 2;
+  // fit the diamond (GW + GH wide) plus the tallest building
+  TW = Math.min(W * 0.96 / ((GW + GH) / 2), H * 0.9 / ((GW + GH) / 4 + 3 * STOREY * 0.62));
+  ZS = TW * 0.62;
+  OX = W / 2 - ((GW - GH) / 2) * TW / 2;
+  OY = (H - ((GW + GH) / 2) * TW / 2) / 2 + 3 * STOREY * ZS * 0.5;
   drawStatic();
 }
-const P = (x, y) => [OX + x * S, OY + y * S];
+// grid (x across, y down the plan, z up) → screen
+const iso = (x, y, z = 0) => [OX + (x - y) * TW / 2, OY + (x + y) * TW / 4 - z * ZS];
+// draw on the ground plane using grid units directly
+function ground(g) { g.setTransform(DPR * TW / 2, DPR * TW / 4, -DPR * TW / 2, DPR * TW / 4, DPR * OX, DPR * OY); }
+function screen(g) { g.setTransform(DPR, 0, 0, DPR, 0, 0); }
+const poly = (g, pts) => { g.beginPath(); g.moveTo(...pts[0]); for (let i = 1; i < pts.length; i++) g.lineTo(...pts[i]); g.closePath(); };
 
 function drawStatic() {
   if (!W) return;
-  bx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  screen(bx);
   bx.fillStyle = '#000'; bx.fillRect(0, 0, W, H);
+  const u = 1 / (TW / 2);                              // one screen pixel, in ground units (roughly)
+
+  /* ground plane */
+  ground(bx);
+  // the ground outline of the whole site
+  bx.strokeStyle = 'rgba(255,255,255,.15)'; bx.lineWidth = u; bx.strokeRect(0, 0, GW, GH);
   // light pools
-  const lamps = opts.light ? LAMPS.map((l, i) => [l, opts.care || !BROKEN.has(i)]) : [];
-  for (const [[lx, ly], on] of lamps) {
-    if (!on) continue;
-    const [px, py] = P(lx, ly), g = bx.createRadialGradient(px, py, 0, px, py, 6.5 * S);
-    g.addColorStop(0, 'rgba(255,255,255,.22)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-    bx.fillStyle = g; bx.beginPath(); bx.arc(px, py, 6.5 * S, 0, Math.PI * 2); bx.fill();
+  for (let i = 0; i < LAMPS.length; i++) {
+    const on = opts.light && (opts.care || !BROKEN.has(i)); if (!on) continue;
+    const [lx, ly] = LAMPS[i], g = bx.createRadialGradient(lx, ly, 0, lx, ly, 6.5);
+    g.addColorStop(0, 'rgba(255,255,255,.24)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    bx.fillStyle = g; bx.beginPath(); bx.arc(lx, ly, 6.5, 0, Math.PI * 2); bx.fill();
   }
-  // overlooked ground: fine hatching; blind spots: dashed outline
-  bx.strokeStyle = 'rgba(255,255,255,.55)'; bx.lineWidth = 1;
+  // route edges (street, alley, car park)
+  bx.strokeStyle = 'rgba(255,255,255,.35)'; bx.lineWidth = u;
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
-    const i = y * GW + x; if (!route[i]) continue;
-    const [px, py] = P(x, y);
-    if (lit[i] && seen[i]) { bx.beginPath(); bx.moveTo(px, py + S); bx.lineTo(px + S, py); bx.stroke(); }
+    const v = grid[y * GW + x]; if (v !== STREET && v !== ALLEY && v !== CARPARK) continue;
+    const other = (nx, ny) => { const w = at(nx, ny); return w !== STREET && w !== ALLEY && w !== CARPARK; };
+    bx.beginPath();
+    if (other(x, y - 1)) { bx.moveTo(x, y); bx.lineTo(x + 1, y); }
+    if (other(x, y + 1)) { bx.moveTo(x, y + 1); bx.lineTo(x + 1, y + 1); }
+    if (other(x - 1, y)) { bx.moveTo(x, y); bx.lineTo(x, y + 1); }
+    if (other(x + 1, y)) { bx.moveTo(x + 1, y); bx.lineTo(x + 1, y + 1); }
+    bx.stroke();
   }
-  bx.setLineDash([3, 3]); bx.strokeStyle = 'rgba(255,255,255,.8)';
+  // overlooked ground: hatching
+  bx.strokeStyle = 'rgba(255,255,255,.6)'; bx.lineWidth = u;
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+    const i = y * GW + x; if (!route[i] || !(lit[i] && seen[i])) continue;
+    bx.beginPath(); bx.moveTo(x, y + 1); bx.lineTo(x + 1, y); bx.stroke();
+  }
+  // blind spots: dashed outline
+  bx.setLineDash([3 * u, 3 * u]); bx.strokeStyle = 'rgba(255,255,255,.85)';
   for (const i of blindCells) {
     const x = i % GW, y = (i / GW) | 0;
     const edge = (nx, ny) => { const n = ny * GW + nx; return nx < 0 || ny < 0 || nx >= GW || ny >= GH || !route[n] || (lit[n] && seen[n]); };
-    const [px, py] = P(x, y);
     bx.beginPath();
-    if (edge(x, y - 1)) { bx.moveTo(px, py); bx.lineTo(px + S, py); }
-    if (edge(x, y + 1)) { bx.moveTo(px, py + S); bx.lineTo(px + S, py + S); }
-    if (edge(x - 1, y)) { bx.moveTo(px, py); bx.lineTo(px, py + S); }
-    if (edge(x + 1, y)) { bx.moveTo(px + S, py); bx.lineTo(px + S, py + S); }
+    if (edge(x, y - 1)) { bx.moveTo(x, y); bx.lineTo(x + 1, y); }
+    if (edge(x, y + 1)) { bx.moveTo(x, y + 1); bx.lineTo(x + 1, y + 1); }
+    if (edge(x - 1, y)) { bx.moveTo(x, y); bx.lineTo(x, y + 1); }
+    if (edge(x + 1, y)) { bx.moveTo(x + 1, y); bx.lineTo(x + 1, y + 1); }
     bx.stroke();
   }
+  // sightlines from windows, along the ground
+  bx.setLineDash([2 * u, 4 * u]); bx.strokeStyle = 'rgba(255,255,255,.22)';
+  for (const [x0, y0, x1, y1] of rays) { bx.beginPath(); bx.moveTo(x0, y0); bx.lineTo(x1, y1); bx.stroke(); }
   bx.setLineDash([]);
-  // sightlines
-  bx.strokeStyle = 'rgba(255,255,255,.18)'; bx.setLineDash([2, 4]);
-  for (const [x0, y0, x1, y1] of rays) { const a = P(x0, y0), b = P(x1, y1); bx.beginPath(); bx.moveTo(...a); bx.lineTo(...b); bx.stroke(); }
+  // front gardens: dotted
+  bx.strokeStyle = 'rgba(255,255,255,.35)'; bx.setLineDash([u, 3 * u]);
+  for (const [x0, x1] of [[3, 19], [23, 40], [44, 60]]) bx.strokeRect(x0, 11, x1 - x0 + 1, 1);
   bx.setLineDash([]);
-  // buildings, gardens, hedges, route edges
-  bx.lineWidth = 1.2;
-  const outline = (v, style, dash) => {
-    bx.strokeStyle = style; bx.setLineDash(dash || []);
-    for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
-      if (grid[y * GW + x] !== v) continue;
-      const [px, py] = P(x, y); bx.beginPath();
-      if (at(x, y - 1) !== v) { bx.moveTo(px, py); bx.lineTo(px + S, py); }
-      if (at(x, y + 1) !== v) { bx.moveTo(px, py + S); bx.lineTo(px + S, py + S); }
-      if (at(x - 1, y) !== v) { bx.moveTo(px, py); bx.lineTo(px, py + S); }
-      if (at(x + 1, y) !== v) { bx.moveTo(px + S, py); bx.lineTo(px + S, py + S); }
-      bx.stroke();
-    }
-    bx.setLineDash([]);
-  };
-  outline(BUILDING, '#fff');
-  outline(GARDEN, 'rgba(255,255,255,.4)', [1, 3]);
-  // hedges: tall = a thick wavy line, low = a light one
-  bx.strokeStyle = opts.plant ? 'rgba(255,255,255,.35)' : '#fff'; bx.lineWidth = opts.plant ? 1 : 2.4;
-  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
-    if (grid[y * GW + x] !== HEDGE) continue;
-    const [px, py] = P(x + 0.5, y + 0.5); bx.beginPath(); bx.arc(px, py, S * (opts.plant ? 0.25 : 0.45), 0, Math.PI * 2); bx.stroke();
-  }
-  bx.lineWidth = 1;
-  // windows
-  bx.fillStyle = '#fff';
-  for (const [wx, wy, dx, dy] of BASE_WINDOWS.concat(opts.windows ? ACTIVE_WINDOWS : [])) {
-    const [px, py] = P(wx - dx * 0.5, wy - dy * 0.5);
-    if (dx) bx.fillRect(px - 1, py - S * 0.4, 2, S * 0.8); else bx.fillRect(px - S * 0.4, py - 1, S * 0.8, 2);
-  }
-  // lamps
-  for (let i = 0; i < LAMPS.length; i++) {
-    const [px, py] = P(...LAMPS[i]), on = opts.light && (opts.care || !BROKEN.has(i));
-    bx.strokeStyle = '#fff'; bx.beginPath(); bx.arc(px, py, S * 0.35, 0, Math.PI * 2);
-    if (on) { bx.fillStyle = '#fff'; bx.fill(); } else bx.stroke();
-    if (opts.light && !on) { bx.beginPath(); bx.moveTo(px - S * 0.4, py - S * 0.4); bx.lineTo(px + S * 0.4, py + S * 0.4); bx.stroke(); }   // broken
-  }
-  // gate across the alley
-  if (opts.gate) {
-    const [ax, ay] = P(29, 17.1), [bx2] = P(33, 17.1);
-    bx.strokeStyle = '#fff'; bx.lineWidth = 2.4; bx.beginPath(); bx.moveTo(ax, ay); bx.lineTo(bx2, ay); bx.stroke(); bx.lineWidth = 1;
-    label('RESIDENTS ONLY', 31, 26, 0.75);
-  }
-  // graffiti and litter when neglected
-  if (!opts.care) {
-    bx.strokeStyle = 'rgba(255,255,255,.75)';
-    for (const [gx, gy] of [[27.6, 24], [27.6, 31], [42, 21.6], [55, 21.6]]) {
-      const [px, py] = P(gx, gy); bx.beginPath();
-      for (let k = 0; k < 7; k++) bx.lineTo(px + (k % 2 ? 1 : -1) * S * 0.25, py - S + k * S * 0.3);
-      bx.stroke();
-    }
-    for (const [lx, ly] of [[31, 25], [38, 30], [47, 33], [60, 26], [30, 33]]) { const [px, py] = P(lx, ly); bx.strokeRect(px, py, S * 0.4, S * 0.3); }
-  }
+  // litter when neglected
+  if (!opts.care) { bx.strokeStyle = 'rgba(255,255,255,.7)'; for (const [lx, ly] of [[31, 25], [38, 30], [47, 33], [60, 26], [30, 33]]) bx.strokeRect(lx, ly, 0.5, 0.35); }
+
+  /* things standing up, painted back to front */
+  screen(bx);
+  const items = [];
+  BLOCKS.forEach(b => items.push({ k: b[2] + b[3], f: () => block(b) }));
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) if (grid[y * GW + x] === HEDGE) items.push({ k: x + y + 1, f: () => hedge(x, y) });
+  LAMPS.forEach((l, i) => items.push({ k: l[0] + l[1], f: () => lamp(i) }));
+  if (opts.gate) items.push({ k: 33 + 17, f: gateFence });
+  items.sort((a, b) => a.k - b.k).forEach(it => it.f());
+
   // hiding places
-  for (const [x, y] of hidePlaces) label('?', x + 0.5, y + 0.8, 1);
-  // labels
-  label('STREET', 4, 14.5, 0.5, 'left');
-  label('HOUSES', 11, 7, 0.55); label('HOUSES', 31.5, 7, 0.55); label('HOUSES', 52, 7, 0.55);
-  label('FLATS', 15, 24, 0.55); label('SHOPS', 48, 19.9, 0.55);
-  if (!opts.gate) label('ALLEY', 30.9, 20, 0.5);
-  label('CAR PARK', 48, 29, 0.5);
+  for (const [x, y] of hidePlaces) label('?', ...iso(x + 0.5, y + 0.5, 0.4), 1, Math.max(10, TW * 0.9));
+  // labels on the ground
+  label('STREET', ...iso(41.5, 14.5), 0.5);
+  if (!opts.gate) label('ALLEY', ...iso(31, 19.5), 0.45);
+  label('CAR PARK', ...iso(48, 31.5), 0.45);
 }
-function label(t, x, y, a, align) {
-  const [px, py] = P(x, y);
-  bx.globalAlpha = a; bx.fillStyle = '#fff'; bx.textAlign = align || 'center';
-  bx.font = `300 ${Math.max(9, S * 0.75)}px "IBM Plex Mono", monospace`;
-  bx.fillText(t, px, py); bx.globalAlpha = 1;
+
+function block([x0, y0, x1, y1, storeys, name]) {
+  const h = storeys * STOREY, X1 = x1 + 1, Y1 = y1 + 1;
+  const A = iso(x0, y0), B = iso(X1, y0), C = iso(X1, Y1), D = iso(x0, Y1);
+  const At = iso(x0, y0, h), Bt = iso(X1, y0, h), Ct = iso(X1, Y1, h), Dt = iso(x0, Y1, h);
+  // hidden back edges, faint, so the block reads as see-through
+  bx.strokeStyle = 'rgba(255,255,255,.18)'; bx.lineWidth = 1; bx.setLineDash([2, 3]);
+  bx.beginPath(); bx.moveTo(...A); bx.lineTo(...B); bx.moveTo(...A); bx.lineTo(...D); bx.moveTo(...A); bx.lineTo(...At); bx.stroke();
+  bx.setLineDash([]);
+  // windows on the back faces (north and west), seen through the block
+  windowsOn(x0, y0, x1, y1, storeys, 'back');
+  // faces: semi-transparent so the street behind still reads
+  bx.fillStyle = 'rgba(0,0,0,.42)'; bx.strokeStyle = '#fff'; bx.lineWidth = 1.1;
+  poly(bx, [D, C, Ct, Dt]); bx.fill(); bx.stroke();      // south face
+  poly(bx, [B, C, Ct, Bt]); bx.fill(); bx.stroke();      // east face
+  poly(bx, [At, Bt, Ct, Dt]); bx.fill(); bx.stroke();    // roof
+  windowsOn(x0, y0, x1, y1, storeys, 'front');
+  // graffiti on the walls when neglected
+  if (!opts.care) {
+    bx.strokeStyle = 'rgba(255,255,255,.8)';
+    for (const [gx, gy] of [[28, 24], [28, 28.5], [42, 22], [55, 22]]) {
+      if (!(gx === X1 && gy >= y0 && gy <= Y1) && !(gy === Y1 && gx >= x0 && gx <= X1)) continue;
+      bx.beginPath(); for (let k = 0; k < 8; k++) { const t = k / 7; bx.lineTo(...iso(gx === X1 ? gx : gx - 0.8 + t * 1.6, gx === X1 ? gy - 0.8 + t * 1.6 : gy, 0.25 + (k % 2) * 0.55)); } bx.stroke();
+    }
+  }
+  label(name, ...iso((x0 + X1) / 2, (y0 + Y1) / 2, h), 0.6);
+}
+
+// windows are the "eyes": white panes on each storey of the facade they face
+function windowsOn(x0, y0, x1, y1, storeys, side) {
+  const all = BASE_WINDOWS.concat(opts.windows ? ACTIVE_WINDOWS : []);
+  for (const [wx, wy, dx, dy] of all) {
+    // which wall is this window on?
+    const onNorth = dy === -1 && Math.abs(wy - 0.5 - (y0 - 1)) < 1.2 && wx >= x0 && wx <= x1 + 1;
+    const onSouth = dy === 1 && Math.abs(wy - 0.5 - (y1 + 1)) < 1.2 && wx >= x0 && wx <= x1 + 1;
+    const onEast = dx === 1 && Math.abs(wx - (x1 + 1)) < 1.2 && wy >= y0 && wy <= y1 + 1;
+    if (!(onNorth || onSouth || onEast)) continue;
+    const back = onNorth;
+    if ((side === 'back') !== back) continue;
+    bx.fillStyle = back ? 'rgba(255,255,255,.45)' : '#fff';
+    for (let f = 0; f < storeys; f++) {
+      const z0 = f * STOREY + 0.45, z1 = z0 + 0.7;
+      let q;
+      if (onEast) { const X = x1 + 1; q = [iso(X, wy - 0.3, z0), iso(X, wy + 0.3, z0), iso(X, wy + 0.3, z1), iso(X, wy - 0.3, z1)]; }
+      else { const Y = onNorth ? y0 : y1 + 1; q = [iso(wx - 0.3, Y, z0), iso(wx + 0.3, Y, z0), iso(wx + 0.3, Y, z1), iso(wx - 0.3, Y, z1)]; }
+      poly(bx, q); bx.fill();
+    }
+  }
+}
+
+function hedge(x, y) {
+  const h = opts.plant ? 0.35 : 1.3;
+  const pts = [[x, y + 1], [x + 1, y + 1], [x + 1, y]].map(([a, b]) => iso(a, b));
+  const top = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]].map(([a, b]) => iso(a, b, h));
+  bx.fillStyle = '#000'; bx.strokeStyle = opts.plant ? 'rgba(255,255,255,.45)' : '#fff'; bx.lineWidth = opts.plant ? 0.8 : 1.2;
+  poly(bx, [pts[0], pts[1], top[2], top[3]]); bx.fill(); bx.stroke();
+  poly(bx, [pts[1], pts[2], top[1], top[2]]); bx.fill(); bx.stroke();
+  poly(bx, top); bx.fill(); bx.stroke();
+  if (!opts.plant) { bx.beginPath(); for (let k = 0; k <= 4; k++) bx.lineTo(...iso(x + k / 4, y + 1, h + (k % 2) * 0.25)); bx.stroke(); }   // leafy top
+}
+
+function lamp(i) {
+  const [lx, ly] = LAMPS[i], on = opts.light && (opts.care || !BROKEN.has(i));
+  const b = iso(lx, ly), t = iso(lx, ly, 2.6);
+  bx.strokeStyle = '#fff'; bx.lineWidth = 1; bx.beginPath(); bx.moveTo(...b); bx.lineTo(...t); bx.stroke();
+  bx.beginPath(); bx.arc(t[0], t[1], Math.max(2, TW * 0.22), 0, Math.PI * 2);
+  if (on) { bx.fillStyle = '#fff'; bx.fill(); } else bx.stroke();
+  if (opts.light && !on) { const r = TW * 0.3; bx.beginPath(); bx.moveTo(t[0] - r, t[1] - r); bx.lineTo(t[0] + r, t[1] + r); bx.stroke(); }   // broken
+}
+
+function gateFence() {
+  const h = 1.4, a = iso(29, 17.1), b = iso(33, 17.1), at2 = iso(29, 17.1, h), bt = iso(33, 17.1, h);
+  bx.strokeStyle = '#fff'; bx.lineWidth = 1.4;
+  bx.beginPath(); bx.moveTo(...a); bx.lineTo(...at2); bx.lineTo(...bt); bx.lineTo(...b);
+  for (let k = 1; k < 8; k++) { bx.moveTo(...iso(29 + k * 0.5, 17.1)); bx.lineTo(...iso(29 + k * 0.5, 17.1, h)); }
+  bx.stroke();
+  label('RESIDENTS ONLY', ...iso(31, 17.1, h + 0.6), 0.75);
+}
+
+function label(t, x, y, a, size) {
+  bx.globalAlpha = a; bx.fillStyle = '#fff'; bx.textAlign = 'center';
+  bx.font = `300 ${size || Math.max(9, TW * 0.7)}px "IBM Plex Mono", monospace`;
+  bx.fillText(t, x, y); bx.globalAlpha = 1;
 }
 
 /* ─── A walker on the public route ────────────────────────── */
@@ -368,17 +434,16 @@ function frame(now) {
   if (wd > L) { wd = L; wdir = -1; } if (wd < 0) { wd = 0; wdir = 1; }
   const [gx, gy] = walkerAt(path, wd), i = Math.floor(gy) * GW + Math.floor(gx);
   const safe = lit[i] && seen[i];
-  const [px, py] = P(gx, gy), s = S * 0.09, ph = now / 160;
-  // stick man (top-down-ish, standing up so you can read him)
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4; ctx.beginPath();
+  const [px, py] = iso(gx, gy), s = TW * 0.075, ph = now / 160;
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.3; ctx.beginPath();
   ctx.arc(px, py - 27 * s, 3.6 * s, 0, Math.PI * 2);
   ctx.moveTo(px, py - 23 * s); ctx.lineTo(px, py - 12 * s);
   const a = Math.sin(ph) * 0.6;
   ctx.moveTo(px, py - 12 * s); ctx.lineTo(px + Math.sin(a) * 9 * s, py); ctx.moveTo(px, py - 12 * s); ctx.lineTo(px - Math.sin(a) * 9 * s, py);
   ctx.moveTo(px, py - 21 * s); ctx.lineTo(px - Math.sin(a) * 7 * s, py - 14 * s); ctx.moveTo(px, py - 21 * s); ctx.lineTo(px + Math.sin(a) * 7 * s, py - 14 * s);
   ctx.stroke();
-  ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = `300 ${Math.max(9, S * 0.7)}px "IBM Plex Mono", monospace`;
-  ctx.globalAlpha = 0.85; ctx.fillText(safe ? 'seen' : 'blind spot…', px, py - 33 * s); ctx.globalAlpha = 1;
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = `300 ${Math.max(9, TW * 0.65)}px "IBM Plex Mono", monospace`;
+  ctx.globalAlpha = 0.9; ctx.fillText(safe ? 'seen' : 'blind spot…', px, py - 33 * s); ctx.globalAlpha = 1;
   requestAnimationFrame(frame);
 }
 
