@@ -44,6 +44,32 @@
   summary::before{content:'+';display:inline-block;width:1.4em;color:var(--mid)}
   details[open] summary::before{content:'–'}
   .sources{font-size:.7rem;color:var(--dim)}
+  .assess{max-width:880px;margin-top:4rem;border-top:1px solid var(--line);padding-top:2rem}
+  .area{margin-top:2rem;border:0}
+  .area legend{font-family:'Syne',sans-serif;font-weight:500;letter-spacing:.15em;text-transform:uppercase;font-size:.8rem;color:#fff;margin-bottom:.4rem}
+  .q{display:flex;gap:1rem;justify-content:space-between;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding:.8rem 0}
+  .q p{flex:1 1 380px;font-size:.84rem}
+  .report{margin-top:3rem}
+  .rep-head{display:grid;gap:1rem;grid-template-columns:1fr;align-items:center;border:1px solid #fff;padding:1.4rem}
+  @media(min-width:760px){.rep-head{grid-template-columns:1fr 1.2fr}}
+  .big{font-family:'Syne',sans-serif;font-weight:600;font-size:4rem;line-height:1;margin-top:.3rem}
+  .word{font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--mid);margin:.4rem 0 .8rem}
+  .radar{width:100%;max-width:420px;justify-self:center}
+  .radar text{fill:#bbb;font:300 9px 'IBM Plex Mono',monospace}
+  .report h2{margin-top:2.2rem}
+  .plan,.ev{margin:.8rem 0 0 1.2rem;font-size:.84rem}
+  .plan li,.ev li{margin:.55rem 0}
+  .sev{display:inline-block;font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;border:1px solid currentColor;padding:0 .4rem;margin-right:.5rem;vertical-align:1px}
+  .sev.no{color:var(--err)} .sev.partly{color:var(--warn)} .sev.unanswered{color:var(--mid)}
+  @media print{
+    body{background:#fff;color:#000}
+    header,footer,.lede,form,#result,section:not(.assess),.info,.sources,.tiersw,#qs,#printBtn{display:none!important}
+    .assess{border:0;margin:0;padding:0}
+    .rep-head{border-color:#000}
+    .radar polygon[fill^="rgba"]{fill:rgba(0,0,0,.08);stroke:#000}
+    .radar text{fill:#000}
+    a{color:#000}
+  }
   .sources a{color:var(--mid)}
 </style>
 </head>
@@ -97,6 +123,18 @@
   </form>
 
   <div class="result" id="result" hidden aria-live="polite"></div>
+
+  <section class="assess" id="assess" hidden aria-labelledby="assess-h">
+    <div class="kicker">Step 2</div>
+    <h2 id="assess-h" style="font-size:1.4rem;letter-spacing:.06em;margin-top:.4rem">Readiness assessment</h2>
+    <p class="lede" style="margin-top:.6rem">Answer honestly: <b>Yes</b> if it’s done and written down, <b>Partly</b> if it’s started or informal, <b>No</b> if it isn’t in place. Your answers stay in this browser.</p>
+    <div class="tiersw opts" style="margin-top:1rem">
+      <label><input type="radio" name="atier" value="standard" checked><span>Standard tier</span></label>
+      <label><input type="radio" name="atier" value="enhanced"><span>Enhanced tier</span></label>
+    </div>
+    <div id="qs"></div>
+    <div class="report" id="report" aria-live="polite"></div>
+  </section>
 
   <section>
     <h2>The law in one minute</h2>
@@ -158,6 +196,149 @@
 </footer>
 
 <script src="/assets/konami.js"></script>
+<script>
+/* ─── Step 2: readiness assessment, built from the handbook's Martyn's Law checklist ── */
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+// area, question, action if missing, evidence, tiers
+const AREAS = [
+  ['Scope and responsibility', [
+    ['You know the number of people the premises or event can reasonably be expected to hold at the same time, and how you worked it out.', 'Work out and record your capacity figure, using your busiest realistic day.', 'Your capacity figure and how you reached it.', 'both'],
+    ['You know who the responsible person is, in law, for each premises or event.', 'Identify and record the responsible person for each premises or event.', 'The name and role of the responsible person.', 'both'],
+    ['If several buildings are used for the same purpose, you have checked whether they count as one premises.', 'Check whether a campus or group of buildings counts as one premises.', 'A note of how the premises boundary was decided.', 'both']
+  ]],
+  ['Evacuation', [
+    ['You have a written procedure for getting people out quickly and safely, away from the danger.', 'Write an evacuation procedure for an attack, not only for fire: routes, assembly away from the threat, who decides.', 'The written evacuation procedure.', 'both'],
+    ['Evacuation routes and assembly points would not send people towards an attacker or into a crowded pinch point.', 'Review routes and assembly points against an attack scenario, and add alternatives.', 'A plan showing primary and alternative routes.', 'both']
+  ]],
+  ['Invacuation', [
+    ['You have a written procedure for bringing people inside to a safer place when the danger is outside.', 'Write an invacuation procedure and choose protected spaces away from glazing.', 'The written invacuation procedure and the chosen spaces.', 'both']
+  ]],
+  ['Lockdown', [
+    ['You can stop an attacker getting in or moving through the site: doors, shutters and areas that can be secured quickly.', 'List the doors and areas that can be locked down, how, and by whom; fix any that can’t.', 'The lockdown procedure and the list of lockable doors and areas.', 'both'],
+    ['Staff know who can call a lockdown and how it is called.', 'Decide who can trigger lockdown and give them a clear way to do it.', 'A note of who can call lockdown and how.', 'both']
+  ]],
+  ['Communication', [
+    ['You have a way to tell everyone on the premises what is happening and what to do, without causing panic.', 'Set up a way to give clear, specific instructions: public address, messages, coded staff alerts.', 'A description of how people are warned, with example messages.', 'both'],
+    ['You know how you would contact the emergency services and pass on what you know.', 'Agree who calls 999 and what information they pass on.', 'The emergency contact procedure.', 'both']
+  ]],
+  ['Training and rehearsal', [
+    ['Staff have had basic counter-terrorism awareness training, such as the free ACT e-learning.', 'Enrol staff on free ACT awareness e-learning (ProtectUK) and record completion.', 'A record of staff training and when it was refreshed.', 'both'],
+    ['The procedures have been rehearsed, for example as a tabletop exercise, and updated after.', 'Run a short tabletop exercise each year and update the procedures afterwards.', 'A note of exercises run and changes made.', 'both']
+  ]],
+  ['Notification', [
+    ['You have a plan to notify the Security Industry Authority within three months of the duty coming into force.', 'Diary the notification, name who will do it, and keep the details ready.', 'Your notification record.', 'both'],
+    ['You have a process to tell the regulator of a relevant change within 28 days.', 'Set up a simple change process with a named owner.', 'The change process.', 'both']
+  ]],
+  ['Senior individual', [
+    ['A designated senior individual is responsible for compliance (needed if the responsible person isn’t an individual).', 'Appoint and record a designated senior individual.', 'The name and role of the designated senior individual.', 'enhanced']
+  ]],
+  ['Risk assessment', [
+    ['You have carried out and written down an assessment of the terrorism risk to your premises or event.', 'Carry out a proportionate terrorism risk assessment and record it.', 'The written risk assessment.', 'enhanced']
+  ]],
+  ['Monitoring', [
+    ['You have reasonably practicable measures to monitor the premises and the immediate surroundings.', 'Decide how the site and its approaches are watched: staff, CCTV, patrols, and who acts on what they see.', 'Your monitoring measures in the measures document.', 'enhanced']
+  ]],
+  ['Movement', [
+    ['You can control movement into, out of and within the premises: entrances, queues, staff-only areas.', 'Plan entry points, queuing and staff-only control so movement can be managed and restricted.', 'Your movement measures in the measures document.', 'enhanced']
+  ]],
+  ['Physical security', [
+    ['You have considered the physical safety and security of the premises, such as vehicle approach and glazing at crowded entrances.', 'Assess the physical vulnerabilities and fold any measures into planned works rather than a costly retrofit.', 'Your physical measures in the measures document.', 'enhanced']
+  ]],
+  ['Information security', [
+    ['Plans and procedures that could expose vulnerabilities are protected.', 'Restrict who can see floor plans, security procedures and the measures document.', 'A note of how sensitive information is controlled.', 'enhanced']
+  ]],
+  ['Documentation', [
+    ['Your assessment and measures document is current and ready to show the regulator.', 'Keep one measures document up to date, with a review date.', 'The measures document with its last review date.', 'enhanced']
+  ]]
+];
+const KEY = 'jn-mlaw-v1';
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+const tier = () => (document.querySelector('input[name="atier"]:checked') || {}).value || 'standard';
+const qid = (a, i) => a.replace(/\W+/g, '').slice(0, 12) + i;
+
+function render() {
+  const t = tier(), box = $('qs');
+  box.innerHTML = '';
+  AREAS.forEach(([area, qs]) => {
+    const list = qs.filter(q => q[3] === 'both' || t === 'enhanced');
+    if (!list.length) return;
+    const fs = document.createElement('fieldset');
+    fs.className = 'area';
+    fs.innerHTML = `<legend>${area}</legend>`;
+    list.forEach((q, i) => {
+      const id = qid(area, i);
+      const row = document.createElement('div');
+      row.className = 'q';
+      row.innerHTML = `<p>${q[0]}</p><div class="opts">${['yes', 'partly', 'no'].map(v =>
+        `<label><input type="radio" name="${id}" value="${v}"${state[id] === v ? ' checked' : ''}><span>${v[0].toUpperCase() + v.slice(1)}</span></label>`).join('')}</div>`;
+      row.querySelectorAll('input').forEach(inp => inp.addEventListener('change', () => { state[id] = inp.value; save(); report(); }));
+      fs.append(row);
+    });
+    box.append(fs);
+  });
+  report();
+}
+
+function report() {
+  const t = tier(), out = $('report');
+  const scores = [], gaps = [], evidence = [];
+  let answered = 0, total = 0;
+  AREAS.forEach(([area, qs]) => {
+    const list = qs.filter(q => q[3] === 'both' || t === 'enhanced');
+    if (!list.length) return;
+    let s = 0;
+    list.forEach((q, i) => {
+      const a = state[qid(area, i)]; total++;
+      if (a) answered++;
+      s += a === 'yes' ? 1 : a === 'partly' ? 0.5 : 0;
+      if (a !== 'yes') gaps.push({ area, action: q[1], level: a === 'partly' ? 'partly' : a === 'no' ? 'no' : 'unanswered' });
+      evidence.push(q[2]);
+    });
+    scores.push([area, s / list.length]);
+  });
+  if (!answered) { out.innerHTML = '<p class="small" style="margin-top:2rem">Your score, gaps and action plan appear here as you answer.</p>'; return; }
+  const overall = Math.round(scores.reduce((a, b) => a + b[1], 0) / scores.length * 100);
+  const word = overall >= 85 ? 'Ready' : overall >= 60 ? 'Getting there' : overall >= 30 ? 'Early days' : 'Not started';
+  gaps.sort((a, b) => ({ no: 0, unanswered: 1, partly: 2 }[a.level] - { no: 0, unanswered: 1, partly: 2 }[b.level]));
+  // radar chart of the areas, white lines
+  const n = scores.length, R = 120, cx = 160, cy = 150;
+  const pt = (i, r) => [cx + Math.sin(i / n * Math.PI * 2) * r, cy - Math.cos(i / n * Math.PI * 2) * r];
+  const ring = f => scores.map((_, i) => pt(i, R * f).join(',')).join(' ');
+  const shape = scores.map(([, v], i) => pt(i, R * Math.max(0.04, v)).join(',')).join(' ');
+  const labels = scores.map(([a], i) => { const [x, y] = pt(i, R + 16); return `<text x="${x}" y="${y}" text-anchor="${x < cx - 5 ? 'end' : x > cx + 5 ? 'start' : 'middle'}" dominant-baseline="middle">${a}</text>`; }).join('');
+  const radar = `<svg viewBox="-40 -10 400 320" class="radar" role="img" aria-label="Readiness by area">
+    ${[0.25, 0.5, 0.75, 1].map(f => `<polygon points="${ring(f)}" fill="none" stroke="#333"/>`).join('')}
+    ${scores.map((_, i) => `<line x1="${cx}" y1="${cy}" x2="${pt(i, R)[0]}" y2="${pt(i, R)[1]}" stroke="#333"/>`).join('')}
+    <polygon points="${shape}" fill="rgba(255,255,255,.12)" stroke="#fff" stroke-width="1.5"/>${labels}</svg>`;
+  out.innerHTML = `
+    <div class="rep-head">
+      <div><div class="kicker">${t === 'enhanced' ? 'Enhanced' : 'Standard'} tier readiness</div>
+        <div class="big">${overall}%</div><div class="word">${word}</div>
+        <p class="small">${answered} of ${total} questions answered.</p>
+        <p style="margin-top:1rem"><button type="button" class="ghost" id="printBtn">Print or save as PDF</button></p></div>
+      ${radar}
+    </div>
+    <h2>Action plan</h2>
+    ${gaps.length ? '<ol class="plan">' + gaps.map(g => `<li><span class="sev ${g.level}">${g.level === 'no' ? 'Gap' : g.level === 'partly' ? 'Partly' : 'Check'}</span><b>${g.area}.</b> ${g.action}</li>`).join('') + '</ol>' : '<p>Nothing outstanding. Keep it rehearsed and reviewed.</p>'}
+    <h2>Evidence to keep ready</h2>
+    <ul class="ev">${[...new Set(evidence)].map(e => `<li>${e}</li>`).join('')}</ul>
+    <p class="note">A self-assessment against the duties as published, not legal advice or a compliance certificate. The duties are not expected in force before spring 2027: check GOV.UK for the commencement date. Want a second pair of eyes? <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">Talk to James</a>.</p>`;
+  $('printBtn').addEventListener('click', () => window.print());
+}
+
+document.querySelectorAll('input[name="atier"]').forEach(r => r.addEventListener('change', () => { state._tier = r.value; save(); render(); }));
+window.startAssessment = t => {
+  const r = document.querySelector(`input[name="atier"][value="${t}"]`); if (r) r.checked = true; state._tier = t; save();
+  $('assess').hidden = false; render();
+  $('assess').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+if (Object.keys(state).length) { const r = document.querySelector(`input[name="atier"][value="${state._tier || 'standard'}"]`); if (r) r.checked = true; $('assess').hidden = false; render(); }
+})();
+</script>
 <script>
 (() => {
 'use strict';
@@ -257,7 +438,7 @@ form.addEventListener('submit', e => {
   }
 
   out.innerHTML = `<div class="kicker">${kicker}</div><div class="tier">${tier}</div>${body}
-    <p style="margin-top:1.6rem"><a class="btn" href="${LINKEDIN}" target="_blank" rel="noopener">Talk to James about getting ready</a></p>
+    <p style="margin-top:1.6rem">${/Standard|Enhanced/.test(tier) ? `<button type="button" onclick="startAssessment('${/Enhanced/.test(tier) ? 'enhanced' : 'standard'}')">Step 2: check your readiness</button> ` : ''}<a class="btn ghost" href="${LINKEDIN}" target="_blank" rel="noopener">Talk to James</a></p>
     <p class="note">A quick guide, not legal advice. The Act, its commencement dates and the Home Office statutory guidance are the authority: <a href="${GUIDANCE}" target="_blank" rel="noopener">read the official guidance on GOV.UK &nearr;</a>. Schedule 2 of the Act excludes some premises; this check doesn’t cover those.</p>`;
   out.hidden = false;
   out.scrollIntoView({ behavior: 'smooth', block: 'start' });
