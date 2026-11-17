@@ -4,87 +4,69 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>James Norman</title>
+<meta name="description" content="James Norman: physical security and counter-terrorism consulting, producer and DJ.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  html{font-size:16px}
-  body{background:#000;overflow:hidden;-webkit-font-smoothing:antialiased;height:100vh;
-    font-family:'IBM Plex Mono',monospace;color:#5a5650}
-  canvas{position:fixed;inset:0;width:100%;height:100%}
-  #field{z-index:0}
-  #trace{z-index:1}
-  .page{position:relative;z-index:2;height:100vh;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
-  .page *{pointer-events:auto}
-  .top{padding:2.5rem 3rem;display:flex;justify-content:space-between;align-items:center;opacity:0;animation:fi 2s 1s forwards}
-  .top div{font-size:.4rem;font-weight:300;letter-spacing:.35em;text-transform:uppercase;color:#2a2520}
-  .center{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center}
-  .name{
-    font-family:'Syne',sans-serif;font-weight:500;
-    font-size:clamp(2.4rem,8vw,6.5rem);
-    letter-spacing:-.03em;line-height:1;text-transform:uppercase;
-    color:rgba(210,195,165,0.55);
-    opacity:0;animation:bi 3s 1.5s forwards;
-    mix-blend-mode:soft-light;
-  }
-  .name i{font-style:normal;font-weight:400;opacity:.45}
-  .tagline{font-size:.42rem;font-weight:300;letter-spacing:.6em;text-transform:uppercase;
-    color:rgba(90,80,60,0.4);margin-top:2.5rem;opacity:0;animation:fi 2s 2.5s forwards}
-  .ln-link{display:inline-flex;align-items:center;gap:.4rem;font-size:.38rem;font-weight:300;
-    letter-spacing:.3em;text-transform:uppercase;color:#2a2520;text-decoration:none;
-    margin-top:2rem;transition:color .8s;opacity:0;animation:fi 2s 3s forwards}
-  .ln-link:hover{color:#6a6050}
-  .ln-link svg{width:9px;height:9px;transition:transform .4s}
-  .ln-link:hover svg{transform:translate(2px,-2px)}
-  .bottom{padding:2.5rem 3rem;display:flex;justify-content:space-between;align-items:flex-end;
-    font-size:.35rem;font-weight:300;letter-spacing:.3em;text-transform:uppercase;color:#1a1815;
-    opacity:0;animation:fi 2s 3.5s forwards}
-  .pt{cursor:pointer;transition:color .5s}
-  .pt:hover{color:#4a4030}
-  .po{position:fixed;inset:0;z-index:10000;background:#000;display:none;flex-direction:column;
-    align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace}
+  html,body{height:100%}
+  body{background:#000;color:#fff;overflow:hidden;-webkit-font-smoothing:antialiased;font-family:'IBM Plex Mono',monospace;font-weight:300}
+  #sky{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .page{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+  .page a,.page button{pointer-events:auto}
+  .top,.bottom{padding:2rem 3rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;
+    font-size:.6rem;letter-spacing:.35em;text-transform:uppercase;color:#8a8a8a;opacity:0;animation:fi 2s .6s forwards}
+  .bottom{align-items:flex-end;animation-delay:1.6s}
+  .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;padding:9vh 16px 0}
+  .name{font-family:'Syne',sans-serif;font-weight:500;font-size:clamp(2.6rem,9vw,7rem);line-height:1;letter-spacing:-.03em;
+    text-transform:uppercase;opacity:0;animation:bi 2.4s .3s forwards;text-shadow:0 0 40px #000}
+  .name i{font-style:normal;font-weight:400;opacity:.55}
+  .tagline{font-size:.62rem;letter-spacing:.55em;text-transform:uppercase;color:#bdbdbd;margin-top:1.6rem;opacity:0;animation:fi 2s 1.2s forwards}
+  nav{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem 1.8rem;margin-top:2.2rem;opacity:0;animation:fi 2s 1.8s forwards;max-width:640px}
+  nav a{display:inline-flex;align-items:center;gap:.4rem;font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;
+    color:#cfcfcf;text-decoration:none;padding:.6rem 0;transition:color .5s}
+  nav a:hover,nav a:focus-visible{color:#fff;outline:none}
+  nav svg{width:9px;height:9px;transition:transform .4s}
+  nav a:hover svg{transform:translate(2px,-2px)}
+  .pt{cursor:pointer;background:none;border:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;transition:color .5s}
+  .pt:hover{color:#fff}
+  .hint{color:#4a4a4a}
+  .po{position:fixed;inset:0;z-index:10000;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
   .po.active{display:flex}
-  .pc{position:absolute;top:1.5rem;right:2rem;font-size:.45rem;letter-spacing:.15em;
-    text-transform:uppercase;color:#444;background:none;border:none;cursor:pointer;padding:.5rem;font-family:inherit}
+  .pc{position:absolute;top:1.5rem;right:2rem;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:#777;background:none;border:none;cursor:pointer;padding:.5rem;font-family:inherit}
   .pc:hover{color:#fff}
-  .ps{font-size:.5rem;letter-spacing:.15em;color:#ffcc00;margin-bottom:1rem}
-  .ph{font-size:.35rem;letter-spacing:.1em;color:#222;margin-top:1rem}
+  .ps{font-size:.65rem;letter-spacing:.15em;color:#ffcc00;margin-bottom:1rem}
+  .ph{font-size:.55rem;letter-spacing:.1em;color:#555;margin-top:1rem}
+  #pacCanvas{max-width:100%;height:auto}
   @keyframes fi{to{opacity:1}}
-  @keyframes bi{0%{opacity:0;filter:blur(6px)}100%{opacity:1;filter:blur(0)}}
-  @media(max-width:600px){.top,.bottom{padding:1.5rem}.bottom{flex-direction:column;align-items:center;gap:.8rem;text-align:center}}
+  @keyframes bi{0%{opacity:0;filter:blur(8px)}100%{opacity:1;filter:blur(0)}}
+  @media(max-width:700px){.top,.bottom{padding:1.25rem 16px;font-size:.5rem;letter-spacing:.2em}.bottom{flex-direction:column;align-items:center;gap:.7rem;text-align:center}.hint{display:none}.tagline{letter-spacing:.3em}nav{gap:.2rem 1.2rem}.center{padding-top:6vh}}
+  @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important}}
 </style>
 </head>
 <body>
-<canvas id="field"></canvas>
-<canvas id="trace"></canvas>
+<canvas id="sky" aria-hidden="true"></canvas>
 <div class="page">
   <header class="top">
-    <div>v1.07</div>
+    <div>v2.0</div>
     <div>Available for consultancy</div>
   </header>
   <main class="center">
     <h1 class="name">James <i>Norman</i></h1>
     <p class="tagline">Security Consulting · Producer · DJ</p>
-    <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener" class="ln-link">
-      LinkedIn <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg>
-    </a>
-    <a href="music/" class="ln-link">
-      Music <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg>
-    </a>
-    <a href="visualiser/" class="ln-link">
-      Visualiser <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg>
-    </a>
-    <a href="security/" class="ln-link">
-      Security <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg>
-    </a>
-    <a href="night-shift/" class="ln-link">
-      Night Shift <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg>
-    </a>
+    <nav aria-label="Site">
+      <a href="/visualiser/">Visualiser <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg></a>
+      <a href="/music/">Music <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg></a>
+      <a href="/security/">Security <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg></a>
+      <a href="/night-shift/">Night Shift <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg></a>
+      <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">LinkedIn <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 13L13 3M13 3H7M13 3V9"/></svg></a>
+    </nav>
   </main>
   <footer class="bottom">
     <div>BEng · CEng · MIET · RSES</div>
-    <div class="pt" onclick="openPac()">&#9698; Play</div>
+    <div class="hint">Move to steer</div>
+    <button class="pt" onclick="openPac()">&#9698; Play</button>
     <div>&copy; 2026</div>
   </footer>
 </div>
@@ -95,258 +77,25 @@
   <div class="ph">Arrow keys or swipe to move</div>
 </div>
 
+<script type="module">
+import { createFlight } from '/assets/flight.js';
+// A slow flight over drifting, pulsar-like ridges.
+function rnd(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function sample(row, n) {
+  const r = rnd(n * 2654435761 + 7), P = row.length, beat = Math.exp(-((n % 16) / 3));
+  for (let k = 0, m = 3 + ((r() * 4) | 0); k < m; k++) {
+    const c = 0.5 + (r() - 0.5) * 0.32, w = 0.008 + r() * 0.03, a = (0.15 + r() * 0.6) * (0.7 + 0.5 * beat);
+    for (let i = 0; i < P; i++) { const x = i / (P - 1) - c; row[i] += a * Math.exp(-(x * x) / (2 * w * w)); }
+  }
+  for (let i = 0; i < P; i++) {
+    const d = (i / (P - 1) - 0.5) * 2;
+    row[i] = (row[i] + r() * 0.05) * (0.06 + 0.94 * Math.exp(-(d * d) / 0.08));
+  }
+}
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+createFlight(document.getElementById('sky'), { sample, rate: () => (reduce ? 2 : 9), horizon: innerWidth < 700 ? 0.46 : 0.62, amp: 0.4 });
+</script>
 <script>
-/* ═══════════════════════════════════════════════
-   WEBGL ROTHKO COLOUR FIELDS
-   Smooth, luminous, breathing. Oak/olive/black.
-   ═══════════════════════════════════════════════ */
-const fC = document.getElementById('field');
-const gl = fC.getContext('webgl') || fC.getContext('experimental-webgl');
-const tC = document.getElementById('trace');
-const tX = tC.getContext('2d');
-let W, H;
-
-function resize() {
-  W = fC.width = tC.width = window.innerWidth;
-  H = fC.height = tC.height = window.innerHeight;
-  if (gl) gl.viewport(0, 0, W, H);
-}
-resize();
-window.addEventListener('resize', resize);
-
-// ── Noise for trace layer ──
-const PM=new Uint8Array(512);{const p=new Uint8Array(256);for(let i=0;i<256;i++)p[i]=i;
-let sd=42;function sr(){sd|=0;sd=sd+0x6D2B79F5|0;var t=Math.imul(sd^sd>>>15,1|sd);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}
-for(let i=255;i>0;i--){let j=sr()*i|0;[p[i],p[j]]=[p[j],p[i]]}for(let i=0;i<512;i++)PM[i]=p[i&255]}
-const GR=[[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]];
-function N(x,y){const F=.5*(Math.sqrt(3)-1),G2=(3-Math.sqrt(3))/6;let s=(x+y)*F,i=Math.floor(x+s),j=Math.floor(y+s),t=(i+j)*G2,x0=x-(i-t),y0=y-(j-t);let i1=x0>y0?1:0,j1=x0>y0?0:1,x1=x0-i1+G2,y1=y0-j1+G2,x2=x0-1+2*G2,y2=y0-1+2*G2;let ii=i&255,jj=j&255;let g0=PM[ii+PM[jj]]%12,g1=PM[ii+i1+PM[jj+j1]]%12,g2=PM[ii+1+PM[jj+1]]%12;let n0=0,n1=0,n2=0,t0=.5-x0*x0-y0*y0,t1=.5-x1*x1-y1*y1,t2=.5-x2*x2-y2*y2;if(t0>0){t0*=t0;n0=t0*t0*(GR[g0][0]*x0+GR[g0][1]*y0)}if(t1>0){t1*=t1;n1=t1*t1*(GR[g1][0]*x1+GR[g1][1]*y1)}if(t2>0){t2*=t2;n2=t2*t2*(GR[g2][0]*x2+GR[g2][1]*y2)}return 70*(n0+n1+n2)}
-
-if (gl) {
-const vs = `attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
-const fs = `
-precision highp float;
-uniform float t;
-uniform vec2 res;
-
-vec3 mod289(vec3 x){return x-floor(x/289.)*289.;}
-vec2 mod289v(vec2 x){return x-floor(x/289.)*289.;}
-vec3 permute(vec3 x){return mod289(((x*34.)+1.)*x);}
-float snoise(vec2 v){
-  const vec4 C=vec4(.211324865,.366025403,-.577350269,.024390243);
-  vec2 i=floor(v+dot(v,C.yy));vec2 x0=v-i+dot(i,C.xx);
-  vec2 i1=(x0.x>x0.y)?vec2(1.,0.):vec2(0.,1.);
-  vec4 x12=x0.xyxy+C.xxzz;x12.xy-=i1;i=mod289v(i);
-  vec3 p=permute(permute(i.y+vec3(0.,i1.y,1.))+i.x+vec3(0.,i1.x,1.));
-  vec3 m=max(.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.);
-  m=m*m;m=m*m;
-  vec3 x_=2.*fract(p*C.www)-1.;vec3 h=abs(x_)-.5;
-  vec3 ox=floor(x_+.5);vec3 a0=x_-ox;
-  m*=1.79284291-.85373472*(a0*a0+h*h);
-  vec3 g;g.x=a0.x*x0.x+h.x*x0.y;g.yz=a0.yz*x12.xz+h.yz*x12.yw;
-  return 130.*dot(m,g);
-}
-
-// soft rectangle with rounded edges in Y
-float softRect(float y, float center, float halfH, float softness) {
-  float d = abs(y - center) - halfH;
-  return 1.0 - smoothstep(-softness, softness, d);
-}
-
-// horizontal margins
-float hMargin(float x, float margin, float soft) {
-  float l = smoothstep(margin - soft, margin + soft, x);
-  float r = smoothstep(margin - soft, margin + soft, 1.0 - x);
-  return l * r;
-}
-
-void main(){
-  vec2 uv = gl_FragCoord.xy / res;
-  float aspect = res.x / res.y;
-
-  // ── COLOUR PALETTE ──
-  // deep olive green
-  vec3 olive = vec3(0.22, 0.26, 0.10);
-  vec3 oliveLight = vec3(0.30, 0.35, 0.14);
-  // warm oak
-  vec3 oak = vec3(0.42, 0.28, 0.12);
-  vec3 oakLight = vec3(0.52, 0.36, 0.16);
-  // deep umber/moss
-  vec3 moss = vec3(0.16, 0.20, 0.10);
-  vec3 mossWarm = vec3(0.24, 0.18, 0.08);
-  // dark earth for separations
-  vec3 earth = vec3(0.06, 0.05, 0.03);
-  // accent — muted burnt sienna
-  vec3 sienna = vec3(0.50, 0.18, 0.08);
-
-  // ── NOISE WARPS ──
-  float n1 = snoise(vec2(uv.x * 1.5 + t * 0.06, uv.y * 2.0 + t * 0.04));
-  float n2 = snoise(vec2(uv.x * 3.0 - t * 0.08, uv.y * 4.0 + t * 0.03));
-  float n3 = snoise(vec2(uv.x * 0.8 + t * 0.03, uv.y * 1.2 - t * 0.05));
-  float nFine = snoise(vec2(uv.x * 8.0 + t * 0.1, uv.y * 12.0));
-
-  // warped y for organic field boundaries
-  float wy = uv.y + n1 * 0.015 + n2 * 0.005;
-
-  // ── FIELD MASKS — overlapping, blending ──
-  // upper field: olive — top portion
-  float f1 = softRect(wy, 0.28, 0.16, 0.06);
-  // middle field: oak — the dominant warm band
-  float f2 = softRect(wy, 0.52, 0.14, 0.07);
-  // lower field: moss/umber
-  float f3 = softRect(wy, 0.76, 0.12, 0.05);
-
-  // horizontal margins — Rothko fields don't touch edges
-  float hm = hMargin(uv.x, 0.06, 0.03);
-  f1 *= hm;
-  f2 *= hm;
-  f3 *= hm;
-
-  // ── INNER LUMINOSITY — Rothko glow from within ──
-  // each field is brighter in its centre
-  float glow1 = exp(-pow((wy - 0.28) * 4.0, 2.0)) * 0.3;
-  float glow2 = exp(-pow((wy - 0.52) * 3.5, 2.0)) * 0.35;
-  float glow3 = exp(-pow((wy - 0.76) * 4.5, 2.0)) * 0.25;
-
-  // pulse
-  glow1 *= 1.0 + sin(t * 0.3) * 0.08;
-  glow2 *= 1.0 + sin(t * 0.25 + 1.0) * 0.08;
-  glow3 *= 1.0 + sin(t * 0.35 + 2.0) * 0.08;
-
-  // ── COLOUR MIXING ──
-  // base: per-field colour with internal variation
-  vec3 c1 = mix(olive, oliveLight, 0.5 + n1 * 0.3 + glow1);
-  vec3 c2 = mix(oak, oakLight, 0.5 + n3 * 0.25 + glow2);
-  vec3 c3 = mix(moss, mossWarm, 0.5 + n2 * 0.3 + glow3);
-
-  // subtle temperature shifts
-  c1 += vec3(n2 * 0.02, nFine * 0.01, -n1 * 0.01);
-  c2 += vec3(nFine * 0.015, n1 * 0.01, -n3 * 0.015);
-  c3 += vec3(-n3 * 0.01, n2 * 0.015, nFine * 0.01);
-
-  // ── COMPOSITE ──
-  vec3 col = vec3(0.0);
-
-  // Layer fields with additive-ish blending
-  col = mix(col, c1, f1 * 0.85);
-  col = mix(col, c2, f2 * 0.9);
-  col = mix(col, c3, f3 * 0.8);
-
-  // ── OVERLAP BLENDING — where fields meet, colours merge ──
-  // olive-oak transition
-  float blend12 = f1 * f2;
-  col += mix(c1, c2, 0.5) * blend12 * 0.15;
-  // oak-moss transition
-  float blend23 = f2 * f3;
-  col += mix(c2, c3, 0.5) * blend23 * 0.12;
-
-  // ── SUBTLE FIELD GAP DARKENING ──
-  float hGap1 = exp(-pow((wy - 0.40) * 25.0, 2.0));
-  float hGap2 = exp(-pow((wy - 0.64) * 25.0, 2.0));
-  col = mix(col, earth, (hGap1 + hGap2) * 0.06 * hm);
-
-  // ── CANVAS TEXTURE ──
-  float grain = snoise(vec2(gl_FragCoord.x * 0.5, gl_FragCoord.y * 0.5) + t * 0.5);
-  col += grain * 0.008;
-
-  // ── VIGNETTE ──
-  vec2 vc = (uv - 0.5) * vec2(1.2, 1.0);
-  float vig = 1.0 - dot(vc, vc) * 0.8;
-  col *= vig;
-
-  gl_FragColor = vec4(max(col, 0.0), 1.0);
-}
-`;
-
-function compile(src, type) {
-  const s = gl.createShader(type);
-  gl.shaderSource(s, src);
-  gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
-  return s;
-}
-
-const prog = gl.createProgram();
-gl.attachShader(prog, compile(vs, gl.VERTEX_SHADER));
-gl.attachShader(prog, compile(fs, gl.FRAGMENT_SHADER));
-gl.linkProgram(prog);
-gl.useProgram(prog);
-
-const buf = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
-const loc = gl.getAttribLocation(prog, 'p');
-gl.enableVertexAttribArray(loc);
-gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-
-const uT = gl.getUniformLocation(prog, 't');
-const uR = gl.getUniformLocation(prog, 'res');
-
-let time = 0;
-
-function renderGL() {
-  gl.uniform1f(uT, time);
-  gl.uniform2f(uR, W, H);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  time += 0.006;
-
-  // ── WAVEFORM TRACE LAYER ──
-  tX.clearRect(0, 0, W, H);
-  const cy = H * 0.52;
-  const kickPhase = (time * 3) % Math.PI;
-  const kickAmp = Math.exp(-kickPhase * 3);
-
-  const waves = [
-    { freq: 0.18, amp: 50, speed: 0.2, a: 0.018, w: 2.5 },
-    { freq: 0.45, amp: 30, speed: 0.4, a: 0.015, w: 1.8 },
-    { freq: 0.9, amp: 18, speed: 0.7, a: 0.016, w: 1.2 },
-    { freq: 1.6, amp: 10, speed: 1.1, a: 0.014, w: 0.9 },
-    { freq: 2.8, amp: 6, speed: 1.7, a: 0.012, w: 0.7 },
-    { freq: 5.0, amp: 3, speed: 2.5, a: 0.010, w: 0.5 },
-    { freq: 0.08, amp: 65, speed: 0.1, a: 0.010, w: 3 },
-    { freq: 8.0, amp: 1.5, speed: 3.8, a: 0.007, w: 0.4 },
-  ];
-
-  for (const wv of waves) {
-    const yOff = N(time * 0.1 + wv.freq, wv.freq * 2) * 5;
-    // golden/amber trace colour
-    tX.strokeStyle = `rgba(180,150,80,${wv.a})`;
-    tX.lineWidth = wv.w;
-    tX.beginPath();
-    for (let x = 0; x <= W; x += 3) {
-      const nx = x / W;
-      const env = Math.pow(Math.sin(nx * Math.PI), 0.3);
-      let y = Math.sin(nx * Math.PI * 2 * wv.freq - time * wv.speed) * wv.amp;
-      y += Math.sin(nx * Math.PI * 2 * wv.freq * 0.5 - time * wv.speed * 0.6 + 0.4) * wv.amp * 0.3;
-      y += kickAmp * Math.sin(nx * 16 - time * 4) * wv.amp * 0.2;
-      y += N(nx * 4 + time * wv.speed * 0.1, wv.freq + time * 0.03) * wv.amp * 0.08;
-      y *= env;
-      if (x === 0) tX.moveTo(x, cy + yOff + y);
-      else tX.lineTo(x, cy + yOff + y);
-    }
-    tX.stroke();
-  }
-
-  // Sum line
-  tX.strokeStyle = 'rgba(200,170,90,0.02)';
-  tX.lineWidth = 1.5;
-  tX.beginPath();
-  for (let x = 0; x <= W; x += 2) {
-    const nx = x / W;
-    const env = Math.pow(Math.sin(nx * Math.PI), 0.3);
-    let y = 0;
-    for (const wv of waves) y += Math.sin(nx * Math.PI * 2 * wv.freq - time * wv.speed) * wv.amp * 0.06;
-    y += kickAmp * Math.sin(nx * 16 - time * 4) * 2;
-    y *= env;
-    if (x === 0) tX.moveTo(x, cy + y);
-    else tX.lineTo(x, cy + y);
-  }
-  tX.stroke();
-
-  requestAnimationFrame(renderGL);
-}
-renderGL();
-}
-
 /* ═══════════════════════════════════════
    PAC-MAN
    ═══════════════════════════════════════ */

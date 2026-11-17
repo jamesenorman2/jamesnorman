@@ -3,7 +3,7 @@
      sample(row, n) -> meta     fill Float32Array `row` (heights ~0..1.4) for the n-th line; return anything to tag it
      rate() -> number           new lines per second (before the visitor's speed setting)
      onNear(meta)               called each frame with the tag of the line just ahead of the ship
-     rows, points, rowWidth, amp, fadeFar
+     rows, points, rowWidth, amp, horizon (0-1 down the screen, default 0.34)
    }) */
 export function createFlight(canvas, opts = {}) {
   const ROWS = opts.rows || 72, POINTS = opts.points || 160;
@@ -80,7 +80,7 @@ export function createFlight(canvas, opts = {}) {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
     ctx.translate(W / 2, H / 2); ctx.rotate(cam.roll); ctx.translate(-W / 2, -H / 2);
-    const f = Math.max(W * 0.55, H * 0.75), horizon = H * 0.34, gap = SPAN / ROWS, pad = Math.hypot(W, H);
+    const f = Math.max(W * 0.55, H * 0.75), horizon = H * (opts.horizon || 0.34), gap = SPAN / ROWS, pad = Math.hypot(W, H);
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#000';
