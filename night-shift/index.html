@@ -10,6 +10,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">
 <style>
+  .floor{margin:2.5rem 0 0;border:1px solid var(--line)}
+  .floor canvas{display:block;width:100%;height:clamp(300px,42vw,460px)}
+  .findings{list-style:none;margin-top:.4rem}
+  .findings li{margin:.7rem 0;font-size:.8rem}
+  .findings b{font-weight:400}
+  .sev{display:inline-block;font-size:.55rem;letter-spacing:.25em;text-transform:uppercase;border:1px solid currentColor;padding:.05rem .4rem;margin-right:.5rem;vertical-align:1px}
+  .sev.action{color:var(--err)} .sev.watch{color:var(--warn)} .sev.info{color:var(--mid)}
+  .findings p{color:var(--mid);font-size:.75rem;margin-top:.2rem}
   .crew{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:2rem}
   .crew .card b{font-family:'Syne',sans-serif;font-weight:600;letter-spacing:.25em;font-size:.85rem;display:block;margin-bottom:.4rem}
   .shift{border-top:1px solid var(--line);padding:2rem 0}
@@ -46,10 +54,14 @@
   <p class="lede">Day and night, a crew of AI agents works this site like a control room, with a fresh shift every hour. Patrol checks every page. Analyst writes the handover. DJ picks the track of the day and sets up the next battle on the <a href="/music/">Music</a> tab.</p>
 
   <div class="crew">
-    <div class="card"><b>PATROL</b><span class="small">Walks every page on the site, timing each response and noting anything out of place.</span></div>
-    <div class="card"><b>ANALYST</b><span class="small">Reads the patrol report and writes a short handover in control-room style, with a status.</span></div>
-    <div class="card"><b>DJ</b><span class="small">Picks a track of the day from my SoundCloud, and pits two agents against each other in a DJ battle.</span></div>
+    <div class="card"><b>PATROL</b><span class="small">Walks every page it can find from the homepage: status, speed, size, title and the security headers each page sends.</span></div>
+    <div class="card"><b>ANALYST</b><span class="small">Compares this shift with the last, writes the handover in control-room style, and raises findings with a recommendation.</span></div>
+    <div class="card"><b>DJ</b><span class="small">Picks a track for the hour to suit the time of day, never repeating itself, and sets up a two-agent DJ battle.</span></div>
   </div>
+
+  <section class="floor" aria-label="The crew at work: stick men walking the site, checking each page">
+    <canvas id="floor"></canvas>
+  </section>
 
   <section id="log" aria-live="polite">
     <p class="small">Loading the log…</p>
@@ -83,6 +95,17 @@ function renderShift(row) {
   const left = el('div');
   left.append(el('div', 'tag', 'Analyst handover'));
   left.append(el('p', 'handover', (L.analyst && L.analyst.handover) || L.note || 'No handover written this shift.'));
+  const fnd = L.analyst && L.analyst.findings;
+  if (fnd && fnd.length) {
+    left.append(el('div', 'tag', 'Findings'));
+    const ul = el('ul', 'findings');
+    fnd.forEach(f => {
+      const li = el('li');
+      li.append(el('span', 'sev ' + f.severity, f.severity), el('b', null, f.title), el('p', null, f.detail));
+      ul.append(li);
+    });
+    left.append(ul);
+  }
   if (L.dj && L.dj.track) {
     left.append(el('div', 'tag', 'DJ · track of the day'));
     const p = el('p', 'small');
@@ -118,11 +141,168 @@ async function load() {
     log.innerHTML = '';
     if (!rows.length) { log.append(el('p', 'small', 'The crew is clocking on for the first shift…')); return; }
     rows.forEach(r => log.append(renderShift(r)));
+    setFloorShift(rows[0].log);
   } catch (e) {
     log.innerHTML = '';
     log.append(el('p', 'small', 'The log couldn’t load right now.'));
   }
 }
+/* ─── The floor: the crew as little white stick men walking the site ── */
+const floor = { rooms: [], shift: null, t: 0, men: [] };
+const fcv = document.getElementById('floor'), fx = fcv.getContext('2d');
+let FW = 0, FH = 0;
+const NAMES = { '/': 'Home', '/visualiser/': 'Visualiser', '/music/': 'Music', '/security/': 'Security', '/security/layers/': 'Layers',
+  '/security/cpted/': 'Streets', '/security/martyns-law/': 'Martyn’s Law', '/night-shift/': 'Control room', '/admin/': 'Admin' };
+const label = p => NAMES[p] || p.replace(/^\/|\/$/g, '').split('/').pop().replace(/-/g, ' ') || 'Home';
+
+function layout() {
+  const r = fcv.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
+  FW = r.width; FH = r.height; fcv.width = FW * d; fcv.height = FH * d; fx.setTransform(d, 0, 0, d, 0, 0);
+  const pages = (floor.shift && floor.shift.patrol || []).filter(p => !/\.(css|js|json)$/.test(p.path)).slice(0, 12);
+  const list = pages.length ? pages : Object.keys(NAMES).map(path => ({ path, ok: true }));
+  const top = Math.ceil(list.length / 2), m = 10, cy = FH / 2, ch = Math.max(46, FH * 0.17);
+  const rw = (FW - m * 2) / top;
+  floor.cy = cy; floor.ch = ch;
+  floor.rooms = list.map((p, i) => {
+    const upper = i < top, col = upper ? i : i - top, cols = upper ? top : list.length - top;
+    const w = (FW - m * 2) / cols, x = m + col * w;
+    const y = upper ? m : cy + ch / 2, h = cy - ch / 2 - m;
+    return { ...p, name: label(p.path), x, y, w, h, upper, door: { x: x + w / 2, y: upper ? y + h : y }, centre: { x: x + w / 2, y: y + h * (upper ? 0.62 : 0.42) }, seen: 0 };
+  });
+  const find = path => floor.rooms.find(r => r.path === path) || floor.rooms[0];
+  floor.control = find('/night-shift/');
+  floor.music = find('/music/');
+  void rw;
+}
+
+// a route through every room: corridor → door → inside (check) → door → corridor
+function route(reverse) {
+  const rooms = reverse ? [...floor.rooms].reverse() : floor.rooms, pts = [];
+  rooms.forEach(r => {
+    pts.push({ x: r.door.x, y: floor.cy }, { x: r.door.x, y: r.door.y }, { x: r.centre.x, y: r.centre.y, check: r }, { x: r.door.x, y: r.door.y }, { x: r.door.x, y: floor.cy });
+  });
+  return pts;
+}
+
+function makeMen() {
+  floor.men = [
+    { name: 'PATROL', path: route(false), i: 0, x: 0, y: floor.cy, pause: 0, step: 0 },
+    { name: 'PATROL', path: route(true), i: 0, x: FW, y: floor.cy, pause: 0, step: 0 }
+  ];
+  floor.men.forEach(m => { const p = m.path[0]; if (p) { m.x = p.x; m.y = p.y; } });
+}
+
+function stickMan(x, y, s, phase, pose) {
+  // y = feet. s = scale.
+  const hip = y - 12 * s, sh = y - 22 * s, head = y - 27 * s;
+  fx.beginPath();
+  fx.arc(x, head, 3.6 * s, 0, Math.PI * 2);
+  fx.moveTo(x, head + 3.6 * s); fx.lineTo(x, hip);
+  if (pose === 'walk') {
+    const a = Math.sin(phase) * 0.6;
+    fx.moveTo(x, hip); fx.lineTo(x + Math.sin(a) * 9 * s, y);
+    fx.moveTo(x, hip); fx.lineTo(x - Math.sin(a) * 9 * s, y);
+    fx.moveTo(x, sh); fx.lineTo(x - Math.sin(a) * 7 * s, sh + 8 * s);
+    fx.moveTo(x, sh); fx.lineTo(x + Math.sin(a) * 7 * s, sh + 8 * s);
+  } else if (pose === 'check') {
+    fx.moveTo(x, hip); fx.lineTo(x - 4 * s, y); fx.moveTo(x, hip); fx.lineTo(x + 4 * s, y);
+    fx.moveTo(x, sh); fx.lineTo(x + 8 * s, sh - 4 * s);              // torch / clipboard arm up
+    fx.moveTo(x, sh); fx.lineTo(x - 5 * s, sh + 7 * s);
+  } else if (pose === 'type') {
+    // sitting: thighs forward, shins down
+    fx.moveTo(x, hip); fx.lineTo(x + 8 * s, hip); fx.lineTo(x + 8 * s, y);
+    const k = Math.sin(phase * 3) * 1.5 * s;
+    fx.moveTo(x, sh); fx.lineTo(x + 10 * s, sh + 6 * s + k);
+    fx.moveTo(x, sh); fx.lineTo(x + 9 * s, sh + 7 * s - k);
+  } else if (pose === 'dance') {
+    const b = Math.sin(phase * 2);
+    fx.moveTo(x, hip); fx.lineTo(x - 5 * s, y); fx.moveTo(x, hip); fx.lineTo(x + 5 * s, y);
+    fx.moveTo(x, sh); fx.lineTo(x - 7 * s, sh - 6 * s - b * 3 * s);
+    fx.moveTo(x, sh); fx.lineTo(x + 7 * s, sh + (b > 0 ? -8 : 4) * s);
+  }
+  fx.stroke();
+}
+
+function text(str, x, y, size, alpha, align) {
+  fx.globalAlpha = alpha; fx.fillStyle = '#fff';
+  fx.font = `300 ${size}px "IBM Plex Mono", monospace`; fx.textAlign = align || 'center';
+  fx.fillText(str, x, y); fx.globalAlpha = 1;
+}
+
+function drawFloor(dt) {
+  floor.t += dt;
+  fx.clearRect(0, 0, FW, FH);
+  fx.strokeStyle = '#fff'; fx.lineWidth = 1; fx.lineCap = 'round';
+  const s = Math.max(1.1, Math.min(1.8, FW / 640));
+
+  // rooms with doorways onto the corridor
+  floor.rooms.forEach(r => {
+    r.seen = Math.max(0, r.seen - dt * 0.25);
+    fx.globalAlpha = 0.35 + r.seen * 0.65;
+    const gap = Math.min(28 * s, r.w * 0.3), dl = r.door.x - gap / 2, dr = r.door.x + gap / 2;
+    fx.beginPath();
+    if (r.upper) { fx.moveTo(dl, r.y + r.h); fx.lineTo(r.x, r.y + r.h); fx.lineTo(r.x, r.y); fx.lineTo(r.x + r.w, r.y); fx.lineTo(r.x + r.w, r.y + r.h); fx.lineTo(dr, r.y + r.h); }
+    else { fx.moveTo(dl, r.y); fx.lineTo(r.x, r.y); fx.lineTo(r.x, r.y + r.h); fx.lineTo(r.x + r.w, r.y + r.h); fx.lineTo(r.x + r.w, r.y); fx.lineTo(dr, r.y); }
+    fx.stroke(); fx.globalAlpha = 1;
+    text(r.name.toUpperCase(), r.x + r.w / 2, r.upper ? r.y + 16 : r.y + r.h - 8, 9 * s, 0.55);
+    if (r.seen > 0.05) {
+      const ok = r.ok, msg = ok ? `✓ ${r.ms != null ? r.ms + ' ms' : 'ok'}` : `✗ ${r.status}`;
+      text(msg, r.x + r.w / 2, r.upper ? r.y + 30 * s : r.y + r.h - 22 * s, 10 * s, Math.min(1, r.seen * 1.5));
+    }
+  });
+
+  // the control room desk and the analyst typing the handover
+  const c = floor.control, mus = floor.music;
+  if (c) {
+    const dx = c.centre.x - 14 * s, dy = c.centre.y + 10 * s;
+    fx.beginPath(); fx.moveTo(dx + 12 * s, dy - 10 * s); fx.lineTo(dx + 28 * s, dy - 10 * s); fx.moveTo(dx + 26 * s, dy - 10 * s); fx.lineTo(dx + 26 * s, dy); fx.stroke();  // desk
+    fx.strokeRect(dx + 16 * s, dy - 20 * s, 10 * s, 8 * s);                                                      // screen
+    stickMan(dx, dy, s, floor.t, 'type');
+    text('ANALYST', dx + 6 * s, dy + 12 * s, 8 * s, 0.6);
+    const lines = (floor.shift && floor.shift.analyst && floor.shift.analyst.handover || 'All quiet. Standing by.').split(/(?<=[.!?])\s+/);
+    const li = Math.floor(floor.t / 4) % lines.length, typed = lines[li].slice(0, Math.floor((floor.t % 4) * 28));
+    const maxW = Math.max(120, c.w - 16), words = typed.split(' '); let line = '', ly = c.upper ? c.y + 34 * s : c.y + 18 * s, n = 0;
+    fx.font = `300 ${9 * s}px "IBM Plex Mono", monospace`;
+    for (const w of words) { const t2 = line ? line + ' ' + w : w; if (fx.measureText(t2).width > maxW && line) { if (n < 2) text(line, c.x + 8, ly, 9 * s, 0.75, 'left'); ly += 11 * s; n++; line = w; } else line = t2; }
+    if (n < 3) text(line + (Math.floor(floor.t * 2) % 2 ? '▌' : ''), c.x + 8, ly, 9 * s, 0.75, 'left');
+  }
+  // the DJ at the decks
+  if (mus && mus !== c) {
+    const x = mus.centre.x, y = mus.centre.y + 10 * s;
+    fx.strokeRect(x - 18 * s, y - 12 * s, 36 * s, 6 * s);
+    [-9, 9].forEach(o => { fx.beginPath(); fx.arc(x + o * s, y - 15 * s, 4 * s, floor.t * 4, floor.t * 4 + 5); fx.stroke(); });
+    stickMan(x, y + 6 * s - Math.abs(Math.sin(floor.t * 4)) * 2 * s, s, floor.t * 2, 'dance');
+    text('DJ', x, y + 18 * s, 8 * s, 0.6);
+    const pick = floor.shift && floor.shift.dj && floor.shift.dj.track && floor.shift.dj.track.title;
+    if (pick) text('♪ ' + (pick.length > 26 ? pick.slice(0, 25) + '…' : pick), x, mus.upper ? mus.y + 30 * s : mus.y + mus.h - 22 * s, 9 * s, 0.7);
+    for (let k = 0; k < 3; k++) { const ph = (floor.t * 0.6 + k / 3) % 1; text('♪', x + 22 * s + Math.sin(ph * 6 + k) * 6, y - 18 * s - ph * 28 * s, 10 * s, 1 - ph); }
+  }
+
+  // patrols walking the corridor and checking each room
+  const speed = 60 * s;
+  floor.men.forEach(m => {
+    if (!m.path.length) return;
+    if (m.pause > 0) { m.pause -= dt; stickMan(m.x, m.y, s, 0, 'check'); text(m.name, m.x, m.y + 12 * s, 8 * s, 0.6); return; }
+    const p = m.path[m.i], dx = p.x - m.x, dy = p.y - m.y, dist = Math.hypot(dx, dy), stepLen = speed * dt;
+    if (dist <= stepLen) {
+      m.x = p.x; m.y = p.y; m.i = (m.i + 1) % m.path.length;
+      if (p.check) { p.check.seen = 1; m.pause = 1.4; }
+    } else { m.x += dx / dist * stepLen; m.y += dy / dist * stepLen; m.step += stepLen * 0.25; }
+    stickMan(m.x, m.y, s, m.step, 'walk');
+    text(m.name, m.x, m.y + 12 * s, 8 * s, 0.6);
+  });
+}
+
+let floorLast = performance.now();
+function floorLoop(now) {
+  const dt = Math.max(0, Math.min(0.05, (now - floorLast) / 1000)); floorLast = now;
+  drawFloor(matchMedia('(prefers-reduced-motion: reduce)').matches ? dt * 0.3 : dt);
+  requestAnimationFrame(floorLoop);
+}
+function setFloorShift(log) { floor.shift = log; layout(); makeMen(); }
+addEventListener('resize', () => { layout(); makeMen(); });
+layout(); makeMen(); requestAnimationFrame(floorLoop);
+
 load();
 JN.kickShift().then(ran => { if (ran) load(); });
 })();

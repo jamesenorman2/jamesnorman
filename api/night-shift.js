@@ -72,24 +72,56 @@ async function authorised(req) {
   return null;
 }
 
-async function patrol() {
-  return Promise.all(PAGES.map(async path => {
-    const start = Date.now();
-    try {
-      const r = await fetch(SITE + path, { redirect: 'follow', signal: AbortSignal.timeout(10000) });
-      await r.arrayBuffer();
-      return { path, status: r.status, ok: r.ok, ms: Date.now() - start };
-    } catch (e) {
-      return { path, status: e.name === 'TimeoutError' ? 'timeout' : 'unreachable', ok: false, ms: null };
+const SEC_HEADERS = {
+  'strict-transport-security': 'HSTS',
+  'content-security-policy': 'CSP',
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'frame protection',
+  'referrer-policy': 'referrer policy',
+  'permissions-policy': 'permissions policy'
+};
+
+async function check(path) {
+  const start = Date.now();
+  try {
+    const r = await fetch(SITE + path, { redirect: 'follow', signal: AbortSignal.timeout(10000) });
+    const body = await r.text();
+    const html = (r.headers.get('content-type') || '').includes('text/html');
+    const out = { path, status: r.status, ok: r.ok, ms: Date.now() - start, kb: Math.round(body.length / 102.4) / 10 };
+    if (html) {
+      out.title = ((body.match(/<title>([^<]*)<\/title>/i) || [])[1] || '').trim().slice(0, 80) || null;
+      out.missing = Object.keys(SEC_HEADERS).filter(h => !r.headers.get(h)).map(h => SEC_HEADERS[h]);
+      out._html = body;
     }
-  }));
+    return out;
+  } catch (e) {
+    return { path, status: e.name === 'TimeoutError' ? 'timeout' : 'unreachable', ok: false, ms: null };
+  }
+}
+
+// Walk the site: start from the pages we know, add every internal link the homepage points to.
+async function patrol() {
+  const home = await check('/');
+  const found = new Set(PAGES);
+  for (const m of (home._html || '').matchAll(/href="(\/[^"#?]*|[a-z][a-z0-9-]*\/)"/gi)) {
+    let href = m[1].startsWith('/') ? m[1] : '/' + m[1];
+    if (!/\.(png|jpe?g|svg|ico|webp)$/i.test(href)) found.add(href);
+  }
+  found.delete('/');
+  const rest = await Promise.all([...found].slice(0, 24).map(check));
+  return [home, ...rest].map(({ _html, ...p }) => p);
 }
 
 const Pick = z.object({ track_number: z.number().int(), pitch: z.string() });
 const ShiftSchema = z.object({
   analyst: z.object({
     status: z.enum(['GREEN', 'AMBER', 'RED']),
-    handover: z.string()
+    handover: z.string(),
+    findings: z.array(z.object({
+      severity: z.enum(['info', 'watch', 'action']),
+      title: z.string(),
+      detail: z.string()
+    }))
   }),
   dj: z.object({ track_number: z.number().int(), reason: z.string() }),
   battle: z.object({
@@ -102,22 +134,34 @@ const ShiftSchema = z.object({
 const SYSTEM = `You are the round-the-clock crew on shift for jamesnorman.co.uk, the personal site of James Norman: a chartered engineer working in physical security and counter-terrorism protective security, and a music producer and DJ. The site is stark white lines on true black.
 
 You play three roles in one report:
-- ANALYST: write the shift handover from the patrol report, in calm, concise control-room style (think security control room radio log, not military cosplay). 60 to 110 words. Mention anything that failed or was slow (over 1500 ms), otherwise confirm all clear. Status GREEN if everything is fine, AMBER for slow pages or one failure, RED for several failures or the home page failing.
-- DJ: pick one track of the day from the numbered track list and give a one-sentence reason.
+- ANALYST: write the shift handover from the patrol report, in calm, concise control-room style (think security control room radio log, not military cosplay). 60 to 110 words. Compare with the previous shift where you can: what's new, what's fixed, what got slower or faster. Status GREEN if everything is fine, AMBER for slow pages (over 1500 ms) or one failure, RED for several failures or the home page failing.
+  Then list up to 5 findings, most important first. severity "action" = something is broken or a clear fix is needed; "watch" = worth keeping an eye on (a slower page, a heavy page, a missing security header across the site); "info" = useful context. Each has a short title (max 8 words) and a one or two sentence detail with a practical recommendation. Group site-wide issues (for example the same missing security header on every page) into one finding. Be accurate: only report what the data shows. No findings is fine if nothing is worth saying.
+- DJ: pick one track for the current hour from the numbered track list, suiting the time of day in the UK (late night and early morning = deeper and calmer; evening and weekends = bigger energy). Don't repeat any of the recent picks listed. Give a one-sentence reason.
 - DJ BATTLE: two rival AI DJs, ${AGENTS.a} (precise, cool, loves tension and space) and ${AGENTS.b} (warm, playful, loves the drop) each pick a different track from the list and pitch it in 30 to 60 words. Then write a short exchange of 4 to 6 lines of friendly trash talk between them, alternating speakers, starting with "a".
 
 Keep everything light, witty and kind. Never describe attack methods or anything that could help someone cause harm. Only use track numbers that appear in the list.`;
 
-async function runAgents(patrolReport, tracks) {
+async function runAgents(patrolReport, tracks, previous) {
   if (!process.env.ANTHROPIC_API_KEY) return { note: 'Analyst and DJ off duty tonight: no Claude API key is set yet.' };
   const client = new Anthropic();
   const list = tracks.length
     ? tracks.map((t, i) => `${i + 1}. ${t.title}`).join('\n')
     : '(the track list could not be read tonight; use track_number 0 for every pick and joke that the crate is empty)';
-  const user = `Shift date: ${new Date().toUTCString()}
+  const uk = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', weekday: 'long', hour: '2-digit', minute: '2-digit' });
+  const prev = previous && previous.log;
+  const prevPatrol = prev && Array.isArray(prev.patrol)
+    ? prev.patrol.map(p => `${p.path} ${p.status} ${p.ms == null ? '-' : p.ms + ' ms'}`).join('; ')
+    : 'none';
+  const recentPicks = previous && previous.recentPicks && previous.recentPicks.length ? previous.recentPicks.join(' | ') : 'none';
+  const user = `Shift: ${new Date().toUTCString()} (UK time: ${uk})
 
-PATROL REPORT (path, HTTP status, response time):
-${patrolReport.map(p => `${p.path}  ${p.status}  ${p.ms == null ? '-' : p.ms + ' ms'}`).join('\n')}
+PATROL REPORT (path, HTTP status, response time, size, page title, missing security headers):
+${patrolReport.map(p => `${p.path}  ${p.status}  ${p.ms == null ? '-' : p.ms + ' ms'}  ${p.kb != null ? p.kb + ' KB' : ''}  ${p.title ? '"' + p.title + '"' : ''}  ${p.missing ? 'missing: ' + (p.missing.join(', ') || 'none') : ''}`).join('\n')}
+
+PREVIOUS SHIFT (${prev ? previous.created_at : 'none'}): status ${prev && prev.analyst ? prev.analyst.status : 'unknown'}
+${prevPatrol}
+
+RECENT DJ PICKS (don't repeat): ${recentPicks}
 
 TRACK LIST:
 ${list}`;
@@ -135,7 +179,11 @@ ${list}`;
     if (!out) return { note: 'The analyst’s report came back unreadable tonight.' };
 
     const track = n => (Number.isInteger(n) && n >= 1 && n <= tracks.length) ? { title: tracks[n - 1].title, url: tracks[n - 1].url } : null;
-    const result = { analyst: { status: out.analyst.status, handover: out.analyst.handover.slice(0, 1200) } };
+    const result = { analyst: {
+      status: out.analyst.status,
+      handover: out.analyst.handover.slice(0, 1200),
+      findings: (out.analyst.findings || []).slice(0, 5).map(f => ({ severity: f.severity, title: f.title.slice(0, 80), detail: f.detail.slice(0, 400) }))
+    } };
     const dj = track(out.dj.track_number);
     if (dj) result.dj = { track: dj, reason: out.dj.reason.slice(0, 300) };
     const ta = track(out.battle.a.track_number), tb = track(out.battle.b.track_number);
@@ -157,6 +205,15 @@ ${list}`;
 
 const SHIFT_EVERY_MINUTES = 60;
 
+// The previous shift (for comparison) and the DJ's recent picks (so it doesn't repeat itself).
+async function lastShifts() {
+  try {
+    const rows = await db('jn_night_shift?select=created_at,log&order=id.desc&limit=8');
+    if (!rows.length) return null;
+    return { ...rows[0], recentPicks: rows.map(r => r.log && r.log.dj && r.log.dj.track && r.log.dj.track.title).filter(Boolean).slice(0, 6) };
+  } catch (e) { return null; }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') { res.setHeader('Allow', 'GET, POST'); return res.status(405).json({ ok: false }); }
   res.setHeader('Cache-Control', 'no-store');
@@ -176,8 +233,8 @@ export default async function handler(req, res) {
   }
 
   const started = new Date().toISOString();
-  const [report, tracks] = await Promise.all([patrol(), soundcloudTracks()]);
-  const agents = await runAgents(report, tracks);
+  const [report, tracks, previous] = await Promise.all([patrol(), soundcloudTracks(), lastShifts()]);
+  const agents = await runAgents(report, tracks, previous);
   const log = { started_at: started, finished_at: new Date().toISOString(), trigger: who, patrol: report, tracks_found: tracks.length, ...agents };
 
   try {
