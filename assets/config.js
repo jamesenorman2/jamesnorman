@@ -15,6 +15,11 @@ window.JN = {
     try { const r = await fetch('/api/night-shift', { cache: 'no-store' }); return (await r.json()).ran === true; }
     catch (e) { return false; }
   },
+  // Ask the research desk to file today's report (runs at most once a day; takes a few minutes when it does).
+  async kickDesk() {
+    try { const r = await fetch('/api/research', { cache: 'no-store' }); return (await r.json()).ran === true; }
+    catch (e) { return false; }
+  },
   async rpc(fn, body) {
     const r = await fetch(`${this.api}/rpc/${fn}`, {
       method: 'POST',

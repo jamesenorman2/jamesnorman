@@ -3,11 +3,18 @@
     {
       "path": "/api/night-shift",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/research",
+      "schedule": "30 6 * * *"
     }
   ],
   "functions": {
     "api/night-shift.js": {
       "maxDuration": 120
+    },
+    "api/research.js": {
+      "maxDuration": 300
     }
   },
   "headers": [

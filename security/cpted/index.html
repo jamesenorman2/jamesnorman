@@ -55,6 +55,19 @@
     .card{border-color:#999}
     .tag.high,.tag.med,.tag.low{color:#000}
   }
+  .review{max-width:860px}
+  .review h3{font-size:.95rem;font-weight:500;margin:2.2rem 0 .6rem}
+  .review p,.review li{color:#c9c9c9;font-size:.86rem;line-height:1.75;margin:.7rem 0}
+  .review ol,.review ul{padding-left:1.2rem}
+  .review .lede{font-size:1rem;color:var(--fg)}
+  .evtable{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.74rem}
+  .evtable th{font-size:.55rem;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);font-weight:400;text-align:left;padding:.6rem .5rem;border-bottom:1px solid var(--line)}
+  .evtable td{padding:.75rem .5rem;border-bottom:1px solid var(--line);vertical-align:top;color:#bdbdbd;line-height:1.55}
+  .evtable td:first-child{color:var(--fg);white-space:nowrap}
+  .g-strong{color:#4ade80;font-weight:400} .g-mod{color:#ffb000;font-weight:400} .g-weak{color:#ff6b6b;font-weight:400}
+  .refs li{font-size:.72rem!important;line-height:1.6!important;color:var(--mid)!important}
+  .callout{border-left:2px solid var(--fg);padding:.2rem 0 .2rem 1rem;margin:1.5rem 0}
+  @media(max-width:640px){.evtable thead{display:none}.evtable tr{display:block;border-bottom:1px solid var(--line);padding:.6rem 0}.evtable td{display:block;border:0;padding:.25rem 0}.evtable td:first-child{white-space:normal;font-size:.85rem}.evtable td:last-child::before{content:'Evidence: ';color:var(--mid)}}
 </style>
 </head>
 <body>
@@ -65,6 +78,7 @@
       <li><a href="/music/">Music</a></li>
       <li><a href="/security/" aria-current="page">Security</a></li>
       <li><a href="/night-shift/">Night Shift</a></li>
+      <li><a href="/blog/">Blog</a></li>
     </ul>
   </nav>
 </header>
@@ -130,12 +144,94 @@
   <section>
     <h2>The four principles</h2>
     <div class="grid">
-      <div class="card"><div class="kicker">Lighting · Frontages · Planting</div><h2 style="margin-top:.6rem">Natural surveillance</h2><p class="small">Arrange a place so people can be seen going about it: light, windows and clear lines of sight put eyes on the street without a single camera.</p></div>
-      <div class="card"><div class="kicker">Gate the alley</div><h2 style="margin-top:.6rem">Natural access control</h2><p class="small">Paths, gates and landscaping guide people where you want them, and make it obvious when someone is somewhere they shouldn’t be.</p></div>
-      <div class="card"><div class="kicker">Gate the alley</div><h2 style="margin-top:.6rem">Territorial reinforcement</h2><p class="small">Clear boundaries between public, shared and private space tell everyone a place belongs to someone.</p></div>
-      <div class="card"><div class="kicker">Maintenance</div><h2 style="margin-top:.6rem">Maintenance</h2><p class="small">Broken lights and graffiti signal that nobody is watching. Quick repairs signal the opposite, and keep the other measures working.</p></div>
+      <div class="card"><div class="kicker">Evidence: <b class="g-strong">strong</b></div><h2 style="margin-top:.6rem">Natural surveillance</h2><p class="small">Arrange a place so people can be seen going about it: light, windows and clear lines of sight put eyes on the street without a single camera.</p></div>
+      <div class="card"><div class="kicker">Evidence: <b class="g-mod">moderate</b></div><h2 style="margin-top:.6rem">Natural access control</h2><p class="small">Paths, gates and landscaping guide people where you want them, and make it obvious when someone is somewhere they shouldn’t be.</p></div>
+      <div class="card"><div class="kicker">Evidence: <b class="g-weak">weak, untested</b></div><h2 style="margin-top:.6rem">Territorial reinforcement</h2><p class="small">Clear boundaries between public, shared and private space tell everyone a place belongs to someone.</p></div>
+      <div class="card"><div class="kicker">Evidence: <b class="g-mod">moderate</b></div><h2 style="margin-top:.6rem">Maintenance</h2><p class="small">Broken lights and graffiti signal that nobody is watching. Quick repairs signal the opposite, and keep the other measures working.</p></div>
     </div>
     <p class="small" style="margin-top:1.5rem">A simplified model for illustration: real assessments look at the specific site, its use and its crime patterns. <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">Talk to James &nearr;</a></p>
+  </section>
+
+  <section class="review" id="evidence" aria-labelledby="ev-h">
+    <div class="kicker">Scientific review</div>
+    <h2 id="ev-h" style="margin-top:.6rem">Does CPTED actually work? What the evidence says</h2>
+    <p class="lede">Crime Prevention Through Environmental Design is one of the oldest ideas in security practice, and one of the most often asserted. This is a review of what the research supports, what it doesn&rsquo;t, and what that means for the model above.</p>
+
+    <h3>Where the idea comes from</h3>
+    <p>The term was coined by the criminologist C. Ray Jeffery in 1971, and the architect Oscar Newman&rsquo;s <i>Defensible Space</i> (1972) gave it its best-known form: residents defend space they can see and feel responsible for. It now sits on three better-tested theories. <b>Routine activity theory</b> (Cohen &amp; Felson, 1979) says crime needs a motivated offender, a suitable target and the absence of a capable guardian, all in the same place and time. <b>Rational choice</b> (Cornish &amp; Clarke, 1986) says offenders weigh effort, risk and reward. <b>Situational crime prevention</b> (Clarke) turns both into practice: raise the effort, raise the risk, cut the reward. CPTED is the design end of that toolkit. Each principle on this page works by changing one of those variables.</p>
+
+    <h3>How to read the evidence</h3>
+    <p>Most CPTED evaluations are before-and-after studies, ideally with a comparison area. Those are vulnerable to regression to the mean (schemes go where crime has just peaked), to other things changing at the same time, and to publication bias. A few interventions now have randomised trials or systematic reviews with meta-analysis, and those carry far more weight. The grades below follow that ladder.</p>
+
+    <table class="evtable">
+      <thead><tr><th>Measure</th><th>Best evidence</th><th>What it found</th><th>Grade</th></tr></thead>
+      <tbody>
+        <tr><td>Street lighting</td><td>Randomised trial (Chalfin et al., 2022); Campbell systematic review of 13 studies (Welsh &amp; Farrington, 2008)</td><td>Temporary lighting randomly assigned to 40 New York public housing developments cut outdoor night-time index crime by at least 36%. The review found a significant reduction overall, and daytime crime fell about as much as night-time crime.</td><td class="g-strong">Strong</td></tr>
+        <tr><td>Vacant lot clean-up and greening</td><td>Citywide cluster randomised trial, 541 lots in Philadelphia (Branas et al., 2018; Moyer et al., 2019)</td><td>Greening, or simply mowing and clearing rubbish, reduced shootings nearby. The largest effects were in the poorest neighbourhoods. Serious shootings fell by around 7&ndash;9%.</td><td class="g-strong">Strong</td></tr>
+        <tr><td>CCTV</td><td>40-year systematic review and meta-analysis (Piza et al., 2019)</td><td>A significant but modest overall reduction. The largest and most consistent effects were in car parks. Actively monitored systems, and CCTV combined with other measures, did better than cameras on their own.</td><td class="g-mod">Moderate</td></tr>
+        <tr><td>Alley gating</td><td>Meta-analysis and realist synthesis (Sidebottom et al., 2018)</td><td>Modest but significant reductions in burglary, with little sign of displacement to nearby streets.</td><td class="g-mod">Moderate</td></tr>
+        <tr><td>Street layout</td><td>Large observational study at street-segment level (Johnson &amp; Bowers, 2010)</td><td>More permeable streets carried higher burglary risk. Cul-de-sacs, especially winding ones, carried lower risk, and major roads higher.</td><td class="g-mod">Moderate</td></tr>
+        <tr><td>Secured by Design housing</td><td>Matched-pair re-evaluation ten years on (Armitage &amp; Monchuk, 2011)</td><td>Burglary stayed much lower on SBD estates than on matched non-SBD estates. Results for some other crimes were mixed.</td><td class="g-mod">Moderate</td></tr>
+        <tr><td>Maintenance and visible disorder</td><td>Six field experiments (Keizer, Lindenberg &amp; Steg, 2008, <i>Science</i>)</td><td>With graffiti on a postbox, the share of passers-by who stole an envelope showing a &euro;5 note rose from 13% to 27%. Disorder spreads, and so does order. These are small-scale tests, not evidence about serious crime.</td><td class="g-mod">Moderate</td></tr>
+        <tr><td>Territorial reinforcement; &ldquo;second-generation&rdquo; CPTED</td><td>Narrative reviews (Cozens &amp; Love, 2015)</td><td>Hard to define and measure. The social, community-building strand of CPTED has not been empirically well tested.</td><td class="g-weak">Weak</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Doesn&rsquo;t crime just move round the corner?</h3>
+    <p>This is the most common objection, and the evidence mostly answers it. Guerette and Bowers (2009) reviewed 102 evaluations of situational prevention, covering 574 observations. Displacement showed up in 26% of observations, while a <b>diffusion of benefits</b> (crime falling in the surrounding area as well) showed up in 27%. Where displacement did happen, it was smaller than the reduction it came from. Offenders are not hydraulic: when a place gets harder, many of them simply don&rsquo;t offend there, and some overestimate how far the measure reaches.</p>
+
+    <h3>Three surprises in the evidence</h3>
+    <ol>
+      <li><b>Lighting works in daylight.</b> If lighting only worked by letting people see offenders, night-time crime should fall more than daytime crime. It doesn&rsquo;t (Welsh &amp; Farrington, 2008). That points to a second mechanism: visible investment signals that the place is cared for and watched, and it shifts how residents use and defend it. The New York trial also found arrests fell, which suggests deterrence rather than more catching.</li>
+      <li><b>The cheapest version can work as well as the expensive one.</b> In Philadelphia, basic clean-up and mowing reduced serious shootings about as much as full greening (Moyer et al., 2019). Maintenance is not the boring principle. It may be the one with the best cost-benefit ratio.</li>
+      <li><b>Cameras need people.</b> CCTV did best where someone was actively watching and where it was combined with other measures (Piza et al., 2019). Surveillance is only as good as the response behind it. That is the same point the Layers tool on this site makes about detection and delay.</li>
+    </ol>
+
+    <h3>Limits and criticisms</h3>
+    <ul>
+      <li><b>Eyes on the street are not guardians.</b> Natural surveillance assumes someone is watching and will act. The bystander effect, empty buildings at night and indifferent neighbours all break that link. A place can be &ldquo;seen&rdquo; and still unguarded.</li>
+      <li><b>Context decides.</b> Cul-de-sacs reduce burglary but can concentrate other problems, and permeability helps footfall and natural surveillance in busy centres. The same measure can be right in one place and wrong in another. The EMMIE framework (effect, mechanism, moderators, implementation, economics) used by the UK College of Policing exists because &ldquo;what works&rdquo; is always &ldquo;what works, where, and how&rdquo;.</li>
+      <li><b>Fortress and exclusion effects.</b> Gates, fences and hostile architecture can protect one group by pushing others out, and heavy target hardening can raise fear by signalling danger. Good CPTED makes a place feel welcoming to legitimate users and uncomfortable only for offenders.</li>
+      <li><b>Decay.</b> Lamps fail, hedges grow, gates get propped open. The SBD and lighting studies that show lasting effects are the ones where measures were maintained.</li>
+      <li><b>The evidence base is uneven.</b> Lighting, vacant-lot remediation, CCTV and gating have strong research behind them. Territoriality and the social strand of CPTED rest mostly on theory and case studies.</li>
+    </ul>
+
+    <div class="callout">
+      <p><b>What this means for the model above.</b> The surveillance score counts ground that is both lit and overlooked, which is where the evidence is strongest. Treat it as a measure of <i>opportunity</i>, not of guardianship. A 90% score with nobody behind the windows is not a safe place. Use the findings list to decide what to change first, and the maintenance switch as a reminder that every measure decays.</p>
+    </div>
+
+    <h3>A practitioner&rsquo;s order of work</h3>
+    <ol>
+      <li>Start with the crime problem, not the checklist: what happens, where, when, and to whom.</li>
+      <li>Fix maintenance first. It is cheap, fast, well evidenced and makes everything else work.</li>
+      <li>Light for people, not for cameras: even coverage on routes and entrances, no glare, no dark pockets beside bright ones.</li>
+      <li>Open up sightlines from active windows and frontages. Trim planting to below 1&nbsp;m and lift tree canopies above head height.</li>
+      <li>Control access where crime concentrates: gate rear alleys and define private space, while keeping the public route legible and welcoming.</li>
+      <li>Add cameras only with a monitoring and response plan, and combine them with other measures.</li>
+      <li>Evaluate: count before and after, with a comparison area, and look for displacement and diffusion.</li>
+    </ol>
+
+    <h3>References</h3>
+    <ol class="refs">
+      <li>Armitage, R. &amp; Monchuk, L. (2011). Sustaining the crime reduction impact of designing out crime: re-evaluating the Secured by Design scheme 10 years on. <i>Security Journal</i>, 24(4), 320&ndash;343.</li>
+      <li>Branas, C. C. et al. (2018). Citywide cluster randomized trial to restore blighted vacant land and its effects on violence, crime, and fear. <i>PNAS</i>, 115(12), 2946&ndash;2951.</li>
+      <li>Chalfin, A., Hansen, B., Lerner, J. &amp; Parker, L. (2022). Reducing crime through environmental design: evidence from a randomized experiment of street lighting in New York City. <i>Journal of Quantitative Criminology</i>, 38(1), 127&ndash;157. <a href="https://www.nber.org/papers/w25798" target="_blank" rel="noopener">NBER w25798</a></li>
+      <li>Clarke, R. V. (ed.) (1997). <i>Situational Crime Prevention: Successful Case Studies</i> (2nd ed.). Harrow and Heston.</li>
+      <li>Cohen, L. E. &amp; Felson, M. (1979). Social change and crime rate trends: a routine activity approach. <i>American Sociological Review</i>, 44(4), 588&ndash;608.</li>
+      <li>Cornish, D. B. &amp; Clarke, R. V. (eds.) (1986). <i>The Reasoning Criminal</i>. Springer.</li>
+      <li>Cozens, P. &amp; Love, T. (2015). A review and current status of Crime Prevention through Environmental Design (CPTED). <i>Journal of Planning Literature</i>, 30(4), 393&ndash;412.</li>
+      <li>Guerette, R. T. &amp; Bowers, K. J. (2009). Assessing the extent of crime displacement and diffusion of benefits: a review of situational crime prevention evaluations. <i>Criminology</i>, 47(4), 1331&ndash;1368.</li>
+      <li>Jeffery, C. R. (1971). <i>Crime Prevention Through Environmental Design</i>. Sage.</li>
+      <li>Johnson, S. D. &amp; Bowers, K. J. (2010). Permeability and burglary risk: are cul-de-sacs safer? <i>Journal of Quantitative Criminology</i>, 26(1), 89&ndash;111.</li>
+      <li>Keizer, K., Lindenberg, S. &amp; Steg, L. (2008). The spreading of disorder. <i>Science</i>, 322(5908), 1681&ndash;1685.</li>
+      <li>Moyer, R., MacDonald, J. M., Ridgeway, G. &amp; Branas, C. C. (2019). Effect of remediating blighted vacant land on shootings: a citywide cluster randomized trial. <i>American Journal of Public Health</i>, 109(1), 140&ndash;144.</li>
+      <li>Newman, O. (1972). <i>Defensible Space: Crime Prevention Through Urban Design</i>. Macmillan.</li>
+      <li>Piza, E. L., Welsh, B. C., Farrington, D. P. &amp; Thomas, A. L. (2019). CCTV surveillance for crime prevention: a 40-year systematic review with meta-analysis. <i>Criminology &amp; Public Policy</i>, 18(1), 134&ndash;159.</li>
+      <li>Sidebottom, A. et al. (2018). Gating alleys to reduce crime: a meta-analysis and realist synthesis. <i>Justice Quarterly</i>, 35(1), 55&ndash;86. <a href="https://discovery.ucl.ac.uk/id/eprint/1540036/" target="_blank" rel="noopener">Open access</a></li>
+      <li>Welsh, B. C. &amp; Farrington, D. P. (2008). Effects of improved street lighting on crime. <i>Campbell Systematic Reviews</i>, 4(1), 1&ndash;51.</li>
+      <li>College of Policing. <a href="https://whatworks.college.police.uk/research/crime-reduction-toolkit/street-lighting" target="_blank" rel="noopener">Crime Reduction Toolkit</a> (EMMIE summaries).</li>
+    </ol>
+    <p class="small">Reviewed November 2026. Figures are as reported by the studies cited; effects vary by setting.</p>
   </section>
 </main>
 

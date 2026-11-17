@@ -77,6 +77,13 @@
       <div class="msg" id="shiftMsg" role="status"></div>
     </div>
 
+    <div class="card" style="margin-top:1rem">
+      <div class="k">Research desk and blog</div>
+      <div class="v">Once a day the agents search the news (terrorism incidents first, then security, AI, AI agents and music production), file briefs and write one blog post. Runs on the first blog visit after 20 hours, plus a daily 06:30 UTC backup. Run it now to test: it takes a few minutes.</div>
+      <div class="row"><button type="button" class="ghost" id="deskBtn">Run research desk now</button></div>
+      <div class="msg" id="deskMsg" role="status"></div>
+    </div>
+
     <a class="back" href="/" target="_blank" rel="noopener">Open visualiser &nearr;</a>
   </section>
 </main>
@@ -195,6 +202,18 @@ $('shiftBtn').addEventListener('click', async () => {
     else say(msg, res.note ? `Shift logged. ${res.note}` : `Shift logged. Status ${res.status}. See the Night Shift page.`, res.note ? '' : 'ok');
   } catch (e) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
   $('shiftBtn').disabled = false;
+});
+$('deskBtn').addEventListener('click', async () => {
+  const msg = $('deskMsg');
+  say(msg, 'The agents are out reading the news… this takes a few minutes.');
+  $('deskBtn').disabled = true;
+  try {
+    const r = await fetch('/api/research', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
+    const res = await r.json();
+    if (!res.ok) say(msg, res.error || 'The desk didn’t file.', 'err');
+    else say(msg, `Filed: “${res.title}”, ${res.incidents} incident(s), ${res.briefs} brief(s). See the Blog.`, 'ok');
+  } catch (e) { say(msg, 'Couldn’t reach the server, or it took too long. Check the Blog in a few minutes.', 'err'); }
+  $('deskBtn').disabled = false;
 });
 })();
 </script>
