@@ -3,6 +3,7 @@
      sample(row, n) -> meta     fill Float32Array `row` (heights ~0..1.4) for the n-th line; return anything to tag it
      rate() -> number           new lines per second (before the visitor's speed setting)
      onNear(meta)               called each frame with the tag of the line just ahead of the ship
+     onAhead(meta)              the same for a line further ahead (for autopilots); cam.userAt says when the visitor last steered
      rows, points, rowWidth, amp, horizon (0-1 down the screen, default 0.34)
    }) */
 export function createFlight(canvas, opts = {}) {
@@ -12,7 +13,7 @@ export function createFlight(canvas, opts = {}) {
   const CAM_X = 1.6, CAM_LO = 0.1, CAM_HI = 1.6;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const ctx = canvas.getContext('2d');
-  const cam = { x: 0, y: 0.62, tx: 0, ty: 0.62, roll: 0, speed: 1, tspeed: 1 };
+  const cam = { x: 0, y: 0.62, tx: 0, ty: 0.62, roll: 0, speed: 1, tspeed: 1, userAt: -1e9 };   // userAt: last time the visitor steered
   const keys = new Set();
   const history = Array.from({ length: ROWS }, () => new Float32Array(POINTS));
   const meta = new Array(ROWS).fill(null);
@@ -34,8 +35,8 @@ export function createFlight(canvas, opts = {}) {
     cam.tx = (((x - r.left) / r.width) - 0.5) * 2 * CAM_X;
     cam.ty = CAM_LO + (1 - (y - r.top) / r.height) * (CAM_HI - CAM_LO);
   }
-  canvas.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) steer(e.clientX, e.clientY); });
-  canvas.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') steer(e.clientX, e.clientY); });
+  canvas.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) { steer(e.clientX, e.clientY); cam.userAt = performance.now(); } });
+  canvas.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') { steer(e.clientX, e.clientY); cam.userAt = performance.now(); } });
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     cam.tspeed = Math.max(0.3, Math.min(3, cam.tspeed * (e.deltaY > 0 ? 0.9 : 1.1)));
@@ -44,7 +45,7 @@ export function createFlight(canvas, opts = {}) {
   addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey || /input|select|textarea/i.test(e.target.tagName)) return;
     const k = e.key.toLowerCase();
-    if (steerKeys.includes(k)) { keys.add(k); e.preventDefault(); }
+    if (steerKeys.includes(k)) { keys.add(k); e.preventDefault(); cam.userAt = performance.now(); }
     else if (k === '+' || k === '=') cam.tspeed = Math.min(3, cam.tspeed * 1.2);
     else if (k === '-' || k === '_') cam.tspeed = Math.max(0.3, cam.tspeed / 1.2);
   });
@@ -106,6 +107,7 @@ export function createFlight(canvas, opts = {}) {
       ctx.lineTo(W + pad, ground);
       ctx.stroke();
       if (a === ROWS - 6 && opts.onNear) opts.onNear(meta[idx]);   // the line just ahead of the ship
+      if (a === ROWS - 22 && opts.onAhead) opts.onAhead(meta[idx]); // a little further ahead, for an autopilot to aim at
     }
     ctx.globalAlpha = 1;
   }
