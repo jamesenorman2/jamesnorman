@@ -10,6 +10,11 @@ window.JN = {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
   },
+  // Ask the AI crew to start a shift. The server only runs one per hour; resolves true if one ran.
+  async kickShift() {
+    try { const r = await fetch('/api/night-shift', { cache: 'no-store' }); return (await r.json()).ran === true; }
+    catch (e) { return false; }
+  },
   async rpc(fn, body) {
     const r = await fetch(`${this.api}/rpc/${fn}`, {
       method: 'POST',

@@ -1,9 +1,9 @@
-// The Night Shift: a crew of AI agents that works the site every night.
+// The Night Shift: a crew of AI agents that works the site round the clock.
 //   PATROL  – fetches every page and times it (plain code, no AI needed)
 //   ANALYST – writes a control-room handover from the patrol report
 //   DJ      – picks a track of the day and sets up a two-agent DJ battle
-// Runs from Vercel Cron (GET with the CRON_SECRET bearer token) or from the
-// admin page (POST with the admin password). Results are posted to the site's
+// A new shift starts at most once an hour, kicked off by visitors' pages (GET),
+// plus the daily Vercel Cron backup (CRON_SECRET) and the admin page (POST + password). Results are posted to the site's
 // database with SHIFT_TOKEN, and shown on /night-shift/ and /music/.
 //
 // Environment variables (Vercel → Settings → Environment Variables):
@@ -99,7 +99,7 @@ const ShiftSchema = z.object({
   })
 });
 
-const SYSTEM = `You are the overnight crew for jamesnorman.co.uk, the personal site of James Norman: a chartered engineer working in physical security and counter-terrorism protective security, and a music producer and DJ. The site is stark white lines on true black.
+const SYSTEM = `You are the round-the-clock crew on shift for jamesnorman.co.uk, the personal site of James Norman: a chartered engineer working in physical security and counter-terrorism protective security, and a music producer and DJ. The site is stark white lines on true black.
 
 You play three roles in one report:
 - ANALYST: write the shift handover from the patrol report, in calm, concise control-room style (think security control room radio log, not military cosplay). 60 to 110 words. Mention anything that failed or was slow (over 1500 ms), otherwise confirm all clear. Status GREEN if everything is fine, AMBER for slow pages or one failure, RED for several failures or the home page failing.
@@ -155,24 +155,35 @@ ${list}`;
   }
 }
 
+const SHIFT_EVERY_MINUTES = 60;
+
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') { res.setHeader('Allow', 'GET, POST'); return res.status(405).json({ ok: false }); }
-  let who;
-  try { who = await authorised(req); } catch (e) { return res.status(503).json({ ok: false, error: 'Database unavailable' }); }
-  if (!who) return res.status(401).json({ ok: false, error: 'Not authorised' });
+  res.setHeader('Cache-Control', 'no-store');
   if (!process.env.SHIFT_TOKEN) return res.status(500).json({ ok: false, error: 'SHIFT_TOKEN is not set' });
 
-  const started = new Date().toISOString();
-  const report = await patrol();
-  const tracks = await soundcloudTracks();
+  // Admin and the daily cron force a shift; anyone else can ask, and the database
+  // only lets one shift start per hour, however many visitors ask at once.
+  let who;
+  try { who = await authorised(req); } catch (e) { return res.status(503).json({ ok: false, error: 'Database unavailable' }); }
+  if (!who) {
+    if (req.method !== 'GET') return res.status(401).json({ ok: false, error: 'Not authorised' });
+    try {
+      const claimed = await db('rpc/jn_claim_shift', { p_token: process.env.SHIFT_TOKEN, p_minutes: SHIFT_EVERY_MINUTES });
+      if (claimed !== true) return res.status(200).json({ ok: true, ran: false });
+    } catch (e) { return res.status(503).json({ ok: false, error: 'Database unavailable' }); }
+    who = 'visitor';
+  }
 
+  const started = new Date().toISOString();
+  const [report, tracks] = await Promise.all([patrol(), soundcloudTracks()]);
   const agents = await runAgents(report, tracks);
-  const log = { started_at: started, finished_at: new Date().toISOString(), trigger: who, patrol: report, ...agents };
+  const log = { started_at: started, finished_at: new Date().toISOString(), trigger: who, patrol: report, tracks_found: tracks.length, ...agents };
 
   try {
     const posted = await db('rpc/jn_post_shift', { p_token: process.env.SHIFT_TOKEN, p_log: log });
     if (!posted.ok) return res.status(500).json({ ok: false, error: posted.error || 'Could not save the shift' });
-    return res.status(200).json({ ok: true, id: posted.id, status: agents.analyst ? agents.analyst.status : null, note: agents.note || null });
+    return res.status(200).json({ ok: true, ran: true, id: posted.id, status: agents.analyst ? agents.analyst.status : null, note: agents.note || null });
   } catch (e) {
     return res.status(503).json({ ok: false, error: 'Could not save the shift' });
   }

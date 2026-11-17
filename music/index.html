@@ -69,7 +69,7 @@
   <section aria-labelledby="battle-h">
     <div class="kicker">Agent DJ battle</div>
     <h2 id="battle-h" style="margin-top:.4rem">Two AI agents. One track each. You decide.</h2>
-    <p class="small" id="battleDate">Every night the Night Shift agents pick two of my tracks and argue their case.</p>
+    <p class="small" id="battleDate">Every hour the Night Shift agents pick two of my tracks and argue their case.</p>
     <div id="battle" hidden>
       <div class="battle" style="margin-top:1.5rem">
         <article class="card agent" data-side="a"></article>
@@ -79,7 +79,7 @@
       <div class="meter" aria-hidden="true"><i id="meter"></i></div>
       <div class="exchange" id="exchange"></div>
     </div>
-    <p class="small" id="battleEmpty" hidden>The first battle drops after the next Night Shift. Check back tomorrow.</p>
+    <p class="small" id="battleEmpty" hidden>The crew is setting up the first battle. Check back in a minute.</p>
   </section>
 </main>
 
@@ -256,6 +256,7 @@ async function loadBattle() {
 /* ─── Start ─────────────────────────────────────────────── */
 mountPlayer(JN.soundcloud, false);   // your whole profile, so visitors can browse
 loadBattle();
+JN.kickShift().then(ran => { if (ran) loadBattle(); });
 })();
 </script>
 </body>

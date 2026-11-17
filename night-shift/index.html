@@ -41,9 +41,9 @@
 </header>
 
 <main class="wrap">
-  <div class="kicker">AI agents on duty · 05:00 UTC nightly</div>
+  <div class="kicker">AI agents on duty · round the clock</div>
   <h1>Night Shift</h1>
-  <p class="lede">While I sleep, a crew of AI agents works this site like a control room. Patrol checks every page. Analyst writes the handover. DJ picks the track of the day and sets up tomorrow’s battle on the <a href="/music/">Music</a> tab.</p>
+  <p class="lede">Day and night, a crew of AI agents works this site like a control room, with a fresh shift every hour. Patrol checks every page. Analyst writes the handover. DJ picks the track of the day and sets up the next battle on the <a href="/music/">Music</a> tab.</p>
 
   <div class="crew">
     <div class="card"><b>PATROL</b><span class="small">Walks every page on the site, timing each response and noting anything out of place.</span></div>
@@ -111,18 +111,20 @@ function renderShift(row) {
   return box;
 }
 
-(async () => {
+async function load() {
   const log = document.getElementById('log');
   try {
     const rows = await JN.get('jn_night_shift?select=id,created_at,log&order=id.desc&limit=7');
     log.innerHTML = '';
-    if (!rows.length) { log.append(el('p', 'small', 'No shifts logged yet. The crew clocks on at 05:00 UTC.')); return; }
+    if (!rows.length) { log.append(el('p', 'small', 'The crew is clocking on for the first shift…')); return; }
     rows.forEach(r => log.append(renderShift(r)));
   } catch (e) {
     log.innerHTML = '';
     log.append(el('p', 'small', 'The log couldn’t load right now.'));
   }
-})();
+}
+load();
+JN.kickShift().then(ran => { if (ran) load(); });
 })();
 </script>
 </body>
