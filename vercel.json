@@ -1,19 +1,48 @@
 {
   "crons": [
-    { "path": "/api/night-shift", "schedule": "0 5 * * *" }
+    {
+      "path": "/api/night-shift",
+      "schedule": "0 5 * * *"
+    }
   ],
   "functions": {
-    "api/night-shift.js": { "maxDuration": 120 }
+    "api/night-shift.js": {
+      "maxDuration": 120
+    }
   },
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), geolocation=(), payment=(), microphone=(self)" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), geolocation=(), payment=(), microphone=(self)"
+        }
       ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/visualiser",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/visualiser/",
+      "destination": "/",
+      "permanent": false
     }
   ]
 }

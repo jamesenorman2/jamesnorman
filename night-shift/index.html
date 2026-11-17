@@ -43,7 +43,6 @@
   <nav class="nav" aria-label="Site">
     <a class="home" href="/">James Norman</a>
     <ul>
-      <li><a href="/visualiser/">Visualiser</a></li>
       <li><a href="/music/">Music</a></li>
       <li><a href="/security/">Security</a></li>
       <li><a href="/night-shift/" aria-current="page">Night Shift</a></li>
@@ -200,7 +199,7 @@ async function load() {
 const floor = { rooms: [], shift: null, t: 0, men: [] };
 const fcv = document.getElementById('floor'), fx = fcv.getContext('2d');
 let FW = 0, FH = 0;
-const NAMES = { '/': 'Home', '/visualiser/': 'Visualiser', '/music/': 'Music', '/security/': 'Security', '/security/layers/': 'Layers',
+const NAMES = { '/': 'Home', '/music/': 'Music', '/security/': 'Security', '/security/layers/': 'Layers',
   '/security/cpted/': 'Streets', '/security/martyns-law/': 'Martyn’s Law', '/night-shift/': 'Control room', '/admin/': 'Admin' };
 const label = p => NAMES[p] || p.replace(/^\/|\/$/g, '').split('/').pop().replace(/-/g, ' ') || 'Home';
 
@@ -223,7 +222,7 @@ function layout() {
   floor.music = find('/music/');
   floor.security = floor.rooms.find(r => r.path === '/security/');
   floor.legal = floor.rooms.find(r => r.path === '/security/martyns-law/');
-  floor.vis = floor.rooms.find(r => r.path === '/visualiser/');
+  floor.vis = floor.rooms.find(r => r.path === '/');
   void rw;
 }
 

@@ -21,7 +21,7 @@ import { gatekeeper, links, clerk, intel, scout } from '../lib/jobs.js';
 const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
 const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
 const SITE = (process.env.SITE_URL || 'https://www.jamesnorman.co.uk').replace(/\/$/, '');
-const PAGES = ['/', '/visualiser/', '/music/', '/security/', '/security/layers/', '/security/cpted/',
+const PAGES = ['/', '/music/', '/security/', '/security/layers/', '/security/cpted/',
   '/security/martyns-law/', '/night-shift/', '/admin/', '/assets/site.css', '/assets/flight.js'];
 const AGENTS = { a: 'VANTAGE', b: 'LOWLIGHT' };
 const SOUNDCLOUD = (process.env.SOUNDCLOUD_URL || 'https://soundcloud.com/jamesnormal').replace(/\/$/, '');

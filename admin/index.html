@@ -43,7 +43,7 @@
 <body>
 <main>
   <h1>Admin</h1>
-  <p class="sub">Choose the SoundCloud song the visualiser plays.</p>
+  <p class="sub">Normally the homepage plays a random pick from the Night Shift agents. Set a song here to play that instead for everyone; “Use my latest uploads” clears it and goes back to the agents’ picks.</p>
 
   <form id="login">
     <label for="pw">Password</label>
@@ -77,7 +77,7 @@
       <div class="msg" id="shiftMsg" role="status"></div>
     </div>
 
-    <a class="back" href="../visualiser/" target="_blank" rel="noopener">Open visualiser &nearr;</a>
+    <a class="back" href="/" target="_blank" rel="noopener">Open visualiser &nearr;</a>
   </section>
 </main>
 
@@ -118,7 +118,7 @@ async function showCurrent() {
       a.textContent = v.title || v.url;
       cur.append(a);
     } else {
-      cur.textContent = 'Your latest SoundCloud uploads (no song chosen)';
+      cur.textContent = 'The agents’ picks (no song chosen)';
     }
   } catch (e) { $('current').textContent = 'Couldn’t load the current setting'; }
 }
@@ -173,7 +173,7 @@ async function save(url, title) {
   try {
     const res = await rpc('jn_set_track', { p_password: password, p_url: url, p_title: title });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
-    say(msg, url ? 'Saved. Visitors will hear it next time they open the visualiser.' : 'Saved. The visualiser will play your latest uploads.', 'ok');
+    say(msg, url ? 'Saved. Visitors will hear it next time they open the visualiser.' : 'Cleared. The homepage is back to the agents’ picks.', 'ok');
     showCurrent();
   } catch (e) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
 }
