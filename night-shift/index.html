@@ -18,7 +18,10 @@
   .sev{display:inline-block;font-size:.55rem;letter-spacing:.25em;text-transform:uppercase;border:1px solid currentColor;padding:.05rem .4rem;margin-right:.5rem;vertical-align:1px}
   .sev.action{color:var(--err)} .sev.watch{color:var(--warn)} .sev.info{color:var(--mid)}
   .findings p{color:var(--mid);font-size:.75rem;margin-top:.2rem}
-  .crew{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:2rem}
+  .crew{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:2rem}
+  .crew .card{padding:1rem}
+  .crew .res{display:block;margin-top:.6rem;font-size:.72rem;color:#fff}
+  .crew .res.bad{color:var(--err)} .crew .res.warn{color:var(--warn)}
   .crew .card b{font-family:'Syne',sans-serif;font-weight:600;letter-spacing:.25em;font-size:.85rem;display:block;margin-bottom:.4rem}
   .shift{border-top:1px solid var(--line);padding:2rem 0}
   .shift-head{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:baseline}
@@ -51,13 +54,9 @@
 <main class="wrap">
   <div class="kicker">AI agents on duty · round the clock</div>
   <h1>Night Shift</h1>
-  <p class="lede">Day and night, a crew of AI agents works this site like a control room, with a fresh shift every hour. Patrol checks every page. Analyst writes the handover. DJ picks the track of the day and sets up the next battle on the <a href="/music/">Music</a> tab.</p>
+  <p class="lede">Day and night, a crew of eight agents works this site like a control room, with a fresh shift every hour. They check real things: every page, the certificate and domain, the outside links, the official Martyn’s Law guidance, the UK threat level and my SoundCloud. The Analyst writes it all up, and the DJ sets up the next battle on the <a href="/music/">Music</a> tab.</p>
 
-  <div class="crew">
-    <div class="card"><b>PATROL</b><span class="small">Walks every page it can find from the homepage: status, speed, size, title and the security headers each page sends.</span></div>
-    <div class="card"><b>ANALYST</b><span class="small">Compares this shift with the last, writes the handover in control-room style, and raises findings with a recommendation.</span></div>
-    <div class="card"><b>DJ</b><span class="small">Picks a track for the hour to suit the time of day, never repeating itself, and sets up a two-agent DJ battle.</span></div>
-  </div>
+  <div class="crew" id="crew" aria-live="polite"></div>
 
   <section class="floor" aria-label="The crew at work: stick men walking the site, checking each page">
     <canvas id="floor"></canvas>
@@ -134,6 +133,55 @@ function renderShift(row) {
   return box;
 }
 
+// The crew and their jobs, with each one's latest real result.
+const CREW = [
+  ['PATROL', 'Walks every page it can find from the homepage: status, speed, size, title and security headers.', L => {
+    const p = L.patrol || [], bad = p.filter(x => !x.ok).length;
+    return [`${p.length - bad}/${p.length} pages OK`, bad ? 'bad' : ''];
+  }],
+  ['GATEKEEPER', 'Checks the HTTPS certificate and that the domain still points where it should.', L => {
+    const g = (L.jobs || {}).gatekeeper; if (!g) return ['–'];
+    const c = g.cert || {}, d = g.dns || {};
+    return [`${c.days != null ? 'Certificate: ' + c.days + ' days left' : 'Certificate: unchecked'} · Domain ${d.ok ? 'OK' : 'CHECK'}`, (c.days != null && c.days < 30) || d.ok === false ? 'bad' : ''];
+  }],
+  ['LINKS', 'Checks the outside sites this one relies on: SoundCloud, LinkedIn, GOV.UK, legislation.gov.uk, ProtectUK, MI5.', L => {
+    const l = (L.jobs || {}).links; if (!l) return ['–'];
+    const broken = l.filter(x => !x.ok && !x.blocked);
+    return [broken.length ? 'Broken: ' + broken.map(x => x.name).join(', ') : `All ${l.length} reachable`, broken.length ? 'bad' : ''];
+  }],
+  ['CLERK', 'Watches the official Martyn’s Law guidance on GOV.UK for updates.', L => {
+    const c = (L.jobs || {}).clerk; if (!c) return ['–'];
+    if (!c.ok) return ['Couldn’t check GOV.UK', 'warn'];
+    return [(c.changed ? 'UPDATED since last shift' : 'No change') + (c.updated ? ' · last updated ' + new Date(c.updated).toLocaleDateString() : ''), c.changed ? 'warn' : ''];
+  }],
+  ['INTEL', 'Reads the UK national threat level as published by MI5.', L => {
+    const i = (L.jobs || {}).intel; if (!i) return ['–'];
+    return [i.ok ? 'UK national threat level: ' + i.level : 'Couldn’t read it this shift', i.ok ? '' : 'warn'];
+  }],
+  ['SCOUT', 'Watches my SoundCloud for new uploads.', L => {
+    const sc = (L.jobs || {}).scout; if (!sc) return ['–'];
+    return [`${sc.count} tracks` + (sc.new && sc.new.length ? ' · new: ' + sc.new.map(t => t.title).join(', ') : ' · nothing new')];
+  }],
+  ['ANALYST', 'Reads every report, compares with the last shift, writes the handover and raises findings.', L => {
+    const a = L.analyst; if (!a) return [L.note || '–', 'warn'];
+    return [`Status ${a.status} · ${(a.findings || []).length} findings`, a.status === 'RED' ? 'bad' : a.status === 'AMBER' ? 'warn' : ''];
+  }],
+  ['DJ', 'Picks a track for the hour to suit the time of day, and sets up the DJ battle.', L => {
+    const d = L.dj; return [d && d.track ? '♪ ' + d.track.title : '–'];
+  }]
+];
+function renderCrew(L) {
+  const box = document.getElementById('crew');
+  box.innerHTML = '';
+  CREW.forEach(([name, job, result]) => {
+    const card = el('div', 'card');
+    const [txt, cls] = L ? result(L) : ['–'];
+    card.append(el('b', null, name), el('span', 'small', job), el('span', 'res ' + (cls || ''), txt));
+    box.append(card);
+  });
+}
+renderCrew(null);
+
 async function load() {
   const log = document.getElementById('log');
   try {
@@ -142,6 +190,7 @@ async function load() {
     if (!rows.length) { log.append(el('p', 'small', 'The crew is clocking on for the first shift…')); return; }
     rows.forEach(r => log.append(renderShift(r)));
     setFloorShift(rows[0].log);
+    renderCrew(rows[0].log);
   } catch (e) {
     log.innerHTML = '';
     log.append(el('p', 'small', 'The log couldn’t load right now.'));
@@ -172,6 +221,9 @@ function layout() {
   const find = path => floor.rooms.find(r => r.path === path) || floor.rooms[0];
   floor.control = find('/night-shift/');
   floor.music = find('/music/');
+  floor.security = floor.rooms.find(r => r.path === '/security/');
+  floor.legal = floor.rooms.find(r => r.path === '/security/martyns-law/');
+  floor.vis = floor.rooms.find(r => r.path === '/visualiser/');
   void rw;
 }
 
@@ -187,9 +239,27 @@ function route(reverse) {
 function makeMen() {
   floor.men = [
     { name: 'PATROL', path: route(false), i: 0, x: 0, y: floor.cy, pause: 0, step: 0 },
-    { name: 'PATROL', path: route(true), i: 0, x: FW, y: floor.cy, pause: 0, step: 0 }
+    { name: 'PATROL', path: route(true), i: 0, x: FW, y: floor.cy, pause: 0, step: 0 },
+    { name: 'LINKS', path: [{ x: FW * 0.55, y: floor.cy + floor.ch * 0.25 }, { x: FW - 8, y: floor.cy + floor.ch * 0.25, hold: 2.2 }], i: 0, x: FW * 0.55, y: floor.cy, pause: 0, step: 0 }
   ];
   floor.men.forEach(m => { const p = m.path[0]; if (p) { m.x = p.x; m.y = p.y; } });
+}
+
+function jobLine(job) {
+  const J = floor.shift && floor.shift.jobs;
+  if (!J) return '…';
+  if (job === 'gatekeeper') {
+    const g = J.gatekeeper || {}, c = g.cert || {}, d = g.dns || {};
+    return `${c.days != null ? 'HTTPS ' + c.days + 'd' : 'HTTPS ?'} · DNS ${d.ok ? '✓' : '✗'}`;
+  }
+  if (job === 'links') {
+    const l = J.links || [], good = l.filter(x => x.ok || x.blocked).length;
+    return `Links ${good}/${l.length}`;
+  }
+  if (job === 'clerk') { const c = J.clerk || {}; return c.ok ? (c.changed ? 'Guidance UPDATED' : 'Guidance unchanged') : 'Guidance ?'; }
+  if (job === 'intel') { const i = J.intel || {}; return i.ok ? 'UK threat: ' + i.level : 'Threat level ?'; }
+  if (job === 'scout') { const sc = J.scout || {}; return sc.count != null ? `${sc.count} tracks · ${sc.new && sc.new.length ? sc.new.length + ' new' : 'none new'}` : 'Tracks ?'; }
+  return '';
 }
 
 function stickMan(x, y, s, phase, pose) {
@@ -233,7 +303,7 @@ function drawFloor(dt) {
   floor.t += dt;
   fx.clearRect(0, 0, FW, FH);
   fx.strokeStyle = '#fff'; fx.lineWidth = 1; fx.lineCap = 'round';
-  const s = Math.max(1.1, Math.min(1.8, FW / 640));
+  const s = Math.max(0.6, Math.min(0.95, FW / 1100));
 
   // rooms with doorways onto the corridor
   floor.rooms.forEach(r => {
@@ -278,18 +348,37 @@ function drawFloor(dt) {
     for (let k = 0; k < 3; k++) { const ph = (floor.t * 0.6 + k / 3) % 1; text('♪', x + 22 * s + Math.sin(ph * 6 + k) * 6, y - 18 * s - ph * 28 * s, 10 * s, 1 - ph); }
   }
 
+  // specialists at their posts, each showing its real latest result
+  const post = (room, name, job, pose, dx) => {
+    if (!room) return;
+    const x = room.centre.x + (dx || 0) * s, y = room.centre.y + 14 * s;
+    stickMan(x, y, s, floor.t * 1.3, pose);
+    text(name, x, y + 12 * s, 8 * s, 0.6);
+    text(jobLine(job), x, y - 34 * s, 9 * s, 0.85);
+  };
+  // GATEKEEPER at the front door (left end of the corridor)
+  { const x = 22 * s + 8, y = floor.cy + floor.ch * 0.3;
+    fx.beginPath(); fx.moveTo(8, floor.cy - floor.ch / 2 + 4); fx.lineTo(8, floor.cy + floor.ch / 2 - 4); fx.stroke();
+    stickMan(x, y, s, floor.t, 'check'); text('GATEKEEPER', x + 4, y + 12 * s, 8 * s, 0.6); text(jobLine('gatekeeper'), x + 30 * s, y - 34 * s, 9 * s, 0.85, 'left'); }
+  post(floor.legal, 'CLERK', 'clerk', 'check', -20);
+  if (floor.security) { const r = floor.security; fx.strokeRect(r.centre.x + 40 * s, r.centre.y - 6 * s, 22 * s, 14 * s); }   // the board
+  post(floor.security, 'INTEL', 'intel', 'check', -14);
+  post(floor.vis || floor.rooms[1], 'SCOUT', 'scout', 'check', 0);
+
   // patrols walking the corridor and checking each room
   const speed = 60 * s;
   floor.men.forEach(m => {
     if (!m.path.length) return;
-    if (m.pause > 0) { m.pause -= dt; stickMan(m.x, m.y, s, 0, 'check'); text(m.name, m.x, m.y + 12 * s, 8 * s, 0.6); return; }
+    if (m.pause > 0) { m.pause -= dt; stickMan(m.x, m.y, s, 0, 'check'); text(m.name, m.x, m.y + 12 * s, 8 * s, 0.6); if (m.name === 'LINKS') { text('OUTSIDE →', FW - 30, floor.cy - floor.ch * 0.15, 8 * s, 0.5); text(jobLine('links'), m.x - 20 * s, m.y - 34 * s, 9 * s, 0.8); } return; }
     const p = m.path[m.i], dx = p.x - m.x, dy = p.y - m.y, dist = Math.hypot(dx, dy), stepLen = speed * dt;
     if (dist <= stepLen) {
       m.x = p.x; m.y = p.y; m.i = (m.i + 1) % m.path.length;
       if (p.check) { p.check.seen = 1; m.pause = 1.4; }
+      if (p.hold) m.pause = p.hold;
     } else { m.x += dx / dist * stepLen; m.y += dy / dist * stepLen; m.step += stepLen * 0.25; }
     stickMan(m.x, m.y, s, m.step, 'walk');
     text(m.name, m.x, m.y + 12 * s, 8 * s, 0.6);
+    if (m.name === 'LINKS') text(jobLine('links'), m.x, m.y - 34 * s, 9 * s, 0.8);
   });
 }
 

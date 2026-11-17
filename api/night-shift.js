@@ -16,6 +16,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
+import { gatekeeper, links, clerk, intel, scout } from '../lib/jobs.js';
 
 const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
 const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
@@ -135,13 +136,14 @@ const SYSTEM = `You are the round-the-clock crew on shift for jamesnorman.co.uk,
 
 You play three roles in one report:
 - ANALYST: write the shift handover from the patrol report, in calm, concise control-room style (think security control room radio log, not military cosplay). 60 to 110 words. Compare with the previous shift where you can: what's new, what's fixed, what got slower or faster. Status GREEN if everything is fine, AMBER for slow pages (over 1500 ms) or one failure, RED for several failures or the home page failing.
+  Cover the specialist reports too: a certificate within 30 days of expiry or a domain no longer pointing at Vercel is an "action"; a broken outside link is "action" (but "blocked" is fine, ignore it); a change to the Martyn's Law guidance is a "watch" telling James to review his checker; a new SoundCloud upload is "info". State the threat level only exactly as INTEL reports it, and never speculate about threats.
   Then list up to 5 findings, most important first. severity "action" = something is broken or a clear fix is needed; "watch" = worth keeping an eye on (a slower page, a heavy page, a missing security header across the site); "info" = useful context. Each has a short title (max 8 words) and a one or two sentence detail with a practical recommendation. Group site-wide issues (for example the same missing security header on every page) into one finding. Be accurate: only report what the data shows. No findings is fine if nothing is worth saying.
 - DJ: pick one track for the current hour from the numbered track list, suiting the time of day in the UK (late night and early morning = deeper and calmer; evening and weekends = bigger energy). Don't repeat any of the recent picks listed. Give a one-sentence reason.
 - DJ BATTLE: two rival AI DJs, ${AGENTS.a} (precise, cool, loves tension and space) and ${AGENTS.b} (warm, playful, loves the drop) each pick a different track from the list and pitch it in 30 to 60 words. Then write a short exchange of 4 to 6 lines of friendly trash talk between them, alternating speakers, starting with "a".
 
 Keep everything light, witty and kind. Never describe attack methods or anything that could help someone cause harm. Only use track numbers that appear in the list.`;
 
-async function runAgents(patrolReport, tracks, previous) {
+async function runAgents(patrolReport, tracks, previous, jobs = {}) {
   if (!process.env.ANTHROPIC_API_KEY) return { note: 'Analyst and DJ off duty tonight: no Claude API key is set yet.' };
   const client = new Anthropic();
   const list = tracks.length
@@ -162,6 +164,13 @@ PREVIOUS SHIFT (${prev ? previous.created_at : 'none'}): status ${prev && prev.a
 ${prevPatrol}
 
 RECENT DJ PICKS (don't repeat): ${recentPicks}
+
+SPECIALIST REPORTS:
+GATEKEEPER (HTTPS certificate and domain): ${JSON.stringify(jobs.gatekeeper || null)}
+LINKS (outside links; "blocked" means the site refuses automated checks, not broken): ${JSON.stringify((jobs.links || []).map(l => ({ name: l.name, status: l.status, blocked: l.blocked, ms: l.ms })))}
+CLERK (Martyn's Law guidance on GOV.UK; "changed" = updated since the last shift): ${JSON.stringify(jobs.clerk || null)}
+INTEL (UK national threat level per MI5): ${JSON.stringify(jobs.intel || null)}
+SCOUT (SoundCloud): ${jobs.scout ? jobs.scout.count + ' tracks; new since last shift: ' + (jobs.scout.new.map(t => t.title).join(' | ') || 'none') : 'no data'}
 
 TRACK LIST:
 ${list}`;
@@ -233,9 +242,14 @@ export default async function handler(req, res) {
   }
 
   const started = new Date().toISOString();
-  const [report, tracks, previous] = await Promise.all([patrol(), soundcloudTracks(), lastShifts()]);
-  const agents = await runAgents(report, tracks, previous);
-  const log = { started_at: started, finished_at: new Date().toISOString(), trigger: who, patrol: report, tracks_found: tracks.length, ...agents };
+  const previous = await lastShifts();
+  const prevJobs = (previous && previous.log && previous.log.jobs) || {};
+  const [report, tracks, gate, outside, legal, threat] = await Promise.all([
+    patrol(), soundcloudTracks(), gatekeeper(), links(), clerk(prevJobs.clerk), intel()
+  ]);
+  const jobs = { gatekeeper: gate, links: outside, clerk: legal, intel: threat, scout: scout(tracks, prevJobs.scout) };
+  const agents = await runAgents(report, tracks, previous, jobs);
+  const log = { started_at: started, finished_at: new Date().toISOString(), trigger: who, patrol: report, tracks_found: tracks.length, jobs, ...agents };
 
   try {
     const posted = await db('rpc/jn_post_shift', { p_token: process.env.SHIFT_TOKEN, p_log: log });
