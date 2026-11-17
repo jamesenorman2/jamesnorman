@@ -3,26 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Safer Streets Remix — James Norman</title>
-<meta name="description" content="Crime Prevention Through Environmental Design, as an instrument: change the street and hear it go from uneasy to settled.">
+<title>Safer Streets — James Norman</title>
+<meta name="description" content="Crime Prevention Through Environmental Design, made visible: switch on each principle and watch the blind spots on a street plan disappear.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">
 <style>
-  .stage{position:relative;border:1px solid var(--line);aspect-ratio:16/9;width:100%;background:#000}
-  .stage canvas{position:absolute;inset:0;width:100%;height:100%}
-  .feel{position:absolute;left:1rem;top:1rem;font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:var(--mid)}
-  .feel b{display:block;font-family:'Syne',sans-serif;font-weight:600;font-size:1.3rem;letter-spacing:.02em;color:var(--fg);text-transform:none;margin-top:.2rem}
-  .mixer{display:grid;gap:1.2rem 2rem;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-top:1.5rem}
-  .mixer .val{float:right;color:var(--mid)}
-  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:transparent;border:0;padding:0}
-  input[type=range]::-webkit-slider-runnable-track{height:1px;background:var(--fg)}
-  input[type=range]::-moz-range-track{height:1px;background:var(--fg)}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#000;border:1px solid var(--fg);margin-top:-7px;border-radius:0}
-  input[type=range]::-moz-range-thumb{width:12px;height:12px;background:#000;border:1px solid var(--fg);border-radius:0}
-  .hint{font-size:.7rem;color:var(--dim);margin-top:.3rem}
-  .actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.5rem}
+  .layout{display:grid;gap:2rem;grid-template-columns:1fr;margin-top:2rem}
+  @media(min-width:980px){.layout{grid-template-columns:1fr 300px}}
+  .plan{border:1px solid var(--line);position:relative}
+  .plan canvas{display:block;width:100%;aspect-ratio:16/9}
+  .legend{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--mid);padding:.8rem 1rem;border-top:1px solid var(--line)}
+  .legend i{display:inline-block;width:14px;height:10px;margin-right:.4rem;vertical-align:-1px;border:1px solid #fff}
+  .legend .seen{background:repeating-linear-gradient(45deg,#fff 0 1px,transparent 1px 4px);border-color:#777}
+  .legend .blind{border-style:dashed}
+  .legend .light{border-radius:50%;background:radial-gradient(#fff,transparent 70%);border:0}
+  .scores{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+  .score .v{font-family:'Syne',sans-serif;font-weight:600;font-size:clamp(1.3rem,2.4vw,2rem);line-height:1}
+  .score .k{font-size:.55rem;letter-spacing:.25em;text-transform:uppercase;color:var(--mid);margin-top:.3rem}
+  .feel{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--mid);margin:-.5rem 0 1.5rem}
+  .feel b{color:#fff;font-weight:400}
+  .switch{display:flex;gap:.8rem;align-items:flex-start;border-top:1px solid var(--line);padding:.9rem 0;cursor:pointer}
+  .switch input{position:absolute;opacity:0;width:1px;height:1px}
+  .switch .box{flex:0 0 34px;height:18px;border:1px solid #fff;position:relative;margin-top:2px;transition:background .3s}
+  .switch .box::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;background:#fff;transition:transform .3s,background .3s}
+  .switch input:checked + .box{background:#fff}
+  .switch input:checked + .box::after{transform:translateX(16px);background:#000}
+  .switch input:focus-visible + .box{outline:1px solid #fff;outline-offset:3px}
+  .switch .name{font-size:.78rem;text-transform:none;letter-spacing:0;color:#fff}
+  .switch .p{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--mid);display:block;margin:.15rem 0 .25rem}
+  .switch .what{font-size:.7rem;color:var(--dim);line-height:1.5;display:block}
+  .actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
 </style>
 </head>
 <body>
@@ -40,58 +52,54 @@
 
 <main class="wrap">
   <div class="kicker">Crime Prevention Through Environmental Design</div>
-  <h1>Safer Streets Remix</h1>
-  <p class="lede">How a place is designed changes how it feels, and how likely it is to be targeted. Remix this street with the five faders and listen: the music follows the street from uneasy to settled.</p>
+  <h1>Safer Streets</h1>
+  <p class="lede">A street at night, from above. Ground that is lit and can be seen from a window is naturally overlooked: people behave differently when they could be seen. Everything else is a blind spot. Switch on each CPTED principle and watch what it does.</p>
 
-  <section style="margin-top:2rem">
-    <div class="stage">
-      <canvas id="street" aria-label="A line drawing of a street that changes as you move the faders"></canvas>
-      <div class="feel" aria-live="polite">How it feels<b id="feel">Uneasy</b></div>
+  <div class="layout">
+    <div>
+      <div class="plan">
+        <canvas id="plan" aria-label="Top-down plan of a street showing which public areas are overlooked and where the blind spots are"></canvas>
+        <div class="legend">
+          <span><i class="seen"></i>Overlooked</span>
+          <span><i class="blind"></i>Blind spot</span>
+          <span><i class="light"></i>Street light</span>
+          <span>? Hiding place</span>
+          <span>— — Sightline from a window</span>
+        </div>
+      </div>
     </div>
 
-    <div class="mixer">
-      <div>
-        <label for="light">Lighting <span class="val" id="v-light"></span></label>
-        <input type="range" id="light" min="0" max="100" value="15">
-        <div class="hint">Even, white light. Faces readable at a distance.</div>
+    <aside aria-label="CPTED controls">
+      <div class="scores">
+        <div class="score"><div class="v" id="pct">0%</div><div class="k">Route overlooked</div></div>
+        <div class="score"><div class="v" id="blind">0</div><div class="k">Unwatched ground</div></div>
+        <div class="score"><div class="v" id="hide">0</div><div class="k">Hiding places</div></div>
       </div>
-      <div>
-        <label for="sight">Sightlines <span class="val" id="v-sight"></span></label>
-        <input type="range" id="sight" min="0" max="100" value="10">
-        <div class="hint">Windows and active frontages overlooking the street.</div>
+      <div class="feel" aria-live="polite">Feels <b id="feel">uneasy</b></div>
+
+      <label class="switch"><input type="checkbox" id="light"><span class="box"></span><span><span class="name">Street lighting</span><span class="p">Natural surveillance</span><span class="what">Even white light along every route, so faces can be seen.</span></span></label>
+      <label class="switch"><input type="checkbox" id="windows"><span class="box"></span><span><span class="name">Active frontages</span><span class="p">Natural surveillance</span><span class="what">Windows on the blank alley wall and the back of the shops: eyes on the street.</span></span></label>
+      <label class="switch"><input type="checkbox" id="plant"><span class="box"></span><span><span class="name">Low planting</span><span class="p">Natural surveillance</span><span class="what">Hedges cut below about a metre: views open up, hiding places go.</span></span></label>
+      <label class="switch"><input type="checkbox" id="gate"><span class="box"></span><span><span class="name">Gate the alley</span><span class="p">Access control · Territory</span><span class="what">The shortcut becomes residents-only, so people use the overlooked street.</span></span></label>
+      <label class="switch"><input type="checkbox" id="care"><span class="box"></span><span><span class="name">Maintenance</span><span class="p">Maintenance</span><span class="what">Broken lights fixed, graffiti and litter cleared. Someone cares.</span></span></label>
+
+      <div class="actions">
+        <button id="soundBtn">Sound on</button>
+        <button class="ghost" id="allOn">Apply all</button>
+        <button class="ghost" id="allOff">Reset</button>
       </div>
-      <div>
-        <label for="plant">Planting <span class="val" id="v-plant"></span></label>
-        <input type="range" id="plant" min="0" max="100" value="10">
-        <div class="hint">Low, managed planting that hides nobody.</div>
-      </div>
-      <div>
-        <label for="care">Maintenance <span class="val" id="v-care"></span></label>
-        <input type="range" id="care" min="0" max="100" value="5">
-        <div class="hint">Clean walls, fixed glass, no litter. Someone cares.</div>
-      </div>
-      <div>
-        <label for="space">Defined space <span class="val" id="v-space"></span></label>
-        <input type="range" id="space" min="0" max="100" value="10">
-        <div class="hint">Clear boundaries, entrances and ownership.</div>
-      </div>
-    </div>
-    <div class="actions">
-      <button id="soundBtn">Sound on</button>
-      <button class="ghost" id="neglect">Neglected</button>
-      <button class="ghost" id="fix">Fixed</button>
-    </div>
-  </section>
+    </aside>
+  </div>
 
   <section>
     <h2>The four principles</h2>
     <div class="grid">
-      <div class="card"><div class="kicker">Lighting · Sightlines · Planting</div><h2 style="margin-top:.6rem">Natural surveillance</h2><p class="small">People behave differently when they could be seen. Light, windows and clear lines of sight put eyes on the street without a single camera.</p></div>
-      <div class="card"><div class="kicker">Defined space</div><h2 style="margin-top:.6rem">Access control</h2><p class="small">Paths, gateways and landscaping guide people where you want them to go, and make it obvious when someone is somewhere they shouldn’t be.</p></div>
-      <div class="card"><div class="kicker">Defined space</div><h2 style="margin-top:.6rem">Territorial reinforcement</h2><p class="small">Clear boundaries and a sense of ownership tell everyone this place belongs to someone, and that they’re looking after it.</p></div>
-      <div class="card"><div class="kicker">Maintenance</div><h2 style="margin-top:.6rem">Maintenance</h2><p class="small">Broken glass and graffiti signal that nobody is watching. Quick repairs signal the opposite, and stop the slide.</p></div>
+      <div class="card"><div class="kicker">Lighting · Frontages · Planting</div><h2 style="margin-top:.6rem">Natural surveillance</h2><p class="small">Arrange a place so people can be seen going about it: light, windows and clear lines of sight put eyes on the street without a single camera.</p></div>
+      <div class="card"><div class="kicker">Gate the alley</div><h2 style="margin-top:.6rem">Natural access control</h2><p class="small">Paths, gates and landscaping guide people where you want them, and make it obvious when someone is somewhere they shouldn’t be.</p></div>
+      <div class="card"><div class="kicker">Gate the alley</div><h2 style="margin-top:.6rem">Territorial reinforcement</h2><p class="small">Clear boundaries between public, shared and private space tell everyone a place belongs to someone.</p></div>
+      <div class="card"><div class="kicker">Maintenance</div><h2 style="margin-top:.6rem">Maintenance</h2><p class="small">Broken lights and graffiti signal that nobody is watching. Quick repairs signal the opposite, and keep the other measures working.</p></div>
     </div>
-    <p class="small" style="margin-top:1.5rem">Want this kind of thinking applied to your site? <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">Talk to James &nearr;</a></p>
+    <p class="small" style="margin-top:1.5rem">A simplified model for illustration: real assessments look at the specific site, its use and its crime patterns. <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">Talk to James &nearr;</a></p>
   </section>
 </main>
 
@@ -105,196 +113,308 @@
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
-const ids = ['light', 'sight', 'plant', 'care', 'space'];
-const v = {};
-const read = () => ids.forEach(k => { v[k] = $(k).value / 100; $('v-' + k).textContent = $(k).value; });
-read();
-const score = () => ids.reduce((s, k) => s + v[k], 0) / ids.length;
+const opts = { light: false, windows: false, plant: false, gate: false, care: false };
 
-/* ─── Drawing ─────────────────────────────────────────── */
-const cv = $('street'), ctx = cv.getContext('2d');
-let W = 0, H = 0;
+/* ─── The site, on a grid ─────────────────────────────────── */
+const GW = 64, GH = 36;
+const EMPTY = 0, BUILDING = 1, STREET = 2, ALLEY = 3, CARPARK = 4, HEDGE = 5, GARDEN = 6;
+const grid = new Uint8Array(GW * GH);
+const at = (x, y) => (x < 0 || y < 0 || x >= GW || y >= GH) ? BUILDING : grid[y * GW + x];
+const fill = (x0, y0, x1, y1, v) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) grid[y * GW + x] = v; };
+
+function buildSite() {
+  grid.fill(EMPTY);
+  fill(0, 12, GW - 1, 16, STREET);                 // the street
+  fill(3, 3, 19, 10, BUILDING); fill(23, 3, 40, 10, BUILDING); fill(44, 3, 60, 10, BUILDING);   // houses, north side
+  fill(3, 11, 19, 11, GARDEN); fill(23, 11, 40, 11, GARDEN); fill(44, 11, 60, 11, GARDEN);       // front gardens
+  fill(3, 18, 27, 30, BUILDING);                   // flats, south-west
+  fill(34, 18, 61, 21, BUILDING);                  // shops, south-east
+  fill(29, 17, 32, 34, ALLEY);                     // the alley shortcut
+  fill(34, 23, 62, 34, CARPARK);                   // car park behind the shops
+  fill(33, 25, 33, 34, HEDGE);                     // hedge between the alley and the car park
+  fill(39, 27, 45, 28, HEDGE); fill(50, 27, 56, 28, HEDGE);   // planting beds in the car park
+}
+
+// windows: position (just outside the facade) and the direction they face
+const BASE_WINDOWS = [];
+for (const [x0, x1] of [[4, 18], [24, 39], [45, 59]]) for (let x = x0; x <= x1; x += 3) BASE_WINDOWS.push([x, 11.5, 0, 1]);   // houses look south over the street
+for (let x = 4; x <= 26; x += 3) BASE_WINDOWS.push([x, 17.5, 0, -1]);                                                        // flats look north
+for (let x = 35; x <= 60; x += 3) BASE_WINDOWS.push([x, 17.5, 0, -1]);                                                       // shop fronts look north
+const ACTIVE_WINDOWS = [];
+for (let y = 19; y <= 29; y += 2.5) ACTIVE_WINDOWS.push([28.05, y, 1, 0]);                                                    // flats' gable wall looks over the alley
+for (let x = 36; x <= 60; x += 4) ACTIVE_WINDOWS.push([x, 22.05, 0, 1]);                                                      // shops' back windows look over the car park
+
+const LAMPS = [[7, 14], [19, 14], [31, 14], [43, 14], [55, 14], [30.5, 22], [30.5, 30], [37, 25], [48, 31], [59, 25]];
+const BROKEN = new Set([2, 5, 8]);                 // neglected: these don't work
+
+/* ─── Natural surveillance: lit AND seen from a window ───── */
+const lit = new Uint8Array(GW * GH), seen = new Uint8Array(GW * GH), route = new Uint8Array(GW * GH);
+let rays = [], blindCells = [], hidePlaces = [];
+
+function blocks(x, y, forLight) {
+  const v = at(x, y);
+  return v === BUILDING || (!forLight && v === HEDGE && !opts.plant);
+}
+function lineClear(x0, y0, x1, y1, forLight) {
+  const steps = Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2);
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps, x = Math.floor(x0 + (x1 - x0) * t), y = Math.floor(y0 + (y1 - y0) * t);
+    if (blocks(x, y, forLight)) return false;
+  }
+  return true;
+}
+
+function analyse() {
+  buildSite();
+  route.fill(0); lit.fill(0); seen.fill(0);
+  for (let i = 0; i < GW * GH; i++) {
+    const v = grid[i];
+    if (v === STREET || ((v === ALLEY || v === CARPARK) && !opts.gate)) route[i] = 1;
+  }
+  // lighting
+  const lamps = opts.light ? LAMPS.filter((_, i) => opts.care || !BROKEN.has(i)) : [];
+  for (const [lx, ly] of lamps) {
+    for (let y = Math.floor(ly - 7); y <= ly + 7; y++) for (let x = Math.floor(lx - 7); x <= lx + 7; x++) {
+      if (Math.hypot(x + 0.5 - lx, y + 0.5 - ly) <= 6.5 && at(x, y) !== BUILDING && lineClear(lx, ly, x + 0.5, y + 0.5, true)) lit[y * GW + x] = 1;
+    }
+  }
+  // sightlines from windows
+  const windows = BASE_WINDOWS.concat(opts.windows ? ACTIVE_WINDOWS : []);
+  rays = [];
+  for (const [wx, wy, dx, dy] of windows) {
+    for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+      const cx = x + 0.5 - wx, cy = y + 0.5 - wy, d = Math.hypot(cx, cy);
+      if (d > 15 || d < 0.3) continue;
+      if ((cx * dx + cy * dy) / d < 0.35) continue;         // ~140° field of view out of the window
+      if (at(x, y) === BUILDING) continue;
+      if (lineClear(wx, wy, x + 0.5, y + 0.5, false)) {
+        seen[y * GW + x] = 1;
+        if (d < 2.2) lit[y * GW + x] = 1;                    // light spilling from the window
+      }
+    }
+    // a few sightline rays for the drawing
+    for (const a of [-0.55, 0, 0.55]) {
+      const ang = Math.atan2(dy, dx) + a; let ex = wx, ey = wy;
+      for (let s = 0; s < 15; s += 0.5) { const nx = wx + Math.cos(ang) * s, ny = wy + Math.sin(ang) * s; if (blocks(Math.floor(nx), Math.floor(ny), false)) break; ex = nx; ey = ny; }
+      rays.push([wx, wy, ex, ey]);
+    }
+  }
+  // the result
+  let total = 0, good = 0;
+  blindCells = [];
+  for (let i = 0; i < GW * GH; i++) if (route[i]) { total++; if (lit[i] && seen[i]) good++; else blindCells.push(i); }
+  // each grid square is about 2 m × 2 m
+  const unwatched = blindCells.length * 4;
+  // hiding places: unseen route next to a tall hedge or a building corner, out of sight
+  hidePlaces = [];
+  if (!opts.plant) {
+    for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+      const i = y * GW + x;
+      if (!route[i] || seen[i]) continue;
+      if ((at(x - 1, y) === HEDGE || at(x + 1, y) === HEDGE || at(x, y - 1) === HEDGE || at(x, y + 1) === HEDGE) && (x + y) % 4 === 0) hidePlaces.push([x, y]);
+    }
+  }
+  const pct = total ? Math.round(good / total * 100) : 0;
+  $('pct').textContent = pct + '%';
+  $('blind').textContent = unwatched.toLocaleString() + ' m²';
+  $('hide').textContent = hidePlaces.length;
+  const sc = pct / 100;
+  $('feel').textContent = sc < 0.35 ? 'threatening' : sc < 0.6 ? 'uneasy' : sc < 0.85 ? 'okay' : 'safe and cared for';
+  if (audio) audio.set(sc);
+  score = sc;
+  drawStatic();
+}
+
+/* ─── Drawing ─────────────────────────────────────────────── */
+const cv = $('plan'), ctx = cv.getContext('2d');
+const base = document.createElement('canvas'), bx = base.getContext('2d');
+let W = 0, H = 0, S = 1, OX = 0, OY = 0, DPR = 1, score = 0;
 function resize() {
-  const r = cv.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
-  W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
+  const r = cv.getBoundingClientRect(); DPR = Math.min(devicePixelRatio || 1, 2);
+  W = r.width; H = r.height; cv.width = base.width = W * DPR; cv.height = base.height = H * DPR;
+  S = Math.min(W / GW, H / GH); OX = (W - S * GW) / 2; OY = (H - S * GH) / 2;
+  drawStatic();
 }
-addEventListener('resize', resize); resize();
+const P = (x, y) => [OX + x * S, OY + y * S];
 
-const lerp = (a, b, t) => a + (b - a) * t;
-const rand = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
-const graffiti = Array.from({ length: 14 }, () => ({ side: rand() < 0.5 ? -1 : 1, u: rand() * 0.7, y: 0.25 + rand() * 0.5, w: 0.03 + rand() * 0.05, seed: rand() }));
-const litter = Array.from({ length: 22 }, () => ({ u: rand(), off: rand() * 2 - 1 }));
-const windows = [];
-for (let side of [-1, 1]) for (let c = 0; c < 6; c++) for (let rr = 0; rr < 4; rr++) windows.push({ side, c, rr, t: rand(), lit: rand() });
-
-function draw(t) {
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-  const vx = W / 2, vy = H * 0.42;
-  const depth = u => 1 - Math.pow(1 - u, 1.8);          // perspective-ish spacing
-  // a point on a wall: side -1/1, u depth 0 near → 1 far, h 0 ground → 1 roof
-  const wall = (side, u, h) => {
-    const d = depth(u);
-    const xNear = side < 0 ? W * 0.06 : W * 0.94, xFar = side < 0 ? vx - W * 0.09 : vx + W * 0.09;
-    const x = lerp(xNear, xFar, d);
-    const gNear = H * 0.98, gFar = vy + H * 0.06, rNear = H * 0.04, rFar = vy - H * 0.12;
-    return [x, lerp(lerp(gNear, gFar, d), lerp(rNear, rFar, d), h)];
-  };
-  const ground = (off, u) => {                          // off -1..1 across the path
-    const d = depth(u);
-    return [lerp(vx + off * W * 0.2, vx + off * W * 0.02, d), lerp(H * 0.98, vy + H * 0.06, d)];
-  };
-  const base = 0.3 + 0.7 * v.light;                      // darker streets read dimmer
-  ctx.lineWidth = 1.2; ctx.lineJoin = 'round';
-  const stroke = a => { ctx.strokeStyle = `rgba(255,255,255,${(a * base).toFixed(3)})`; };
-
+function drawStatic() {
+  if (!W) return;
+  bx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  bx.fillStyle = '#000'; bx.fillRect(0, 0, W, H);
   // light pools
-  for (const side of [-1, 1]) for (const u of [0.12, 0.45, 0.72]) {
-    const [x, y] = ground(side * 0.95, u), s = 1 - depth(u) * 0.85;
-    const r = H * 0.35 * s;
-    const g = ctx.createRadialGradient(x, y - r * 0.2, 0, x, y - r * 0.2, r);
-    g.addColorStop(0, `rgba(255,255,255,${0.22 * v.light})`); g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y - r * 0.2, r, 0, Math.PI * 2); ctx.fill();
+  const lamps = opts.light ? LAMPS.map((l, i) => [l, opts.care || !BROKEN.has(i)]) : [];
+  for (const [[lx, ly], on] of lamps) {
+    if (!on) continue;
+    const [px, py] = P(lx, ly), g = bx.createRadialGradient(px, py, 0, px, py, 6.5 * S);
+    g.addColorStop(0, 'rgba(255,255,255,.22)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    bx.fillStyle = g; bx.beginPath(); bx.arc(px, py, 6.5 * S, 0, Math.PI * 2); bx.fill();
   }
-
-  // walls
-  for (const side of [-1, 1]) {
-    stroke(0.9); ctx.beginPath();
-    let p = wall(side, 0, 0); ctx.moveTo(...p);
-    for (const [u, h] of [[1, 0], [1, 1], [0, 1]]) ctx.lineTo(...wall(side, u, h));
-    ctx.stroke();
+  // overlooked ground: fine hatching; blind spots: dashed outline
+  bx.strokeStyle = 'rgba(255,255,255,.55)'; bx.lineWidth = 1;
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+    const i = y * GW + x; if (!route[i]) continue;
+    const [px, py] = P(x, y);
+    if (lit[i] && seen[i]) { bx.beginPath(); bx.moveTo(px, py + S); bx.lineTo(px + S, py); bx.stroke(); }
   }
-  // windows (sightlines)
-  windows.forEach(w => {
-    if (w.t > v.sight) return;
-    const u0 = w.c / 6 + 0.02, u1 = u0 + 0.1, h0 = 0.18 + w.rr * 0.2, h1 = h0 + 0.12;
-    const q = [wall(w.side, u0, h0), wall(w.side, u1, h0), wall(w.side, u1, h1), wall(w.side, u0, h1)];
-    ctx.beginPath(); ctx.moveTo(...q[0]); q.slice(1).forEach(pt => ctx.lineTo(...pt)); ctx.closePath();
-    if (w.lit < v.sight * 0.8) { ctx.fillStyle = `rgba(255,255,255,${0.55 * base})`; ctx.fill(); }
-    stroke(0.8); ctx.stroke();
-    if (w.lit > 0.85 && v.care < 0.4) {              // broken glass
-      stroke(0.8); ctx.beginPath(); ctx.moveTo(...q[0]); ctx.lineTo(...q[2]); ctx.moveTo(...q[1]); ctx.lineTo(...q[3]); ctx.stroke();
+  bx.setLineDash([3, 3]); bx.strokeStyle = 'rgba(255,255,255,.8)';
+  for (const i of blindCells) {
+    const x = i % GW, y = (i / GW) | 0;
+    const edge = (nx, ny) => { const n = ny * GW + nx; return nx < 0 || ny < 0 || nx >= GW || ny >= GH || !route[n] || (lit[n] && seen[n]); };
+    const [px, py] = P(x, y);
+    bx.beginPath();
+    if (edge(x, y - 1)) { bx.moveTo(px, py); bx.lineTo(px + S, py); }
+    if (edge(x, y + 1)) { bx.moveTo(px, py + S); bx.lineTo(px + S, py + S); }
+    if (edge(x - 1, y)) { bx.moveTo(px, py); bx.lineTo(px, py + S); }
+    if (edge(x + 1, y)) { bx.moveTo(px + S, py); bx.lineTo(px + S, py + S); }
+    bx.stroke();
+  }
+  bx.setLineDash([]);
+  // sightlines
+  bx.strokeStyle = 'rgba(255,255,255,.18)'; bx.setLineDash([2, 4]);
+  for (const [x0, y0, x1, y1] of rays) { const a = P(x0, y0), b = P(x1, y1); bx.beginPath(); bx.moveTo(...a); bx.lineTo(...b); bx.stroke(); }
+  bx.setLineDash([]);
+  // buildings, gardens, hedges, route edges
+  bx.lineWidth = 1.2;
+  const outline = (v, style, dash) => {
+    bx.strokeStyle = style; bx.setLineDash(dash || []);
+    for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+      if (grid[y * GW + x] !== v) continue;
+      const [px, py] = P(x, y); bx.beginPath();
+      if (at(x, y - 1) !== v) { bx.moveTo(px, py); bx.lineTo(px + S, py); }
+      if (at(x, y + 1) !== v) { bx.moveTo(px, py + S); bx.lineTo(px + S, py + S); }
+      if (at(x - 1, y) !== v) { bx.moveTo(px, py); bx.lineTo(px, py + S); }
+      if (at(x + 1, y) !== v) { bx.moveTo(px + S, py); bx.lineTo(px + S, py + S); }
+      bx.stroke();
     }
-  });
-  // graffiti (maintenance)
-  graffiti.forEach((gr, i) => {
-    if (i / graffiti.length < v.care) return;
-    stroke(0.75); ctx.beginPath();
-    for (let k = 0; k <= 12; k++) {
-      const u = gr.u + (k / 12) * gr.w, h = gr.y + 0.05 * Math.sin(k * 2.3 + gr.seed * 9);
-      const pt = wall(gr.side, u, h); k ? ctx.lineTo(...pt) : ctx.moveTo(...pt);
+    bx.setLineDash([]);
+  };
+  outline(BUILDING, '#fff');
+  outline(GARDEN, 'rgba(255,255,255,.4)', [1, 3]);
+  // hedges: tall = a thick wavy line, low = a light one
+  bx.strokeStyle = opts.plant ? 'rgba(255,255,255,.35)' : '#fff'; bx.lineWidth = opts.plant ? 1 : 2.4;
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+    if (grid[y * GW + x] !== HEDGE) continue;
+    const [px, py] = P(x + 0.5, y + 0.5); bx.beginPath(); bx.arc(px, py, S * (opts.plant ? 0.25 : 0.45), 0, Math.PI * 2); bx.stroke();
+  }
+  bx.lineWidth = 1;
+  // windows
+  bx.fillStyle = '#fff';
+  for (const [wx, wy, dx, dy] of BASE_WINDOWS.concat(opts.windows ? ACTIVE_WINDOWS : [])) {
+    const [px, py] = P(wx - dx * 0.5, wy - dy * 0.5);
+    if (dx) bx.fillRect(px - 1, py - S * 0.4, 2, S * 0.8); else bx.fillRect(px - S * 0.4, py - 1, S * 0.8, 2);
+  }
+  // lamps
+  for (let i = 0; i < LAMPS.length; i++) {
+    const [px, py] = P(...LAMPS[i]), on = opts.light && (opts.care || !BROKEN.has(i));
+    bx.strokeStyle = '#fff'; bx.beginPath(); bx.arc(px, py, S * 0.35, 0, Math.PI * 2);
+    if (on) { bx.fillStyle = '#fff'; bx.fill(); } else bx.stroke();
+    if (opts.light && !on) { bx.beginPath(); bx.moveTo(px - S * 0.4, py - S * 0.4); bx.lineTo(px + S * 0.4, py + S * 0.4); bx.stroke(); }   // broken
+  }
+  // gate across the alley
+  if (opts.gate) {
+    const [ax, ay] = P(29, 17.1), [bx2] = P(33, 17.1);
+    bx.strokeStyle = '#fff'; bx.lineWidth = 2.4; bx.beginPath(); bx.moveTo(ax, ay); bx.lineTo(bx2, ay); bx.stroke(); bx.lineWidth = 1;
+    label('RESIDENTS ONLY', 31, 26, 0.75);
+  }
+  // graffiti and litter when neglected
+  if (!opts.care) {
+    bx.strokeStyle = 'rgba(255,255,255,.75)';
+    for (const [gx, gy] of [[27.6, 24], [27.6, 31], [42, 21.6], [55, 21.6]]) {
+      const [px, py] = P(gx, gy); bx.beginPath();
+      for (let k = 0; k < 7; k++) bx.lineTo(px + (k % 2 ? 1 : -1) * S * 0.25, py - S + k * S * 0.3);
+      bx.stroke();
     }
-    ctx.stroke();
-  });
-
-  // path edges and paving (defined space)
-  stroke(0.9); ctx.beginPath(); ctx.moveTo(...ground(-1, 0)); ctx.lineTo(...ground(-1, 1)); ctx.moveTo(...ground(1, 0)); ctx.lineTo(...ground(1, 1)); ctx.stroke();
-  const pav = Math.round(v.space * 16);
-  for (let k = 1; k <= pav; k++) { const u = k / 17; stroke(0.35); ctx.beginPath(); ctx.moveTo(...ground(-1, u)); ctx.lineTo(...ground(1, u)); ctx.stroke(); }
-  if (v.space > 0.45) {                                   // a gateway marks the threshold
-    const a = (v.space - 0.45) / 0.55, u = 0.18;
-    const [lx, ly] = ground(-1.05, u), [rx, ry] = ground(1.05, u), top = H * 0.2 * (1 - depth(u) * 0.8);
-    stroke(a); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx, ly - top); ctx.lineTo(rx, ry - top); ctx.lineTo(rx, ry); ctx.stroke();
+    for (const [lx, ly] of [[31, 25], [38, 30], [47, 33], [60, 26], [30, 33]]) { const [px, py] = P(lx, ly); bx.strokeRect(px, py, S * 0.4, S * 0.3); }
   }
-
-  // litter (maintenance)
-  litter.forEach((l, i) => {
-    if (i / litter.length < v.care) return;
-    const [x, y] = ground(l.off * 0.9, l.u * 0.7), s = 3 * (1 - depth(l.u * 0.7) * 0.8);
-    stroke(0.7); ctx.strokeRect(x - s, y - s, s * 2, s * 1.2);
-  });
-
-  // lamp posts
-  for (const side of [-1, 1]) for (const u of [0.12, 0.45, 0.72]) {
-    const [x, y] = ground(side * 0.95, u), h = H * 0.42 * (1 - depth(u) * 0.85);
-    stroke(0.9); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - h); ctx.lineTo(x - side * h * 0.12, y - h); ctx.stroke();
-    if (v.light > 0.1) { ctx.fillStyle = `rgba(255,255,255,${0.3 + 0.7 * v.light})`; ctx.beginPath(); ctx.arc(x - side * h * 0.12, y - h + 3, 2.5 * (1 - depth(u) * 0.6), 0, Math.PI * 2); ctx.fill(); }
-  }
-
-  // a walker heading up the street
-  const wu = (t / 14000) % 1, [fx, fy] = ground(0.15, wu * 0.85), fs = H * 0.13 * (1 - depth(wu * 0.85) * 0.85);
-  const swing = Math.sin(t / 180) * 0.25;
-  stroke(1); ctx.lineWidth = 1.4; ctx.beginPath();
-  ctx.arc(fx, fy - fs * 0.88, fs * 0.08, 0, Math.PI * 2);
-  ctx.moveTo(fx, fy - fs * 0.8); ctx.lineTo(fx, fy - fs * 0.4);
-  ctx.moveTo(fx, fy - fs * 0.4); ctx.lineTo(fx - fs * 0.12 * (1 + swing), fy);
-  ctx.moveTo(fx, fy - fs * 0.4); ctx.lineTo(fx + fs * 0.12 * (1 - swing), fy);
-  ctx.moveTo(fx, fy - fs * 0.7); ctx.lineTo(fx - fs * 0.14, fy - fs * 0.5);
-  ctx.moveTo(fx, fy - fs * 0.7); ctx.lineTo(fx + fs * 0.14, fy - fs * 0.5);
-  ctx.stroke(); ctx.lineWidth = 1.2;
-
-  // hedges (planting) drawn last so tall ones hide the walker
-  for (const side of [-1, 1]) {
-    const tall = 0.02 + (1 - v.plant) * 0.2;
-    ctx.beginPath();
-    for (let k = 0; k <= 60; k++) {
-      const u = k / 60 * 0.8, [x, y] = ground(side * 1.12, u), s = 1 - depth(u) * 0.85;
-      const top = y - H * tall * s * (0.85 + 0.15 * Math.sin(k * 3.1));
-      k ? ctx.lineTo(x, top) : ctx.moveTo(x, top);
-    }
-    for (let k = 60; k >= 0; k--) { const [x, y] = ground(side * 1.12, k / 60 * 0.8); ctx.lineTo(x, y); }
-    ctx.closePath(); ctx.fillStyle = '#000'; ctx.fill(); stroke(0.85); ctx.stroke();
-  }
+  // hiding places
+  for (const [x, y] of hidePlaces) label('?', x + 0.5, y + 0.8, 1);
+  // labels
+  label('STREET', 4, 14.5, 0.5, 'left');
+  label('HOUSES', 11, 7, 0.55); label('HOUSES', 31.5, 7, 0.55); label('HOUSES', 52, 7, 0.55);
+  label('FLATS', 15, 24, 0.55); label('SHOPS', 48, 19.9, 0.55);
+  if (!opts.gate) label('ALLEY', 30.9, 20, 0.5);
+  label('CAR PARK', 48, 29, 0.5);
+}
+function label(t, x, y, a, align) {
+  const [px, py] = P(x, y);
+  bx.globalAlpha = a; bx.fillStyle = '#fff'; bx.textAlign = align || 'center';
+  bx.font = `300 ${Math.max(9, S * 0.75)}px "IBM Plex Mono", monospace`;
+  bx.fillText(t, px, py); bx.globalAlpha = 1;
 }
 
-/* ─── Feel + sound ────────────────────────────────────── */
-const WORDS = [[0.25, 'Threatening'], [0.5, 'Uneasy'], [0.75, 'Getting there'], [1.01, 'Safe and cared for']];
-let audio = null;
+/* ─── A walker on the public route ────────────────────────── */
+const WALK = [[1, 14.5], [30.5, 14.5], [30.5, 27], [48, 27], [61, 27], [61, 33], [36, 33], [30.5, 33], [30.5, 14.5], [62, 14.5]];
+const WALK_GATED = [[1, 14.5], [62, 14.5]];
+let wd = 0, wdir = 1;
+function walkerAt(path, d) {
+  let acc = 0;
+  for (let i = 1; i < path.length; i++) {
+    const [x0, y0] = path[i - 1], [x1, y1] = path[i], len = Math.hypot(x1 - x0, y1 - y0);
+    if (acc + len >= d) { const t = (d - acc) / len; return [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t]; }
+    acc += len;
+  }
+  return path[path.length - 1];
+}
+const pathLen = p => p.reduce((s, pt, i) => i ? s + Math.hypot(pt[0] - p[i - 1][0], pt[1] - p[i - 1][1]) : 0, 0);
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(base, 0, 0);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const path = opts.gate ? WALK_GATED : WALK, L = pathLen(path);
+  wd += dt * 3.2 * wdir;
+  if (wd > L) { wd = L; wdir = -1; } if (wd < 0) { wd = 0; wdir = 1; }
+  const [gx, gy] = walkerAt(path, wd), i = Math.floor(gy) * GW + Math.floor(gx);
+  const safe = lit[i] && seen[i];
+  const [px, py] = P(gx, gy), s = S * 0.09, ph = now / 160;
+  // stick man (top-down-ish, standing up so you can read him)
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4; ctx.beginPath();
+  ctx.arc(px, py - 27 * s, 3.6 * s, 0, Math.PI * 2);
+  ctx.moveTo(px, py - 23 * s); ctx.lineTo(px, py - 12 * s);
+  const a = Math.sin(ph) * 0.6;
+  ctx.moveTo(px, py - 12 * s); ctx.lineTo(px + Math.sin(a) * 9 * s, py); ctx.moveTo(px, py - 12 * s); ctx.lineTo(px - Math.sin(a) * 9 * s, py);
+  ctx.moveTo(px, py - 21 * s); ctx.lineTo(px - Math.sin(a) * 7 * s, py - 14 * s); ctx.moveTo(px, py - 21 * s); ctx.lineTo(px + Math.sin(a) * 7 * s, py - 14 * s);
+  ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = `300 ${Math.max(9, S * 0.7)}px "IBM Plex Mono", monospace`;
+  ctx.globalAlpha = 0.85; ctx.fillText(safe ? 'seen' : 'blind spot…', px, py - 33 * s); ctx.globalAlpha = 1;
+  requestAnimationFrame(frame);
+}
+
+/* ─── Sound: uneasy when it's dark and unseen, settled when it's overlooked ── */
+let audio = null, soundOn = false;
 function startAudio() {
   const ac = new (window.AudioContext || window.webkitAudioContext)();
   const master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
   const tense = ac.createGain(), calm = ac.createGain(), pulse = ac.createGain(), knock = ac.createGain();
   [tense, calm, pulse, knock].forEach(g => { g.gain.value = 0; g.connect(master); });
-  // tense: a dissonant cluster that wobbles
   const tlp = ac.createBiquadFilter(); tlp.type = 'lowpass'; tlp.frequency.value = 900; tlp.connect(tense);
   const trem = ac.createGain(); trem.gain.value = 0.6; trem.connect(tlp);
   const lfo = ac.createOscillator(), lfoAmt = ac.createGain(); lfo.frequency.value = 5.3; lfoAmt.gain.value = 0.4; lfo.connect(lfoAmt); lfoAmt.connect(trem.gain); lfo.start();
   [65.4, 138.6, 185, 196, 277.2].forEach(f => { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = (Math.random() - 0.5) * 30; const g = ac.createGain(); g.gain.value = 0.06; o.connect(g); g.connect(trem); o.start(); });
-  // calm: an open major chord
   [130.8, 196, 329.6, 493.9, 587.3].forEach(f => { const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = ac.createGain(); g.gain.value = 0.07; o.connect(g); g.connect(calm); o.start(); });
-  // rhythm: a steady heartbeat when safe, irregular knocks when not
-  let next = ac.currentTime + 0.1, s = 0;
-  const beat = 60 / 76 / 2;
+  let next = ac.currentTime + 0.1, st = 0; const beat = 60 / 76 / 2;
   const hit = (t, f, g, len) => { const o = ac.createOscillator(), e = ac.createGain(); o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.4, t + len); e.gain.setValueAtTime(0.8, t); e.gain.exponentialRampToValueAtTime(0.001, t + len); o.connect(e); e.connect(g); o.start(t); o.stop(t + len + 0.05); };
-  const timer = setInterval(() => {
-    while (next < ac.currentTime + 0.15) {
-      if (s % 2 === 0) hit(next, 90, pulse, 0.25);
-      if (Math.random() < 0.18) hit(next + Math.random() * beat, 60 + Math.random() * 200, knock, 0.12);
-      next += beat; s++;
-    }
-  }, 30);
+  setInterval(() => { while (next < ac.currentTime + 0.15) { if (st % 2 === 0) hit(next, 90, pulse, 0.25); if (Math.random() < 0.18) hit(next + Math.random() * beat, 60 + Math.random() * 200, knock, 0.12); next += beat; st++; } }, 30);
   audio = {
-    set(sc) {
-      const t = ac.currentTime;
-      tense.gain.setTargetAtTime((1 - sc) * 0.9, t, 0.4);
-      calm.gain.setTargetAtTime(sc * 0.9, t, 0.4);
-      pulse.gain.setTargetAtTime(Math.max(0, sc - 0.35) * 0.5, t, 0.4);
-      knock.gain.setTargetAtTime(Math.max(0, 0.6 - sc) * 0.6, t, 0.4);
-      tlp.frequency.setTargetAtTime(500 + (1 - sc) * 1500, t, 0.4);
-    },
+    set(sc) { const t = ac.currentTime; tense.gain.setTargetAtTime((1 - sc) * 0.9, t, 0.4); calm.gain.setTargetAtTime(sc * 0.9, t, 0.4); pulse.gain.setTargetAtTime(Math.max(0, sc - 0.35) * 0.5, t, 0.4); knock.gain.setTargetAtTime(Math.max(0, 0.6 - sc) * 0.6, t, 0.4); tlp.frequency.setTargetAtTime(500 + (1 - sc) * 1500, t, 0.4); },
     toggle(on) { master.gain.setTargetAtTime(on ? 0.5 : 0, ac.currentTime, 0.2); }
   };
 }
 
-let soundOn = false;
-function update() {
-  read();
-  const sc = score();
-  $('feel').textContent = WORDS.find(([max]) => sc < max)[1];
-  if (audio) audio.set(sc);
-}
-ids.forEach(k => $(k).addEventListener('input', update));
+/* ─── Controls ────────────────────────────────────────────── */
+Object.keys(opts).forEach(k => $(k).addEventListener('change', () => { opts[k] = $(k).checked; analyse(); }));
+const setAll = v => { Object.keys(opts).forEach(k => { opts[k] = v; $(k).checked = v; }); analyse(); };
+$('allOn').addEventListener('click', () => setAll(true));
+$('allOff').addEventListener('click', () => setAll(false));
 $('soundBtn').addEventListener('click', () => {
   if (!audio) { try { startAudio(); } catch (e) { $('soundBtn').hidden = true; return; } }
-  soundOn = !soundOn; audio.toggle(soundOn); audio.set(score());
+  soundOn = !soundOn; audio.toggle(soundOn); audio.set(score);
   $('soundBtn').textContent = soundOn ? 'Sound off' : 'Sound on';
 });
-const preset = val => { ids.forEach(k => $(k).value = val); update(); };
-$('neglect').addEventListener('click', () => preset(5));
-$('fix').addEventListener('click', () => preset(95));
-update();
-
-const loop = t => { draw(t); requestAnimationFrame(loop); };
-requestAnimationFrame(loop);
+addEventListener('resize', resize);
+resize(); analyse(); requestAnimationFrame(frame);
 })();
 </script>
 </body>
