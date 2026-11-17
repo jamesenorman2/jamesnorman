@@ -77,6 +77,7 @@
       <button id="playBtn" title="Play / pause (Space)" disabled>Play</button>
       <button id="loadBtn" title="Play an audio file from your device instead (L)">Load file</button>
       <button id="micBtn" title="Use your microphone (M)" aria-pressed="false">Mic</button>
+      <button id="wildBtn" title="Wild camera on or off (C)" aria-pressed="true">Wild</button>
       <button id="uiBtn" title="Hide interface (H)">Hide</button>
     </div>
     <div class="status" id="status">Loading</div>
@@ -236,8 +237,9 @@ async function loadWave(url) {
   wave = null;
   if (!url) return;
   try {
-    const r = await fetch(url.replace(/\.png(\?.*)?$/, '.json'));
-    const j = await r.json();
+    let j = null;
+    try { const r = await fetch('/api/waveform?wave=' + encodeURIComponent(url.split('?')[0])); if (r.ok) j = await r.json(); } catch (e) {}
+    if (!j || !j.samples) j = await (await fetch(url.replace(/\.png(\?.*)?$/, '.json'))).json();
     const h = j.height || 140;
     wave = j.samples.map(v => v / h);
     const sorted = [...wave].sort((a, b) => a - b);
@@ -246,25 +248,48 @@ async function loadWave(url) {
   } catch (e) { wave = null; }  // fall back to a steady pulse
 }
 
+// Live energy of the music, shared with the camera: level 0..1, hit = sudden jumps in loudness.
+let energy = 0, hit = 0, rowCount = 0;
+
 function sampleSoundCloud(row) {
   const pos = scPos + (scPlaying ? performance.now() - scPosAt : 0);
-  let level, kick, seed;
+  const t = pos / 1000;
+  let level, kick;
   if (wave && scDuration) {
-    const n = wave.length;
-    const idx = Math.max(0, Math.min(n - 1, Math.floor((pos / scDuration) * n)));
+    const n = wave.length, fi = Math.max(0, Math.min(n - 1.001, (pos / scDuration) * n));
+    const i0 = Math.floor(fi), fr = fi - i0;
     const norm = v => Math.max(0, Math.min(1, (v - waveLo) / (waveHi - waveLo || 1)));
-    let prev = 0;
-    for (let k = 1; k <= 8; k++) prev += norm(wave[Math.max(0, idx - k)]);
-    level = norm(wave[idx]);
-    kick = Math.max(0, level - prev / 8) * 3;
-    seed = idx * 7919 + (scSoundId | 0);
+    level = norm(wave[i0]) * (1 - fr) + norm(wave[i0 + 1]) * fr;      // smooth between waveform points
+    const span = Math.max(2, Math.round((2000 / scDuration) * n));     // the last ~2 seconds
+    let avg = 0;
+    for (let k = 1; k <= span; k++) avg += norm(wave[Math.max(0, i0 - k)]);
+    kick = Math.max(0, level - avg / span) * 3;
   } else {
-    const beat = (pos / 500) % 1;            // ~120 bpm pulse
+    const beat = (pos / 500) % 1;            // ~120 bpm pulse if the waveform isn't available
     level = 0.4 + 0.35 * Math.exp(-beat * 6);
     kick = Math.exp(-beat * 8) * 0.5;
-    seed = Math.floor(pos / 36);
   }
-  bumps(row, seeded(seed), 0.25 + level * 0.9, kick);
+  energy = level; hit = Math.max(hit, kick);
+  shapeRow(row, t, level, kick);
+}
+
+// Peaks drift smoothly over time; loudness lifts them, hits throw up sharp spikes.
+function shapeRow(row, t, level, kick) {
+  row.fill(0);
+  const r = seeded(++rowCount * 2654435761);
+  for (let k = 0; k < 6; k++) {
+    const c = 0.5 + 0.17 * Math.sin(t * (0.31 + 0.13 * k) + k * 1.7) + 0.04 * Math.sin(t * (1.9 + k * 0.4));
+    const w = 0.01 + 0.022 * (0.5 + 0.5 * Math.sin(t * 0.7 + k * 2.1));
+    const a = (0.15 + level * 0.95) * (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * (1.1 + 0.37 * k) + k * 2.3)));
+    for (let i = 0; i < POINTS; i++) { const x = i / (POINTS - 1) - c; row[i] += a * Math.exp(-(x * x) / (2 * w * w)); }
+  }
+  if (kick > 0.12) {
+    for (let k = 0; k < 3; k++) {
+      const c = 0.5 + (r() - 0.5) * 0.3, w = 0.004 + r() * 0.006, a = kick * (0.8 + r() * 0.9);
+      for (let i = 0; i < POINTS; i++) { const x = i / (POINTS - 1) - c; row[i] += a * Math.exp(-(x * x) / (2 * w * w)); }
+    }
+  }
+  for (let i = 0; i < POINTS; i++) row[i] = Math.min(row[i] + r() * 0.06 * (0.3 + level), 1.6);
 }
 
 /* ─── Source 2 & 3: local file / microphone (real frequency analysis) ── */
@@ -299,10 +324,16 @@ function sampleAnalyser(row) {
     const v = (freq[b0] * (1 - f) + freq[Math.min(b0 + 1, freq.length - 1)] * f) / 255;
     row[i] = Math.pow(v, 1.6);
   }
+  let bass = 0;
+  for (let i = 2; i < 24; i++) bass += freq[i];
+  bass /= 22 * 255;
+  hit = Math.max(hit, Math.max(0, bass - energy) * 4);
+  energy = energy * 0.7 + bass * 0.3;
 }
 
 function sampleIdle(row) {
   bumps(row, seeded(idleSeed++), 0.5, 0.1);
+  energy = 0.25;
 }
 
 /* ─── Which source is driving the picture ────────────────── */
@@ -321,23 +352,48 @@ const NEAR = 0.22, FAR = 14, SPAN = FAR - NEAR;
 const ROW_W = 4;              // width of the active part of each line (world units)
 const AMP = 0.5;              // height of the tallest peaks
 const CAM_X = 1.6, CAM_LO = 0.1, CAM_HI = 1.6;
-const cam = { x: 0, y: 0.62, tx: 0, ty: 0.62, roll: 0, speed: 1, tspeed: 1 };
+const cam = { x: 0, y: 0.62, tx: 0, ty: 0.62, roll: 0, speed: 1, tspeed: 1, spin: 0, spinV: 0, zoom: 1, shake: 0, tilt: 0 };
 const keys = new Set();
+let lastInput = -1e9, calm = reduceMotion, lastRoll = 0, clockT = 0;
+const touched = () => { lastInput = performance.now(); };
 
 function steerTo(clientX, clientY) {
   cam.tx = ((clientX / W) - 0.5) * 2 * CAM_X;
   cam.ty = CAM_LO + (1 - clientY / H) * (CAM_HI - CAM_LO);
 }
 addEventListener('pointermove', e => {
-  if (e.pointerType === 'mouse' || e.buttons) steerTo(e.clientX, e.clientY);
+  if (e.pointerType === 'mouse' || e.buttons) { steerTo(e.clientX, e.clientY); touched(); }
 });
-addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') steerTo(e.clientX, e.clientY); });
+addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') { steerTo(e.clientX, e.clientY); touched(); } });
 addEventListener('wheel', e => {
+  touched();
   cam.tspeed = Math.max(0.3, Math.min(3, cam.tspeed * (e.deltaY > 0 ? 0.9 : 1.1)));
 }, { passive: true });
 
 function updateCamera(dt) {
+  clockT += dt;
   const step = dt * 1.6;
+  if (keys.size) touched();
+  const auto = !calm && performance.now() - lastInput > 2500;
+  if (auto) {
+    // swoop side to side, dive into the peaks and climb out, faster when the music is loud
+    const t = clockT, e = energy;
+    cam.tx = Math.sin(t * 0.37 + Math.sin(t * 0.13) * 2) * (0.6 + e * 0.9) * CAM_X / 1.5;
+    cam.ty = CAM_LO + (0.5 + 0.5 * Math.sin(t * 0.29 + 1 + Math.sin(t * 0.07) * 3)) * (CAM_HI - CAM_LO) * (0.6 + e * 0.4);
+    cam.tspeed = Math.min(3.2, 0.7 + e * 1.6 + hit * 1.5);
+    // barrel roll on a big hit (not too often)
+    if (hit > 0.45 && clockT - lastRoll > 5) { lastRoll = clockT; cam.spinV = (Math.random() < 0.5 ? -1 : 1) * Math.PI * 2 / 1.1; }
+  }
+  if (!calm) {
+    cam.zoom += ((1 + hit * 0.35) - cam.zoom) * Math.min(1, dt * 12);            // punch in on hits
+    cam.shake = hit * 7;
+    cam.tilt = auto ? Math.sin(clockT * 0.21) * 0.08 : 0;                        // horizon wanders
+  } else { cam.zoom = 1; cam.shake = 0; cam.tilt = 0; }
+  if (cam.spinV) {
+    cam.spin += cam.spinV * dt;
+    if (Math.abs(cam.spin) >= Math.PI * 2) { cam.spin = 0; cam.spinV = 0; }
+  }
+  hit *= Math.exp(-dt * 4);
   if (keys.has('arrowleft') || keys.has('a')) cam.tx -= step * CAM_X;
   if (keys.has('arrowright') || keys.has('d')) cam.tx += step * CAM_X;
   if (keys.has('arrowup') || keys.has('w')) cam.ty += step;
@@ -351,7 +407,8 @@ function updateCamera(dt) {
   cam.y += (cam.ty - cam.y) * k;
   cam.speed += (cam.tspeed - cam.speed) * k;
   const vx = (cam.x - prevX) / Math.max(dt, 1e-3);
-  const targetRoll = reduceMotion ? 0 : Math.max(-0.35, Math.min(0.35, -vx * 0.12));
+  const bank = calm ? 0.35 : 0.7;
+  const targetRoll = reduceMotion ? 0 : Math.max(-bank, Math.min(bank, -vx * (calm ? 0.12 : 0.3)));
   cam.roll += (targetRoll - cam.roll) * k;
 }
 
@@ -393,12 +450,12 @@ function draw(phase) {
   ctx.fillRect(0, 0, W, H);
 
   // bank into turns
-  ctx.translate(W / 2, H / 2);
-  ctx.rotate(cam.roll);
+  ctx.translate(W / 2 + (Math.random() - 0.5) * cam.shake, H / 2 + (Math.random() - 0.5) * cam.shake);
+  ctx.rotate(cam.roll + cam.spin);
   ctx.translate(-W / 2, -H / 2);
 
-  const f = Math.max(W * 0.55, H * 0.75);          // focal length
-  const horizon = H * 0.34;
+  const f = Math.max(W * 0.55, H * 0.75) * cam.zoom; // focal length, punched in on hits
+  const horizon = H * (0.34 + cam.tilt);
   const gap = SPAN / ROWS;
   const pad = Math.hypot(W, H);                      // overdraw so rolled edges stay covered
   ctx.lineJoin = 'round';
@@ -525,6 +582,9 @@ fileInput.addEventListener('change', () => { loadFile(fileInput.files[0]); fileI
 playBtn.addEventListener('click', togglePlay);
 micBtn.addEventListener('click', toggleMic);
 $('uiBtn').addEventListener('click', toggleUI);
+function toggleWild() { calm = !calm; $('wildBtn').setAttribute('aria-pressed', String(!calm)); $('wildBtn').textContent = calm ? 'Calm' : 'Wild'; }
+$('wildBtn').addEventListener('click', toggleWild);
+if (calm) { $('wildBtn').setAttribute('aria-pressed', 'false'); $('wildBtn').textContent = 'Calm'; }
 cv.addEventListener('click', () => { if (!tapToPlay()) document.body.classList.remove('hide-ui'); });
 
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
@@ -537,6 +597,7 @@ addEventListener('keydown', e => {
   if (k === '-' || k === '_') { cam.tspeed = Math.max(0.3, cam.tspeed / 1.2); return; }
   if (k === ' ') { e.preventDefault(); if (!tapToPlay()) togglePlay(); }
   else if (k === 'h') toggleUI();
+  else if (k === 'c') toggleWild();
   else if (k === 'm') toggleMic();
   else if (k === 'l') fileInput.click();
   else if (k === 'f') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
