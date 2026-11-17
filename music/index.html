@@ -10,8 +10,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">
 <style>
-  .threat{display:grid;gap:1.2rem;grid-template-columns:1fr;align-items:end}
-  @media(min-width:800px){.threat{grid-template-columns:1.2fr 1fr}}
+  .nowgrid{display:grid;gap:2rem;grid-template-columns:1fr;align-items:end}
+  @media(min-width:800px){.nowgrid{grid-template-columns:minmax(240px,380px) 1fr}}
+  .art{margin:0}
+  .art .frame{position:relative;aspect-ratio:1/1;border:1px solid var(--line);background:#0a0a0a;overflow:hidden}
+  .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:opacity .8s,transform 6s ease-out}
+  .art img.on{transform:scale(1.04)}
+  .art figcaption{margin-top:.8rem}
+  .art .title{font-family:'Syne',sans-serif;font-weight:500;font-size:1rem;line-height:1.3}
+  .art .who{font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);margin-top:.3rem}
+  .threat .small{margin-top:1.4rem}
   .level{font-family:'Syne',sans-serif;font-weight:600;font-size:clamp(2.4rem,8vw,5rem);line-height:1;letter-spacing:-.02em;transition:color .6s}
   .bars{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:1rem}
   .bars span{height:10px;border:1px solid var(--line);transition:background .5s,border-color .5s}
@@ -49,8 +57,12 @@
   <h1>Music</h1>
   <p class="lede">Producer and DJ. Everything here plays straight from SoundCloud. Fly through any of it in the <a href="/visualiser/">visualiser</a>.</p>
 
-  <section aria-labelledby="threat-h">
-    <div class="threat">
+  <section class="nowgrid" aria-label="Now playing">
+    <figure class="art">
+      <div class="frame"><img id="art" alt="" hidden></div>
+      <figcaption><div class="title" id="artTitle">Press play below</div><div class="who" id="artWho">James Norman</div></figcaption>
+    </figure>
+    <div class="threat" aria-labelledby="threat-h">
       <div>
         <div class="kicker" id="threat-h">Dancefloor threat level</div>
         <div class="level" id="level" aria-live="polite">LOW</div>
@@ -115,6 +127,7 @@ function mountPlayer(url, autoPlay) {
   if (typeof SC === 'undefined') return;
   widget = SC.Widget(iframe);
   const E = SC.Widget.Events;
+  widget.bind(E.READY, () => readSound());
   widget.bind(E.PLAY, () => { playing = true; readSound(); });
   widget.bind(E.PAUSE, () => { playing = false; });
   widget.bind(E.FINISH, () => { playing = false; });
@@ -126,16 +139,34 @@ function readSound() {
     if (!s || s.id === soundId) return;
     soundId = s.id;
     duration = s.duration || s.full_duration || 0;
+    showArt(s);
     loadWave(s.waveform_url);
   });
 }
 
+// The artwork is the only thing in colour on the page.
+function showArt(s) {
+  const src = (s.artwork_url || (s.user && s.user.avatar_url) || '').replace(/-large\.(jpg|png)/, '-t500x500.$1');
+  const img = $('art');
+  $('artTitle').textContent = s.title || '';
+  $('artWho').textContent = (s.user && s.user.username) || 'James Norman';
+  if (!src) { img.hidden = true; return; }
+  img.classList.remove('on');
+  img.style.opacity = 0;
+  img.onload = () => { img.hidden = false; img.style.opacity = 1; requestAnimationFrame(() => img.classList.add('on')); };
+  img.alt = 'Artwork for ' + (s.title || 'this track');
+  img.src = src;
+}
+
 // SoundCloud publishes each track's loudness over time; we read the energy around the playhead.
+// It's fetched through the site's own server, because browsers can't read it from SoundCloud directly.
 async function loadWave(url) {
   wave = null;
   if (!url) return;
   try {
-    const j = await (await fetch(url.replace(/\.png(\?.*)?$/, '.json'))).json();
+    const r = await fetch('/api/waveform?wave=' + encodeURIComponent(url.split('?')[0]));
+    const j = await r.json();
+    if (!j.ok) throw new Error('no waveform');
     const h = j.height || 140;
     wave = j.samples.map(v => v / h);
     const sorted = [...wave].sort((a, b) => a - b);
