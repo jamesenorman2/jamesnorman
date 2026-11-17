@@ -11,6 +11,7 @@
 //   CRON_SECRET        Vercel Cron sends it in the Authorization header
 //   SHIFT_TOKEN        secret that lets this function write the shift log
 //   SITE_URL           optional, defaults to https://www.jamesnorman.co.uk
+//   SOUNDCLOUD_URL     optional, defaults to https://soundcloud.com/jamesnormal
 
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
@@ -22,6 +23,31 @@ const SITE = (process.env.SITE_URL || 'https://www.jamesnorman.co.uk').replace(/
 const PAGES = ['/', '/visualiser/', '/music/', '/security/', '/security/layers/', '/security/cpted/',
   '/security/martyns-law/', '/night-shift/', '/admin/', '/assets/site.css', '/assets/flight.js'];
 const AGENTS = { a: 'VANTAGE', b: 'LOWLIGHT' };
+const SOUNDCLOUD = (process.env.SOUNDCLOUD_URL || 'https://soundcloud.com/jamesnormal').replace(/\/$/, '');
+const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;
+
+const decode = s => s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+  .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").trim();
+
+// Your track list, read live from SoundCloud's public feed: find the user id on the profile page, then read the RSS.
+async function soundcloudTracks() {
+  try {
+    const page = await (await fetch(SOUNDCLOUD, { signal: AbortSignal.timeout(8000) })).text();
+    const id = (page.match(/soundcloud:\/\/users:(\d+)/) || page.match(/"urn":"soundcloud:users:(\d+)"/) || [])[1];
+    if (!id) return [];
+    const rss = await (await fetch(`https://feeds.soundcloud.com/users/soundcloud:users:${id}/sounds.rss`, { signal: AbortSignal.timeout(8000) })).text();
+    const tracks = [];
+    for (const item of rss.split('<item>').slice(1)) {
+      const title = decode((item.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '');
+      const url = decode((item.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || '').split('?')[0];
+      if (title && SC_URL_RE.test(url)) tracks.push({ title: title.slice(0, 200), url });
+      if (tracks.length >= 100) break;
+    }
+    return tracks;
+  } catch (e) {
+    return [];
+  }
+}
 
 async function db(path, body) {
   const r = await fetch(`${DB}/${path}`, {
@@ -87,7 +113,7 @@ async function runAgents(patrolReport, tracks) {
   const client = new Anthropic();
   const list = tracks.length
     ? tracks.map((t, i) => `${i + 1}. ${t.title}`).join('\n')
-    : '(no tracks synced yet; use track_number 0 for every pick and say the crate is empty)';
+    : '(the track list could not be read tonight; use track_number 0 for every pick and joke that the crate is empty)';
   const user = `Shift date: ${new Date().toUTCString()}
 
 PATROL REPORT (path, HTTP status, response time):
@@ -138,11 +164,7 @@ export default async function handler(req, res) {
 
   const started = new Date().toISOString();
   const report = await patrol();
-  let tracks = [];
-  try {
-    const [row] = await db('jn_site_settings?key=eq.catalogue&select=value');
-    if (row && Array.isArray(row.value)) tracks = row.value.slice(0, 200);
-  } catch (e) { /* no catalogue yet */ }
+  const tracks = await soundcloudTracks();
 
   const agents = await runAgents(report, tracks);
   const log = { started_at: started, finished_at: new Date().toISOString(), trigger: who, patrol: report, ...agents };

@@ -71,19 +71,11 @@
     <div id="preview"></div>
 
     <div class="card" style="margin-top:2.5rem">
-      <div class="k">Track list for the DJ agents</div>
-      <div class="v" id="catalogue">…</div>
-      <div class="row"><button type="button" class="ghost" id="syncBtn">Sync my SoundCloud tracks</button></div>
-      <div class="msg" id="syncMsg" role="status"></div>
-    </div>
-
-    <div class="card">
       <div class="k">Night Shift</div>
-      <div class="v">Runs automatically at 05:00 UTC. Run it now to test, or after syncing new tracks.</div>
+      <div class="v">Runs automatically at 05:00 UTC and reads your tracks straight from SoundCloud. Run it now to test.</div>
       <div class="row"><button type="button" class="ghost" id="shiftBtn">Run night shift now</button></div>
       <div class="msg" id="shiftMsg" role="status"></div>
     </div>
-    <div id="syncBox" style="position:absolute;left:-9999px;top:0;width:300px;height:166px" aria-hidden="true"></div>
 
     <a class="back" href="../visualiser/" target="_blank" rel="noopener">Open visualiser &nearr;</a>
   </section>
@@ -142,7 +134,6 @@ $('login').addEventListener('submit', async e => {
     $('login').hidden = true;
     $('panel').hidden = false;
     showCurrent();
-    showCatalogue();
     $('url').focus();
   } catch (err) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
 });
@@ -192,46 +183,6 @@ $('trackForm').addEventListener('submit', e => {
   if (previewed) save(previewed.url, previewed.title);
 });
 $('latestBtn').addEventListener('click', () => save(null, null));
-
-/* ─── Track list for the DJ agents ─────────────────────── */
-async function showCatalogue() {
-  try {
-    const r = await fetch(`${API}/jn_site_settings?key=eq.catalogue&select=value,updated_at`, { headers: { apikey: KEY }, cache: 'no-store' });
-    const [row] = await r.json();
-    $('catalogue').textContent = row && Array.isArray(row.value)
-      ? `${row.value.length} tracks, last synced ${new Date(row.updated_at).toLocaleString()}`
-      : 'Not synced yet';
-  } catch (e) { $('catalogue').textContent = 'Couldn’t load'; }
-}
-
-$('syncBtn').addEventListener('click', () => {
-  const msg = $('syncMsg');
-  say(msg, 'Reading your SoundCloud…');
-  $('syncBtn').disabled = true;
-  const box = $('syncBox');
-  box.innerHTML = '';
-  const iframe = document.createElement('iframe');
-  iframe.src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent('https://soundcloud.com/jamesnormal') + '&auto_play=false&visual=false';
-  box.append(iframe);
-  const w = SC.Widget(iframe);
-  const collect = () => new Promise(res => w.getSounds(list => res((list || []).filter(s => s && s.title && s.permalink_url))));
-  w.bind(SC.Widget.Events.READY, async () => {
-    // the player loads tracks in batches; read twice and keep the longer list
-    let best = await collect();
-    await new Promise(r => setTimeout(r, 2500));
-    const again = await collect();
-    if (again.length > best.length) best = again;
-    const tracks = best.map(s => ({ title: s.title, url: s.permalink_url.split('?')[0], duration: s.duration || 0 }));
-    if (!tracks.length) { say(msg, 'No public tracks found on your SoundCloud.', 'err'); $('syncBtn').disabled = false; return; }
-    try {
-      const res = await rpc('jn_set_catalogue', { p_password: password, p_tracks: tracks });
-      if (!res.ok) say(msg, res.error || 'Couldn’t save', 'err');
-      else { say(msg, `Synced ${res.count} tracks.`, 'ok'); showCatalogue(); }
-    } catch (e) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
-    $('syncBtn').disabled = false;
-    box.innerHTML = '';
-  });
-});
 
 $('shiftBtn').addEventListener('click', async () => {
   const msg = $('shiftMsg');
