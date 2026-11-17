@@ -71,6 +71,12 @@
   .pp svg{width:100%;height:100%;display:block}
   .pp .ic-pause{display:none} .pp.playing .ic-pause{display:inline} .pp.playing .ic-play{display:none}
   .controls{align-items:center}
+  /* transport: play/pause on the left and previous/next on the right, both sitting just above the seek waveform */
+  .transport,.skip{position:fixed;bottom:calc(5.2rem + 64px + .9rem);z-index:4;display:flex;gap:.9rem;align-items:center;pointer-events:auto}
+  .transport{left:3rem} .skip{right:3rem}
+  .pp.sk{width:44px;height:44px}
+  .pp:disabled{opacity:.3}
+  @media(max-width:700px){.transport,.skip{bottom:calc(9.5rem + 48px + .7rem)}.transport{left:16px}.skip{right:16px}.pp.sk{width:40px;height:40px}}
   /* the intro: the name fades in, the tabs follow, then both drift away and leave the visuals */
   .intro{position:fixed;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;padding:16px}
   .intro .name{font-family:'Syne',sans-serif;font-weight:500;font-size:clamp(2.6rem,9vw,7.5rem);line-height:1;letter-spacing:-.03em;text-transform:uppercase;color:#fff;
@@ -139,7 +145,6 @@
   </header>
   <footer class="bottom">
     <div class="controls">
-      <button id="playBtn" class="pp" title="Play / pause (Space)" aria-label="Play" disabled><svg viewBox="0 0 48 48" aria-hidden="true"><polygon class="ic-play" points="16,11 37,24 16,37" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><g class="ic-pause" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="11" width="7" height="26"/><rect x="27" y="11" width="7" height="26"/></g></svg></button>
       <button id="loadBtn" title="Play an audio file from your device instead (L)">Load file</button>
       <button id="micBtn" title="Use your microphone (M)" aria-pressed="false">Mic</button>
       <button id="wildBtn" title="Wild camera on or off (C)" aria-pressed="true">Wild</button>
@@ -153,6 +158,13 @@
       <div class="status" id="cue" aria-live="off"></div>
     </div>
   </footer>
+  <div class="transport">
+    <button id="playBtn" class="pp" title="Play / pause (Space)" aria-label="Play" disabled><svg viewBox="0 0 48 48" aria-hidden="true"><polygon class="ic-play" points="16,11 37,24 16,37" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><g class="ic-pause" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="11" width="7" height="26"/><rect x="27" y="11" width="7" height="26"/></g></svg></button>
+  </div>
+  <div class="skip" role="group" aria-label="Track">
+    <button id="prevBtn" class="pp sk" title="Previous track (P)" aria-label="Previous track" disabled><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="36,12 17,24 36,36"/><rect x="11" y="12" width="4" height="24"/></svg></button>
+    <button id="nextBtn" class="pp sk" title="Next track (N)" aria-label="Next track" disabled><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12,12 31,24 12,36"/><rect x="33" y="12" width="4" height="24"/></svg></button>
+  </div>
 </div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="hint" id="hint">Drag to fly round it &middot; scroll to fly out and in &middot; double-click to ride it</div>
@@ -242,7 +254,7 @@ let scSoundId = null, wave = null, waveLo = 0, waveHi = 1, scReady = false;
 
 // Each visit plays one of the tracks the Night Shift agents picked recently (the DJ's
 // hourly pick and both battle picks), chosen at random, and credits the agent who picked it.
-let pickedBy = null;
+let pickedBy = null, picks = [], queue = [], qi = -1;   // the agents' picks, and the order played so far
 async function chosenTrack() {
   const q = new URLSearchParams(location.search).get('track');   // ?track=<SoundCloud link> plays that track
   if (q && SC_URL_RE.test(q)) return q;
@@ -260,7 +272,7 @@ async function chosenTrack() {
       for (const k of ['a', 'b']) { const p = row.battle && row.battle[k]; if (p && p.track && !picks.has(p.track.url)) picks.set(p.track.url, { ...p.track, by: { VANTAGE: 'Agent Monkey Monkey', LOWLIGHT: 'Fish Fish' }[p.agent] || p.agent.replace(/\b\w/g, c => c.toUpperCase()).replace(/\B\w+/g, w => w.toLowerCase()) }); }
     }
     const list = [...picks.values()].filter(p => SC_URL_RE.test(p.url));
-    if (list.length) { const pick = list[Math.floor(Math.random() * list.length)]; pickedBy = pick.by; return pick.url; }
+    if (list.length) { picks = list; const pick = list[Math.floor(Math.random() * list.length)]; pickedBy = pick.by; queue = [pick]; qi = 0; return pick.url; }
   } catch (e) { /* fall through to the latest uploads */ }
   return DEFAULT_SOUNDCLOUD;
 }
@@ -290,7 +302,7 @@ async function startSoundCloud() {
   sc = SC.Widget(iframe);
   sc.bind(E.READY, () => {
     scReady = true;
-    playBtn.disabled = false;
+    playBtn.disabled = false; $('prevBtn').disabled = false; $('nextBtn').disabled = false;
     readSound();
     if (source === 'idle') sc.play();
     // browsers block sound until the visitor interacts; ask for a tap if it didn't start
@@ -307,7 +319,7 @@ async function startSoundCloud() {
     setPlayIcon(true);
   });
   sc.bind(E.PAUSE, () => { scPlaying = false; if (lastMedia === 'sc') { setPlayIcon(false); setStatus('Paused'); } });
-  sc.bind(E.FINISH, () => { scPlaying = false; });
+  sc.bind(E.FINISH, () => { scPlaying = false; if (queue.length) skip(1); });   // carry on with another agent pick
   sc.bind(E.PLAY_PROGRESS, e => { scPos = e.currentPosition; scPosAt = performance.now(); });
   sc.bind(E.ERROR, () => setStatus('Couldn’t load that SoundCloud track'));
 }
@@ -1029,6 +1041,31 @@ function loadFile(file) {
   audioEl.play().catch(() => setStatus('Press play to start'));
 }
 
+// Previous / next: through the agents' picks (a new random one at the end of the list), or SoundCloud's own list.
+function playItem(item) {
+  pickedBy = item.by || null;
+  setStatus('Loading…');
+  sc.load(item.url, { auto_play: true, hide_related: true, show_comments: false, show_reposts: false, visual: false });
+}
+function skip(dir) {
+  if (!sc || !scReady) return;
+  stopMic();
+  if (audioEl && !audioEl.paused) audioEl.pause();
+  lastMedia = 'sc';
+  if (!queue.length) { dir > 0 ? sc.next() : sc.prev(); sc.play(); return; }   // playing the whole profile
+  if (dir < 0) {
+    if (scPos > 5000 || qi === 0) { sc.seekTo(0); sc.play(); return; }       // like any player: back to the start first
+    qi--; playItem(queue[qi]); return;
+  }
+  if (qi < queue.length - 1) { qi++; playItem(queue[qi]); return; }
+  const recent = new Set(queue.slice(-Math.max(1, picks.length - 1)).map(p => p.url));
+  const fresh = picks.filter(p => !recent.has(p.url));
+  const pool = fresh.length ? fresh : picks.filter(p => p.url !== queue[qi].url);
+  if (!pool.length) { sc.seekTo(0); sc.play(); return; }
+  queue.push(pool[Math.floor(Math.random() * pool.length)]); qi = queue.length - 1;
+  playItem(queue[qi]);
+}
+
 function togglePlay() {
   stopMic();
   if (lastMedia === 'file' && audioEl && audioEl.src) {
@@ -1113,8 +1150,8 @@ function runIntro() {
       let x, y, face;
       for (let tries = 0; tries < 30; tries++) {      // keep the letters apart from each other
       const side = Math.random();
-      if (side < 0.3) { x = 14; y = H * (0.18 + Math.random() * 0.55); face = -90; }                 // left edge
-      else if (side < 0.6) { x = W - 14; y = H * (0.18 + Math.random() * 0.55); face = 90; }         // right edge
+      if (side < 0.3) { x = 14; y = H * (0.16 + Math.random() * 0.46); face = -90; }                 // left edge
+      else if (side < 0.6) { x = W - 14; y = H * (0.16 + Math.random() * 0.46); face = 90; }         // right edge
       else if (side < 0.8) { x = W * (0.28 + Math.random() * 0.3); y = 12; face = 0; }               // top
       else { x = W * (0.35 + Math.random() * 0.3); y = H - 12; face = 180; }                        // bottom, upside down
       if (taken.every(([tx, ty]) => Math.hypot(tx - x, ty - y) > Math.min(W, H) * 0.07)) break;
@@ -1146,6 +1183,8 @@ $('tap').addEventListener('click', tapToPlay);
 $('loadBtn').addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => { loadFile(fileInput.files[0]); fileInput.value = ''; });
 playBtn.addEventListener('click', togglePlay);
+$('prevBtn').addEventListener('click', () => skip(-1));
+$('nextBtn').addEventListener('click', () => skip(1));
 micBtn.addEventListener('click', toggleMic);
 $('uiBtn').addEventListener('click', toggleUI);
 function toggleWild() { calm = !calm; $('wildBtn').setAttribute('aria-pressed', String(!calm)); $('wildBtn').textContent = calm ? 'Calm' : 'Wild'; }
@@ -1167,6 +1206,8 @@ addEventListener('keydown', e => {
   if (k === '-' || k === '_') { touched(); view.dist = Math.min(30, view.dist * 1.2); return; }
   if (k === ' ') { e.preventDefault(); if (!tapToPlay()) togglePlay(); }
   else if (k === 'h') toggleUI();
+  else if (k === 'n') skip(1);
+  else if (k === 'p') skip(-1);
   else if (k === 'c') toggleWild();
   else if (k === 'm') toggleMic();
   else if (k === 'l') fileInput.click();
