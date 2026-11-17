@@ -35,6 +35,26 @@
   .switch .p{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--mid);display:block;margin:.15rem 0 .25rem}
   .switch .what{font-size:.7rem;color:var(--dim);line-height:1.5;display:block}
   .actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
+  .tools{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;padding:.7rem 1rem;border-top:1px solid var(--line)}
+  .tools .k{font-size:.58rem;letter-spacing:.25em;text-transform:uppercase;color:var(--mid);margin-right:.4rem}
+  .tool{background:transparent;color:var(--fg);border:1px solid var(--line);padding:.45rem .7rem;font-size:.6rem}
+  .tool.on{background:#fff;color:#000;border-color:#fff}
+  .plan canvas.editing{cursor:crosshair}
+  .audit-head{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+  .pr .v{font-family:'Syne',sans-serif;font-weight:600;font-size:1.6rem;margin-top:.4rem}
+  .findings{margin:.8rem 0 0 1.2rem;font-size:.84rem}
+  .findings li{margin:.9rem 0;cursor:default}
+  .findings li:hover b{text-decoration:underline}
+  .findings p{color:var(--mid);font-size:.78rem;margin-top:.2rem}
+  .tag{display:inline-block;font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;border:1px solid currentColor;padding:0 .4rem;margin-right:.5rem;vertical-align:1px}
+  .tag.high{color:var(--err)} .tag.med{color:var(--warn)} .tag.low{color:var(--mid)}
+  @media print{
+    body{background:#fff;color:#000}
+    header,footer,.lede,aside,.legend,.tools,#printAudit,section:not(#audit){display:none!important}
+    .plan{border:0}
+    .card{border-color:#999}
+    .tag.high,.tag.med,.tag.low{color:#000}
+  }
 </style>
 </head>
 <body>
@@ -65,6 +85,15 @@
           <span>? Hiding place</span>
           <span>— — Sightline from a window</span>
         </div>
+        <div class="tools" role="toolbar" aria-label="Edit the street">
+          <span class="k">Edit</span>
+          <button class="tool on" data-tool="inspect">Look</button>
+          <button class="tool" data-tool="lamp">+ Lamp</button>
+          <button class="tool" data-tool="hedge">+ Hedge</button>
+          <button class="tool" data-tool="kiosk">+ Kiosk</button>
+          <button class="tool" data-tool="remove">Remove</button>
+          <button class="tool" id="clearEdits">Clear my edits</button>
+        </div>
       </div>
     </div>
 
@@ -89,6 +118,14 @@
       </div>
     </aside>
   </div>
+
+  <section id="audit" aria-labelledby="audit-h">
+    <div class="audit-head"><h2 id="audit-h">CPTED audit</h2><button class="ghost" id="printAudit">Print or save as PDF</button></div>
+    <div id="principles" class="grid"></div>
+    <h2 style="margin-top:2rem">Findings</h2>
+    <p class="small">Hover a finding to see it on the plan.</p>
+    <ol id="findings" class="findings"></ol>
+  </section>
 
   <section>
     <h2>The four principles</h2>
@@ -132,6 +169,8 @@ function buildSite() {
   fill(34, 23, 62, 34, CARPARK);                   // car park behind the shops
   fill(33, 25, 33, 34, HEDGE);                     // hedge between the alley and the car park
   fill(39, 27, 45, 28, HEDGE); fill(50, 27, 56, 28, HEDGE);   // planting beds in the car park
+  for (const k of addedHedges) { const [x, y] = k.split(',').map(Number); if (at(x, y) !== BUILDING) grid[y * GW + x] = HEDGE; }
+  for (const k of removedHedges) { const [x, y] = k.split(',').map(Number); if (grid[y * GW + x] === HEDGE) grid[y * GW + x] = (y >= 23 && x >= 34) ? CARPARK : (x >= 29 && x <= 32 ? ALLEY : EMPTY); }
 }
 
 // windows: position (just outside the facade) and the direction they face
@@ -143,8 +182,12 @@ const ACTIVE_WINDOWS = [];
 for (let y = 19; y <= 29; y += 2.5) ACTIVE_WINDOWS.push([28.05, y, 1, 0]);                                                    // flats' gable wall looks over the alley
 for (let x = 36; x <= 60; x += 4) ACTIVE_WINDOWS.push([x, 22.05, 0, 1]);                                                      // shops' back windows look over the car park
 
-const LAMPS = [[7, 14], [19, 14], [31, 14], [43, 14], [55, 14], [30.5, 22], [30.5, 30], [37, 25], [48, 31], [59, 25]];
-const BROKEN = new Set([2, 5, 8]);                 // neglected: these don't work
+const LAMPS = [[7, 14], [19, 14], [31, 14], [43, 14], [55, 14], [30.5, 22], [30.5, 30], [37, 25], [48, 31], [59, 25]]
+  .map(([x, y], i) => ({ x, y, broken: [2, 5, 8].includes(i), user: false }));    // neglected: three don't work
+const lampOn = l => l.user || (opts.light && (opts.care || !l.broken));
+// things the visitor places on the plan
+const OBSERVERS = [];                               // kiosks, cafés, concierge desks: eyes in every direction
+const addedHedges = new Set(), removedHedges = new Set();
 
 /* ─── Natural surveillance: lit AND seen from a window ───── */
 const lit = new Uint8Array(GW * GH), seen = new Uint8Array(GW * GH), route = new Uint8Array(GW * GH);
@@ -171,20 +214,19 @@ function analyse() {
     if (v === STREET || ((v === ALLEY || v === CARPARK) && !opts.gate)) route[i] = 1;
   }
   // lighting
-  const lamps = opts.light ? LAMPS.filter((_, i) => opts.care || !BROKEN.has(i)) : [];
-  for (const [lx, ly] of lamps) {
+  for (const { x: lx, y: ly } of LAMPS.filter(lampOn)) {
     for (let y = Math.floor(ly - 7); y <= ly + 7; y++) for (let x = Math.floor(lx - 7); x <= lx + 7; x++) {
       if (Math.hypot(x + 0.5 - lx, y + 0.5 - ly) <= 6.5 && at(x, y) !== BUILDING && lineClear(lx, ly, x + 0.5, y + 0.5, true)) lit[y * GW + x] = 1;
     }
   }
   // sightlines from windows
-  const windows = BASE_WINDOWS.concat(opts.windows ? ACTIVE_WINDOWS : []);
+  const windows = BASE_WINDOWS.concat(opts.windows ? ACTIVE_WINDOWS : [], OBSERVERS.map(o => [o.x, o.y, 0, 0]));
   rays = [];
   for (const [wx, wy, dx, dy] of windows) {
     for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
       const cx = x + 0.5 - wx, cy = y + 0.5 - wy, d = Math.hypot(cx, cy);
       if (d > 15 || d < 0.3) continue;
-      if ((cx * dx + cy * dy) / d < 0.35) continue;         // ~140° field of view out of the window
+      if ((dx || dy) && (cx * dx + cy * dy) / d < 0.35) continue;   // ~140° from a window; all round from an observation point
       if (at(x, y) === BUILDING) continue;
       if (lineClear(wx, wy, x + 0.5, y + 0.5, false)) {
         seen[y * GW + x] = 1;
@@ -222,6 +264,7 @@ function analyse() {
   if (audio) audio.set(sc);
   score = sc;
   drawStatic();
+  audit();
 }
 
 /* ─── Drawing: an isometric view of the street ───────────── */
@@ -260,8 +303,8 @@ function drawStatic() {
   bx.strokeStyle = 'rgba(255,255,255,.15)'; bx.lineWidth = u; bx.strokeRect(0, 0, GW, GH);
   // light pools
   for (let i = 0; i < LAMPS.length; i++) {
-    const on = opts.light && (opts.care || !BROKEN.has(i)); if (!on) continue;
-    const [lx, ly] = LAMPS[i], g = bx.createRadialGradient(lx, ly, 0, lx, ly, 6.5);
+    if (!lampOn(LAMPS[i])) continue;
+    const { x: lx, y: ly } = LAMPS[i], g = bx.createRadialGradient(lx, ly, 0, lx, ly, 6.5);
     g.addColorStop(0, 'rgba(255,255,255,.24)'); g.addColorStop(1, 'rgba(255,255,255,0)');
     bx.fillStyle = g; bx.beginPath(); bx.arc(lx, ly, 6.5, 0, Math.PI * 2); bx.fill();
   }
@@ -311,7 +354,8 @@ function drawStatic() {
   const items = [];
   BLOCKS.forEach(b => items.push({ k: b[2] + b[3], f: () => block(b) }));
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) if (grid[y * GW + x] === HEDGE) items.push({ k: x + y + 1, f: () => hedge(x, y) });
-  LAMPS.forEach((l, i) => items.push({ k: l[0] + l[1], f: () => lamp(i) }));
+  LAMPS.forEach((l, i) => items.push({ k: l.x + l.y, f: () => lamp(i) }));
+  OBSERVERS.forEach(o => items.push({ k: o.x + o.y, f: () => observer(o) }));
   if (opts.gate) items.push({ k: 33 + 17, f: gateFence });
   items.sort((a, b) => a.k - b.k).forEach(it => it.f());
 
@@ -384,12 +428,23 @@ function hedge(x, y) {
 }
 
 function lamp(i) {
-  const [lx, ly] = LAMPS[i], on = opts.light && (opts.care || !BROKEN.has(i));
+  const { x: lx, y: ly } = LAMPS[i], on = lampOn(LAMPS[i]);
   const b = iso(lx, ly), t = iso(lx, ly, 2.6);
   bx.strokeStyle = '#fff'; bx.lineWidth = 1; bx.beginPath(); bx.moveTo(...b); bx.lineTo(...t); bx.stroke();
   bx.beginPath(); bx.arc(t[0], t[1], Math.max(2, TW * 0.22), 0, Math.PI * 2);
   if (on) { bx.fillStyle = '#fff'; bx.fill(); } else bx.stroke();
-  if (opts.light && !on) { const r = TW * 0.3; bx.beginPath(); bx.moveTo(t[0] - r, t[1] - r); bx.lineTo(t[0] + r, t[1] + r); bx.stroke(); }   // broken
+  if (opts.light && !on && !LAMPS[i].user) { const r = TW * 0.3; bx.beginPath(); bx.moveTo(t[0] - r, t[1] - r); bx.lineTo(t[0] + r, t[1] + r); bx.stroke(); }   // broken
+}
+
+// an observation point: a small kiosk with windows all round
+function observer(o) {
+  const h = 1.6, x = o.x - 0.6, y = o.y - 0.6, X = o.x + 0.6, Y = o.y + 0.6;
+  const D = iso(x, Y), C = iso(X, Y), B = iso(X, y), Dt = iso(x, Y, h), Ct = iso(X, Y, h), Bt = iso(X, y, h), At = iso(x, y, h);
+  bx.fillStyle = 'rgba(0,0,0,.5)'; bx.strokeStyle = '#fff'; bx.lineWidth = 1.1;
+  poly(bx, [D, C, Ct, Dt]); bx.fill(); bx.stroke(); poly(bx, [B, C, Ct, Bt]); bx.fill(); bx.stroke(); poly(bx, [At, Bt, Ct, Dt]); bx.fill(); bx.stroke();
+  bx.fillStyle = '#fff';
+  poly(bx, [iso(x + 0.25, Y, 0.6), iso(X - 0.25, Y, 0.6), iso(X - 0.25, Y, 1.2), iso(x + 0.25, Y, 1.2)]); bx.fill();
+  poly(bx, [iso(X, y + 0.25, 0.6), iso(X, Y - 0.25, 0.6), iso(X, Y - 0.25, 1.2), iso(X, y + 0.25, 1.2)]); bx.fill();
 }
 
 function gateFence() {
@@ -428,6 +483,12 @@ function frame(now) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(base, 0, 0);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (highlight) {
+    ctx.save(); ctx.setTransform(DPR * TW / 2, DPR * TW / 4, -DPR * TW / 2, DPR * TW / 4, DPR * OX, DPR * OY);
+    ctx.fillStyle = 'rgba(255,207,90,.35)';
+    for (const c of highlight) ctx.fillRect(c % GW, (c / GW) | 0, 1, 1);
+    ctx.restore(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
   const path = opts.gate ? WALK_GATED : WALK, L = pathLen(path);
   wd += dt * 3.2 * wdir;
   if (wd > L) { wd = L; wdir = -1; } if (wd < 0) { wd = 0; wdir = 1; }
@@ -445,6 +506,89 @@ function frame(now) {
   ctx.globalAlpha = 0.9; ctx.fillText(safe ? 'seen' : 'blind spot…', px, py - 33 * s); ctx.globalAlpha = 1;
   requestAnimationFrame(frame);
 }
+
+/* ─── Edit the street ─────────────────────────────────────── */
+let tool = 'inspect', highlight = null;
+document.querySelectorAll('.tool[data-tool]').forEach(b => b.addEventListener('click', () => {
+  tool = b.dataset.tool;
+  document.querySelectorAll('.tool[data-tool]').forEach(x => x.classList.toggle('on', x === b));
+  cv.classList.toggle('editing', tool !== 'inspect');
+}));
+$('clearEdits').addEventListener('click', () => {
+  for (let i = LAMPS.length - 1; i >= 0; i--) if (LAMPS[i].user) LAMPS.splice(i, 1);
+  OBSERVERS.length = 0; addedHedges.clear(); removedHedges.clear(); analyse();
+});
+// screen → ground grid (the inverse of the isometric projection)
+function toGrid(px, py) { const u = (px - OX) / (TW / 2), v = (py - OY) / (TW / 4); return [(u + v) / 2, (v - u) / 2]; }
+cv.addEventListener('click', e => {
+  if (tool === 'inspect') return;
+  const r = cv.getBoundingClientRect(), [gx, gy] = toGrid(e.clientX - r.left, e.clientY - r.top);
+  if (gx < 0 || gy < 0 || gx >= GW || gy >= GH) return;
+  const cx = Math.floor(gx), cy = Math.floor(gy), cell = at(cx, cy);
+  if (tool === 'lamp' && cell !== BUILDING) LAMPS.push({ x: cx + 0.5, y: cy + 0.5, broken: false, user: true });
+  if (tool === 'kiosk' && cell !== BUILDING) OBSERVERS.push({ x: cx + 0.5, y: cy + 0.5 });
+  if (tool === 'hedge' && cell !== BUILDING) { const k = cx + ',' + cy; removedHedges.delete(k); addedHedges.add(k); }
+  if (tool === 'remove') {
+    const near = (a) => Math.hypot(a.x - gx, a.y - gy) < 1.4;
+    let i = LAMPS.findIndex(l => l.user && near(l)); if (i >= 0) LAMPS.splice(i, 1);
+    else if ((i = OBSERVERS.findIndex(near)) >= 0) OBSERVERS.splice(i, 1);
+    else if (cell === HEDGE) { const k = cx + ',' + cy; addedHedges.delete(k); removedHedges.add(k); }
+  }
+  analyse();
+});
+
+/* ─── The audit ───────────────────────────────────────────── */
+function zoneOf(x, y) { const v = at(x, y); return v === STREET ? 'street' : v === ALLEY ? 'alley' : v === CARPARK ? 'car park' : 'area'; }
+function where(x, y) {
+  const z = zoneOf(x, y);
+  if (z === 'street') return `the street, ${x < GW / 3 ? 'west end' : x > GW * 2 / 3 ? 'east end' : 'middle'}`;
+  if (z === 'alley') return `the alley, ${y < 25 ? 'near the street' : 'far end'}`;
+  if (z === 'car park') return `the car park, ${y > 29 ? 'south' : 'north'} ${x > 50 ? 'east' : 'west'} side`;
+  return 'by the buildings';
+}
+function audit() {
+  // group unwatched ground into areas
+  const blind = new Set(blindCells), seenCell = new Set(), regions = [];
+  for (const i of blindCells) {
+    if (seenCell.has(i)) continue;
+    const q = [i], cells = []; seenCell.add(i);
+    while (q.length) { const c = q.pop(); cells.push(c); const x = c % GW, y = (c / GW) | 0;
+      for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = (y + oy) * GW + x + ox; if (x + ox >= 0 && x + ox < GW && blind.has(n) && !seenCell.has(n)) { seenCell.add(n); q.push(n); } } }
+    if (cells.length >= 3) regions.push(cells);
+  }
+  const hideSet = new Set(hidePlaces.map(([x, y]) => y * GW + x));
+  const findings = regions.map(cells => {
+    const cx = Math.round(cells.reduce((a, c) => a + c % GW, 0) / cells.length), cy = Math.round(cells.reduce((a, c) => a + ((c / GW) | 0), 0) / cells.length);
+    const unlit = cells.filter(c => !lit[c]).length / cells.length, unseen = cells.filter(c => !seen[c]).length / cells.length;
+    const hides = cells.filter(c => hideSet.has(c)).length;
+    const m2 = cells.length * 4, zone = zoneOf(cells[0] % GW, (cells[0] / GW) | 0);
+    const why = [], fix = [];
+    if (unlit > 0.5) { why.push('unlit'); fix.push('add lighting so faces can be seen'); }
+    if (unseen > 0.5) { why.push(unlit > 0.5 ? 'and not overlooked' : 'lit but not overlooked'); fix.push('bring eyes onto it: windows or an active frontage facing it, or a staffed point such as a kiosk'); }
+    if (hides) { why.push(`${hides} hiding place${hides > 1 ? 's' : ''} behind planting`); fix.push('cut planting below about a metre'); }
+    if ((zone === 'alley' || zone === 'car park') && !opts.gate) fix.push('consider controlling access so it stops being a public through-route');
+    if (opts.light && !opts.care && unlit > 0.3 && LAMPS.some(l => l.broken && !l.user && Math.hypot(l.x - cx, l.y - cy) < 9)) fix.push('repair the broken light here first');
+    const level = m2 >= 120 || hides >= 3 ? 'high' : m2 >= 40 ? 'med' : 'low';
+    return { cells, m2, place: where(cx, cy), why: why.join(', ') || 'partly unwatched', fix, level };
+  }).sort((a, b) => b.m2 - a.m2);
+  const lvlOrder = { high: 0, med: 1, low: 2 };
+  findings.sort((a, b) => lvlOrder[a.level] - lvlOrder[b.level] || b.m2 - a.m2);
+  $('findings').innerHTML = findings.length ? findings.map((f, i) => `<li data-i="${i}"><span class="tag ${f.level}">${{ high: 'Priority', med: 'Improve', low: 'Minor' }[f.level]}</span><b>${f.place[0].toUpperCase() + f.place.slice(1)}</b>, about ${f.m2} m²: ${f.why}.<p>${f.fix.length ? f.fix.map(x => x[0].toUpperCase() + x.slice(1)).join('. ') + '.' : 'Keep an eye on it.'}</p></li>`).join('')
+    : '<li>No significant unwatched public ground. Keep it maintained.</li>';
+  $('findings').querySelectorAll('li[data-i]').forEach(li => {
+    li.addEventListener('mouseenter', () => { highlight = findings[+li.dataset.i].cells; });
+    li.addEventListener('mouseleave', () => { highlight = null; });
+  });
+  const pct = parseInt($('pct').textContent, 10);
+  const P = [
+    ['Natural surveillance', `${pct}% of the route overlooked`, pct >= 85 ? 'Good' : pct >= 60 ? 'Fair' : 'Poor'],
+    ['Access control', opts.gate ? 'Alley gated; route channelled along the street' : 'Alley and car park are open through-routes', opts.gate ? 'Good' : 'Poor'],
+    ['Territorial reinforcement', opts.gate ? 'Clear private space behind the gate; front gardens defined' : 'Front gardens defined; shared space behind is unclaimed', opts.gate ? 'Good' : 'Fair'],
+    ['Maintenance', opts.care ? 'Lights working; no graffiti or litter' : 'Broken lights, graffiti and litter signal neglect', opts.care ? 'Good' : 'Poor']
+  ];
+  $('principles').innerHTML = P.map(([n, d, r]) => `<div class="card pr"><div class="kicker">${n}</div><div class="v">${r}</div><p class="small">${d}</p></div>`).join('');
+}
+$('printAudit').addEventListener('click', () => window.print());
 
 /* ─── Sound: uneasy when it's dark and unseen, settled when it's overlooked ── */
 let audio = null, soundOn = false;
