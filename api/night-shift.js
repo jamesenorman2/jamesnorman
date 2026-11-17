@@ -17,7 +17,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
 import { gatekeeper, links, clerk, intel, scout } from '../lib/jobs.js';
-import { choreograph } from '../lib/choreo.js';
+import { choreograph, refine } from '../lib/choreo.js';
 
 const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
 const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
@@ -223,9 +223,19 @@ const SHIFT_EVERY_MINUTES = 60;
 async function pickleShift(tracks) {
   if (!process.env.ANTHROPIC_API_KEY || !tracks.length) return { ok: false, error: 'off duty' };
   try {
-    const done = new Set((await db('jn_scores?select=track_url')).map(r => r.track_url));
+    const rows = await db('jn_scores?select=track_url,created_at,score&order=created_at.asc');
+    const done = new Set(rows.map(r => r.track_url));
     const todo = tracks.find(t => !done.has(t.url));
-    if (!todo) return { ok: true, scored: done.size, note: 'every track has a cue sheet' };
+    if (!todo) {
+      // every track has a sheet: go back to the one touched longest ago and add a few moments
+      const row = rows.find(r => tracks.some(t => t.url === r.track_url));
+      if (!row) return { ok: true, scored: done.size };
+      const track = tracks.find(t => t.url === row.track_url);
+      const res = await refine(track, row.score);
+      if (!res.ok) return { ok: false, track: track.title, error: res.error };
+      const saved = await db('rpc/jn_post_score', { p_token: process.env.SHIFT_TOKEN, p_url: track.url, p_title: track.title, p_score: res.score });
+      return saved.ok ? { ok: true, refined: track.title, added: res.added, revision: res.score.revision } : { ok: false, error: saved.error };
+    }
     const res = await choreograph(todo);
     if (!res.ok) return { ok: false, track: todo.title, error: res.error };
     const saved = await db('rpc/jn_post_score', { p_token: process.env.SHIFT_TOKEN, p_url: todo.url, p_title: todo.title, p_score: res.score });
