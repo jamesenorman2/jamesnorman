@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fly the Layers — James Norman</title>
+<meta name="description" content="Fly through defence in depth: perimeter, approach, envelope, core. Each layer adds to the music.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  html,body{height:100%;overflow:hidden}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  header.wrap{position:relative;z-index:2;max-width:none}
+  .hud{position:fixed;left:0;right:0;bottom:0;z-index:2;padding:0 16px 1.5rem;pointer-events:none;
+    display:flex;justify-content:space-between;align-items:flex-end;gap:1.5rem;flex-wrap:wrap}
+  @media(min-width:700px){.hud{padding:0 32px 2.2rem}}
+  .hud{background:linear-gradient(to top,rgba(0,0,0,.92) 0,rgba(0,0,0,.75) 55%,transparent);padding-top:5rem}
+  .hud *{pointer-events:auto}
+  .zone .num{font-size:.6rem;letter-spacing:.35em;color:var(--mid)}
+  .zone .name{font-family:'Syne',sans-serif;font-weight:600;font-size:clamp(1.8rem,5vw,3rem);line-height:1;margin:.3rem 0 .2rem;letter-spacing:-.01em}
+  .zone .verb{font-size:.65rem;letter-spacing:.4em;color:var(--mid)}
+  .zone p{max-width:46ch;font-size:.8rem;color:#cfcfcf;margin-top:.8rem;transition:opacity .5s}
+  .legend{list-style:none;font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);text-align:right}
+  .legend li{transition:color .5s}
+  .legend li.on{color:var(--fg)}
+  .start{position:fixed;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem;
+    background:rgba(0,0,0,.6);text-align:center;padding:16px}
+  .start h1{margin:0}
+  .start p{max-width:48ch;color:var(--mid);font-size:.85rem}
+  .flash{position:fixed;left:0;right:0;top:30%;z-index:2;text-align:center;pointer-events:none;opacity:0}
+  .flash .n{font-size:.65rem;letter-spacing:.5em;text-transform:uppercase;color:var(--mid)}
+  .flash .t{font-family:'Syne',sans-serif;font-weight:600;font-size:clamp(2rem,7vw,5rem);line-height:1;margin-top:.5rem;text-shadow:0 0 30px #000}
+  .flash.on{animation:flashIn 2.6s ease forwards}
+  @keyframes flashIn{0%{opacity:0;transform:scale(1.15);filter:blur(6px)}15%{opacity:1;transform:scale(1);filter:blur(0)}70%{opacity:1}100%{opacity:0;transform:scale(.96)}}
+  .endcard{position:fixed;left:0;right:0;top:38%;z-index:2;text-align:center;pointer-events:none;opacity:0;padding:0 16px}
+  .endcard .t{font-family:'Syne',sans-serif;font-weight:600;font-size:clamp(1.4rem,4.5vw,3rem);letter-spacing:.02em;text-shadow:0 0 30px #000}
+  .endcard .n{font-size:.75rem;color:#cfcfcf;margin-top:.8rem}
+  .endcard.on{animation:endIn 4.5s ease forwards}
+  @keyframes endIn{0%{opacity:0}12%{opacity:1}80%{opacity:1}100%{opacity:0}}
+  .progress{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:200px;margin:0 0 .8rem auto}
+  .progress span{height:3px;background:var(--line);overflow:hidden}
+  .progress i{display:block;height:100%;width:0;background:#fff;transition:width .3s linear}
+  .controls-hint{font-size:.55rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-label="A ridge-line landscape you fly through, divided into four layers of protection"></canvas>
+<header class="wrap">
+  <nav class="nav" aria-label="Site">
+    <a class="home" href="/">James Norman</a>
+    <ul>
+      <li><a href="/music/">Music</a></li>
+      <li><a href="/security/" aria-current="page">Security</a></li>
+      <li><a href="/night-shift/">Night Shift</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="flash" id="flash" aria-hidden="true"><div class="n"></div><div class="t"></div></div>
+<div class="endcard" id="endcard" aria-hidden="true">
+  <div class="t">Deter · Detect · Delay · Respond</div>
+  <div class="n">Layered, the people at the centre stay safe. Flying round again.</div>
+</div>
+<div class="hud">
+  <div class="zone" aria-live="polite">
+    <div class="num" id="znum">Layer 1 / 4</div>
+    <div class="name" id="zname">Perimeter</div>
+    <div class="verb" id="zverb">Deter</div>
+    <p id="zdesc"></p>
+  </div>
+  <div>
+    <div class="progress" id="progress" aria-hidden="true"><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span></div>
+    <ol class="legend" id="legend">
+      <li>Perimeter</li><li>Approach</li><li>Envelope</li><li>Core</li>
+    </ol>
+    <div class="controls-hint" style="margin-top:1rem;text-align:right">
+      <button class="ghost" id="soundBtn" style="padding:.5rem .8rem">Sound off</button>
+    </div>
+  </div>
+</div>
+
+<div class="start" id="start">
+  <div class="kicker">Defence in depth</div>
+  <h1>Layers of Protection</h1>
+  <p>Good protective security is layered: each ring deters, detects or delays, so the people at the centre are the hardest thing to reach. Fly in from the boundary to the core. Every layer adds to the music, until the quiet at the centre.</p>
+  <button id="go">Begin flight &middot; sound on</button>
+  <div class="controls-hint">Move to steer &middot; scroll to change speed</div>
+</div>
+
+<script src="/assets/konami.js"></script>
+<script type="module">
+import { createFlight } from '/assets/flight.js';
+
+const ZONES = [
+  { name: 'Perimeter', verb: 'Deter', desc: 'Define the boundary. Fences, gates, lighting and clear signs tell everyone where public space ends, and put off the opportunist before they start.' },
+  { name: 'Approach', verb: 'Detect', desc: 'Control how people and vehicles arrive. Stand-off distance, hostile vehicle mitigation and good sightlines mean anything unusual is seen early.' },
+  { name: 'Envelope', verb: 'Delay', desc: 'The building itself. Robust walls, doors and glazing, and a few well-managed ways in. Every barrier buys time.' },
+  { name: 'Core', verb: 'Respond', desc: 'What it’s all for: people, information, assets. Quiet, calm and hardest to reach, with time for a planned response.' }
+];
+const ZONE_ROWS = 110;
+
+// seeded random, so every flight through a layer looks the same
+function rnd(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+// Each line returns a tag: which layer it's in, and where an autopilot should aim (x across, height).
+function sample(row, n) {
+  const zone = Math.floor(n / ZONE_ROWS) % 4, j = n % ZONE_ROWS, P = row.length, r = rnd(n * 2654435761);
+  let aim = 0, alt = 0.62, label = null;
+  // a gateway marks the start of each layer
+  const gate = j < 2;
+  for (let i = 0; i < P; i++) {
+    const x = i / (P - 1) - 0.5;                       // -0.5 .. 0.5 across the line
+    let h = 0.04 + r() * 0.03;
+    if (zone === 0) {                                  // PERIMETER: fence lines with a gate, lamp posts along the edges
+      h += 0.08 * Math.sin(x * 14 + n * 0.21) ** 2;
+      const gateX = 0.18 * Math.sin(Math.floor(j / 14) * 2.1);
+      if (j % 14 === 0) h = Math.abs(x - gateX) < 0.05 ? 0.03 : ((i % 10 === 0) ? 0.62 : 0.42 + 0.05 * Math.abs(Math.sin(i * 1.7)));
+      if (j % 9 === 4 && Math.abs(Math.abs(x) - 0.33) < 0.005) h = 1.1;   // lamp posts
+      aim = gateX; alt = 0.3;
+    } else if (zone === 1) {                           // APPROACH: a zig-zag lane (vehicle mitigation), berms, bollards
+      const lane = 0.13 * Math.sin(j * 0.085);
+      const d = Math.abs(x - lane);
+      h += 0.38 * smooth(0.13, 0.3, d);
+      if (j % 8 === 0 && d < 0.13) {
+        const b = Math.abs((((x - lane) + 0.13) % 0.052) - 0.026);   // bollards across the lane, gaps between
+        if (b < 0.006) h = 0.34;
+      }
+      if (j % 20 === 10 && Math.abs(Math.abs(x) - 0.4) < 0.006) h = 0.9;   // camera masts on the berms
+      aim = lane; alt = 0.45;
+    } else if (zone === 2) {                           // ENVELOPE: walls with one way in, doors offset through the building
+      h += 0.06;
+      const k = Math.floor(j / 22), door = [0, 0.14, -0.12, 0.06, -0.04][k % 5];
+      if (j % 22 === 0 || j % 22 === 1) h = Math.abs(x - door) < 0.05 ? 0.02 : 0.95;
+      aim = door; alt = 0.22;
+    } else {                                           // CORE: calm, with a ring of pulses for the people at the centre
+      const ring = Math.exp(-((Math.abs(x) - 0.08) ** 2) / 0.0006) * (0.12 + 0.06 * Math.sin(n * 0.3 + x * 40));
+      h = 0.02 + ring + 0.04 * Math.exp(-(x * x) / 0.01) * (0.6 + 0.4 * Math.sin(n * 0.12));
+      aim = 0; alt = 0.5;
+    }
+    if (gate && Math.abs(x) > 0.08) h = Math.max(h, 0.75);   // the gateway into the layer: a frame to fly through
+    row[i] = h;
+  }
+  return { zone, aim: aim * 4, alt, n };
+}
+
+/* ─── Generative score: each layer adds instruments; the core is quiet ── */
+let audio = null;
+function startAudio() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ac = new AC();
+  const master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination);
+  const delay = ac.createDelay(1); delay.delayTime.value = 0.4;
+  const fb = ac.createGain(); fb.gain.value = 0.35; delay.connect(fb); fb.connect(delay); delay.connect(master);
+  const bus = n => { const g = ac.createGain(); g.gain.value = 0; g.connect(master); return g; };
+  const g = { drone: bus(), kick: bus(), hat: bus(), arp: bus(), pad: bus() };
+
+  // drone: two detuned saws, low-passed
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 380; lp.connect(g.drone);
+  [55, 55.4, 82.4].forEach(f => { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; const v = ac.createGain(); v.gain.value = 0.18; o.connect(v); v.connect(lp); o.start(); });
+  // pad for the core: A, E, B, C#
+  [220, 329.6, 493.9, 554.4].forEach(f => { const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = f; const v = ac.createGain(); v.gain.value = 0.08; o.connect(v); v.connect(g.pad); o.start(); });
+  g.pad.connect(delay);
+  const arpOut = ac.createGain(); arpOut.connect(g.arp); g.arp.connect(delay);
+
+  const noise = ac.createBuffer(1, ac.sampleRate * 0.2, ac.sampleRate);
+  const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const SCALE = [220, 261.6, 293.7, 329.6, 392, 440, 523.3];
+  const step = 60 / 112 / 4;
+  let next = ac.currentTime + 0.1, s = 0;
+
+  function kick(t) { const o = ac.createOscillator(), v = ac.createGain(); o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.18); v.gain.setValueAtTime(0.9, t); v.gain.exponentialRampToValueAtTime(0.001, t + 0.35); o.connect(v); v.connect(g.kick); o.start(t); o.stop(t + 0.4); }
+  function hat(t, lvl) { const b = ac.createBufferSource(); b.buffer = noise; const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7500; const v = ac.createGain(); v.gain.setValueAtTime(lvl, t); v.gain.exponentialRampToValueAtTime(0.001, t + 0.05); b.connect(hp); hp.connect(v); v.connect(g.hat); b.start(t); b.stop(t + 0.06); }
+  function note(t, f) { const o = ac.createOscillator(), v = ac.createGain(); o.type = 'triangle'; o.frequency.value = f; v.gain.setValueAtTime(0.0001, t); v.gain.exponentialRampToValueAtTime(0.12, t + 0.01); v.gain.exponentialRampToValueAtTime(0.0001, t + 0.22); o.connect(v); v.connect(arpOut); o.start(t); o.stop(t + 0.25); }
+  const pattern = [0, 2, 4, 6, 4, 2, 5, 3, 1, 3, 5, 6, 4, 2, 3, 1];
+  const timer = setInterval(() => {
+    while (next < ac.currentTime + 0.12) {
+      if (s % 4 === 0) kick(next);
+      hat(next, s % 4 === 2 ? 0.35 : 0.12);
+      note(next, SCALE[pattern[s % 16]] * (s % 32 < 16 ? 1 : 1.5));
+      next += step; s++;
+    }
+  }, 25);
+
+  const MIX = [
+    { drone: 0.9, kick: 0, hat: 0, arp: 0, pad: 0 },
+    { drone: 0.9, kick: 0.8, hat: 0, arp: 0, pad: 0 },
+    { drone: 0.8, kick: 0.8, hat: 0.6, arp: 0.7, pad: 0 },
+    { drone: 0.12, kick: 0, hat: 0, arp: 0, pad: 0.9 }
+  ];
+  audio = {
+    ac, master,
+    zone(z) { const m = MIX[z]; for (const k in g) g[k].gain.setTargetAtTime(m[k], ac.currentTime, 0.8); },
+    mute(on) { master.gain.setTargetAtTime(on ? 0 : 0.55, ac.currentTime, 0.2); },
+    stop() { clearInterval(timer); ac.close(); }
+  };
+}
+
+/* ─── HUD ─────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+let current = -1;
+function showZone(meta) {
+  if (!meta) return;
+  const z = meta.zone;
+  // progress through this layer, and through the whole flight
+  const within = (meta.n % ZONE_ROWS) / ZONE_ROWS;
+  [...$('progress').children].forEach((seg, i) => seg.firstChild.style.width = (i < z ? 100 : i === z ? within * 100 : 0) + '%');
+  if (z === current) return;
+  const lap = current === 3 && z === 0;
+  current = z;
+  if (lap) { endCard(); setTimeout(() => flash(0), 4300); }   // the end card first, then round again
+  else flash(z);
+  $('znum').textContent = `Layer ${z + 1} / 4`;
+  $('zname').textContent = ZONES[z].name;
+  $('zverb').textContent = ZONES[z].verb;
+  $('zdesc').textContent = ZONES[z].desc;
+  [...$('legend').children].forEach((li, i) => li.classList.toggle('on', i === z));
+  if (audio) audio.zone(z);
+}
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const flight = createFlight($('sky'), {
+  sample, rate: () => (reduce ? 4 : 14), onNear: showZone, amp: 0.55,
+  // autopilot: thread the gate, follow the lane, fly through the doorways, unless the visitor is steering
+  onAhead: meta => {
+    if (!meta || !started || performance.now() - flight.cam.userAt < 3000) return;
+    flight.cam.tx = meta.aim; flight.cam.ty = meta.alt;
+  }
+});
+let started = false;
+
+function flash(z) {
+  const f = $('flash');
+  f.querySelector('.n').textContent = `Layer ${z + 1}`;
+  f.querySelector('.t').textContent = `${ZONES[z].name} · ${ZONES[z].verb}`;
+  f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+}
+function endCard() {
+  const e = $('endcard');
+  e.classList.remove('on'); void e.offsetWidth; e.classList.add('on');
+}
+
+let muted = false;
+$('go').addEventListener('click', () => {
+  $('start').hidden = true;
+  started = true;
+  try { startAudio(); audio.zone(Math.max(current, 0)); $('soundBtn').textContent = 'Sound off'; }
+  catch (e) { $('soundBtn').hidden = true; }
+});
+$('soundBtn').addEventListener('click', () => {
+  if (!audio) return;
+  muted = !muted;
+  audio.mute(muted);
+  $('soundBtn').textContent = muted ? 'Sound on' : 'Sound off';
+});
+</script>
+</body>
+</html>
