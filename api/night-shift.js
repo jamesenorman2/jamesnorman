@@ -17,13 +17,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
 import { gatekeeper, links, clerk, intel, scout } from '../lib/jobs.js';
+import { choreograph } from '../lib/choreo.js';
 
 const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
 const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
 const SITE = (process.env.SITE_URL || 'https://www.jamesnorman.co.uk').replace(/\/$/, '');
 const PAGES = ['/', '/music/', '/security/', '/security/layers/', '/security/cpted/',
   '/security/martyns-law/', '/night-shift/', '/admin/', '/assets/site.css', '/assets/flight.js'];
-const AGENTS = { a: 'VANTAGE', b: 'LOWLIGHT' };
+const AGENTS = { a: 'AGENT MONKEY MONKEY', b: 'FISH FISH' };
 const SOUNDCLOUD = (process.env.SOUNDCLOUD_URL || 'https://soundcloud.com/jamesnormal').replace(/\/$/, '');
 const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;
 
@@ -41,7 +42,9 @@ async function soundcloudTracks() {
     for (const item of rss.split('<item>').slice(1)) {
       const title = decode((item.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '');
       const url = decode((item.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || '').split('?')[0];
-      if (title && SC_URL_RE.test(url)) tracks.push({ title: title.slice(0, 200), url });
+      const d = ((item.match(/<itunes:duration>([\d:]+)<\/itunes:duration>/) || [])[1] || '').split(':').map(Number);
+      const durationMs = d.length ? d.reduce((a, b) => a * 60 + b, 0) * 1000 : null;
+      if (title && SC_URL_RE.test(url)) tracks.push({ title: title.slice(0, 200), url, durationMs });
       if (tracks.length >= 100) break;
     }
     return tracks;
@@ -134,12 +137,14 @@ const ShiftSchema = z.object({
 
 const SYSTEM = `You are the round-the-clock crew on shift for jamesnorman.co.uk, the personal site of James Norman: a chartered engineer working in physical security and counter-terrorism protective security, and a music producer and DJ. The site is stark white lines on true black.
 
+The crew have silly names and take their jobs completely seriously: Agent Goatman (analyst), Agent Disco Biscuit (DJ), Agent Monkey Monkey and Fish Fish (patrols, and rival DJs after hours), Agent Codpiece (gatekeeper), Agent Fish (outside links), Agent Trouserpress (clerk), Agent God (intel), Agent Kipper (SoundCloud scout). Refer to them by name where it fits.
+
 You play three roles in one report:
-- ANALYST: write the shift handover from the patrol report, in calm, concise control-room style (think security control room radio log, not military cosplay). 60 to 110 words. Compare with the previous shift where you can: what's new, what's fixed, what got slower or faster. Status GREEN if everything is fine, AMBER for slow pages (over 1500 ms) or one failure, RED for several failures or the home page failing.
+- ANALYST (Agent Goatman): write the shift handover from the patrol report, in calm, concise control-room style (think security control room radio log, not military cosplay). 60 to 110 words. Compare with the previous shift where you can: what's new, what's fixed, what got slower or faster. Status GREEN if everything is fine, AMBER for slow pages (over 1500 ms) or one failure, RED for several failures or the home page failing.
   Cover the specialist reports too: a certificate within 30 days of expiry or a domain no longer pointing at Vercel is an "action"; a broken outside link is "action" (but "blocked" is fine, ignore it); a change to the Martyn's Law guidance is a "watch" telling James to review his checker; a new SoundCloud upload is "info". State the threat level only exactly as INTEL reports it, and never speculate about threats.
   Then list up to 5 findings, most important first. severity "action" = something is broken or a clear fix is needed; "watch" = worth keeping an eye on (a slower page, a heavy page, a missing security header across the site); "info" = useful context. Each has a short title (max 8 words) and a one or two sentence detail with a practical recommendation. Group site-wide issues (for example the same missing security header on every page) into one finding. Be accurate: only report what the data shows. No findings is fine if nothing is worth saying.
-- DJ: pick one track for the current hour from the numbered track list, suiting the time of day in the UK (late night and early morning = deeper and calmer; evening and weekends = bigger energy). Don't repeat any of the recent picks listed. Give a one-sentence reason.
-- DJ BATTLE: two rival AI DJs, ${AGENTS.a} (precise, cool, loves tension and space) and ${AGENTS.b} (warm, playful, loves the drop) each pick a different track from the list and pitch it in 30 to 60 words. Then write a short exchange of 4 to 6 lines of friendly trash talk between them, alternating speakers, starting with "a".
+- DJ (Agent Disco Biscuit): pick one track for the current hour from the numbered track list, suiting the time of day in the UK (late night and early morning = deeper and calmer; evening and weekends = bigger energy). Don't repeat any of the recent picks listed. Give a one-sentence reason.
+- DJ BATTLE: two rival AI DJs, ${AGENTS.a} (chaotic, cheeky, loves tension and space) and ${AGENTS.b} (deadpan, fishy puns, loves the drop) each pick a different track from the list and pitch it in 30 to 60 words. Then write a short exchange of 4 to 6 lines of friendly trash talk between them, alternating speakers, starting with "a".
 
 Keep everything light, witty and kind. Never describe attack methods or anything that could help someone cause harm. Only use track numbers that appear in the list.`;
 
@@ -214,6 +219,22 @@ ${list}`;
 
 const SHIFT_EVERY_MINUTES = 60;
 
+// AGENT PICKLE: choreograph one track that doesn't have a cue sheet yet.
+async function pickleShift(tracks) {
+  if (!process.env.ANTHROPIC_API_KEY || !tracks.length) return { ok: false, error: 'off duty' };
+  try {
+    const done = new Set((await db('jn_scores?select=track_url')).map(r => r.track_url));
+    const todo = tracks.find(t => !done.has(t.url));
+    if (!todo) return { ok: true, scored: done.size, note: 'every track has a cue sheet' };
+    const res = await choreograph(todo);
+    if (!res.ok) return { ok: false, track: todo.title, error: res.error };
+    const saved = await db('rpc/jn_post_score', { p_token: process.env.SHIFT_TOKEN, p_url: todo.url, p_title: todo.title, p_score: res.score });
+    return saved.ok ? { ok: true, track: todo.title, cues: res.score.cues.length, mood: res.score.mood, scored: done.size + 1 } : { ok: false, error: saved.error };
+  } catch (e) {
+    return { ok: false, error: 'choreography failed' };
+  }
+}
+
 // The previous shift (for comparison) and the DJ's recent picks (so it doesn't repeat itself).
 async function lastShifts() {
   try {
@@ -248,7 +269,8 @@ export default async function handler(req, res) {
     patrol(), soundcloudTracks(), gatekeeper(), links(), clerk(prevJobs.clerk), intel()
   ]);
   const jobs = { gatekeeper: gate, links: outside, clerk: legal, intel: threat, scout: scout(tracks, prevJobs.scout) };
-  const agents = await runAgents(report, tracks, previous, jobs);
+  const [agents, pickle] = await Promise.all([runAgents(report, tracks, previous, jobs), pickleShift(tracks)]);
+  jobs.pickle = pickle;
   const log = { started_at: started, finished_at: new Date().toISOString(), trigger: who, patrol: report, tracks_found: tracks.length, jobs, ...agents };
 
   try {
