@@ -38,11 +38,11 @@
   a:hover,button:hover,button:focus-visible,a:focus-visible{color:var(--hi);outline:none}
   button[aria-pressed="true"]{color:var(--hi)}
   button:disabled{opacity:.4;cursor:default}
-  .now{font-family:'Syne',sans-serif;font-weight:500;font-size:.75rem;letter-spacing:.25em;color:var(--mid);
-    max-width:45ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+  .now{font-family:'Syne',sans-serif;font-weight:500;font-size:.75rem;letter-spacing:.2em;color:var(--mid);line-height:1.45;
+    max-width:min(62ch,48vw);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;text-align:right}
   .now:empty{display:none}
   .controls{display:flex;gap:1.8rem;flex-wrap:wrap}
-  .status{max-width:40ch;text-align:right;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .status{max-width:min(62ch,48vw);text-align:right;color:var(--mid);line-height:1.5;letter-spacing:.2em}
   /* if the browser blocks autoplay, the wireframe play button pulses instead of a big button in the middle */
   body.needs-tap #playBtn{animation:ppPulse 1.6s ease-in-out infinite;opacity:1}
   /* the big wireframe play in the middle: shown whenever nothing is playing, gone once the music starts */
@@ -121,7 +121,7 @@
   @keyframes fi{to{opacity:1}}
   @media(max-width:700px){
     .top,.bottom{padding:1.25rem 1rem;font-size:.55rem;letter-spacing:.2em}
-    .now{font-size:.65rem;max-width:60vw}
+    .now{font-size:.65rem;max-width:92vw;text-align:center}
     .bottom{flex-direction:column;align-items:center;gap:1rem}
     .controls{gap:1.2rem;justify-content:center}
     .status{text-align:center;max-width:100%}
@@ -272,15 +272,15 @@ let scSoundId = null, wave = null, waveLo = 0, waveHi = 1, scReady = false;
 // hourly pick and both battle picks), chosen at random, and credits the agent who picked it.
 let pickedBy = null, picks = [], queue = [], qi = -1;
 function remember(url) {
-  try { const r = JSON.parse(localStorage.getItem('jn-recent') || '[]').filter(u => u !== url); r.unshift(url); localStorage.setItem('jn-recent', JSON.stringify(r.slice(0, 12))); } catch (e) { /* private mode */ }
+  try { const r = JSON.parse(localStorage.getItem('jn-recent') || '[]').filter(u => u !== url); r.unshift(url); localStorage.setItem('jn-recent', JSON.stringify(r.slice(0, 20))); } catch (e) { /* private mode */ }
 }   // the agents' picks, and the order played so far
 async function chosenTrack() {
   const q = new URLSearchParams(location.search).get('track');   // ?track=<SoundCloud link> plays that track
-  if (q && SC_URL_RE.test(q)) return q;
+  if (q && SC_URL_RE.test(q)) return { url: q, fixed: true };
   try {                                                         // a song set on the admin page wins
     const [row] = await (await fetch(SETTINGS_URL, { headers: { apikey: SETTINGS_KEY }, cache: 'no-store' })).json();
     const url = row && row.value && row.value.url;
-    if (url && SC_URL_RE.test(url)) return url;
+    if (url && SC_URL_RE.test(url)) return { url, fixed: true };
   } catch (e) { /* no override */ }
   // Every track James has on SoundCloud, plus the agents' recent picks; choose at random, avoiding the
   // last few this browser has played, and credit the agent who picked it (or a random member of the crew).
@@ -296,18 +296,30 @@ async function chosenTrack() {
     if (row.dj && row.dj.track) pool.set(row.dj.track.url, { ...row.dj.track, by: 'Agent Disco Biscuit' });
     for (const k of ['a', 'b']) { const p = row.battle && row.battle[k]; if (p && p.track) pool.set(p.track.url, { ...p.track, by: { VANTAGE: 'Agent Monkey Monkey', LOWLIGHT: 'Fish Fish' }[p.agent] || p.agent.replace(/\b\w/g, c => c.toUpperCase()).replace(/\B\w+/g, w => w.toLowerCase()) }); }
   }
-  const list = [...pool.values()].filter(p => SC_URL_RE.test(p.url));
-  if (list.length) {
-    let recent = [];
-    try { recent = JSON.parse(localStorage.getItem('jn-recent') || '[]'); } catch (e) { /* private mode */ }
-    for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }   // shuffle
-    const fresh = list.filter(p => !recent.includes(p.url));
-    const pick = (fresh.length ? fresh : list)[0];
-    picks = list; pickedBy = pick.by; queue = [pick]; qi = 0;
-    remember(pick.url);
-    return pick.url;
-  }
-  return DEFAULT_SOUNDCLOUD;
+  return { url: DEFAULT_SOUNDCLOUD, fixed: false, pool: [...pool.values()].filter(p => SC_URL_RE.test(p.url)), crew: CREW };
+}
+
+// Choose at random from a list, avoiding what this browser played recently.
+function pickFrom(list) {
+  let recent = [];
+  try { recent = JSON.parse(localStorage.getItem('jn-recent') || '[]'); } catch (e) { /* private mode */ }
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }   // shuffle
+  const fresh = a.filter(p => !recent.includes(p.key));
+  return (fresh.length ? fresh : a)[0];
+}
+
+// The SoundCloud player loads the whole profile; wait until its track list stops growing, then read it.
+function readProfile() {
+  return new Promise(resolve => {
+    let last = -1, tries = 0;
+    const look = () => sc.getSounds(sounds => {
+      const n = (sounds || []).length;
+      if ((n === last && n > 0) || tries++ > 8) return resolve(sounds || []);
+      last = n; setTimeout(look, 450);
+    });
+    look();
+  });
 }
 
 function loadScript(src) {
@@ -318,8 +330,11 @@ function loadScript(src) {
   });
 }
 
+let listing = false, choice = null;
 async function startSoundCloud() {
-  const url = await chosenTrack();
+  choice = await chosenTrack();
+  const url = choice.url;
+  listing = !choice.fixed;
   try { await loadScript('https://w.soundcloud.com/player/api.js'); }
   catch (e) { setStatus('SoundCloud unavailable'); return; }
 
@@ -328,14 +343,33 @@ async function startSoundCloud() {
   iframe.title = 'SoundCloud player';
   iframe.allow = 'autoplay; encrypted-media';
   iframe.src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url) +
-    '&auto_play=true&hide_related=true&show_comments=false&show_reposts=false&visual=false';
+    `&auto_play=${listing ? 'false' : 'true'}&hide_related=true&show_comments=false&show_reposts=false&visual=false`;
   document.body.appendChild(iframe);
 
   const E = SC.Widget.Events;
   sc = SC.Widget(iframe);
-  sc.bind(E.READY, () => {
+  sc.bind(E.READY, async () => {
+    if (listing) {                         // first load: the whole profile, to get every track
+      listing = false;
+      const sounds = await readProfile();
+      const byUrl = new Map((choice.pool || []).map(p => [p.url, p]));
+      const list = sounds.map((t, index) => {
+        const url = (t.permalink_url || '').split('?')[0], known = byUrl.get(url);
+        return { index, url, key: url || 'id:' + t.id, title: t.title || (known && known.title) || '', by: known ? known.by : choice.crew[Math.floor(Math.random() * choice.crew.length)] };
+      });
+      if (list.length > 1) {
+        picks = list; profileMode = true;
+        const pick = pickFrom(list); queue = [pick]; qi = 0;
+        scReady = true; enableButtons();
+        playItem(pick);
+        return;
+      }
+      // the profile list didn't come through: fall back to the RSS tracks and the agents' picks
+      const pool = (choice.pool || []).map(p => ({ ...p, key: p.url }));
+      if (pool.length) { picks = pool; const pick = pickFrom(pool); queue = [pick]; qi = 0; scReady = true; enableButtons(); playItem(pick); return; }
+    }
     scReady = true;
-    playBtn.disabled = false; $('prevBtn').disabled = false; $('nextBtn').disabled = false;
+    enableButtons();
     readSound();
     if (source === 'idle') sc.play();
     // browsers block sound until the visitor interacts; ask for a tap if it didn't start
@@ -349,7 +383,7 @@ async function startSoundCloud() {
     stopMic();
     lastMedia = 'sc';
     readSound();
-    setStatus(pickedBy ? `Picked by ${pickedBy} · Agents` : 'Playing from SoundCloud');
+    setStatus(pickedBy ? `Picked by ${pickedBy}` : 'Playing from SoundCloud');
     setPlayIcon(true);
   });
   sc.bind(E.PAUSE, () => { scPlaying = false; if (lastMedia === 'sc') { setPlayIcon(false); setStatus('Paused'); } });
@@ -802,6 +836,7 @@ function frame(now) {
   updateView(dt);
   followScore();
   autoLasers();
+  autoGlow();
   const base = source !== 'idle' ? ROW_RATE : (reduceMotion ? 3 : 10);
   if (look !== 'freeze') rowClock += dt * base * view.speed;
   while (rowClock >= 1) {
@@ -894,6 +929,14 @@ function draw(phase) {
 
 /* ─── Moments: lasers, a goat, colour flashes, barrel rolls, strobes ── */
 let lasers = [], goat = null, flash = null, lastLaser = -99;
+// A red glow that appears from nowhere, very occasionally: fades up, drifts and pulses, fades away.
+let glows = [], nextGlow = 40 + Math.random() * 60;
+function autoGlow() {
+  if (clockT < nextGlow) return;
+  nextGlow = clockT + 70 + Math.random() * 110;              // roughly every one to three minutes
+  glows.push({ t0: clockT, life: 6 + Math.random() * 4, u: (Math.random() - 0.5) * 1.6, v: 0.15 + Math.random() * 0.75, h: 0.2 + Math.random() * 0.9,
+    du: (Math.random() - 0.5) * 0.04, size: 0.5 + Math.random() * 0.6 });
+}
 // Lasers on the music's hits as well as on the drops: more often when it's loud, rarely in a break.
 function autoLasers() {
   if (source === 'idle' || calm) return;
@@ -911,9 +954,23 @@ function fireMoment(m) {
   else if (m.type === 'flip') { if (!reduceMotion) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }
   if (m.note) $('cue').textContent = `${score && score.by || 'Agent Pickle'}: “${m.note}”`;
 }
-window.JN_moment = fireMoment;   // so the moments can be tried from the console
+window.JN_moment = fireMoment;
+window.JN_glow = () => { nextGlow = clockT; };   // try it from the console   // so the moments can be tried from the console
 
 function drawMoments(project) {
+  // the red glow, from nowhere
+  glows = glows.filter(g => clockT - g.t0 < g.life);
+  for (const g of glows) {
+    const age = clockT - g.t0, k = Math.min(1, age / 1.8, (g.life - age) / 2.2), pulse = 0.8 + 0.2 * Math.sin(age * 2.6);
+    project(surf(g.u + g.du * age, g.v, g.h), 0);
+    if (PZ[0] < 0) continue;
+    const r = Math.max(30, Math.min(W, H) * 0.12 * g.size * pulse);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const grad = ctx.createRadialGradient(PX[0], PY[0], 0, PX[0], PY[0], r);
+    grad.addColorStop(0, `rgba(255,70,60,${0.85 * k})`); grad.addColorStop(0.18, `rgba(255,40,30,${0.45 * k})`); grad.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = grad; ctx.fillRect(PX[0] - r, PY[0] - r, r * 2, r * 2);
+    ctx.restore();
+  }
   // lasers: a fan of beams out of the rectangle, sweeping
   lasers = lasers.filter(l => clockT - l.t0 < 3.2);
   if (lasers.length) {
@@ -1095,10 +1152,13 @@ function loadFile(file) {
 }
 
 // Previous / next: through the agents' picks (a new random one at the end of the list), or SoundCloud's own list.
+let profileMode = false;
+function enableButtons() { playBtn.disabled = false; $('prevBtn').disabled = false; $('nextBtn').disabled = false; }
 function playItem(item) {
   pickedBy = item.by || null;
-  remember(item.url);
+  remember(item.key || item.url);
   setStatus('Loading…');
+  if (profileMode && item.index != null) { sc.skip(item.index); sc.play(); return; }    // jump within the whole profile
   sc.load(item.url, { auto_play: true, hide_related: true, show_comments: false, show_reposts: false, visual: false });
 }
 function skip(dir) {
@@ -1112,9 +1172,9 @@ function skip(dir) {
     qi--; playItem(queue[qi]); return;
   }
   if (qi < queue.length - 1) { qi++; playItem(queue[qi]); return; }
-  const recent = new Set(queue.slice(-Math.max(1, picks.length - 1)).map(p => p.url));
-  const fresh = picks.filter(p => !recent.has(p.url));
-  const pool = fresh.length ? fresh : picks.filter(p => p.url !== queue[qi].url);
+  const recent = new Set(queue.slice(-Math.max(1, picks.length - 1)).map(p => p.key || p.url));
+  const fresh = picks.filter(p => !recent.has(p.key || p.url));
+  const pool = fresh.length ? fresh : picks.filter(p => (p.key || p.url) !== (queue[qi].key || queue[qi].url));
   if (!pool.length) { sc.seekTo(0); sc.play(); return; }
   queue.push(pool[Math.floor(Math.random() * pool.length)]); qi = queue.length - 1;
   playItem(queue[qi]);
