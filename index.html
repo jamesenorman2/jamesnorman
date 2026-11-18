@@ -45,6 +45,17 @@
   .status{max-width:40ch;text-align:right;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* if the browser blocks autoplay, the wireframe play button pulses instead of a big button in the middle */
   body.needs-tap #playBtn{animation:ppPulse 1.6s ease-in-out infinite;opacity:1}
+  /* the big wireframe play in the middle: shown whenever nothing is playing, gone once the music starts */
+  .bigplay{position:fixed;left:50%;top:52%;transform:translate(-50%,-50%) scale(.92);z-index:5;display:flex;flex-direction:column;align-items:center;gap:.9rem;
+    background:none;border:0;color:#fff;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .8s,transform .8s}
+  body.intro-done:not(.is-playing) .bigplay{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+  body.hide-ui .bigplay{opacity:0!important;pointer-events:none!important}
+  .bigplay svg{width:clamp(84px,11vw,124px);height:auto;fill:none;stroke:#fff;stroke-width:1.2;stroke-linejoin:round;transition:transform .4s}
+  .bigplay .ring{stroke-opacity:.35;transform-origin:60px 60px;animation:bpRing 2.4s ease-out infinite}
+  .bigplay:hover svg,.bigplay:focus-visible svg{transform:scale(1.07)}
+  .bigplay span{font-size:.62rem;letter-spacing:.45em;text-transform:uppercase;color:#e6e6e6;background:rgba(0,0,0,.6);padding:.3rem .6rem}
+  @keyframes bpRing{0%{transform:scale(.8);stroke-opacity:.5}100%{transform:scale(1.08);stroke-opacity:0}}
+  @media (prefers-reduced-motion: reduce){.bigplay .ring{animation:none}}
   @keyframes ppPulse{50%{transform:scale(1.12);color:#fff;filter:drop-shadow(0 0 6px rgba(255,255,255,.6))}}
   #scrub{position:fixed;top:auto;left:3rem;right:3rem;bottom:5.2rem;width:calc(100% - 6rem);height:64px;z-index:3;cursor:pointer;touch-action:none;background:transparent}
   body.hide-ui #scrub{opacity:.5}
@@ -163,6 +174,7 @@
       <div class="status" id="cue" aria-live="off"></div>
     </div>
   </footer>
+  <button class="bigplay" id="bigPlay" type="button" aria-label="Start the music"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring" cx="60" cy="60" r="56"/><circle cx="60" cy="60" r="44" style="fill:rgba(0,0,0,.6)"/><polygon points="50,40 82,60 50,80"/></svg><span>Start the music</span></button>
   <div class="transport">
     <button id="playBtn" class="pp" title="Play / pause (Space)" aria-label="Play" disabled><svg viewBox="0 0 48 48" aria-hidden="true"><polygon class="ic-play" points="16,11 37,24 16,37" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><g class="ic-pause" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="11" width="7" height="26"/><rect x="27" y="11" width="7" height="26"/></g></svg></button>
   </div>
@@ -1044,7 +1056,7 @@ async function filePeaksFrom(file) {
 const $ = id => document.getElementById(id);
 const statusEl = $('status'), playBtn = $('playBtn'), micBtn = $('micBtn'), fileInput = $('file'), nowEl = $('now');
 const setStatus = s => { statusEl.textContent = s; statusEl.title = s; };
-function setPlayIcon(playing) { playBtn.classList.toggle('playing', playing); playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play'); }
+function setPlayIcon(playing) { document.body.classList.toggle('is-playing', playing); playBtn.classList.toggle('playing', playing); playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play'); }
 
 function stopMic() {
   if (!micStream) return;
@@ -1213,6 +1225,13 @@ runIntro();
 $('nameSlot').addEventListener('click', e => { e.preventDefault(); runIntro(); });
 
 function toggleUI() { document.body.classList.toggle('hide-ui'); }
+
+$('bigPlay').addEventListener('click', () => {
+  if (tapToPlay()) return;
+  if (sc && scReady) { stopMic(); lastMedia = 'sc'; sc.play(); }
+  else if (lastMedia === 'file' && audioEl && audioEl.src) togglePlay();
+  else setStatus('Loading the music…');
+});
 
 function tapToPlay() {
   if (document.body.classList.contains('needs-tap') && sc) { sc.play(); return true; }
