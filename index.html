@@ -120,16 +120,15 @@
     opacity:0;animation:nameIn 2.4s .4s forwards;text-shadow:0 0 40px #000}
   .intro .name .ch{display:inline-block;will-change:transform}
   .intro .name i{font-style:normal;font-weight:400;opacity:.55}
-  .intro .line{font-size:.7rem;letter-spacing:.55em;text-transform:uppercase;color:#cfcfcf;margin-top:1.6rem;opacity:0;animation:fi 1.6s 1.4s forwards,fadeAway 3s 8s forwards}
   .intro nav{display:flex;flex-wrap:wrap;justify-content:center;gap:.7rem;margin-top:2.4rem;max-width:760px}
   .intro nav a{pointer-events:auto;border:1px solid rgba(255,255,255,.35);color:#fff;padding:.75rem 1.1rem;font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;
     background:rgba(0,0,0,.55);opacity:0;animation:fi 1.2s forwards;transition:border-color .3s,background .3s;will-change:transform}
   .intro nav a:hover{border-color:#fff;background:rgba(255,255,255,.08)}
-  body.intro-done .intro .line,body.intro-done .intro nav{visibility:hidden}
+  body.intro-done .intro nav{visibility:hidden}
   @keyframes nameIn{0%{opacity:0;filter:blur(10px)}100%{opacity:1;filter:blur(0)}}
   @keyframes fadeAway{to{opacity:0;filter:blur(4px)}}
-  @media(max-width:700px){.intro .line{letter-spacing:.3em}.pp{width:50px;height:50px}}
-  @media (prefers-reduced-motion: reduce){.intro .name,.intro .line,.intro nav a{animation-duration:.01s!important}}
+  @media(max-width:700px){.pp{width:50px;height:50px}}
+  @media (prefers-reduced-motion: reduce){.intro .name,.intro nav a{animation-duration:.01s!important}}
   .tag{display:block;font-size:.7rem;letter-spacing:.4em;color:var(--mid);margin-top:.5rem}
   nav.site{display:flex;gap:.6rem 2rem;flex-wrap:wrap;justify-content:center}
   nav.site a{opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
@@ -159,7 +158,6 @@
 
 <div class="intro" id="intro" aria-label="James Norman">
   <h1 class="name">James <i>Norman</i></h1>
-  <p class="line">Security · Producer · DJ</p>
   <nav aria-label="Sections">
     <a href="/music/" style="animation-delay:2.40s,9.40s">Music</a>
     <a href="/night-shift/" style="animation-delay:2.58s,9.52s">Agents</a>
@@ -1285,7 +1283,7 @@ function runIntro() {
   const later = (ms, fn) => introTimers.push(setTimeout(fn, ms));
 
   if (reduceMotion) {
-    later(6000, () => { intro.querySelector('.line').style.opacity = 0; name.style.transition = 'opacity 1s'; name.style.opacity = 0; });
+    later(6000, () => { name.style.transition = 'opacity 1s'; name.style.opacity = 0; });
     later(7000, () => { document.body.classList.add('intro-done'); landName(); });
     return;
   }
