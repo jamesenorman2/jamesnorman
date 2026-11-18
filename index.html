@@ -28,7 +28,10 @@
   body.hide-ui .ui *{pointer-events:none}
   .top,.bottom{padding:2.5rem 3rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;
     font-size:.6rem;font-weight:300;letter-spacing:.3em;text-transform:uppercase}
-  .top{opacity:0;animation:fi 2s .5s forwards}
+  .top{opacity:0;animation:fi 2s .5s forwards;flex-direction:column;justify-content:flex-start;gap:1.1rem}
+  .nameslot{font-family:'Syne',sans-serif;font-weight:500;font-size:clamp(1.3rem,3.2vw,2.3rem);letter-spacing:.14em;color:#fff;line-height:1;white-space:nowrap;visibility:hidden}
+  .nameslot .sl{display:inline-block} .nameslot .dim{opacity:.55} .nameslot .gap{display:inline-block;width:.45em}
+  body.name-landed .nameslot{visibility:visible}
   .bottom{align-items:flex-end;opacity:0;animation:fi 2s 1.2s forwards}
   a,button{color:var(--dim);text-decoration:none;background:none;border:none;font:inherit;
     letter-spacing:inherit;text-transform:inherit;cursor:pointer;transition:color .6s}
@@ -40,10 +43,9 @@
   .now:empty{display:none}
   .controls{display:flex;gap:1.8rem;flex-wrap:wrap}
   .status{max-width:40ch;text-align:right;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tap{position:fixed;left:50%;top:76%;transform:translate(-50%,-50%);padding:1.2rem 2rem;
-    font-size:.75rem;letter-spacing:.5em;text-transform:uppercase;color:var(--hi);background:rgba(0,0,0,.75);
-    border:1px solid var(--dim);opacity:0;pointer-events:none;transition:opacity .6s}
-  body.needs-tap .tap{opacity:1;pointer-events:auto}
+  /* if the browser blocks autoplay, the wireframe play button pulses instead of a big button in the middle */
+  body.needs-tap #playBtn{animation:ppPulse 1.6s ease-in-out infinite;opacity:1}
+  @keyframes ppPulse{50%{transform:scale(1.12);color:#fff;filter:drop-shadow(0 0 6px rgba(255,255,255,.6))}}
   #scrub{position:fixed;top:auto;left:3rem;right:3rem;bottom:5.2rem;width:calc(100% - 6rem);height:64px;z-index:3;cursor:pointer;touch-action:none;background:transparent}
   body.hide-ui #scrub{opacity:.5}
   @media(max-width:700px){#scrub{left:16px;right:16px;width:calc(100% - 32px);bottom:9.5rem;height:48px}}
@@ -64,8 +66,6 @@
   .ps{font-size:.65rem;letter-spacing:.15em;color:#ffcc00;margin-bottom:1rem}
   .ph{font-size:.55rem;letter-spacing:.1em;color:#555;margin-top:1rem}
   #pacCanvas{position:static;width:auto;height:auto;max-width:100%}
-  .brand{font-family:'Syne',sans-serif;font-weight:500;font-size:1rem;letter-spacing:.2em;color:#fff;text-decoration:none;opacity:0;transition:opacity 2s}
-  body.intro-done .brand{opacity:1}
   .pp{width:58px;height:58px;padding:0;color:#fff;opacity:.85;transition:opacity .3s,transform .3s}
   .pp:hover{opacity:1;transform:scale(1.06)}
   .pp svg{width:100%;height:100%;display:block}
@@ -93,15 +93,14 @@
   @keyframes fadeAway{to{opacity:0;filter:blur(4px)}}
   @media(max-width:700px){.intro .line{letter-spacing:.3em}.pp{width:50px;height:50px}}
   @media (prefers-reduced-motion: reduce){.intro .name,.intro .line,.intro nav a{animation-duration:.01s!important}}
-  .brand i{font-style:normal;opacity:.55}
   .tag{display:block;font-size:.5rem;letter-spacing:.4em;color:var(--mid);margin-top:.5rem}
-  nav.site{display:flex;gap:1.4rem;flex-wrap:wrap;justify-content:flex-end}
+  nav.site{display:flex;gap:1.4rem;flex-wrap:wrap;justify-content:center}
   nav.site a{opacity:0;transition:opacity .35s}
   nav.site a.landed,body.intro-done nav.site a{opacity:1}
   nav.site a{color:#d0d0d0;font-size:.66rem;letter-spacing:.28em}
   nav.site a:hover{color:#fff}
   .right{display:flex;flex-direction:column;align-items:flex-end;gap:.6rem;min-width:0}
-  @media(max-width:700px){nav.site{gap:.9rem;justify-content:center}.top{flex-direction:column;gap:.9rem}.right{align-items:center}}
+  @media(max-width:700px){nav.site{gap:.9rem}.top{gap:.9rem}.right{align-items:center}}
   @keyframes fi{to{opacity:1}}
   @media(max-width:700px){
     .top,.bottom{padding:1.25rem 1rem;font-size:.55rem;letter-spacing:.2em}
@@ -131,7 +130,7 @@
 </div>
 <div class="ui">
   <header class="top">
-    <a class="brand" href="/">James <i>Norman</i><span class="tag">Security · Producer · DJ</span></a>
+    <a class="nameslot" id="nameSlot" href="/" title="Replay the intro" aria-label="James Norman"><span class="sl">J</span><span class="sl">A</span><span class="sl">M</span><span class="sl">E</span><span class="sl">S</span><span class="gap"> </span><span class="sl dim">N</span><span class="sl dim">O</span><span class="sl dim">R</span><span class="sl dim">M</span><span class="sl dim">A</span><span class="sl dim">N</span></a>
     <nav class="site" aria-label="Site">
       <a href="/music/">Music</a>
       <a href="/night-shift/">Night Shift</a>
@@ -168,7 +167,6 @@
 </div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="hint" id="hint">Drag to fly round it &middot; scroll to fly out and in &middot; double-click to ride it</div>
-<button class="tap" id="tap">&#9654; Play</button>
 <div class="drop">Release to play</div>
 <input type="file" id="file" accept="audio/*">
 <div class="po" id="pacOverlay">
@@ -1100,7 +1098,7 @@ const INTRO_HTML = $('intro').innerHTML;
 let introTimers = [];
 function runIntro() {
   introTimers.forEach(clearTimeout); introTimers = [];
-  document.body.classList.remove('intro-done');
+  document.body.classList.remove('intro-done', 'name-landed');
   document.querySelectorAll('nav.site a').forEach(a => a.classList.remove('landed'));
   const intro = $('intro');
   intro.innerHTML = INTRO_HTML;                       // fresh copy restarts the CSS fade-ins
@@ -1121,7 +1119,7 @@ function runIntro() {
 
   if (reduceMotion) {
     later(6000, () => { intro.querySelector('.line').style.opacity = 0; name.style.transition = 'opacity 1s'; name.style.opacity = 0; });
-    later(7000, () => document.body.classList.add('intro-done'));
+    later(7000, () => { document.body.classList.add('intro-done'); landName(); });
     return;
   }
   // 1. each tab spins along an arc into its own slot in the header
@@ -1141,36 +1139,34 @@ function runIntro() {
       anim.onfinish = () => { target.classList.add('landed'); a.style.visibility = 'hidden'; };
     });
   });
-  // 2. the letters of the name each spin away to a random spot round the edge of the screen, and stay there
+  // 2. the letters of the name each spin up and re-form, in order, as the name at the top of the page
   later(7300, () => {
-    const W = innerWidth, H = innerHeight;
-    const taken = [];
-    name.querySelectorAll('.ch').forEach(ch => {
-      const r = ch.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      let x, y, face;
-      for (let tries = 0; tries < 30; tries++) {      // keep the letters apart from each other
-      const side = Math.random();
-      if (side < 0.3) { x = 14; y = H * (0.16 + Math.random() * 0.46); face = -90; }                 // left edge
-      else if (side < 0.6) { x = W - 14; y = H * (0.16 + Math.random() * 0.46); face = 90; }         // right edge
-      else if (side < 0.8) { x = W * (0.28 + Math.random() * 0.3); y = 12; face = 0; }               // top
-      else { x = W * (0.35 + Math.random() * 0.3); y = H - 12; face = 180; }                        // bottom, upside down
-      if (taken.every(([tx, ty]) => Math.hypot(tx - x, ty - y) > Math.min(W, H) * 0.07)) break;
-      }
-      taken.push([x, y]);
-      const turns = (Math.floor(Math.random() * 3) + 1) * 360 * (Math.random() < 0.5 ? -1 : 1);
-      const tilt = (Math.random() - 0.5) * 24, scale = 0.16 + Math.random() * 0.12;
-      ch.animate([
+    const slots = [...document.querySelectorAll('#nameSlot .sl')];
+    const chars = [...name.querySelectorAll('.ch')];
+    let left = chars.length;
+    chars.forEach((ch, k) => {
+      const slot = slots[k]; if (!slot) return;
+      const r = ch.getBoundingClientRect(), t = slot.getBoundingClientRect();
+      const dx = t.left + t.width / 2 - (r.left + r.width / 2), dy = t.top + t.height / 2 - (r.top + r.height / 2);
+      const sc = t.height / r.height;
+      const turns = (Math.floor(Math.random() * 2) + 1) * 360 * (Math.random() < 0.5 ? -1 : 1);
+      const swing = (Math.random() - 0.5) * innerWidth * 0.5, lift = -40 - Math.random() * 120;
+      const anim = ch.animate([
         { transform: 'none' },
-        { transform: `translate(${(x - cx) * 0.3}px, ${(y - cy) * 0.3 - 60}px) rotate(${turns * 0.5}deg) rotateY(180deg) scale(1.3)`, offset: 0.35 },
-        { transform: `translate(${x - cx}px, ${y - cy}px) rotate(${turns + face + tilt}deg) rotateY(360deg) scale(${scale})`, opacity: 0.55 }
-      ], { duration: 1800 + Math.random() * 900, delay: Math.random() * 700, easing: 'cubic-bezier(.6,0,.2,1)', fill: 'forwards' });
+        { transform: `translate(${dx * 0.35 + swing}px, ${dy * 0.35 + lift}px) rotate(${turns * 0.55}deg) rotateY(180deg) scale(${1.2})`, offset: 0.45 },
+        { transform: `translate(${dx}px, ${dy}px) rotate(${turns}deg) rotateY(360deg) scale(${sc})` }
+      ], { duration: 1500 + Math.random() * 700, delay: k * 90 + Math.random() * 250, easing: 'cubic-bezier(.6,0,.2,1)', fill: 'forwards' });
+      anim.onfinish = () => { if (--left === 0) landName(); };
     });
   });
-  later(10800, () => document.body.classList.add('intro-done'));
+  later(10800, () => { document.body.classList.add('intro-done'); landName(); });
+}
+function landName() {
+  document.body.classList.add('name-landed');
+  const n = $('intro').querySelector('.name'); if (n) n.style.visibility = 'hidden';
 }
 runIntro();
-document.querySelector('.brand').addEventListener('click', e => { e.preventDefault(); runIntro(); });
-addEventListener('resize', () => { if (document.body.classList.contains('intro-done')) $('intro').querySelector('.name').style.visibility = 'hidden'; });
+$('nameSlot').addEventListener('click', e => { e.preventDefault(); runIntro(); });
 
 function toggleUI() { document.body.classList.toggle('hide-ui'); }
 
@@ -1179,7 +1175,6 @@ function tapToPlay() {
   return false;
 }
 
-$('tap').addEventListener('click', tapToPlay);
 $('loadBtn').addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => { loadFile(fileInput.files[0]); fileInput.value = ''; });
 playBtn.addEventListener('click', togglePlay);
