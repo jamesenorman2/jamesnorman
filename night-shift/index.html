@@ -47,6 +47,7 @@
   .daycrew ul{margin:.8rem 0 0;padding-left:1rem;font-size:.74rem;color:#c4c4c4;line-height:1.6}
   .daycrew .sev-action{color:var(--err)} .daycrew .sev-watch{color:var(--warn)}
   .daycrew .note{font-style:italic;color:#bdbdbd;font-size:.74rem;margin-top:.6rem}
+  .agent-k{display:block;font-size:.55rem;letter-spacing:.35em;text-transform:uppercase;color:var(--mid);margin-bottom:.25rem}
 </style>
 </head>
 <body>
@@ -55,7 +56,7 @@
     <a class="home" href="/">James Norman</a>
     <ul>
       <li><a href="/music/">Music</a></li>
-      <li class="has-sub"><a href="/security/">Security</a><ul class="sub" aria-label="Security tools"><li><a href="/security/layers/">Layers</a></li><li><a href="/security/cpted/">Safer Streets</a></li><li><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
+      <li class="has-sub"><a href="/security/">Security</a><ul class="sub" aria-label="Security tools"><li><a href="/security/layers/">Layers</a></li><li><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
       <li><a href="/night-shift/" aria-current="page">Agents</a></li>
       <li><a href="/blog/">Blog</a></li>
     </ul>
@@ -202,7 +203,8 @@ function renderCrew(L) {
   CREW.forEach(([name, job, result]) => {
     const card = el('div', 'card');
     const [txt, cls] = L ? result(L) : ['–'];
-    card.append(el('b', null, name), el('span', 'small', job), el('span', 'res ' + (cls || ''), txt));
+    const plural = /&/.test(name);
+    card.append(el('span', 'agent-k', plural ? 'Agents' : 'Agent'), el('b', null, name.replace(/\bAGENT /g, '')), el('span', 'small', job), el('span', 'res ' + (cls || ''), txt));
     box.append(card);
   });
 }
@@ -244,7 +246,7 @@ async function loadDayCrew() {
   floor.day = latest;
   box.innerHTML = DAY.map(([id, name, job]) => {
     const r = latest[id], rep = r ? r.report || {} : null;
-    return `<details><summary><b>${escD(name)}</b><span class="job">${escD(job)}</span><span class="sum">${rep ? escD(rep.summary || '') : 'First report due soon'}</span>${r ? `<span class="when">${escD(new Date(r.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>` : ''}</summary>${rep ? crewDetail(id, rep) + (rep.note ? `<p class="note">“${escD(rep.note)}”</p>` : '') : ''}</details>`;
+    return `<details><summary><span class="agent-k">Agent</span><b>${escD(name.replace(/^AGENT /, ''))}</b><span class="job">${escD(job)}</span><span class="sum">${rep ? escD(rep.summary || '') : 'First report due soon'}</span>${r ? `<span class="when">${escD(new Date(r.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>` : ''}</summary>${rep ? crewDetail(id, rep) + (rep.note ? `<p class="note">“${escD(rep.note)}”</p>` : '') : ''}</details>`;
   }).join('');
 }
 loadDayCrew();
@@ -268,7 +270,7 @@ const floor = { rooms: [], shift: null, t: 0, men: [] };
 const fcv = document.getElementById('floor'), fx = fcv.getContext('2d');
 let FW = 0, FH = 0;
 const NAMES = { '/': 'Home', '/music/': 'Music', '/security/': 'Security', '/security/layers/': 'Layers',
-  '/security/cpted/': 'Streets', '/security/martyns-law/': 'Martyn’s Law', '/night-shift/': 'Control room', '/admin/': 'Admin', '/blog/': 'Blog' };
+  '/security/cpted/': 'CPTED', '/security/martyns-law/': 'Martyn’s Law', '/night-shift/': 'Control room', '/admin/': 'Admin', '/blog/': 'Blog' };
 const label = p => NAMES[p] || p.replace(/^\/|\/$/g, '').split('/').pop().replace(/-/g, ' ') || 'Home';
 
 function layout() {
@@ -307,7 +309,7 @@ function makeMen() {
   floor.men = [
     { name: 'MONKEY MONKEY', path: route(false), i: 0, x: 0, y: floor.cy, pause: 0, step: 0 },
     { name: 'FISH FISH', path: route(true), i: 0, x: FW, y: floor.cy, pause: 0, step: 0 },
-    { name: 'AGENT FISH', path: [{ x: FW * 0.55, y: floor.cy + floor.ch * 0.25 }, { x: FW - 8, y: floor.cy + floor.ch * 0.25, hold: 2.2 }], i: 0, x: FW * 0.55, y: floor.cy, pause: 0, step: 0 }
+    { name: 'FISH', path: [{ x: FW * 0.55, y: floor.cy + floor.ch * 0.25 }, { x: FW - 8, y: floor.cy + floor.ch * 0.25, hold: 2.2 }], i: 0, x: FW * 0.55, y: floor.cy, pause: 0, step: 0 }
   ];
   floor.men.forEach(m => { const p = m.path[0]; if (p) { m.x = p.x; m.y = p.y; } });
 }
@@ -431,7 +433,7 @@ function drawFloor(dt) {
     stickMan(x, y, s, floor.t, 'check'); text('CODPIECE', x + 4, y + 12 * s, 8 * s, 0.6); text(jobLine('gatekeeper'), x + 30 * s, y - 34 * s, 9 * s, 0.85, 'left'); }
   post(floor.legal, 'TROUSERPRESS', 'clerk', 'check', -20);
   if (floor.security) { const r = floor.security; fx.strokeRect(r.centre.x + 40 * s, r.centre.y - 6 * s, 22 * s, 14 * s); }   // the board
-  post(floor.security, 'AGENT GOD', 'intel', 'check', -14);
+  post(floor.security, 'GOD', 'intel', 'check', -14);
   post(floor.vis || floor.rooms[1], 'KIPPER', 'scout', 'check', 0);
   post(floor.rooms.find(r => r.path === '/security/layers/') || floor.security, 'DOODLEBUG', 'ideas', 'check', 16);
 
@@ -471,7 +473,7 @@ function drawFloor(dt) {
   const speed = 60 * s;
   floor.men.forEach(m => {
     if (!m.path.length) return;
-    if (m.pause > 0) { m.pause -= dt; stickMan(m.x, m.y, s, 0, 'check'); text(m.name, m.x, m.y + 12 * s, 8 * s, 0.6); if (m.name === 'AGENT FISH') { text('OUTSIDE →', FW - 30, floor.cy - floor.ch * 0.15, 8 * s, 0.5); text(jobLine('links'), m.x - 20 * s, m.y - 34 * s, 9 * s, 0.8); } return; }
+    if (m.pause > 0) { m.pause -= dt; stickMan(m.x, m.y, s, 0, 'check'); text(m.name, m.x, m.y + 12 * s, 8 * s, 0.6); if (m.name === 'FISH') { text('OUTSIDE →', FW - 30, floor.cy - floor.ch * 0.15, 8 * s, 0.5); text(jobLine('links'), m.x - 20 * s, m.y - 34 * s, 9 * s, 0.8); } return; }
     const p = m.path[m.i], dx = p.x - m.x, dy = p.y - m.y, dist = Math.hypot(dx, dy), stepLen = speed * dt;
     if (dist <= stepLen) {
       m.x = p.x; m.y = p.y; m.i = (m.i + 1) % m.path.length;
@@ -480,7 +482,7 @@ function drawFloor(dt) {
     } else { m.x += dx / dist * stepLen; m.y += dy / dist * stepLen; m.step += stepLen * 0.25; }
     stickMan(m.x, m.y, s, m.step, 'walk');
     text(m.name, m.x, m.y + 12 * s, 8 * s, 0.6);
-    if (m.name === 'AGENT FISH') text(jobLine('links'), m.x, m.y - 34 * s, 9 * s, 0.8);
+    if (m.name === 'FISH') text(jobLine('links'), m.x, m.y - 34 * s, 9 * s, 0.8);
   });
 }
 

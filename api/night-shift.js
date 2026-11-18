@@ -20,6 +20,7 @@ import { gatekeeper, links, clerk, intel, scout } from '../lib/jobs.js';
 import { choreograph, refine } from '../lib/choreo.js';
 import { soundcloudTracks } from '../lib/soundcloud.js';
 import { doodlebug, pendingIdeas } from '../lib/ideas.js';
+import { WHO } from '../lib/profile.js';
 
 const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
 const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
@@ -115,7 +116,7 @@ const ShiftSchema = z.object({
   })
 });
 
-const SYSTEM = `You are the round-the-clock crew on shift for jamesnorman.co.uk, the personal site of James Norman: a chartered engineer working in physical security and counter-terrorism protective security, and a music producer and DJ. The site is stark white lines on true black.
+const SYSTEM = `You are the round-the-clock crew on shift for jamesnorman.co.uk, the personal site of James Norman. ${WHO} The site is stark white lines on true black.
 
 The crew have silly names and take their jobs completely seriously: Agent Goatman (analyst), Agent Disco Biscuit (DJ), Agent Monkey Monkey and Fish Fish (patrols, and rival DJs after hours), Agent Codpiece (gatekeeper), Agent Fish (outside links), Agent Trouserpress (clerk), Agent God (intel), Agent Kipper (SoundCloud scout), Agent Doodlebug (ideas for the Security section), Agent Pickle (choreographer). Refer to them by name where it fits.
 

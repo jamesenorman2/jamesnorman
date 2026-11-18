@@ -15,13 +15,16 @@
   ],
   "functions": {
     "api/night-shift.js": {
-      "maxDuration": 120
+      "maxDuration": 120,
+      "includeFiles": "ABOUT.md"
     },
     "api/research.js": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "includeFiles": "ABOUT.md"
     },
     "api/crew.js": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "includeFiles": "ABOUT.md"
     }
   },
   "headers": [

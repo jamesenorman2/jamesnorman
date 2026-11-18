@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Security — James Norman</title>
-<meta name="description" content="Physical security and counter-terrorism protective security, made interactive. By James Norman, BEng CEng MIET RSES.">
+<meta name="description" content="Security, made interactive, by James Norman: Chartered Security Consultant (CEng, MIET, RSES Principal Member, SABRE Accredited Assessor) with over 27 years across CNI and global capital projects.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
@@ -21,6 +21,12 @@
   .quiz .opts button:hover:not(:disabled){border-color:#fff}
   .quiz .opts button.right{border-color:#4ade80;color:#4ade80} .quiz .opts button.wrong{border-color:var(--err);color:var(--err)}
   .quiz .why{max-width:640px;margin-top:1rem;color:#cfcfcf;font-size:.85rem;line-height:1.7}
+  .about{max-width:760px}
+  .about p{color:#c9c9c9;font-size:.86rem;line-height:1.75;margin:.9rem 0}
+  .about .lede{color:#e6e6e6;font-size:.95rem}
+  .about h3{font-family:'Syne',sans-serif;font-weight:500;font-size:.8rem;letter-spacing:.2em;text-transform:uppercase;margin:1.8rem 0 .6rem}
+  .creds{list-style:none;padding:0;display:grid;gap:.45rem}
+  .creds li{font-size:.8rem;color:#e6e6e6;border-left:1px solid #fff;padding-left:.8rem}
   .ideas{display:grid;gap:1rem;grid-template-columns:1fr;margin-top:1.4rem}
   @media(min-width:800px){.ideas{grid-template-columns:1fr 1fr}}
   .idea h3{font-family:'Syne',sans-serif;font-weight:500;font-size:1rem;margin:.5rem 0 .4rem}
@@ -39,7 +45,7 @@
     <a class="home" href="/">James Norman</a>
     <ul>
       <li><a href="/music/">Music</a></li>
-      <li class="has-sub"><a href="/security/" aria-current="page">Security</a><ul class="sub" aria-label="Security tools"><li><a href="/security/layers/">Layers</a></li><li><a href="/security/cpted/">Safer Streets</a></li><li><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
+      <li class="has-sub"><a href="/security/" aria-current="page">Security</a><ul class="sub" aria-label="Security tools"><li><a href="/security/layers/">Layers</a></li><li><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
       <li><a href="/night-shift/">Agents</a></li>
       <li><a href="/blog/">Blog</a></li>
     </ul>
@@ -66,7 +72,7 @@
     <a class="card tool" href="/security/cpted/">
       <div>
         <div class="kicker">Site plan</div>
-        <h2>Safer Streets</h2>
+        <h2>Crime Prevention Through Environmental Design</h2>
         <p class="small">Edit a night-time street in 3D, watch the blind spots change, and get a CPTED audit report.</p>
         <svg viewBox="0 0 200 70" fill="none" stroke="#fff" stroke-width="1" aria-hidden="true">
           <path d="M10 66 L92 24 M190 66 L108 24 M0 4 L80 22 L80 40 L0 70 M200 4 L120 22 L120 40 L200 70"/><path d="M40 60 L40 30 L48 30 M160 60 L160 30 L152 30"/>
@@ -103,13 +109,26 @@
 
   <section>
     <h2>Work with James</h2>
-    <p class="lede">James Norman BEng CEng MIET, Member of the Register of Security Engineers and Specialists (RSES). A chartered engineer who designs physical and protective security for counter-terrorism: threat and risk assessment, hostile vehicle mitigation, blast and stand-off, CPTED and Secured by Design, electronic security systems, control rooms and Martyn’s Law readiness, for crowded places, transport, energy and critical national infrastructure.</p>
+    <div class="about">
+      <p class="lede">As a Chartered Security Consultant and security leader with over 27 years of experience, I specialise in protecting people, assets, and operations across critical national infrastructure and large-scale global capital projects.</p>
+      <p>My approach is grounded in pragmatic problem-solving and risk-based engineering. I help clients navigate complex security requirements, translating evolving threat pictures into solutions that are proportionate, robust, and directly aligned with their operational objectives. Whether addressing physical and electronic security or complex counter-terrorism strategies, the goal is always to deliver guidance that is workable and right-sized to the risk.</p>
+      <p>Leading security consultancy across the UK and the wider AMEA region, my portfolio spans city-level masterplanning, aviation, energy, data centres, sporting arenas, and CNI sites. The constant across all of this work is an in-depth understanding of the threat landscape and the engineering judgement required to safeguard against it.</p>
+      <h3>Key credentials and qualifications</h3>
+      <ul class="creds">
+        <li>BEng (Hons) Electrical &amp; Electronic Engineering</li>
+        <li>CEng Chartered Engineer (IET)</li>
+        <li>Principal Member, Register of Security Engineers and Specialists (RSES), sponsored by the National Protective Security Authority (NPSA)</li>
+        <li>MIET Member of the Institution of Engineering and Technology</li>
+        <li>BRE SABRE Accredited Assessor and Registered Professional</li>
+        <li>SQSS-compliant consultant for HEA 06 Security (BREEAM)</li>
+      </ul>
+    </div>
     <p style="margin-top:1.2rem"><a class="btn" href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">Get in touch on LinkedIn</a></p>
   </section>
 </main>
 
 <footer class="wrap site">
-  <span>BEng · CEng · MIET · RSES</span>
+  <span>BEng (Hons) · CEng · MIET · RSES Principal Member · SABRE Accredited Assessor</span>
   <span>&copy; 2026 James Norman</span>
 </footer>
 <script src="/assets/config.js"></script>
