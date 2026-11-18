@@ -11,10 +11,13 @@
   --err:#ff6b5a;
 }
 html{font-size:16px}
+@media(min-width:1800px){html{font-size:18px}}
+@media(min-width:2400px){html{font-size:22px}}
+@media(min-width:3200px){html{font-size:28px}}
 body{background:var(--bg);color:var(--fg);font-family:'IBM Plex Mono',monospace;font-weight:300;
   -webkit-font-smoothing:antialiased;line-height:1.6;min-height:100vh}
 a{color:var(--fg)}
-.wrap{max-width:1040px;margin:0 auto;padding:0 16px}
+.wrap{max-width:65rem;margin:0 auto;padding:0 16px}
 @media(min-width:700px){.wrap{padding:0 32px}}
 
 /* top navigation */

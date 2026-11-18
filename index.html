@@ -9,6 +9,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
+  html{font-size:16px}
+  @media(min-width:1800px){html{font-size:18px}}
+  @media(min-width:2400px){html{font-size:22px}}
+  @media(min-width:3200px){html{font-size:28px}}
   *{margin:0;padding:0;box-sizing:border-box}
   :root{
     --bg:#000;
@@ -46,18 +50,22 @@
   /* if the browser blocks autoplay, the wireframe play button pulses instead of a big button in the middle */
   body.needs-tap #playBtn{animation:ppPulse 1.6s ease-in-out infinite;opacity:1}
   /* the big wireframe play in the middle: shown whenever nothing is playing, gone once the music starts */
-  .bigplay{position:fixed;left:50%;top:52%;transform:translate(-50%,-50%) scale(.92);z-index:5;display:flex;flex-direction:column;align-items:center;gap:.9rem;
+  .bigplay{position:fixed;left:50%;top:auto;bottom:calc(5.2rem + 4rem + .6rem);transform:translate(-50%,0) scale(.92);z-index:5;display:flex;flex-direction:column;align-items:center;gap:.9rem;
     background:none;border:0;color:#fff;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .8s,transform .8s}
-  body.intro-done:not(.is-playing) .bigplay{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+  body.intro-done:not(.is-playing) .bigplay{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
+  @media(max-width:700px){.bigplay{bottom:calc(9.5rem + 48px + .4rem)}}
   body.hide-ui .bigplay{opacity:0!important;pointer-events:none!important}
-  .bigplay svg{width:clamp(84px,11vw,124px);height:auto;fill:none;stroke:#fff;stroke-width:1.2;stroke-linejoin:round;transition:transform .4s}
+  .bigplay svg{width:clamp(64px,6vw,6rem);height:auto;fill:none;stroke:#fff;stroke-width:1.2;stroke-linejoin:round;transition:transform .4s}
+  /* fully inverted: the disc flips whatever is behind it, and the play triangle is cut out of it */
+  .bigplay svg{mix-blend-mode:difference}
+  .bigplay .disc{fill:#fff;stroke:none}
+  .bigplay .tri{fill:#000;stroke:none}
   .bigplay .ring{stroke-opacity:.35;transform-origin:60px 60px;animation:bpRing 2.4s ease-out infinite}
   .bigplay:hover svg,.bigplay:focus-visible svg{transform:scale(1.07)}
-  .bigplay span{font-size:.62rem;letter-spacing:.45em;text-transform:uppercase;color:#e6e6e6;background:rgba(0,0,0,.6);padding:.3rem .6rem}
   @keyframes bpRing{0%{transform:scale(.8);stroke-opacity:.5}100%{transform:scale(1.08);stroke-opacity:0}}
   @media (prefers-reduced-motion: reduce){.bigplay .ring{animation:none}}
   @keyframes ppPulse{50%{transform:scale(1.12);color:#fff;filter:drop-shadow(0 0 6px rgba(255,255,255,.6))}}
-  #scrub{position:fixed;top:auto;left:3rem;right:3rem;bottom:5.2rem;width:calc(100% - 6rem);height:64px;z-index:3;cursor:pointer;touch-action:none;background:transparent}
+  #scrub{position:fixed;top:auto;left:3rem;right:3rem;bottom:5.2rem;width:calc(100% - 6rem);height:4rem;z-index:3;cursor:pointer;touch-action:none;background:transparent}
   body.hide-ui #scrub{opacity:.5}
   @media(max-width:700px){#scrub{left:16px;right:16px;width:calc(100% - 32px);bottom:9.5rem;height:48px}}
   .hint{position:fixed;left:50%;bottom:10rem;transform:translateX(-50%);font-size:.55rem;letter-spacing:.35em;
@@ -77,15 +85,15 @@
   .ps{font-size:.65rem;letter-spacing:.15em;color:#ffcc00;margin-bottom:1rem}
   .ph{font-size:.55rem;letter-spacing:.1em;color:#555;margin-top:1rem}
   #pacCanvas{position:static;width:auto;height:auto;max-width:100%}
-  .pp{width:58px;height:58px;padding:0;color:#fff;opacity:.85;transition:opacity .3s,transform .3s}
+  .pp{width:3.6rem;height:3.6rem;padding:0;color:#fff;opacity:.85;transition:opacity .3s,transform .3s}
   .pp:hover{opacity:1;transform:scale(1.06)}
   .pp svg{width:100%;height:100%;display:block}
   .pp .ic-pause{display:none} .pp.playing .ic-pause{display:inline} .pp.playing .ic-play{display:none}
   .controls{align-items:center}
   /* transport: play/pause on the left and previous/next on the right, both sitting just above the seek waveform */
-  .transport,.skip{position:fixed;bottom:calc(5.2rem + 64px + .9rem);z-index:4;display:flex;gap:.9rem;align-items:center;pointer-events:auto}
+  .transport,.skip{position:fixed;bottom:calc(5.2rem + 4rem + .9rem);z-index:4;display:flex;gap:.9rem;align-items:center;pointer-events:auto}
   .transport{left:3rem} .skip{right:3rem}
-  .pp.sk{width:44px;height:44px}
+  .pp.sk{width:2.75rem;height:2.75rem}
   .pp:disabled{opacity:.3}
   @media(max-width:700px){.transport,.skip{bottom:calc(9.5rem + 48px + .7rem)}.transport{left:16px}.skip{right:16px}.pp.sk{width:40px;height:40px}}
   /* the intro: the name fades in, the tabs follow, then both drift away and leave the visuals */
@@ -174,7 +182,7 @@
       <div class="status" id="cue" aria-live="off"></div>
     </div>
   </footer>
-  <button class="bigplay" id="bigPlay" type="button" aria-label="Start the music"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring" cx="60" cy="60" r="56"/><circle cx="60" cy="60" r="44" style="fill:rgba(0,0,0,.6)"/><polygon points="50,40 82,60 50,80"/></svg><span>Start the music</span></button>
+  <button class="bigplay" id="bigPlay" type="button" aria-label="Play"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring" cx="60" cy="60" r="56"/><circle class="disc" cx="60" cy="60" r="44"/><polygon class="tri" points="50,40 82,60 50,80"/></svg></button>
   <div class="transport">
     <button id="playBtn" class="pp" title="Play / pause (Space)" aria-label="Play" disabled><svg viewBox="0 0 48 48" aria-hidden="true"><polygon class="ic-play" points="16,11 37,24 16,37" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><g class="ic-pause" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="11" width="7" height="26"/><rect x="27" y="11" width="7" height="26"/></g></svg></button>
   </div>
@@ -343,7 +351,7 @@ async function startSoundCloud() {
   iframe.title = 'SoundCloud player';
   iframe.allow = 'autoplay; encrypted-media';
   iframe.src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url) +
-    `&auto_play=${listing ? 'false' : 'true'}&hide_related=true&show_comments=false&show_reposts=false&visual=false`;
+    `&auto_play=false&hide_related=true&show_comments=false&show_reposts=false&visual=false`;
   document.body.appendChild(iframe);
 
   const E = SC.Widget.Events;
@@ -361,19 +369,17 @@ async function startSoundCloud() {
         picks = list; profileMode = true;
         const pick = pickFrom(list); queue = [pick]; qi = 0;
         scReady = true; enableButtons();
-        playItem(pick);
+        cue(pick);
         return;
       }
       // the profile list didn't come through: fall back to the RSS tracks and the agents' picks
       const pool = (choice.pool || []).map(p => ({ ...p, key: p.url }));
-      if (pool.length) { picks = pool; const pick = pickFrom(pool); queue = [pick]; qi = 0; scReady = true; enableButtons(); playItem(pick); return; }
+      if (pool.length) { picks = pool; const pick = pickFrom(pool); queue = [pick]; qi = 0; scReady = true; enableButtons(); cue(pick); return; }
     }
     scReady = true;
     enableButtons();
     readSound();
-    if (source === 'idle') sc.play();
-    // browsers block sound until the visitor interacts; ask for a tap if it didn't start
-    setTimeout(() => { if (!scPlaying && source === 'idle') { document.body.classList.add('needs-tap'); setStatus('Tap to play'); } }, 1800);
+    if (!scPlaying) setStatus('Ready: press play');       // nothing plays until the visitor asks
   });
   sc.bind(E.PLAY, () => {
     if (!window._homePlayed && window.JN) { window._homePlayed = 1; JN.event('home-play'); }
@@ -1163,6 +1169,7 @@ function playItem(item) {
 }
 function skip(dir) {
   if (!sc || !scReady) return;
+  pending = null;
   stopMic();
   if (audioEl && !audioEl.paused) audioEl.pause();
   lastMedia = 'sc';
@@ -1180,8 +1187,19 @@ function skip(dir) {
   playItem(queue[qi]);
 }
 
+// The track waits, chosen but not playing, until the visitor presses play.
+let pending = null;
+function cue(item) {
+  pending = item; pickedBy = item.by || null;
+  nowEl.textContent = item.title || '';
+  if (item.url) { nowEl.href = item.url; nowEl.title = 'Listen on SoundCloud'; }
+  setStatus(pickedBy ? `Picked by ${pickedBy} · press play` : 'Ready: press play');
+}
+function startPending() { if (!pending) return false; const it = pending; pending = null; playItem(it); return true; }
+
 function togglePlay() {
   stopMic();
+  if (lastMedia !== 'file' && sc && scReady && startPending()) return;
   if (lastMedia === 'file' && audioEl && audioEl.src) {
     actx.resume();
     audioEl.paused ? audioEl.play() : audioEl.pause();
@@ -1288,7 +1306,7 @@ function toggleUI() { document.body.classList.toggle('hide-ui'); }
 
 $('bigPlay').addEventListener('click', () => {
   if (tapToPlay()) return;
-  if (sc && scReady) { stopMic(); lastMedia = 'sc'; sc.play(); }
+  if (sc && scReady) { stopMic(); lastMedia = 'sc'; if (!startPending()) sc.play(); }
   else if (lastMedia === 'file' && audioEl && audioEl.src) togglePlay();
   else setStatus('Loading the music…');
 });
