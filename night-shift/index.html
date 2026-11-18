@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="/assets/site.css">
 <style>
   .floor{margin:2.5rem 0 0;border:1px solid var(--line)}
-  .floor canvas{display:block;width:100%;height:clamp(300px,42vw,460px)}
+  .floor canvas{display:block;width:100%;height:clamp(420px,52vw,600px)}
   .findings{list-style:none;margin-top:.4rem}
   .findings li{margin:.7rem 0;font-size:.8rem}
   .findings b{font-weight:400}
@@ -241,6 +241,7 @@ async function loadDayCrew() {
   try { rows = await JN.get('jn_crew?select=agent,report,created_at&order=id.desc&limit=80'); } catch (e) { rows = []; }
   const latest = {};
   for (const r of rows) if (!latest[r.agent]) latest[r.agent] = r;
+  floor.day = latest;
   box.innerHTML = DAY.map(([id, name, job]) => {
     const r = latest[id], rep = r ? r.report || {} : null;
     return `<details><summary><b>${escD(name)}</b><span class="job">${escD(job)}</span><span class="sum">${rep ? escD(rep.summary || '') : 'First report due soon'}</span>${r ? `<span class="when">${escD(new Date(r.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>` : ''}</summary>${rep ? crewDetail(id, rep) + (rep.note ? `<p class="note">“${escD(rep.note)}”</p>` : '') : ''}</details>`;
@@ -267,7 +268,7 @@ const floor = { rooms: [], shift: null, t: 0, men: [] };
 const fcv = document.getElementById('floor'), fx = fcv.getContext('2d');
 let FW = 0, FH = 0;
 const NAMES = { '/': 'Home', '/music/': 'Music', '/security/': 'Security', '/security/layers/': 'Layers',
-  '/security/cpted/': 'Streets', '/security/martyns-law/': 'Martyn’s Law', '/night-shift/': 'Control room', '/admin/': 'Admin' };
+  '/security/cpted/': 'Streets', '/security/martyns-law/': 'Martyn’s Law', '/night-shift/': 'Control room', '/admin/': 'Admin', '/blog/': 'Blog' };
 const label = p => NAMES[p] || p.replace(/^\/|\/$/g, '').split('/').pop().replace(/-/g, ' ') || 'Home';
 
 function layout() {
@@ -324,6 +325,7 @@ function jobLine(job) {
   }
   if (job === 'clerk') { const c = J.clerk || {}; return c.ok ? (c.changed ? 'Guidance UPDATED' : 'Guidance unchanged') : 'Guidance ?'; }
   if (job === 'intel') { const i = J.intel || {}; return i.ok ? 'UK threat: ' + i.level : 'Threat level ?'; }
+  if (job === 'pickle') { const p = J.pickle || {}; return p.refined ? 'Re-cued ' + p.refined : p.scored ? p.scored + ' tracks cued' : p.track ? 'Cued ' + p.track : 'Cue sheets'; }
   if (job === 'ideas') { const d = J.ideas || {}; return d.archive && d.archive.length ? `${d.archive.length} ideas pitched` : 'Sketching…'; }
   if (job === 'scout') { const sc = J.scout || {}; return sc.count != null ? `${sc.count} tracks · ${sc.new && sc.new.length ? sc.new.length + ' new' : 'none new'}` : 'Tracks ?'; }
   return '';
@@ -432,6 +434,38 @@ function drawFloor(dt) {
   post(floor.security, 'AGENT GOD', 'intel', 'check', -14);
   post(floor.vis || floor.rooms[1], 'KIPPER', 'scout', 'check', 0);
   post(floor.rooms.find(r => r.path === '/security/layers/') || floor.security, 'DOODLEBUG', 'ideas', 'check', 16);
+
+  // the day shift: each agent paces its own room, carrying its prop and its latest report
+  const roomOf = (...paths) => { for (const p of paths) { const r = floor.rooms.find(q => q.path === p); if (r) return r; } return floor.rooms[floor.rooms.length - 1]; };
+  const D = floor.day || {};
+  const dayLine = id => { const r = D[id], t = (r && r.report && r.report.summary) || 'first report due'; return t.length > 28 ? t.slice(0, 27) + '…' : t; };
+  const DAYCREW = [
+    [roomOf('/blog/', '/'), 'GRUMBLE', () => dayLine('grumble'), '✎'],
+    [roomOf('/security/martyns-law/', '/security/'), 'BIN LID', () => dayLine('binlid'), '◫'],
+    [roomOf('/admin/', '/night-shift/'), 'TEACAKE', () => dayLine('teacake'), '⌕'],
+    [roomOf('/', '/blog/'), 'PIGEON', () => dayLine('pigeon'), '#'],
+    [roomOf('/security/', '/security/layers/'), 'BUNSEN', () => dayLine('bunsen'), '?'],
+    [roomOf('/music/'), 'BISCUIT TIN', () => dayLine('biscuittin'), '▤'],
+    [roomOf('/music/'), 'WURZEL', () => dayLine('wurzel'), '◉'],
+    [roomOf('/security/cpted/', '/security/'), 'CRUMPET', () => dayLine('crumpet'), '❏'],
+    [roomOf('/security/layers/', '/security/'), 'SPANNER', () => dayLine('spanner'), '⚒'],
+    [roomOf('/night-shift/', '/music/'), 'PICKLE', () => jobLine('pickle'), '♫']
+  ];
+  const slots = new Map();
+  DAYCREW.forEach(([room]) => slots.set(room, (slots.get(room) || 0) + 1));
+  const used = new Map();
+  DAYCREW.forEach(([room, name, line, glyph], k) => {
+    if (!room) return;
+    const n = slots.get(room), i = used.get(room) || 0; used.set(room, i + 1);
+    const lane = room.x + room.w * ((i + 1) / (n + 1)), range = Math.min(room.w / (n + 1) * 0.35, 40 * s);
+    const ph = k * 1.7, sway = Math.sin(floor.t * 0.45 + ph);
+    const x = lane + sway * range, y = room.y + room.h - (room.upper ? 16 : 28) * s;
+    const moving = Math.abs(Math.cos(floor.t * 0.45 + ph)) > 0.25;
+    stickMan(x, y, s, floor.t * 5 + ph, moving ? 'walk' : 'check');
+    text(glyph, x + 9 * s, y - 30 * s + Math.sin(floor.t * 3 + ph) * 2 * s, 10 * s, 0.9);    // the prop, bobbing
+    text(name, x, y + 10 * s, 7.5 * s, 0.6);
+    if (room.w / n > 70) text(line(), lane, y - 42 * s - (i % 2) * 11 * s, 8 * s, 0.75);   // too narrow on a phone: names only
+  });
 
   // patrols walking the corridor and checking each room
   const speed = 60 * s;
