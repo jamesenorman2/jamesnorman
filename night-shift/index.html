@@ -158,7 +158,7 @@ function renderShift(row) {
 
 // The crew and their jobs, with each one's latest real result.
 const CREW = [
-  ['AGENT MONKEY MONKEY & FISH FISH', 'Patrol. Walk every page it can find from the homepage: status, speed, size, title and security headers.', L => {
+  ['AGENT MONKEY MONKEY', 'Patrol. Walk every page it can find from the homepage: status, speed, size, title and security headers.', L => {
     const p = L.patrol || [], bad = p.filter(x => !x.ok).length;
     return [`${p.length - bad}/${p.length} pages OK`, bad ? 'bad' : ''];
   }],
