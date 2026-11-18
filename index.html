@@ -216,7 +216,7 @@ const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;
 
 const ROWS = 72;            // number of ridge lines
 const POINTS = 160;         // samples per line
-const ROW_RATE = 28;        // new lines per second while music plays
+const ROW_RATE = 42;        // new lines per second while music plays (each line is ~24 ms of music)
 const FFT = 2048;
 const MIN_HZ = 30, MAX_HZ = 9000;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -843,7 +843,7 @@ function frame(now) {
   followScore();
   autoLasers();
   autoGlow();
-  const base = source !== 'idle' ? ROW_RATE : (reduceMotion ? 3 : 10);
+  const base = source !== 'idle' ? (reduceMotion ? 28 : ROW_RATE) : (reduceMotion ? 3 : 10);
   if (look !== 'freeze') rowClock += dt * base * view.speed;
   while (rowClock >= 1) {
     rowClock -= 1;
@@ -859,6 +859,9 @@ function frame(now) {
 }
 
 const PX = new Float32Array(POINTS), PY = new Float32Array(POINTS), PZ = new Float32Array(POINTS);
+// per-point constants across a line: its position u, and sin/cos of 3u for the ripple
+const UX = new Float64Array(POINTS), S3 = new Float64Array(POINTS), C3 = new Float64Array(POINTS);
+for (let i = 0; i < POINTS; i++) { const u = -1 + 2 * i / (POINTS - 1); UX[i] = u * RECT_W / 2; S3[i] = Math.sin(u * 3); C3[i] = Math.cos(u * 3); }
 function draw(phase) {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.fillStyle = '#000';
@@ -878,6 +881,8 @@ function draw(phase) {
     PX[k] = cx + dot(d, r) * F / zc; PY[k] = cy - dot(d, u) * F / zc; PZ[k] = zc;
   };
   ctx.strokeStyle = INK; ctx.lineJoin = 'round';
+  const Cx = C[0], Cy = C[1], Cz = C[2], fx = f[0], fy = f[1], fz = f[2], rx = r[0], ry = r[1], rz = r[2], ux = u[0], uy = u[1], uz = u[2];
+  const curlK = shape.curl * Math.PI / RECT_D, rip = shape.ripple * 0.22;
 
   // the lines: newest at the far edge, sliding towards the near edge
   for (let a = 0; a < SHOW; a++) {
@@ -886,12 +891,28 @@ function draw(phase) {
     const row = history[(head - a + TOTAL * 2) % TOTAL];
     let zsum = 0, n = 0;
     if (look === 'sparse' && a % 3) continue;
-    const hgt = i => {
-      let h = look === 'mirror' ? Math.max(row[i], row[POINTS - 1 - i]) : row[i];
-      if (look === 'spikes') h = Math.pow(h, 0.65) * 1.35;
-      return h * AMP;
-    };
-    for (let i = 0; i < POINTS; i++) { project(surf(-1 + 2 * i / (POINTS - 1), v, hgt(i)), i); if (PZ[i] > 0) { zsum += PZ[i]; n++; } }
+    // surf() and project() worked out inline for every point of the line: the same maths,
+    // with everything that is constant along a line computed once, and no arrays made per point
+    const s = v * RECT_D;
+    let y0, z0, ny, nz;
+    if (Math.abs(curlK) < 1e-4) { y0 = 0; z0 = s; ny = 1; nz = 0; }
+    else { const R = 1 / curlK, an = s * curlK, ca = Math.cos(an), sa = Math.sin(an); y0 = R * (1 - ca); z0 = R * sa; ny = ca; nz = -sa; }
+    const ph = clockT * 1.7 + v * 5, rc = rip * Math.cos(ph), rs = rip * Math.sin(ph);
+    const tw = shape.twist * (v - 0.5) * Math.PI, tc = Math.cos(tw), ts = Math.sin(tw);
+    const mirror = look === 'mirror', spikes = look === 'spikes';
+    for (let i = 0; i < POINTS; i++) {
+      let h = mirror ? Math.max(row[i], row[POINTS - 1 - i]) : row[i];
+      if (spikes) h = Math.pow(h, 0.65) * 1.35;
+      h *= AMP;
+      let x = UX[i], y = y0 + (rip ? rc * S3[i] + rs * C3[i] : 0) + ny * h;
+      const z = z0 + nz * h - RECT_D / 2;
+      if (tw) { const X = x; x = X * tc - y * ts; y = X * ts + y * tc; }
+      const dx = x - Cx, dy = y - Cy, dz = z - Cz, zc = dx * fx + dy * fy + dz * fz;
+      if (zc < 0.04) { PZ[i] = -1; continue; }
+      const q = F / zc;
+      PX[i] = cx + (dx * rx + dy * ry + dz * rz) * q; PY[i] = cy - (dx * ux + dy * uy + dz * uz) * q; PZ[i] = zc;
+      zsum += zc; n++;
+    }
     if (!n) continue;
     const zc = zsum / n;
     const edgeFade = Math.min(1, (a + 1 - phase) / 4, (SHOW - a - phase) / 4);
@@ -1075,22 +1096,30 @@ function trackInfo() {
   }
   return null;
 }
+const scrubBox = { w: 0, h: 0 };
+if (window.ResizeObserver) new ResizeObserver(es => { const c = es[0].contentRect; scrubBox.w = c.width; scrubBox.h = c.height; }).observe(scrub);
 function drawScrub() {
   const info = trackInfo();
   scrub.hidden = !info;
   if (!info) return;
-  const r = scrub.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
+  // the size is cached (ResizeObserver) so drawing never forces a layout in the middle of a frame
+  if (!scrubBox.w) { const b = scrub.getBoundingClientRect(); scrubBox.w = b.width; scrubBox.h = b.height; }
+  const r = { width: scrubBox.w, height: scrubBox.h }, d = Math.min(devicePixelRatio || 1, 2);
   if (scrub.width !== Math.round(r.width * d)) { scrub.width = Math.round(r.width * d); scrub.height = Math.round(r.height * d); }
   sctx.setTransform(d, 0, 0, d, 0, 0);
   sctx.clearRect(0, 0, r.width, r.height);
   const n = info.peaks.length, step = 3, mid = r.height / 2, lo = info.lo || 0, hi = info.hi || 1;
   sctx.lineWidth = 1;
+  // two strokes (played and still to play) instead of one per bar: the same picture, far fewer draw calls
+  const played = new Path2D(), ahead = new Path2D();
   for (let x = 0; x < r.width; x += step) {
     const v = info.peaks[Math.min(n - 1, Math.floor((x / r.width) * n))];
     const a = Math.max(0.06, Math.min(1, (v - lo) / (hi - lo || 1))) * (mid - 1);
-    sctx.strokeStyle = x / r.width <= info.frac ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.3)';
-    sctx.beginPath(); sctx.moveTo(x + 0.5, mid - a); sctx.lineTo(x + 0.5, mid + a); sctx.stroke();
+    const path = x / r.width <= info.frac ? played : ahead;
+    path.moveTo(x + 0.5, mid - a); path.lineTo(x + 0.5, mid + a);
   }
+  sctx.strokeStyle = 'rgba(255,255,255,.95)'; sctx.stroke(played);
+  sctx.strokeStyle = 'rgba(255,255,255,.3)'; sctx.stroke(ahead);
   const px = Math.round(info.frac * r.width) + 0.5;
   sctx.strokeStyle = '#fff';
   sctx.beginPath(); sctx.moveTo(px, 0); sctx.lineTo(px, r.height); sctx.stroke();
