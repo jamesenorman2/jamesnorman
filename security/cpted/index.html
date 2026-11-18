@@ -40,6 +40,9 @@
   .tool{background:transparent;color:var(--fg);border:1px solid var(--line);padding:.45rem .7rem;font-size:.6rem}
   .tool.on{background:#fff;color:#000;border-color:#fff}
   .plan canvas.editing{cursor:crosshair}
+  .tooltip-line{margin:0;padding:.7rem 1rem;border-top:1px solid var(--line);font-size:.74rem;line-height:1.55;color:#d6d6d6;min-height:2.6em}
+  .tooltip-line b{color:#fff;font-weight:400}
+  .tooltip-line .up{color:#4ade80} .tooltip-line .down{color:var(--err)}
   .audit-head{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
   .pr .v{font-family:'Syne',sans-serif;font-weight:600;font-size:1.6rem;margin-top:.4rem}
   .findings{margin:.8rem 0 0 1.2rem;font-size:.84rem}
@@ -101,13 +104,14 @@
         </div>
         <div class="tools" role="toolbar" aria-label="Edit the street">
           <span class="k">Edit</span>
-          <button class="tool on" data-tool="inspect">Look</button>
-          <button class="tool" data-tool="lamp">+ Lamp</button>
-          <button class="tool" data-tool="hedge">+ Hedge</button>
-          <button class="tool" data-tool="kiosk">+ Kiosk</button>
-          <button class="tool" data-tool="remove">Remove</button>
-          <button class="tool" id="clearEdits">Clear my edits</button>
+          <button class="tool on" data-tool="inspect" title="Just look: clicking the plan does nothing">Look</button>
+          <button class="tool" data-tool="lamp" title="Then click the plan to put up a street light">+ Lamp</button>
+          <button class="tool" data-tool="hedge" title="Then click the plan to plant a hedge">+ Hedge</button>
+          <button class="tool" data-tool="kiosk" title="Then click the plan to add a staffed kiosk that watches all round">+ Kiosk</button>
+          <button class="tool" data-tool="remove" title="Then click a lamp, kiosk or hedge to take it away">Remove</button>
+          <button class="tool" id="clearEdits" title="Put the street back as it was">Clear my edits</button>
         </div>
+        <p class="tooltip-line" id="toolHelp" aria-live="polite">Pick a tool, then click on the street plan above to change it. The blind spots and scores update straight away.</p>
       </div>
     </div>
 
@@ -586,6 +590,15 @@ function frame(now) {
     for (const c of highlight) ctx.fillRect(c % GW, (c / GW) | 0, 1, 1);
     ctx.restore(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
+  if (hover && tool !== 'inspect') {
+    ctx.save(); ctx.setTransform(DPR * TW / 2, DPR * TW / 4, -DPR * TW / 2, DPR * TW / 4, DPR * OX, DPR * OY);
+    ctx.fillStyle = hover.ok || tool === 'remove' ? (tool === 'remove' ? 'rgba(255,107,90,.55)' : 'rgba(255,255,255,.55)') : 'rgba(255,107,90,.35)';
+    ctx.fillRect(hover.x - 1, hover.y - 1, 3, 3);
+    ctx.restore(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const [hx, hy] = iso(hover.x + 0.5, hover.y + 0.5);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = `400 ${Math.max(10, TW * 0.8)}px "IBM Plex Mono", monospace`;
+    ctx.fillText(hover.ok || tool === 'remove' ? { lamp: '+ lamp', hedge: '+ hedge', kiosk: '+ kiosk', remove: 'remove' }[tool] : 'building', hx, hy - TW * 1.2);
+  }
   const path = opts.gate ? WALK_GATED : WALK, L = pathLen(path);
   wd += dt * 3.2 * wdir;
   if (wd > L) { wd = L; wdir = -1; } if (wd < 0) { wd = 0; wdir = 1; }
@@ -605,24 +618,44 @@ function frame(now) {
 }
 
 /* ─── Edit the street ─────────────────────────────────────── */
-let tool = 'inspect', highlight = null;
+let tool = 'inspect', highlight = null, hover = null;
+const HELP = {
+  inspect: 'You are just looking. Pick <b>+ Lamp</b>, <b>+ Hedge</b> or <b>+ Kiosk</b>, then click on the street plan above to change it. The blind spots and scores update straight away.',
+  lamp: '<b>+ Lamp:</b> click on the street, alley or car park to put up a street light. Ground only counts as overlooked when it is <b>lit and seen</b> from a window or kiosk, so light the places people can watch.',
+  hedge: '<b>+ Hedge:</b> click to plant a hedge. Hedges block sightlines and make hiding places, so expect the score to drop: that’s the lesson.',
+  kiosk: '<b>+ Kiosk:</b> click to add a staffed kiosk. It watches all the way round, so everything lit and in its line of sight counts as overlooked.',
+  remove: '<b>Remove:</b> click a lamp or kiosk you added, or any hedge, to take it away.'
+};
+const say = html => { $('toolHelp').innerHTML = html; };
 document.querySelectorAll('.tool[data-tool]').forEach(b => b.addEventListener('click', () => {
   tool = b.dataset.tool;
   document.querySelectorAll('.tool[data-tool]').forEach(x => x.classList.toggle('on', x === b));
   cv.classList.toggle('editing', tool !== 'inspect');
+  say(HELP[tool]);
 }));
 $('clearEdits').addEventListener('click', () => {
+  const before = parseInt($('pct').textContent, 10);
   for (let i = LAMPS.length - 1; i >= 0; i--) if (LAMPS[i].user) LAMPS.splice(i, 1);
   OBSERVERS.length = 0; addedHedges.clear(); removedHedges.clear(); analyse();
+  say(`Street put back as it was. Overlooked ground: ${before}% → ${parseInt($('pct').textContent, 10)}%.`);
 });
+// show where the next click will land
+cv.addEventListener('mousemove', e => {
+  if (tool === 'inspect') { hover = null; return; }
+  const r = cv.getBoundingClientRect(), [gx, gy] = toGrid(e.clientX - r.left, e.clientY - r.top);
+  hover = gx >= 0 && gy >= 0 && gx < GW && gy < GH ? { x: Math.floor(gx), y: Math.floor(gy), ok: at(Math.floor(gx), Math.floor(gy)) !== BUILDING } : null;
+});
+cv.addEventListener('mouseleave', () => { hover = null; });
 // screen → ground grid (the inverse of the isometric projection)
 function toGrid(px, py) { const u = (px - OX) / (TW / 2), v = (py - OY) / (TW / 4); return [(u + v) / 2, (v - u) / 2]; }
 cv.addEventListener('click', e => {
   if (window.JN && !window._cptedTold) { window._cptedTold = 1; JN.event('cpted-edit'); }
-  if (tool === 'inspect') return;
+  if (tool === 'inspect') { say('You are just looking: pick <b>+ Lamp</b>, <b>+ Hedge</b> or <b>+ Kiosk</b> first, then click the plan.'); return; }
   const r = cv.getBoundingClientRect(), [gx, gy] = toGrid(e.clientX - r.left, e.clientY - r.top);
-  if (gx < 0 || gy < 0 || gx >= GW || gy >= GH) return;
+  if (gx < 0 || gy < 0 || gx >= GW || gy >= GH) { say('That’s off the edge of the site. Click on the street, alley or car park.'); return; }
   const cx = Math.floor(gx), cy = Math.floor(gy), cell = at(cx, cy);
+  if (cell === BUILDING && tool !== 'remove') { say('That’s a building. Click on open ground: the street, the alley or the car park.'); return; }
+  const before = parseInt($('pct').textContent, 10), hideBefore = parseInt($('hide').textContent, 10), counts = [LAMPS.length, OBSERVERS.length, addedHedges.size, removedHedges.size].join();
   if (tool === 'lamp' && cell !== BUILDING) LAMPS.push({ x: cx + 0.5, y: cy + 0.5, broken: false, user: true });
   if (tool === 'kiosk' && cell !== BUILDING) OBSERVERS.push({ x: cx + 0.5, y: cy + 0.5 });
   if (tool === 'hedge' && cell !== BUILDING) { const k = cx + ',' + cy; removedHedges.delete(k); addedHedges.add(k); }
@@ -632,7 +665,19 @@ cv.addEventListener('click', e => {
     else if ((i = OBSERVERS.findIndex(near)) >= 0) OBSERVERS.splice(i, 1);
     else if (cell === HEDGE) { const k = cx + ',' + cy; addedHedges.delete(k); removedHedges.add(k); }
   }
+  if ([LAMPS.length, OBSERVERS.length, addedHedges.size, removedHedges.size].join() === counts) { say(tool === 'remove' ? 'Nothing to remove there: click right on a lamp or kiosk you added, or on a hedge.' : 'Already there.'); return; }
   analyse();
+  const after = parseInt($('pct').textContent, 10), d = after - before, hideAfter = parseInt($('hide').textContent, 10), dh = hideAfter - hideBefore;
+  const what = { lamp: 'Lamp added', hedge: 'Hedge planted', kiosk: 'Kiosk added', remove: 'Removed' }[tool];
+  const why = {
+    lamp: 'The ground is lit now, but no window or kiosk can see it, so it still isn’t overlooked. Add a <b>+ Kiosk</b> nearby, or light ground that windows already look onto.',
+    kiosk: 'Nothing new is both lit and in its sight here. Put a kiosk where there are lamps but no windows, like the car park, or add lamps around it.',
+    hedge: 'It’s out of everyone’s sightline, so it changed nothing here. Planted on a watched route, a hedge would hide people and cut the score.',
+    remove: 'That didn’t change what’s overlooked.'
+  }[tool];
+  const score = d > 0 ? `<span class="up">(+${d})</span>` : d < 0 ? `<span class="down">(${d})</span>` : '(no change)';
+  const hide = dh ? ` Hiding places: ${hideBefore} → ${hideAfter}.` : '';
+  say(`${what}. Overlooked ground: ${before}% → <b>${after}%</b> ${score}.${hide}${d === 0 && !dh ? ' ' + why : ''}`);
 });
 
 /* ─── The audit ───────────────────────────────────────────── */
