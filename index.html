@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>James Norman</title>
 <meta name="description" content="James Norman: technical director for AECOM and Chartered Security Consultant with over 27 years protecting people, assets and operations across critical national infrastructure and global capital projects. Also a producer and DJ: fly through the music.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://www.jamesnorman.co.uk/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="James Norman">
+<meta property="og:title" content="James Norman">
+<meta property="og:description" content="James Norman: technical director for AECOM and Chartered Security Consultant with over 27 years protecting people, assets and operations across critical national infrastructure and global capital projects. Also a producer and DJ: fly through the music.">
+<meta property="og:url" content="https://www.jamesnorman.co.uk/">
+<meta property="og:image" content="https://www.jamesnorman.co.uk/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
@@ -17,9 +28,9 @@
   :root{
     --bg:#000;
     --ink:#fff;
-    --dim:#3a3530;
-    --mid:#6a6050;
-    --hi:#b8a888;
+    --dim:#8a8070;
+    --mid:#a09680;
+    --hi:#f0e6cc;
   }
   html,body{height:100%}
   body{background:var(--bg);overflow:hidden;-webkit-font-smoothing:antialiased;
@@ -31,7 +42,7 @@
   body.hide-ui .ui{opacity:0}
   body.hide-ui .ui *{pointer-events:none}
   .top,.bottom{padding:2.5rem 3rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;
-    font-size:.6rem;font-weight:300;letter-spacing:.3em;text-transform:uppercase}
+    font-size:.7rem;font-weight:300;letter-spacing:.3em;text-transform:uppercase}
   .top{opacity:0;animation:fi 2s .5s forwards;flex-direction:column;justify-content:flex-start;gap:1.1rem}
   .nameslot{font-family:'Syne',sans-serif;font-weight:500;font-size:clamp(1.3rem,3.2vw,2.3rem);letter-spacing:.14em;color:#fff;line-height:1;white-space:nowrap;visibility:hidden}
   .nameslot .sl{display:inline-block} .nameslot .dim{opacity:.55} .nameslot .gap{display:inline-block;width:.45em}
@@ -46,13 +57,14 @@
     max-width:min(62ch,48vw);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;text-align:right}
   .now:empty{display:none}
   .controls{display:flex;gap:1.8rem;flex-wrap:wrap}
+  .controls button{padding:.7rem 0;min-height:32px}
   .status{max-width:min(62ch,48vw);text-align:right;color:var(--mid);line-height:1.5;letter-spacing:.2em}
   /* if the browser blocks autoplay, the wireframe play button pulses instead of a big button in the middle */
   body.needs-tap #playBtn{animation:ppPulse 1.6s ease-in-out infinite;opacity:1}
   /* the big wireframe play in the middle: shown whenever nothing is playing, gone once the music starts */
   .bigplay{position:fixed;left:50%;top:auto;bottom:calc(5.2rem + 4rem + .6rem);transform:translate(-50%,0) scale(.92);z-index:5;display:flex;flex-direction:column;align-items:center;gap:.9rem;
     background:none;border:0;color:#fff;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .8s,transform .8s}
-  body.intro-done:not(.is-playing) .bigplay{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
+  body.intro-done:not(.is-playing) .bigplay,body.sc-ready:not(.is-playing) .bigplay{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
   @media(max-width:700px){.bigplay{bottom:calc(9.5rem + 48px + .4rem)}}
   body.hide-ui .bigplay{opacity:0!important;pointer-events:none!important}
   .bigplay svg{width:clamp(64px,6vw,6rem);height:auto;fill:none;stroke:#fff;stroke-width:1.2;stroke-linejoin:round;transition:transform .4s}
@@ -68,10 +80,15 @@
   #scrub{position:fixed;top:auto;left:3rem;right:3rem;bottom:5.2rem;width:calc(100% - 6rem);height:4rem;z-index:3;cursor:pointer;touch-action:none;background:transparent}
   body.hide-ui #scrub{opacity:.5}
   @media(max-width:700px){#scrub{left:16px;right:16px;width:calc(100% - 32px);bottom:9.5rem;height:48px}}
-  .hint{position:fixed;left:50%;bottom:10rem;transform:translateX(-50%);font-size:.55rem;letter-spacing:.35em;
+  .hint{position:fixed;left:50%;bottom:10rem;transform:translateX(-50%);font-size:.7rem;letter-spacing:.35em;
     text-transform:uppercase;color:var(--mid);white-space:nowrap;opacity:0;pointer-events:none;animation:hint 7s 2s forwards}
   @keyframes hint{0%{opacity:0}15%{opacity:1}75%{opacity:1}100%{opacity:0}}
   body.hide-ui .hint{display:none}
+  /* the hint sits where the waveform will be (empty until something plays), clear of the big play button */
+  .hint{bottom:6.2rem}
+  @media(max-width:700px){.hint{bottom:auto;top:7.5rem;white-space:normal;width:calc(100% - 32px);text-align:center;line-height:1.8}}
+  /* on short screens the intro's tabs reach down to the play button, so it waits for the intro there */
+  @media(max-height:760px){body.sc-ready:not(.intro-done) .bigplay{opacity:0;pointer-events:none}body:not(.intro-done) .skip{visibility:hidden}}
   .drop{position:fixed;inset:1.5rem;border:1px dashed var(--mid);display:flex;align-items:center;justify-content:center;
     font-size:.7rem;letter-spacing:.4em;text-transform:uppercase;color:var(--hi);opacity:0;pointer-events:none;transition:opacity .3s}
   body.dragging .drop{opacity:1}
@@ -80,10 +97,10 @@
   input[type=file]{display:none}
   .po{position:fixed;inset:0;z-index:10000;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
   .po.active{display:flex}
-  .pc{position:absolute;top:1.5rem;right:2rem;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:#777;background:none;border:none;cursor:pointer;padding:.5rem;font-family:inherit}
+  .pc{position:absolute;top:1.5rem;right:2rem;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:#aaa;background:none;border:none;cursor:pointer;padding:.5rem;font-family:inherit}
   .pc:hover{color:#fff}
-  .ps{font-size:.65rem;letter-spacing:.15em;color:#ffcc00;margin-bottom:1rem}
-  .ph{font-size:.55rem;letter-spacing:.1em;color:#555;margin-top:1rem}
+  .ps{font-size:.7rem;letter-spacing:.15em;color:#ffcc00;margin-bottom:1rem}
+  .ph{font-size:.7rem;letter-spacing:.1em;color:#999;margin-top:1rem}
   #pacCanvas{position:static;width:auto;height:auto;max-width:100%}
   .pp{width:3.6rem;height:3.6rem;padding:0;color:#fff;opacity:.85;transition:opacity .3s,transform .3s}
   .pp:hover{opacity:1;transform:scale(1.06)}
@@ -93,6 +110,7 @@
   /* transport: play/pause on the left and previous/next on the right, both sitting just above the seek waveform */
   .transport,.skip{position:fixed;bottom:calc(5.2rem + 4rem + .9rem);z-index:4;display:flex;gap:.9rem;align-items:center;pointer-events:auto}
   .transport{left:3rem} .skip{right:3rem}
+  body:not(.has-played) .transport{visibility:hidden}
   .pp.sk{width:2.75rem;height:2.75rem}
   .pp:disabled{opacity:.3}
   @media(max-width:700px){.transport,.skip{bottom:calc(9.5rem + 48px + .7rem)}.transport{left:16px}.skip{right:16px}.pp.sk{width:40px;height:40px}}
@@ -102,25 +120,24 @@
     opacity:0;animation:nameIn 2.4s .4s forwards;text-shadow:0 0 40px #000}
   .intro .name .ch{display:inline-block;will-change:transform}
   .intro .name i{font-style:normal;font-weight:400;opacity:.55}
-  .intro .line{font-size:.68rem;letter-spacing:.55em;text-transform:uppercase;color:#cfcfcf;margin-top:1.6rem;opacity:0;animation:fi 1.6s 1.4s forwards,fadeAway 3s 8s forwards}
   .intro nav{display:flex;flex-wrap:wrap;justify-content:center;gap:.7rem;margin-top:2.4rem;max-width:760px}
-  .intro nav a{pointer-events:auto;border:1px solid rgba(255,255,255,.35);color:#fff;padding:.75rem 1.1rem;font-size:.66rem;letter-spacing:.3em;text-transform:uppercase;
+  .intro nav a{pointer-events:auto;border:1px solid rgba(255,255,255,.35);color:#fff;padding:.75rem 1.1rem;font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;
     background:rgba(0,0,0,.55);opacity:0;animation:fi 1.2s forwards;transition:border-color .3s,background .3s;will-change:transform}
   .intro nav a:hover{border-color:#fff;background:rgba(255,255,255,.08)}
-  body.intro-done .intro .line,body.intro-done .intro nav{visibility:hidden}
+  body.intro-done .intro nav{visibility:hidden}
   @keyframes nameIn{0%{opacity:0;filter:blur(10px)}100%{opacity:1;filter:blur(0)}}
   @keyframes fadeAway{to{opacity:0;filter:blur(4px)}}
-  @media(max-width:700px){.intro .line{letter-spacing:.3em}.pp{width:50px;height:50px}}
-  @media (prefers-reduced-motion: reduce){.intro .name,.intro .line,.intro nav a{animation-duration:.01s!important}}
-  .tag{display:block;font-size:.5rem;letter-spacing:.4em;color:var(--mid);margin-top:.5rem}
+  @media(max-width:700px){.pp{width:50px;height:50px}}
+  @media (prefers-reduced-motion: reduce){.intro .name,.intro nav a{animation-duration:.01s!important}}
+  .tag{display:block;font-size:.7rem;letter-spacing:.4em;color:var(--mid);margin-top:.5rem}
   nav.site{display:flex;gap:.6rem 2rem;flex-wrap:wrap;justify-content:center}
-  nav.site a{opacity:0;transition:opacity .35s}
+  nav.site a{opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
   nav.site{align-items:center} nav.site .has-sub{position:relative;display:inline-flex}
   nav.site .sub{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.55rem;
     padding:.9rem 1.2rem;background:rgba(0,0,0,.85);border:1px solid #333;opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;z-index:6;white-space:nowrap}
   nav.site .has-sub:hover .sub,nav.site .has-sub:focus-within .sub{opacity:1;visibility:visible}
-  nav.site .sub a{opacity:1!important;font-size:.74rem}
-  nav.site a.landed,body.intro-done nav.site a{opacity:1}
+  nav.site .sub a{opacity:1!important;visibility:inherit;font-size:.74rem}
+  nav.site a.landed,body.intro-done nav.site a{opacity:1;visibility:visible}
   nav.site a{color:#e0e0e0;font-size:.86rem;letter-spacing:.26em;padding:.3rem 0}
   @media(max-width:700px){nav.site{gap:.15rem 1.1rem}nav.site a{font-size:.74rem;letter-spacing:.2em}}
   nav.site a:hover{color:#fff}
@@ -128,10 +145,10 @@
   @media(max-width:700px){nav.site{gap:.9rem}.top{gap:.9rem}.right{align-items:center}}
   @keyframes fi{to{opacity:1}}
   @media(max-width:700px){
-    .top,.bottom{padding:1.25rem 1rem;font-size:.55rem;letter-spacing:.2em}
-    .now{font-size:.65rem;max-width:92vw;text-align:center}
+    .top,.bottom{padding:1.25rem 1rem;font-size:.7rem;letter-spacing:.2em}
+    .now{font-size:.7rem;max-width:92vw;text-align:center}
     .bottom{flex-direction:column;align-items:center;gap:1rem}
-    .controls{gap:1.2rem;justify-content:center}
+    .controls{gap:.4rem 1rem;justify-content:center;letter-spacing:.12em}
     .status{text-align:center;max-width:100%}
   }
 </style>
@@ -141,7 +158,6 @@
 
 <div class="intro" id="intro" aria-label="James Norman">
   <h1 class="name">James <i>Norman</i></h1>
-  <p class="line">Security · Producer · DJ</p>
   <nav aria-label="Sections">
     <a href="/music/" style="animation-delay:2.40s,9.40s">Music</a>
     <a href="/night-shift/" style="animation-delay:2.58s,9.52s">Agents</a>
@@ -158,10 +174,10 @@
       <a href="/night-shift/">Agents</a>
       <a href="/blog/">Blog</a>
       <span class="has-sub"><a href="/security/">Security</a>
-        <span class="sub" role="menu" aria-label="Security tools">
-          <a href="/security/layers/" role="menuitem">Layers</a>
-          <a href="/security/cpted/" role="menuitem">Crime Prevention Through Environmental Design</a>
-          <a href="/security/martyns-law/" role="menuitem">Martyn’s Law</a>
+        <span class="sub" aria-label="Security tools">
+          <a href="/security/layers/">Layers</a>
+          <a href="/security/cpted/">Crime Prevention Through Environmental Design</a>
+          <a href="/security/martyns-law/">Martyn’s Law</a>
         </span>
       </span>
       <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">LinkedIn</a>
@@ -172,7 +188,7 @@
       <button id="loadBtn" title="Play an audio file from your device instead (L)">Load file</button>
       <button id="micBtn" title="Use your microphone (M)" aria-pressed="false">Mic</button>
       <button id="wildBtn" title="Wild camera on or off (C)" aria-pressed="true">Wild</button>
-      <button id="strobeBtn" title="Strobe on the biggest drops (3 flashes, max 3 a second)" aria-pressed="true">Strobe</button>
+      <button id="strobeBtn" title="Strobe on the biggest drops (3 flashes, max 3 a second). Off by default" aria-pressed="false">No strobe</button>
       <button id="uiBtn" title="Hide interface (H)">Hide</button>
       <button id="eggBtn" onclick="openPac()">Egg</button>
     </div>
@@ -340,10 +356,12 @@ function loadScript(src) {
 
 let listing = false, choice = null;
 async function startSoundCloud() {
+  const api = loadScript('https://w.soundcloud.com/player/api.js');   // in parallel with choosing the track
+  api.catch(() => {});
   choice = await chosenTrack();
   const url = choice.url;
   listing = !choice.fixed;
-  try { await loadScript('https://w.soundcloud.com/player/api.js'); }
+  try { await api; }
   catch (e) { setStatus('SoundCloud unavailable'); return; }
 
   const iframe = document.createElement('iframe');
@@ -691,7 +709,9 @@ const touched = () => { lastInput = performance.now(); };
 const shape = { curl: 0, curlTo: 0, twist: 0, twistTo: 0, ripple: 0, rippleTo: 0 };
 
 // a point on the rectangle: u -1..1 across, v 0 (near edge) .. 1 (far edge), h height off the surface
-function surf(u, v, h) {
+// surfInto writes the point to SX, SY, SZ (no garbage: it runs ~16,000 times a frame); surf returns it as an array.
+let SX = 0, SY = 0, SZ = 0;
+function surfInto(u, v, h) {
   const s = v * RECT_D, k = shape.curl * Math.PI / RECT_D;
   let x = u * RECT_W / 2, y, z, ny, nz;
   if (Math.abs(k) < 1e-4) { y = 0; z = s; ny = 1; nz = 0; }
@@ -700,8 +720,9 @@ function surf(u, v, h) {
   y += ny * h; z += nz * h;
   const tw = shape.twist * (v - 0.5) * Math.PI;
   if (tw) { const c = Math.cos(tw), sn = Math.sin(tw), X = x, Y = y; x = X * c - Y * sn; y = X * sn + Y * c; }
-  return [x, y, z - RECT_D / 2];
+  SX = x; SY = y; SZ = z - RECT_D / 2;
 }
+function surf(u, v, h) { surfInto(u, v, h); return [SX, SY, SZ]; }
 
 /* camera: position C looking at T with up U, all smoothed towards the director's targets */
 const view = { yaw: 0.7, pitch: 0.45, dist: 6.5, zoom: 1, spin: 0, spinV: 0, shake: 0,
@@ -859,7 +880,7 @@ function frame(now) {
 }
 
 const PX = new Float32Array(POINTS), PY = new Float32Array(POINTS), PZ = new Float32Array(POINTS);
-// per-point constants across a line: its position u, and sin/cos of 3u for the ripple
+// per-point constants across a line: its position, and sin/cos of 3u for the ripple
 const UX = new Float64Array(POINTS), S3 = new Float64Array(POINTS), C3 = new Float64Array(POINTS);
 for (let i = 0; i < POINTS; i++) { const u = -1 + 2 * i / (POINTS - 1); UX[i] = u * RECT_W / 2; S3[i] = Math.sin(u * 3); C3[i] = Math.cos(u * 3); }
 function draw(phase) {
@@ -875,13 +896,15 @@ function draw(phase) {
   const F = Math.max(W, H) * 0.62 * view.zoom;
   const cx = W / 2 + (Math.random() - 0.5) * view.shake, cy = H / 2 + (Math.random() - 0.5) * view.shake;
   const fogFar = Math.hypot(...sub(C, view.T)) + RECT_D + 3;
-  const project = (p, k) => {
-    const d = sub(p, C), zc = dot(d, f);
+  const c0 = C[0], c1 = C[1], c2 = C[2], f0 = f[0], f1 = f[1], f2 = f[2], r0 = r[0], r1 = r[1], r2 = r[2], u0 = u[0], u1 = u[1], u2 = u[2];
+  const projectXYZ = (x, y, z, k) => {
+    const d0 = x - c0, d1 = y - c1, d2 = z - c2, zc = d0 * f0 + d1 * f1 + d2 * f2;
     if (zc < 0.04) { PZ[k] = -1; return; }
-    PX[k] = cx + dot(d, r) * F / zc; PY[k] = cy - dot(d, u) * F / zc; PZ[k] = zc;
+    const s = F / zc;
+    PX[k] = cx + (d0 * r0 + d1 * r1 + d2 * r2) * s; PY[k] = cy - (d0 * u0 + d1 * u1 + d2 * u2) * s; PZ[k] = zc;
   };
+  const project = (p, k) => projectXYZ(p[0], p[1], p[2], k);
   ctx.strokeStyle = INK; ctx.lineJoin = 'round';
-  const Cx = C[0], Cy = C[1], Cz = C[2], fx = f[0], fy = f[1], fz = f[2], rx = r[0], ry = r[1], rz = r[2], ux = u[0], uy = u[1], uz = u[2];
   const curlK = shape.curl * Math.PI / RECT_D, rip = shape.ripple * 0.22;
 
   // the lines: newest at the far edge, sliding towards the near edge
@@ -891,27 +914,27 @@ function draw(phase) {
     const row = history[(head - a + TOTAL * 2) % TOTAL];
     let zsum = 0, n = 0;
     if (look === 'sparse' && a % 3) continue;
-    // surf() and project() worked out inline for every point of the line: the same maths,
-    // with everything that is constant along a line computed once, and no arrays made per point
-    const s = v * RECT_D;
+    const mirror = look === 'mirror', spikes = look === 'spikes';
+    // a flat line (no sound) only needs a few points to follow the curve; a line with peaks needs them all
+    let flat = true; for (let i = 0; i < POINTS; i++) if (row[i] > 0) { flat = false; break; }
+    const step = flat ? 8 : 1;
+    // surfInto() inlined: everything that is the same along a line (the curl, ripple phase and twist)
+    // is worked out once per line instead of once per point; the result is identical
+    const sv = v * RECT_D;
     let y0, z0, ny, nz;
-    if (Math.abs(curlK) < 1e-4) { y0 = 0; z0 = s; ny = 1; nz = 0; }
-    else { const R = 1 / curlK, an = s * curlK, ca = Math.cos(an), sa = Math.sin(an); y0 = R * (1 - ca); z0 = R * sa; ny = ca; nz = -sa; }
+    if (Math.abs(curlK) < 1e-4) { y0 = 0; z0 = sv; ny = 1; nz = 0; }
+    else { const R = 1 / curlK, an = sv * curlK, ca = Math.cos(an), sa = Math.sin(an); y0 = R * (1 - ca); z0 = R * sa; ny = ca; nz = -sa; }
     const ph = clockT * 1.7 + v * 5, rc = rip * Math.cos(ph), rs = rip * Math.sin(ph);
     const tw = shape.twist * (v - 0.5) * Math.PI, tc = Math.cos(tw), ts = Math.sin(tw);
-    const mirror = look === 'mirror', spikes = look === 'spikes';
-    for (let i = 0; i < POINTS; i++) {
+    for (let i = 0; ; i = Math.min(i + step, POINTS - 1)) {
       let h = mirror ? Math.max(row[i], row[POINTS - 1 - i]) : row[i];
       if (spikes) h = Math.pow(h, 0.65) * 1.35;
       h *= AMP;
       let x = UX[i], y = y0 + (rip ? rc * S3[i] + rs * C3[i] : 0) + ny * h;
-      const z = z0 + nz * h - RECT_D / 2;
       if (tw) { const X = x; x = X * tc - y * ts; y = X * ts + y * tc; }
-      const dx = x - Cx, dy = y - Cy, dz = z - Cz, zc = dx * fx + dy * fy + dz * fz;
-      if (zc < 0.04) { PZ[i] = -1; continue; }
-      const q = F / zc;
-      PX[i] = cx + (dx * rx + dy * ry + dz * rz) * q; PY[i] = cy - (dx * ux + dy * uy + dz * uz) * q; PZ[i] = zc;
-      zsum += zc; n++;
+      projectXYZ(x, y, z0 + nz * h - RECT_D / 2, i);
+      if (PZ[i] > 0) { zsum += PZ[i]; n++; }
+      if (i === POINTS - 1) break;
     }
     if (!n) continue;
     const zc = zsum / n;
@@ -931,9 +954,10 @@ function draw(phase) {
     }
     ctx.beginPath();
     let pen = false;
-    for (let i = 0; i < POINTS; i++) {
-      if (PZ[i] < 0) { pen = false; continue; }
-      if (pen) ctx.lineTo(PX[i], PY[i]); else { ctx.moveTo(PX[i], PY[i]); pen = true; }
+    for (let i = 0; ; i = Math.min(i + step, POINTS - 1)) {
+      if (PZ[i] < 0) pen = false;
+      else if (pen) ctx.lineTo(PX[i], PY[i]); else { ctx.moveTo(PX[i], PY[i]); pen = true; }
+      if (i === POINTS - 1) break;
     }
     ctx.stroke();
   }
@@ -942,7 +966,7 @@ function draw(phase) {
   for (const side of [-1, 1]) {
     ctx.beginPath(); let pen = false;
     for (let k = 0; k <= 40; k++) {
-      project(surf(side, k / 40, 0), 0);
+      surfInto(side, k / 40, 0); projectXYZ(SX, SY, SZ, 0);
       if (PZ[0] < 0) { pen = false; continue; }
       if (pen) ctx.lineTo(PX[0], PY[0]); else { ctx.moveTo(PX[0], PY[0]); pen = true; }
     }
@@ -1070,7 +1094,7 @@ function drawGoat(look) {
 
 /* ─── Strobe: everything inverts, white to black and black to white ── */
 // Kept to 3 flashes, never faster than 3 a second (photosensitivity safety), and off for reduced motion.
-let strobeOn = !reduceMotion, strobing = false, lastStrobe = -99;
+let strobeOn = false, strobing = false, lastStrobe = -99;
 function strobe() {
   if (!strobeOn || strobing || calm || clockT - lastStrobe < 20) return;
   strobing = true; lastStrobe = clockT;
@@ -1110,7 +1134,7 @@ function drawScrub() {
   sctx.clearRect(0, 0, r.width, r.height);
   const n = info.peaks.length, step = 3, mid = r.height / 2, lo = info.lo || 0, hi = info.hi || 1;
   sctx.lineWidth = 1;
-  // two strokes (played and still to play) instead of one per bar: the same picture, far fewer draw calls
+  // two strokes (played, still to play) instead of one per bar: the same picture, far fewer draw calls
   const played = new Path2D(), ahead = new Path2D();
   for (let x = 0; x < r.width; x += step) {
     const v = info.peaks[Math.min(n - 1, Math.floor((x / r.width) * n))];
@@ -1148,7 +1172,7 @@ async function filePeaksFrom(file) {
 const $ = id => document.getElementById(id);
 const statusEl = $('status'), playBtn = $('playBtn'), micBtn = $('micBtn'), fileInput = $('file'), nowEl = $('now');
 const setStatus = s => { statusEl.textContent = s; statusEl.title = s; };
-function setPlayIcon(playing) { document.body.classList.toggle('is-playing', playing); playBtn.classList.toggle('playing', playing); playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play'); }
+function setPlayIcon(playing) { if (playing) document.body.classList.add('has-played'); document.body.classList.toggle('is-playing', playing); playBtn.classList.toggle('playing', playing); playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play'); }
 
 function stopMic() {
   if (!micStream) return;
@@ -1188,7 +1212,7 @@ function loadFile(file) {
 
 // Previous / next: through the agents' picks (a new random one at the end of the list), or SoundCloud's own list.
 let profileMode = false;
-function enableButtons() { playBtn.disabled = false; $('prevBtn').disabled = false; $('nextBtn').disabled = false; }
+function enableButtons() { document.body.classList.add('sc-ready'); playBtn.disabled = false; $('prevBtn').disabled = false; $('nextBtn').disabled = false; }
 function playItem(item) {
   pickedBy = item.by || null;
   remember(item.key || item.url);
@@ -1281,7 +1305,7 @@ function runIntro() {
   const later = (ms, fn) => introTimers.push(setTimeout(fn, ms));
 
   if (reduceMotion) {
-    later(6000, () => { intro.querySelector('.line').style.opacity = 0; name.style.transition = 'opacity 1s'; name.style.opacity = 0; });
+    later(6000, () => { name.style.transition = 'opacity 1s'; name.style.opacity = 0; });
     later(7000, () => { document.body.classList.add('intro-done'); landName(); });
     return;
   }
@@ -1403,10 +1427,10 @@ startSoundCloud();
 /* ═══════════════════════════════════════
    PAC-MAN
    ═══════════════════════════════════════ */
-const ov=document.getElementById('pacOverlay');const pcc=document.getElementById('pacCanvas');const ppx=pcc.getContext('2d');const se=document.getElementById('pacScore');let pg=null;
+const ov=document.getElementById('pacOverlay');const pcc=document.getElementById('pacCanvas');const ppx=pcc.getContext('2d');const se=document.getElementById('pacScore');let pg=null;let iD=-1,ts=null;document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')iD=0;if(e.key==='ArrowDown')iD=1;if(e.key==='ArrowLeft')iD=2;if(e.key==='ArrowUp')iD=3});pcc.addEventListener('touchstart',e=>{ts={x:e.touches[0].clientX,y:e.touches[0].clientY}});pcc.addEventListener('touchend',e=>{if(!ts)return;let dx=e.changedTouches[0].clientX-ts.x,dy=e.changedTouches[0].clientY-ts.y;iD=Math.abs(dx)>Math.abs(dy)?(dx>0?0:2):(dy>0?1:3);ts=null});
 function openPac(){ov.classList.add('active');startPac()}function closePac(){ov.classList.remove('active');if(pg)cancelAnimationFrame(pg);pg=null}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ov.classList.contains('active'))closePac()});
-function startPac(){const T=20,C=21,R=21;pcc.width=C*T;pcc.height=R*T;const M=[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],[0,3,0,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,0,3,0],[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],[0,1,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,1,0],[0,1,1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,1,0],[0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0],[2,2,2,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,2,2,2],[0,0,0,0,1,0,1,0,0,4,4,4,0,0,1,0,1,0,0,0,0],[1,1,1,1,1,1,1,0,4,4,4,4,4,0,1,1,1,1,1,1,1],[0,0,0,0,1,0,1,0,4,4,4,4,4,0,1,0,1,0,0,0,0],[2,2,2,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,2,2,2],[0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],[0,1,0,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,0,1,0],[0,3,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,3,0],[0,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,0],[0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],[0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0],[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];let dt=[],pw=[];for(let r=0;r<R;r++)for(let c=0;c<C;c++){if(M[r][c]===1)dt.push({x:c,y:r});if(M[r][c]===3)pw.push({x:c,y:r})}let sc=0,p={x:10,y:15,d:0,mo:0,md:1},gh=[{x:9,y:9,d:0,c:'#ff0000',s:false,sx:1,sy:1,m:'s'},{x:10,y:9,d:1,c:'#00ffff',s:false,sx:19,sy:1,m:'s'},{x:11,y:9,d:2,c:'#ffb8ff',s:false,sx:1,sy:19,m:'s'},{x:10,y:10,d:3,c:'#ffb852',s:false,sx:19,sy:19,m:'s'}],pt=0,go=false,gw=false;const ds=[{x:1,y:0},{x:0,y:1},{x:-1,y:0},{x:0,y:-1}];function cm(x,y){if(y<0||y>=R)return false;return M[y][(x%C+C)%C]!==0}let iD=-1;document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')iD=0;if(e.key==='ArrowDown')iD=1;if(e.key==='ArrowLeft')iD=2;if(e.key==='ArrowUp')iD=3});let ts=null;pcc.addEventListener('touchstart',e=>{ts={x:e.touches[0].clientX,y:e.touches[0].clientY}});pcc.addEventListener('touchend',e=>{if(!ts)return;let dx=e.changedTouches[0].clientX-ts.x,dy=e.changedTouches[0].clientY-ts.y;iD=Math.abs(dx)>Math.abs(dy)?(dx>0?0:2):(dy>0?1:3);ts=null});let tk=0;function mg(g){let ps=[];for(let d=0;d<4;d++){if(d===(g.d+2)%4)continue;let nx=g.x+ds[d].x,ny=g.y+ds[d].y;nx=(nx%C+C)%C;if(ny>=0&&ny<R&&M[ny][nx]!==0)ps.push({d,x:nx,y:ny})}if(!ps.length){let nd=(g.d+2)%4;g.d=nd;g.x=(g.x+ds[nd].x%C+C)%C;g.y+=ds[nd].y;return}let tx=g.s?Math.random()*C|0:(g.m==='c'?p.x:g.sx),ty=g.s?Math.random()*R|0:(g.m==='c'?p.y:g.sy);let b=ps[0],bd=1e9;for(let pp of ps){let dd=(pp.x-tx)**2+(pp.y-ty)**2;if(dd<bd){bd=dd;b=pp}}g.d=b.d;g.x=b.x;g.y=b.y}function upd(){tk++;gh.forEach(g=>{if(!g.s)g.m=(tk/200|0)%2?'c':'s'});if(pt>0){pt--;if(!pt)gh.forEach(g=>g.s=false)}if(tk%7===0){if(iD>=0){let nx=p.x+ds[iD].x,ny=p.y+ds[iD].y;nx=(nx%C+C)%C;if(cm(nx,ny))p.d=iD;iD=-1}let nx=p.x+ds[p.d].x,ny=p.y+ds[p.d].y;nx=(nx%C+C)%C;if(cm(nx,ny)){p.x=nx;p.y=ny}}dt=dt.filter(d=>{if(d.x===p.x&&d.y===p.y){sc+=10;return false}return true});pw=pw.filter(d=>{if(d.x===p.x&&d.y===p.y){sc+=50;pt=300;gh.forEach(g=>g.s=true);return false}return true});if(!dt.length&&!pw.length)gw=true;if(tk%9===0)gh.forEach(mg);gh.forEach(g=>{if(g.x===p.x&&g.y===p.y){if(g.s){sc+=200;g.x=10;g.y=9;g.s=false}else go=true}});p.mo+=p.md*.08;if(p.mo>.4)p.md=-1;if(p.mo<.02)p.md=1}function drw(){ppx.fillStyle='#000';ppx.fillRect(0,0,pcc.width,pcc.height);for(let r=0;r<R;r++)for(let c=0;c<C;c++){if(M[r][c]===0){ppx.fillStyle='#080810';ppx.fillRect(c*T,r*T,T,T);ppx.strokeStyle='#151535';ppx.lineWidth=1;[[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy])=>{let nr=r+dy,nc=c+dx;if(nr<0||nr>=R||nc<0||nc>=C)return;if(M[nr][nc]!==0){if(dx!==0){ppx.beginPath();ppx.moveTo(c*T+(dx===1?T:0),r*T);ppx.lineTo(c*T+(dx===1?T:0),r*T+T);ppx.stroke()}else{ppx.beginPath();ppx.moveTo(c*T,r*T+(dy===1?T:0));ppx.lineTo(c*T+T,r*T+(dy===1?T:0));ppx.stroke()}}})}}dt.forEach(d=>{ppx.fillStyle='#ffcc00';ppx.beginPath();ppx.arc(d.x*T+T/2,d.y*T+T/2,2,0,Math.PI*2);ppx.fill()});if(Math.sin(tk*.1)>.2)pw.forEach(d=>{ppx.fillStyle='#ffcc00';ppx.beginPath();ppx.arc(d.x*T+T/2,d.y*T+T/2,5,0,Math.PI*2);ppx.fill()});let px2=p.x*T+T/2,py2=p.y*T+T/2,a=[0,Math.PI/2,Math.PI,Math.PI*1.5][p.d];ppx.fillStyle='#ffcc00';ppx.beginPath();ppx.arc(px2,py2,T/2-.5,a+p.mo,a+Math.PI*2-p.mo);ppx.lineTo(px2,py2);ppx.fill();gh.forEach(g=>{let gx=g.x*T+T/2,gy=g.y*T+T/2;ppx.fillStyle=g.s?'#2222ff':g.c;ppx.beginPath();ppx.arc(gx,gy-2,T/2-1,Math.PI,0);ppx.lineTo(gx+T/2-1,gy+T/2-2);for(let i=0;i<3;i++){ppx.lineTo(gx+T/2-1-(i+.5)*(T-2)/3,gy+T/2-6);ppx.lineTo(gx+T/2-1-(i+1)*(T-2)/3,gy+T/2-2)}ppx.fill();if(!g.s){[[-3,-3],[3,-3]].forEach(([ox,oy])=>{ppx.fillStyle='#fff';ppx.beginPath();ppx.arc(gx+ox,gy+oy,3,0,Math.PI*2);ppx.fill();ppx.fillStyle='#00f';ppx.beginPath();ppx.arc(gx+ox+ds[g.d].x,gy+oy+ds[g.d].y,1.5,0,Math.PI*2);ppx.fill()})}else{ppx.fillStyle='#fff';[[-3,-3],[3,-3]].forEach(([ox,oy])=>{ppx.beginPath();ppx.arc(gx+ox,gy+oy,2,0,Math.PI*2);ppx.fill()})}});if(go){ppx.fillStyle='rgba(0,0,0,.8)';ppx.fillRect(0,0,pcc.width,pcc.height);ppx.fillStyle='#cc0000';ppx.font='500 22px "Syne"';ppx.textAlign='center';ppx.fillText('Game Over',pcc.width/2,pcc.height/2);ppx.fillStyle='#333';ppx.font='300 10px "IBM Plex Mono"';ppx.fillText('Click to restart',pcc.width/2,pcc.height/2+22)}if(gw){ppx.fillStyle='rgba(0,0,0,.8)';ppx.fillRect(0,0,pcc.width,pcc.height);ppx.fillStyle='#c90';ppx.font='500 22px "Syne"';ppx.textAlign='center';ppx.fillText('You Win',pcc.width/2,pcc.height/2)}se.textContent='Score: '+sc}function gl2(){if(!ov.classList.contains('active'))return;if(!go&&!gw)upd();drw();pg=requestAnimationFrame(gl2)}pcc.onclick=()=>{if(go||gw)startPac()};gl2()}
+function startPac(){const T=20,C=21,R=21;pcc.width=C*T;pcc.height=R*T;const M=[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],[0,3,0,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,0,3,0],[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],[0,1,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,1,0],[0,1,1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,1,0],[0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0],[2,2,2,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,2,2,2],[0,0,0,0,1,0,1,0,0,4,4,4,0,0,1,0,1,0,0,0,0],[1,1,1,1,1,1,1,0,4,4,4,4,4,0,1,1,1,1,1,1,1],[0,0,0,0,1,0,1,0,4,4,4,4,4,0,1,0,1,0,0,0,0],[2,2,2,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,2,2,2],[0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],[0,1,0,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,0,1,0],[0,3,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,3,0],[0,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,0],[0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],[0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0],[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];let dt=[],pw=[];for(let r=0;r<R;r++)for(let c=0;c<C;c++){if(M[r][c]===1)dt.push({x:c,y:r});if(M[r][c]===3)pw.push({x:c,y:r})}let sc=0,p={x:10,y:15,d:0,mo:0,md:1},gh=[{x:9,y:9,d:0,c:'#ff0000',s:false,sx:1,sy:1,m:'s'},{x:10,y:9,d:1,c:'#00ffff',s:false,sx:19,sy:1,m:'s'},{x:11,y:9,d:2,c:'#ffb8ff',s:false,sx:1,sy:19,m:'s'},{x:10,y:10,d:3,c:'#ffb852',s:false,sx:19,sy:19,m:'s'}],pt=0,go=false,gw=false;const ds=[{x:1,y:0},{x:0,y:1},{x:-1,y:0},{x:0,y:-1}];function cm(x,y){if(y<0||y>=R)return false;return M[y][(x%C+C)%C]!==0}iD=-1;let tk=0;function mg(g){let ps=[];for(let d=0;d<4;d++){if(d===(g.d+2)%4)continue;let nx=g.x+ds[d].x,ny=g.y+ds[d].y;nx=(nx%C+C)%C;if(ny>=0&&ny<R&&M[ny][nx]!==0)ps.push({d,x:nx,y:ny})}if(!ps.length){let nd=(g.d+2)%4;g.d=nd;g.x=(g.x+ds[nd].x%C+C)%C;g.y+=ds[nd].y;return}let tx=g.s?Math.random()*C|0:(g.m==='c'?p.x:g.sx),ty=g.s?Math.random()*R|0:(g.m==='c'?p.y:g.sy);let b=ps[0],bd=1e9;for(let pp of ps){let dd=(pp.x-tx)**2+(pp.y-ty)**2;if(dd<bd){bd=dd;b=pp}}g.d=b.d;g.x=b.x;g.y=b.y}function upd(){tk++;gh.forEach(g=>{if(!g.s)g.m=(tk/200|0)%2?'c':'s'});if(pt>0){pt--;if(!pt)gh.forEach(g=>g.s=false)}if(tk%7===0){if(iD>=0){let nx=p.x+ds[iD].x,ny=p.y+ds[iD].y;nx=(nx%C+C)%C;if(cm(nx,ny))p.d=iD;iD=-1}let nx=p.x+ds[p.d].x,ny=p.y+ds[p.d].y;nx=(nx%C+C)%C;if(cm(nx,ny)){p.x=nx;p.y=ny}}dt=dt.filter(d=>{if(d.x===p.x&&d.y===p.y){sc+=10;return false}return true});pw=pw.filter(d=>{if(d.x===p.x&&d.y===p.y){sc+=50;pt=300;gh.forEach(g=>g.s=true);return false}return true});if(!dt.length&&!pw.length)gw=true;if(tk%9===0)gh.forEach(mg);gh.forEach(g=>{if(g.x===p.x&&g.y===p.y){if(g.s){sc+=200;g.x=10;g.y=9;g.s=false}else go=true}});p.mo+=p.md*.08;if(p.mo>.4)p.md=-1;if(p.mo<.02)p.md=1}function drw(){ppx.fillStyle='#000';ppx.fillRect(0,0,pcc.width,pcc.height);for(let r=0;r<R;r++)for(let c=0;c<C;c++){if(M[r][c]===0){ppx.fillStyle='#080810';ppx.fillRect(c*T,r*T,T,T);ppx.strokeStyle='#151535';ppx.lineWidth=1;[[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy])=>{let nr=r+dy,nc=c+dx;if(nr<0||nr>=R||nc<0||nc>=C)return;if(M[nr][nc]!==0){if(dx!==0){ppx.beginPath();ppx.moveTo(c*T+(dx===1?T:0),r*T);ppx.lineTo(c*T+(dx===1?T:0),r*T+T);ppx.stroke()}else{ppx.beginPath();ppx.moveTo(c*T,r*T+(dy===1?T:0));ppx.lineTo(c*T+T,r*T+(dy===1?T:0));ppx.stroke()}}})}}dt.forEach(d=>{ppx.fillStyle='#ffcc00';ppx.beginPath();ppx.arc(d.x*T+T/2,d.y*T+T/2,2,0,Math.PI*2);ppx.fill()});if(Math.sin(tk*.1)>.2)pw.forEach(d=>{ppx.fillStyle='#ffcc00';ppx.beginPath();ppx.arc(d.x*T+T/2,d.y*T+T/2,5,0,Math.PI*2);ppx.fill()});let px2=p.x*T+T/2,py2=p.y*T+T/2,a=[0,Math.PI/2,Math.PI,Math.PI*1.5][p.d];ppx.fillStyle='#ffcc00';ppx.beginPath();ppx.arc(px2,py2,T/2-.5,a+p.mo,a+Math.PI*2-p.mo);ppx.lineTo(px2,py2);ppx.fill();gh.forEach(g=>{let gx=g.x*T+T/2,gy=g.y*T+T/2;ppx.fillStyle=g.s?'#2222ff':g.c;ppx.beginPath();ppx.arc(gx,gy-2,T/2-1,Math.PI,0);ppx.lineTo(gx+T/2-1,gy+T/2-2);for(let i=0;i<3;i++){ppx.lineTo(gx+T/2-1-(i+.5)*(T-2)/3,gy+T/2-6);ppx.lineTo(gx+T/2-1-(i+1)*(T-2)/3,gy+T/2-2)}ppx.fill();if(!g.s){[[-3,-3],[3,-3]].forEach(([ox,oy])=>{ppx.fillStyle='#fff';ppx.beginPath();ppx.arc(gx+ox,gy+oy,3,0,Math.PI*2);ppx.fill();ppx.fillStyle='#00f';ppx.beginPath();ppx.arc(gx+ox+ds[g.d].x,gy+oy+ds[g.d].y,1.5,0,Math.PI*2);ppx.fill()})}else{ppx.fillStyle='#fff';[[-3,-3],[3,-3]].forEach(([ox,oy])=>{ppx.beginPath();ppx.arc(gx+ox,gy+oy,2,0,Math.PI*2);ppx.fill()})}});if(go){ppx.fillStyle='rgba(0,0,0,.8)';ppx.fillRect(0,0,pcc.width,pcc.height);ppx.fillStyle='#cc0000';ppx.font='500 22px "Syne"';ppx.textAlign='center';ppx.fillText('Game Over',pcc.width/2,pcc.height/2);ppx.fillStyle='#333';ppx.font='300 10px "IBM Plex Mono"';ppx.fillText('Click to restart',pcc.width/2,pcc.height/2+22)}if(gw){ppx.fillStyle='rgba(0,0,0,.8)';ppx.fillRect(0,0,pcc.width,pcc.height);ppx.fillStyle='#c90';ppx.font='500 22px "Syne"';ppx.textAlign='center';ppx.fillText('You Win',pcc.width/2,pcc.height/2)}se.textContent='Score: '+sc}function gl2(){if(!ov.classList.contains('active'))return;if(!go&&!gw)upd();drw();pg=requestAnimationFrame(gl2)}pcc.onclick=()=>{if(go||gw)startPac()};gl2()}
 </script>
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
