@@ -36,6 +36,14 @@
   #preview{margin-top:1.5rem}
   #preview iframe{width:100%;height:166px;border:0;display:block}
   [hidden]{display:none!important}
+  .badge{display:inline-block;min-width:1.4em;padding:0 .4em;margin-left:.4rem;background:#ff5a4f;color:#000;font-weight:600;text-align:center;border-radius:1em}
+  .badge:empty{display:none}
+  .idea{border-top:1px solid #222;padding:1rem 0}
+  .idea b{font-weight:500;color:#fff}
+  .idea p{margin:.35rem 0;color:#aaa;font-size:.8rem;line-height:1.55}
+  .idea textarea{width:100%;min-height:3.2em;margin:.5rem 0;background:#000;color:#fff;border:1px solid #333;font:inherit;font-size:.8rem;padding:.5rem}
+  .idea .verdict{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase}
+  .idea .verdict.agree{color:#4ade80} .idea .verdict.disagree{color:#ff6b5a}
   .back{display:inline-block;margin-top:3rem;color:var(--dim);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;text-decoration:none}
   .back:hover{color:var(--fg)}
 </style>
@@ -43,7 +51,7 @@
 <body>
 <main>
   <h1>Admin</h1>
-  <p class="sub">Normally the homepage plays a random pick from the Night Shift agents. Set a song here to play that instead for everyone; “Use my latest uploads” clears it and goes back to the agents’ picks.</p>
+  <p class="sub">Normally the homepage plays a random pick from the agents. Set a song here to play that instead for everyone; “Use my latest uploads” clears it and goes back to the agents’ picks.</p>
 
   <form id="login">
     <label for="pw">Password</label>
@@ -71,7 +79,7 @@
     <div id="preview"></div>
 
     <div class="card" style="margin-top:2.5rem">
-      <div class="k">Night Shift</div>
+      <div class="k">Agents</div>
       <div class="v">A new shift starts at most once an hour while people visit the site, plus a daily 05:00 UTC backup. Reads your tracks straight from SoundCloud. Run one now to test.</div>
       <div class="row"><button type="button" class="ghost" id="shiftBtn">Run night shift now</button></div>
       <div class="msg" id="shiftMsg" role="status"></div>
@@ -82,6 +90,12 @@
       <div class="v">Once a day the agents search the news (terrorism incidents first, then security, AI, AI agents and music production), file briefs and write one blog post. Runs on the first blog visit after 20 hours, plus a daily 06:30 UTC backup. Run it now to test: it takes a few minutes.</div>
       <div class="row"><button type="button" class="ghost" id="deskBtn">Run research desk now</button></div>
       <div class="msg" id="deskMsg" role="status"></div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="k">Ideas to review <span id="ideaCount" class="badge"></span></div>
+      <div class="v">Agent Doodlebug pitches games and moving diagrams for the Security section once a day. Agree and it goes on the build list; disagree and Doodlebug learns from it. Your verdict and note show on the Blog and the Idea Lab.</div>
+      <div id="ideaList"></div>
     </div>
 
     <a class="back" href="/" target="_blank" rel="noopener">Open visualiser &nearr;</a>
@@ -141,8 +155,44 @@ $('login').addEventListener('submit', async e => {
     $('login').hidden = true;
     $('panel').hidden = false;
     showCurrent();
+    loadIdeas();
     $('url').focus();
   } catch (err) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
+});
+
+// Doodlebug's ideas, waiting ones first, with Agree / Disagree and a note.
+const escH = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+async function loadIdeas() {
+  const box = $('ideaList');
+  try {
+    const [shift, reviews] = await Promise.all([
+      fetch(`${API}/jn_night_shift?select=ideas:log->jobs->ideas&order=id.desc&limit=1`, { headers: { apikey: KEY }, cache: 'no-store' }).then(r => r.json()),
+      fetch(`${API}/jn_idea_reviews?select=*`, { headers: { apikey: KEY }, cache: 'no-store' }).then(r => r.ok ? r.json() : [])
+    ]);
+    const ideas = ((shift[0] && shift[0].ideas && shift[0].ideas.archive) || []).filter(i => i.id);
+    const byId = new Map(reviews.map(r => [r.idea_id, r]));
+    const waiting = ideas.filter(i => !byId.has(i.id));
+    $('ideaCount').textContent = waiting.length || '';
+    if (!ideas.length) { box.innerHTML = '<p class="sub">No ideas yet: Doodlebug pitches on the next shift.</p>'; return; }
+    box.innerHTML = waiting.concat(ideas.filter(i => byId.has(i.id))).slice(0, 20).map(i => {
+      const r = byId.get(i.id);
+      return `<div class="idea" data-id="${escH(i.id)}"><b>${escH(i.title)}</b> <span class="sub">· ${escH(i.kind)} · ${escH(i.effort)} build</span>
+        <p>${escH(i.theory)}. ${escH(i.pitch)}</p><p>${escH(i.how_it_works)}</p>
+        ${r ? `<p class="verdict ${escH(r.verdict)}">${r.verdict === 'agree' ? 'Agreed' : 'Disagreed'}${r.note ? ': ' + escH(r.note) : ''}</p>` : ''}
+        <textarea placeholder="Note for the agents (optional)">${r && r.note ? escH(r.note) : ''}</textarea>
+        <div class="row"><button type="button" class="ghost" data-v="agree">Agree</button><button type="button" class="ghost" data-v="disagree">Disagree</button><span class="msg" role="status"></span></div></div>`;
+    }).join('');
+  } catch (e) { box.innerHTML = '<p class="msg err">Couldn’t load the ideas.</p>'; }
+}
+$('ideaList').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-v]'); if (!b) return;
+  const card = b.closest('.idea'), msg = card.querySelector('.msg');
+  say(msg, 'Saving…');
+  try {
+    const res = await rpc('jn_review_idea', { p_password: password, p_idea_id: card.dataset.id, p_verdict: b.dataset.v, p_note: card.querySelector('textarea').value });
+    if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
+    loadIdeas();
+  } catch (err) { say(msg, 'Couldn’t reach the server.', 'err'); }
 });
 
 $('url').addEventListener('input', () => { previewed = null; $('saveBtn').disabled = true; say($('msg'), ''); });
@@ -199,7 +249,7 @@ $('shiftBtn').addEventListener('click', async () => {
     const r = await fetch('/api/night-shift', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
     const res = await r.json();
     if (!res.ok) say(msg, res.error || 'The shift didn’t run.', 'err');
-    else say(msg, res.note ? `Shift logged. ${res.note}` : `Shift logged. Status ${res.status}. See the Night Shift page.`, res.note ? '' : 'ok');
+    else say(msg, res.note ? `Shift logged. ${res.note}` : `Shift logged. Status ${res.status}. See the Agents page.`, res.note ? '' : 'ok');
   } catch (e) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
   $('shiftBtn').disabled = false;
 });

@@ -125,7 +125,7 @@
   <p class="line">Security · Producer · DJ</p>
   <nav aria-label="Sections">
     <a href="/music/" style="animation-delay:2.40s,9.40s">Music</a>
-    <a href="/night-shift/" style="animation-delay:2.58s,9.52s">Night Shift</a>
+    <a href="/night-shift/" style="animation-delay:2.58s,9.52s">Agents</a>
     <a href="/blog/" style="animation-delay:2.76s,9.64s">Blog</a>
     <a href="/security/" style="animation-delay:2.94s,9.76s">Security</a>
     <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener" style="animation-delay:3.12s,9.88s">LinkedIn</a>
@@ -136,7 +136,7 @@
     <a class="nameslot" id="nameSlot" href="/" title="Replay the intro" aria-label="James Norman"><span class="sl">J</span><span class="sl">A</span><span class="sl">M</span><span class="sl">E</span><span class="sl">S</span><span class="gap"> </span><span class="sl dim">N</span><span class="sl dim">O</span><span class="sl dim">R</span><span class="sl dim">M</span><span class="sl dim">A</span><span class="sl dim">N</span></a>
     <nav class="site" aria-label="Site">
       <a href="/music/">Music</a>
-      <a href="/night-shift/">Night Shift</a>
+      <a href="/night-shift/">Agents</a>
       <a href="/blog/">Blog</a>
       <span class="has-sub"><a href="/security/">Security</a>
         <span class="sub" role="menu" aria-label="Security tools">
@@ -256,7 +256,7 @@ function bumps(row, rnd, level, kick) {
 let sc = null, scPlaying = false, scPos = 0, scPosAt = 0, scDuration = 0;
 let scSoundId = null, wave = null, waveLo = 0, waveHi = 1, scReady = false;
 
-// Each visit plays one of the tracks the Night Shift agents picked recently (the DJ's
+// Each visit plays one of the tracks the agents picked recently (the DJ's
 // hourly pick and both battle picks), chosen at random, and credits the agent who picked it.
 let pickedBy = null, picks = [], queue = [], qi = -1;
 function remember(url) {
@@ -336,7 +336,7 @@ async function startSoundCloud() {
     stopMic();
     lastMedia = 'sc';
     readSound();
-    setStatus(pickedBy ? `Picked by ${pickedBy} · Night Shift` : 'Playing from SoundCloud');
+    setStatus(pickedBy ? `Picked by ${pickedBy} · Agents` : 'Playing from SoundCloud');
     setPlayIcon(true);
   });
   sc.bind(E.PAUSE, () => { scPlaying = false; if (lastMedia === 'sc') { setPlayIcon(false); setStatus('Paused'); } });

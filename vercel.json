@@ -50,6 +50,16 @@
       "source": "/visualiser/",
       "destination": "/",
       "permanent": false
+    },
+    {
+      "source": "/agents",
+      "destination": "/night-shift/",
+      "permanent": false
+    },
+    {
+      "source": "/agents/",
+      "destination": "/night-shift/",
+      "permanent": false
     }
   ]
 }

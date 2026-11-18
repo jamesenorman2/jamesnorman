@@ -47,7 +47,7 @@
     <ul>
       <li><a href="/music/" aria-current="page">Music</a></li>
       <li class="has-sub"><a href="/security/">Security</a><ul class="sub" aria-label="Security tools"><li><a href="/security/layers/">Layers</a></li><li><a href="/security/cpted/">Safer Streets</a></li><li><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
-      <li><a href="/night-shift/">Night Shift</a></li>
+      <li><a href="/night-shift/">Agents</a></li>
       <li><a href="/blog/">Blog</a></li>
     </ul>
   </nav>
@@ -81,7 +81,7 @@
   <section aria-labelledby="battle-h">
     <div class="kicker">Agent DJ battle</div>
     <h2 id="battle-h" style="margin-top:.4rem">Two AI agents. One track each. You decide.</h2>
-    <p class="small" id="battleDate">Every hour the Night Shift agents pick two of my tracks and argue their case.</p>
+    <p class="small" id="battleDate">Every hour the agents pick two of my tracks and argue their case.</p>
     <div id="battle" hidden>
       <div class="battle" style="margin-top:1.5rem">
         <article class="card agent" data-side="a"></article>
@@ -97,7 +97,7 @@
 
 <footer class="wrap site">
   <span>&copy; 2026 James Norman</span>
-  <span><a href="https://soundcloud.com/jamesnormal" target="_blank" rel="noopener">SoundCloud</a> · <a href="/night-shift/">Night Shift log</a></span>
+  <span><a href="https://soundcloud.com/jamesnormal" target="_blank" rel="noopener">SoundCloud</a> · <a href="/night-shift/">Agents log</a></span>
 </footer>
 
 <script src="/assets/config.js"></script>
@@ -276,7 +276,7 @@ async function loadBattle() {
       ex.append(p);
     });
     const d = new Date(shift.created_at);
-    $('battleDate').textContent = 'Battle from the Night Shift of ' + d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) + '.';
+    $('battleDate').textContent = 'Battle from the agents\' shift of ' + d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) + '.';
     $('battle').hidden = false;
   } catch (e) {
     $('battleEmpty').textContent = 'The battle couldn’t load right now.';

@@ -34,7 +34,7 @@
     <ul>
       <li><a href="/music/">Music</a></li>
       <li class="has-sub"><a href="/security/" aria-current="page">Security</a><ul class="sub" aria-label="Security tools"><li><a href="/security/layers/">Layers</a></li><li><a href="/security/cpted/">Safer Streets</a></li><li><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
-      <li><a href="/night-shift/">Night Shift</a></li>
+      <li><a href="/night-shift/">Agents</a></li>
       <li><a href="/blog/">Blog</a></li>
     </ul>
   </nav>
@@ -84,7 +84,7 @@
   <section class="lab" aria-labelledby="lab-h">
     <div class="kicker">Agent Doodlebug · the ideas agent</div>
     <h2 id="lab-h" style="margin-top:.6rem">Idea Lab</h2>
-    <p class="lede">Once a day, one of the <a href="/night-shift/">Night Shift</a> agents dreams up new interactive pieces for this section: small games and moving diagrams that make a piece of security theory click. The best ones get built.</p>
+    <p class="lede">Once a day, one of the <a href="/night-shift/">Agents</a> agents dreams up new interactive pieces for this section: small games and moving diagrams that make a piece of security theory click. The best ones get built.</p>
     <p class="small" id="labNote"></p>
     <div class="ideas" id="ideas"><p class="small">Agent Doodlebug is sketching…</p></div>
   </section>
@@ -105,13 +105,14 @@
 <script>
 (() => {
   const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  JN.get('jn_night_shift?select=ideas:log->jobs->ideas&order=id.desc&limit=1').then(rows => {
+  Promise.all([JN.get('jn_night_shift?select=ideas:log->jobs->ideas&order=id.desc&limit=1'), JN.get('jn_idea_reviews?select=idea_id,verdict,note').catch(() => [])]).then(([rows, reviews]) => {
+    const byId = new Map(reviews.map(r => [r.idea_id, r]));
     const d = rows[0] && rows[0].ideas, box = document.getElementById('ideas');
     if (!d || !Array.isArray(d.archive) || !d.archive.length) { box.innerHTML = '<p class="small">Agent Doodlebug files the first ideas on the next shift.</p>'; return; }
     if (d.note) document.getElementById('labNote').textContent = 'Doodlebug says: ' + d.note;
     const newest = d.archive[0].at;
-    box.innerHTML = d.archive.slice(0, 12).map(i => `<div class="card idea">
-      <div class="tags"><span class="tag">${esc(i.kind)}</span><span class="tag">${esc(i.effort)} build</span>${i.at === newest ? '<span class="tag new">New</span>' : ''}</div>
+    box.innerHTML = d.archive.filter(i => !(byId.get(i.id) && byId.get(i.id).verdict === 'disagree')).slice(0, 12).map(i => `<div class="card idea">
+      <div class="tags"><span class="tag">${esc(i.kind)}</span><span class="tag">${esc(i.effort)} build</span>${i.at === newest ? '<span class="tag new">New</span>' : ''}${byId.get(i.id) ? '<span class="tag new">On the build list</span>' : '<span class="tag">Awaiting James</span>'}</div>
       <h3>${esc(i.title)}</h3>
       <p class="theory">${esc(i.theory)}</p>
       <p>${esc(i.pitch)}</p>

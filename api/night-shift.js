@@ -19,7 +19,7 @@ import { z } from 'zod';
 import { gatekeeper, links, clerk, intel, scout } from '../lib/jobs.js';
 import { choreograph, refine } from '../lib/choreo.js';
 import { soundcloudTracks } from '../lib/soundcloud.js';
-import { doodlebug } from '../lib/ideas.js';
+import { doodlebug, pendingIdeas } from '../lib/ideas.js';
 
 const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
 const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
@@ -261,9 +261,18 @@ export default async function handler(req, res) {
     patrol(), soundcloudTracks(), gatekeeper(), links(), clerk(prevJobs.clerk), intel()
   ]);
   const jobs = { gatekeeper: gate, links: outside, clerk: legal, intel: threat, scout: scout(tracks, prevJobs.scout) };
-  const [agents, pickle, ideas] = await Promise.all([runAgents(report, tracks, previous, jobs), pickleShift(tracks), doodlebug(prevJobs.ideas)]);
+  const reviews = await db('jn_idea_reviews?select=idea_id,verdict,note').catch(() => []);
+  const [agents, pickle, ideas] = await Promise.all([runAgents(report, tracks, previous, jobs), pickleShift(tracks), doodlebug(prevJobs.ideas, reviews)]);
   jobs.pickle = pickle;
   jobs.ideas = ideas;
+  // flag Doodlebug's ideas that are waiting for James's verdict, as an action on the Agents page
+  const waiting = pendingIdeas(ideas, reviews);
+  jobs.ideas.pending = waiting.length;
+  if (waiting.length && agents.analyst) {
+    agents.analyst.findings = [{ severity: 'action', title: `${waiting.length} idea${waiting.length > 1 ? 's' : ''} await your verdict`,
+      detail: `Agent Doodlebug has pitched ${waiting.map(i => '“' + i.title + '”').slice(0, 3).join(', ')}${waiting.length > 3 ? ' and more' : ''}. Agree or disagree on the admin page; agreed ideas go on the build list.` }]
+      .concat(agents.analyst.findings || []).slice(0, 6);
+  }
   const log = { started_at: started, finished_at: new Date().toISOString(), trigger: who, patrol: report, tracks_found: tracks.length, jobs, ...agents };
 
   try {
