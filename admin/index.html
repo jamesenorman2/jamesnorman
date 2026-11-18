@@ -98,6 +98,30 @@
       <div id="ideaList"></div>
     </div>
 
+    <div class="card" style="margin-top:1rem">
+      <div class="k">Day crew</div>
+      <div class="v">Each agent runs once a day on its own. Run one now to test it (it can take a minute or two). Full reports are on the Agents page.</div>
+      <div class="row" id="crewBtns">
+        <button type="button" class="ghost" data-agent="binlid">Bin Lid</button><button type="button" class="ghost" data-agent="teacake">Teacake</button>
+        <button type="button" class="ghost" data-agent="pigeon">Pigeon</button><button type="button" class="ghost" data-agent="bunsen">Bunsen</button>
+        <button type="button" class="ghost" data-agent="biscuittin">Biscuit Tin</button><button type="button" class="ghost" data-agent="wurzel">Wurzel</button>
+      </div>
+      <div class="msg" id="crewMsg" role="status"></div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="k">Bunsen’s LinkedIn post</div>
+      <div class="v" id="liQ">Today’s question, ready to paste.</div>
+      <textarea id="liPost" readonly style="width:100%;min-height:9em;margin-top:.6rem;background:#000;color:#fff;border:1px solid #333;font:inherit;font-size:.8rem;padding:.6rem"></textarea>
+      <div class="row"><button type="button" class="ghost" id="liCopy">Copy</button><span class="msg" id="liMsg" role="status"></span></div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="k">Spanner’s builds</div>
+      <div class="v">Rough working versions of the ideas you agreed, on preview links. Nothing goes live until you say so.</div>
+      <div id="builds" class="sub">None yet.</div>
+    </div>
+
     <a class="back" href="/" target="_blank" rel="noopener">Open visualiser &nearr;</a>
   </section>
 </main>
@@ -156,6 +180,7 @@ $('login').addEventListener('submit', async e => {
     $('panel').hidden = false;
     showCurrent();
     loadIdeas();
+    loadCrewBits();
     $('url').focus();
   } catch (err) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
 });
@@ -193,6 +218,30 @@ $('ideaList').addEventListener('click', async e => {
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
     loadIdeas();
   } catch (err) { say(msg, 'Couldn’t reach the server.', 'err'); }
+});
+
+async function loadCrewBits() {
+  try {
+    const rows = await fetch(`${API}/jn_crew?select=agent,report&agent=in.(bunsen,spanner)&order=id.desc&limit=6`, { headers: { apikey: KEY }, cache: 'no-store' }).then(r => r.ok ? r.json() : []);
+    const b = (rows.find(r => r.agent === 'bunsen') || {}).report, sp = (rows.find(r => r.agent === 'spanner') || {}).report;
+    if (b) { $('liQ').textContent = b.question || ''; $('liPost').value = b.linkedin_post || ''; }
+    if (sp && Array.isArray(sp.builds) && sp.builds.length) {
+      $('builds').innerHTML = sp.builds.map(x => `<p>${escH(x.title)}: ${escH(x.status)}${/^https:\/\/[^\s"<>]+$/.test(x.preview || '') ? ` · <a href="${escH(x.preview)}" target="_blank" rel="noopener">open preview</a>` : ''}</p>`).join('');
+    }
+  } catch (e) { /* optional */ }
+}
+$('liCopy').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('liPost').value); say($('liMsg'), 'Copied', 'ok'); } catch (e) { $('liPost').select(); say($('liMsg'), 'Select and copy', ''); } });
+$('crewBtns').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-agent]'); if (!b) return;
+  const msg = $('crewMsg');
+  say(msg, `${b.textContent} is on it…`);
+  try {
+    const r = await fetch('/api/crew', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password, agent: b.dataset.agent }) });
+    const res = await r.json();
+    const done = (res.ran || [])[0];
+    say(msg, done ? `${b.textContent}: ${done.summary || 'done'}` : (res.error || 'Didn’t run'), done && done.ok ? 'ok' : 'err');
+    loadCrewBits();
+  } catch (err) { say(msg, 'Couldn’t reach the server, or it took too long.', 'err'); }
 });
 
 $('url').addEventListener('input', () => { previewed = null; $('saveBtn').disabled = true; say($('msg'), ''); });

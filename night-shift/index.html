@@ -36,6 +36,17 @@
   th{font-weight:400;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;font-size:.58rem}
   td.bad{color:var(--err)}
   .tag{font-size:.58rem;letter-spacing:.3em;color:var(--dim);text-transform:uppercase;margin:1.2rem 0 .4rem}
+  .daycrew{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));margin-top:1rem}
+  .daycrew details{border:1px solid var(--line);padding:1rem}
+  .daycrew summary{cursor:pointer;list-style:none}
+  .daycrew summary::-webkit-details-marker{display:none}
+  .daycrew b{font-family:'Syne',sans-serif;font-weight:600;letter-spacing:.25em;font-size:.85rem;display:block;margin-bottom:.3rem}
+  .daycrew .job{font-size:.7rem;color:var(--mid);display:block}
+  .daycrew .sum{display:block;margin-top:.55rem;font-size:.78rem;color:#e6e6e6}
+  .daycrew .when{display:block;margin-top:.3rem;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+  .daycrew ul{margin:.8rem 0 0;padding-left:1rem;font-size:.74rem;color:#c4c4c4;line-height:1.6}
+  .daycrew .sev-action{color:var(--err)} .daycrew .sev-watch{color:var(--warn)}
+  .daycrew .note{font-style:italic;color:#bdbdbd;font-size:.74rem;margin-top:.6rem}
 </style>
 </head>
 <body>
@@ -54,9 +65,15 @@
 <main class="wrap">
   <div class="kicker">AI agents on duty · round the clock</div>
   <h1>Agents</h1>
-  <p class="lede">Day and night, a crew of agents with very silly names works this site like a control room, with a fresh shift every hour. They check real things: every page, the certificate and domain, the outside links, the official Martyn’s Law guidance, the UK threat level and my SoundCloud. The Analyst writes it all up, and the DJ sets up the next battle on the <a href="/music/">Music</a> tab.</p>
+  <p class="lede">Day and night, a crew of agents with very silly names works this site like a control room, with a fresh shift every hour, and a day crew that each do one job a day. They check real things: every page, the certificate and domain, the outside links, the official Martyn’s Law guidance, the UK threat level and my SoundCloud. The Analyst writes it all up, and the DJ sets up the next battle on the <a href="/music/">Music</a> tab.</p>
 
   <div class="crew" id="crew" aria-live="polite"></div>
+
+  <section aria-labelledby="day-h">
+    <h2 id="day-h">The day crew</h2>
+    <p class="small">Once a day (Wurzel weekly), each of these agents does one job and files a report. Open a card for the detail.</p>
+    <div class="daycrew" id="daycrew"><p class="small">Waking the day crew…</p></div>
+  </section>
 
   <section class="floor" aria-label="The crew at work: stick men walking the site, checking each page">
     <canvas id="floor"></canvas>
@@ -185,6 +202,46 @@ function renderCrew(L) {
   });
 }
 renderCrew(null);
+
+// The day crew: one report each, read from the database.
+const DAY = [
+  ['grumble', 'AGENT GRUMBLE', 'Editor. Checks every blog post and incident report against its sources before it goes out.'],
+  ['binlid', 'AGENT BIN LID', 'Regulation watcher. New GOV.UK guidance on Martyn’s Law, the SIA, protective security and the Building Regulations.'],
+  ['teacake', 'AGENT TEACAKE', 'Hostile reconnaissance on this site: exposed files, the database’s public key, the proxy, headers, strobe safety.'],
+  ['pigeon', 'AGENT PIGEON', 'Visitor analyst. Reads the week’s privacy-friendly visit counts and suggests improvements.'],
+  ['bunsen', 'AGENT BUNSEN', 'Question setter. One security question a day on the Security page, and a LinkedIn post for James.'],
+  ['biscuittin', 'AGENT BISCUIT TIN', 'SoundCloud stats: plays, likes and reposts, and what’s climbing.'],
+  ['wurzel', 'AGENT WURZEL', 'Crate digger. Each week, new records that fit James’s sound, with which set they’d go in.'],
+  ['crumpet', 'AGENT CRUMPET', 'Handbook quality: contradictions, broken citations, out-of-date standards and thin pages, ranked to fix next.'],
+  ['spanner', 'AGENT SPANNER', 'Builder. Turns ideas James agreed into build plans and rough working versions on a preview link.']
+];
+const escD = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const safeHref = u => /^https:\/\/[^\s"<>]+$/.test(u || '') ? u : null;
+function crewDetail(id, r) {
+  const li = (arr, f) => (arr || []).length ? '<ul>' + arr.map(f).join('') + '</ul>' : '';
+  if (id === 'teacake') return li(r.findings, f => `<li class="sev-${escD(f.severity)}">${escD(f.title)}: <span>${escD(f.detail)}</span></li>`);
+  if (id === 'binlid') return li(r.items, x => `<li>${safeHref(x.url) ? `<a href="${escD(x.url)}" target="_blank" rel="noopener">${escD(x.title)}</a>` : escD(x.title)} <span class="sev-${x.relevance === 'high' ? 'action' : 'watch'}">${escD(x.relevance || '')}</span>${x.impact ? ' · ' + escD(x.impact) : ''}</li>`);
+  if (id === 'grumble') return li(r.changes, c => `<li>${escD(c)}</li>`);
+  if (id === 'pigeon') return li(r.suggestions, x => `<li><b style="font-size:.74rem;letter-spacing:0;display:inline">${escD(x.title)}</b>: ${escD(x.detail)}</li>`) + (r.stats && r.stats.top ? li(r.stats.top.slice(0, 8), t => `<li>${escD(t.path)}: ${escD(t.views)}</li>`) : '');
+  if (id === 'biscuittin') return li(r.tracks, t => `<li>${escD(t.title)}: ${t.plays == null ? '?' : escD(t.plays.toLocaleString('en-GB'))} plays${t.new_plays ? ` (+${escD(t.new_plays)})` : ''}</li>`);
+  if (id === 'wurzel') return (r.sound ? `<p class="note">${escD(r.sound)}</p>` : '') + li(r.picks, p => `<li>${safeHref(p.url) ? `<a href="${escD(p.url)}" target="_blank" rel="noopener">${escD(p.artist)} – ${escD(p.title)}</a>` : escD(p.artist + ' – ' + p.title)} (${escD(p.label)}): ${escD(p.why)}</li>`);
+  if (id === 'bunsen') return `<p class="note">${escD(r.question || '')}</p><p class="small"><a href="/security/#quiz">Answer it on the Security page</a></p>`;
+  if (id === 'crumpet') return li(r.fix_next, x => `<li>${escD(x)}</li>`);
+  if (id === 'spanner') return li(r.builds, b => `<li>${escD(b.title)}: ${escD(b.status)}${safeHref(b.preview) ? ` · <a href="${escD(b.preview)}" target="_blank" rel="noopener">preview</a>` : ''}</li>`);
+  return '';
+}
+async function loadDayCrew() {
+  const box = document.getElementById('daycrew');
+  let rows = [];
+  try { rows = await JN.get('jn_crew?select=agent,report,created_at&order=id.desc&limit=80'); } catch (e) { rows = []; }
+  const latest = {};
+  for (const r of rows) if (!latest[r.agent]) latest[r.agent] = r;
+  box.innerHTML = DAY.map(([id, name, job]) => {
+    const r = latest[id], rep = r ? r.report || {} : null;
+    return `<details><summary><b>${escD(name)}</b><span class="job">${escD(job)}</span><span class="sum">${rep ? escD(rep.summary || '') : 'First report due soon'}</span>${r ? `<span class="when">${escD(new Date(r.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>` : ''}</summary>${rep ? crewDetail(id, rep) + (rep.note ? `<p class="note">“${escD(rep.note)}”</p>` : '') : ''}</details>`;
+  }).join('');
+}
+loadDayCrew();
 
 async function load() {
   const log = document.getElementById('log');

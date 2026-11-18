@@ -102,6 +102,7 @@
   <span><a href="/security/">More security tools</a></span>
 </footer>
 
+<script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
 <script>
 (() => {
@@ -281,6 +282,7 @@ function stageAt(t) { let acc = 0; for (let i = 0; i < model.steps.length; i++) 
 
 $('run1').addEventListener('click', () => animate(attempt()));
 $('run1000').addEventListener('click', () => {
+  window.JN && JN.event('layers-1000');
   let ok = 0; for (let i = 0; i < 1000; i++) if (attempt().interrupted) ok++;
   $('verdict').textContent = `${ok} of 1,000 simulated attempts were interrupted (${(ok / 10).toFixed(1)}%), against a calculated ${Math.round(model.pi * 100)}%.`;
 });

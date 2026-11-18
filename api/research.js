@@ -59,6 +59,11 @@ export default async function handler(req, res) {
   try {
     const saved = await db('rpc/jn_post_desk', { p_token: process.env.SHIFT_TOKEN, p_post: desk.post, p_incidents: desk.incidents, p_briefs: desk.briefs });
     if (!saved.ok) return res.status(500).json({ ok: false, error: saved.error });
-    return res.status(200).json({ ok: true, ran: true, trigger: who, post: saved.id, title: desk.post.title, incidents: desk.incidents.length, briefs: desk.briefs.length, sources_searched: desk.searched });
+    const g = desk.grumble;
+    await db('rpc/jn_post_crew', { p_token: process.env.SHIFT_TOKEN, p_agent: 'grumble', p_report: {
+      summary: g.ok ? (g.verdict === 'hold' ? `Held today’s post: “${(desk.held || {}).title || ''}”` : `Passed today’s post with ${g.changes.length} change${g.changes.length === 1 ? '' : 's'}`) : 'Couldn’t review today',
+      note: g.note, changes: g.changes, verdict: g.verdict, title: (desk.post || desk.held || {}).title || null } }).catch(() => null);
+    return res.status(200).json({ ok: true, ran: true, trigger: who, post: saved.id, title: desk.post ? desk.post.title : null, held_by_grumble: !desk.post,
+      incidents: desk.incidents.length, briefs: desk.briefs.length, sources_searched: desk.searched, grumble: g.note });
   } catch (e) { return res.status(503).json({ ok: false, error: 'Could not save' }); }
 }

@@ -38,6 +38,14 @@
   .exchange{margin-top:1.5rem;font-size:.8rem;border-left:1px solid var(--line);padding-left:1rem}
   .exchange p{margin:.5rem 0}
   .exchange b{font-weight:400;letter-spacing:.2em;font-size:.65rem;color:var(--mid);margin-right:.6rem}
+  .stats{display:grid;gap:.4rem;margin-top:1rem}
+  .stats .row{display:grid;grid-template-columns:1fr auto auto;gap:1rem;align-items:center;font-size:.78rem;border-top:1px solid var(--line);padding:.6rem 0}
+  .stats .bar{height:3px;background:#fff;margin-top:.35rem}
+  .stats .up{color:#4ade80;font-size:.7rem}
+  .digs{display:grid;gap:1rem;grid-template-columns:1fr;margin-top:1rem}
+  @media(min-width:760px){.digs{grid-template-columns:1fr 1fr}}
+  .digs .card h3{font-family:'Syne',sans-serif;font-weight:500;font-size:.95rem;margin:.4rem 0}
+  .digs .card p{font-size:.78rem;color:#c4c4c4;line-height:1.6;margin:.4rem 0}
 </style>
 </head>
 <body>
@@ -92,6 +100,19 @@
       <div class="exchange" id="exchange"></div>
     </div>
     <p class="small" id="battleEmpty" hidden>The crew is setting up the first battle. Check back in a minute.</p>
+  </section>
+  <section aria-labelledby="stats-h">
+    <div class="kicker">Agent Biscuit Tin · SoundCloud stats</div>
+    <h2 id="stats-h" style="margin-top:.6rem">The numbers</h2>
+    <p class="small" id="statsSum">Counting…</p>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section aria-labelledby="dig-h">
+    <div class="kicker">Agent Wurzel · crate digger · weekly</div>
+    <h2 id="dig-h" style="margin-top:.6rem">This week’s dig</h2>
+    <p class="small" id="digSound">Wurzel is in the back room with the crates…</p>
+    <div class="digs" id="digs"></div>
   </section>
 </main>
 
@@ -288,6 +309,24 @@ async function loadBattle() {
 mountPlayer(JN.soundcloud, false);   // your whole profile, so visitors can browse
 loadBattle();
 JN.kickShift().then(ran => { if (ran) loadBattle(); });
+})();
+
+// Agent Biscuit Tin and Agent Wurzel
+(async () => {
+  const escM = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const okUrl = u => /^https:\/\/[^\s"<>]+$/.test(u || '');
+  let rows = [];
+  try { rows = await JN.get('jn_crew?select=agent,report,created_at&agent=in.(biscuittin,wurzel)&order=id.desc&limit=10'); } catch (e) { /* not yet */ }
+  const bt = (rows.find(r => r.agent === 'biscuittin') || {}).report, wz = (rows.find(r => r.agent === 'wurzel') || {}).report;
+  if (bt && Array.isArray(bt.tracks)) {
+    document.getElementById('statsSum').textContent = bt.summary || '';
+    const max = Math.max(1, ...bt.tracks.map(t => t.plays || 0));
+    document.getElementById('stats').innerHTML = bt.tracks.slice().sort((a, b) => (b.plays || 0) - (a.plays || 0)).map(t => `<div class="row"><div>${okUrl(t.url) ? `<a href="${escM(t.url)}" target="_blank" rel="noopener">${escM(t.title)}</a>` : escM(t.title)}<div class="bar" style="width:${Math.round(100 * (t.plays || 0) / max)}%"></div></div><span>${t.plays == null ? '?' : escM(t.plays.toLocaleString('en-GB'))} plays · ${t.likes == null ? '?' : escM(t.likes)} likes</span><span class="up">${t.new_plays ? '+' + escM(t.new_plays) : ''}</span></div>`).join('');
+  } else document.getElementById('statsSum').textContent = 'Biscuit Tin files the first count soon.';
+  if (wz && Array.isArray(wz.picks)) {
+    document.getElementById('digSound').textContent = wz.sound || '';
+    document.getElementById('digs').innerHTML = wz.picks.map(p => `<div class="card"><div class="kicker">${escM(p.label)} · ${escM(p.released)}</div><h3>${okUrl(p.url) ? `<a href="${escM(p.url)}" target="_blank" rel="noopener">${escM(p.artist)} – ${escM(p.title)}</a>` : escM(p.artist + ' – ' + p.title)}</h3><p>${escM(p.why)}</p><p class="small">Mix it into: ${escM(p.mix_with)}</p></div>`).join('');
+  } else document.getElementById('digSound').textContent = 'Wurzel files the first dig this week.';
 })();
 </script>
 </body>

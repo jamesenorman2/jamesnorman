@@ -7,6 +7,10 @@
     {
       "path": "/api/research",
       "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/crew",
+      "schedule": "15 7 * * *"
     }
   ],
   "functions": {
@@ -14,6 +18,9 @@
       "maxDuration": 120
     },
     "api/research.js": {
+      "maxDuration": 300
+    },
+    "api/crew.js": {
       "maxDuration": 300
     }
   },
@@ -59,6 +66,31 @@
     {
       "source": "/agents/",
       "destination": "/night-shift/",
+      "permanent": false
+    },
+    {
+      "source": "/lib/:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/package.json",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/package-lock.json",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/vercel.json",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/.vercelignore",
+      "destination": "/",
       "permanent": false
     }
   ]

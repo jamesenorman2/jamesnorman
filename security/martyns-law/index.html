@@ -196,6 +196,7 @@
   <span><a href="/security/">More security tools</a></span>
 </footer>
 
+<script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
 <script>
 /* ─── Step 2: readiness assessment, built from the handbook's Martyn's Law checklist ── */
@@ -333,6 +334,7 @@ function report() {
 
 document.querySelectorAll('input[name="atier"]').forEach(r => r.addEventListener('change', () => { state._tier = r.value; save(); render(); }));
 window.startAssessment = t => {
+  window.JN && JN.event('mlaw-assessment');
   const r = document.querySelector(`input[name="atier"][value="${t}"]`); if (r) r.checked = true; state._tier = t; save();
   $('assess').hidden = false; render();
   $('assess').scrollIntoView({ behavior: 'smooth', block: 'start' });

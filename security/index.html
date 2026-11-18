@@ -15,6 +15,12 @@
   .tool h2{font-size:1.1rem;letter-spacing:.06em;margin:.8rem 0 .6rem}
   .tool .go{font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--mid);margin-top:1.4rem}
   .tool svg{width:100%;height:70px;margin-top:1rem}
+  .quiz .q{font-family:'Syne',sans-serif;font-size:1.15rem;line-height:1.4;max-width:46ch;margin:1rem 0}
+  .quiz .opts{display:grid;gap:.6rem;max-width:640px}
+  .quiz .opts button{text-align:left;border:1px solid var(--line);background:transparent;color:#ddd;padding:.85rem 1rem;font:inherit;font-size:.85rem;cursor:pointer;letter-spacing:0;text-transform:none}
+  .quiz .opts button:hover:not(:disabled){border-color:#fff}
+  .quiz .opts button.right{border-color:#4ade80;color:#4ade80} .quiz .opts button.wrong{border-color:var(--err);color:var(--err)}
+  .quiz .why{max-width:640px;margin-top:1rem;color:#cfcfcf;font-size:.85rem;line-height:1.7}
   .ideas{display:grid;gap:1rem;grid-template-columns:1fr;margin-top:1.4rem}
   @media(min-width:800px){.ideas{grid-template-columns:1fr 1fr}}
   .idea h3{font-family:'Syne',sans-serif;font-weight:500;font-size:1rem;margin:.5rem 0 .4rem}
@@ -81,6 +87,12 @@
     </a>
   </section>
 
+  <section class="quiz" id="quiz" aria-labelledby="quiz-h">
+    <div class="kicker">Agent Bunsen · question of the day</div>
+    <h2 id="quiz-h" style="margin-top:.6rem">Test yourself</h2>
+    <div id="quizBox"><p class="small">Bunsen is setting today’s question…</p></div>
+  </section>
+
   <section class="lab" aria-labelledby="lab-h">
     <div class="kicker">Agent Doodlebug · the ideas agent</div>
     <h2 id="lab-h" style="margin-top:.6rem">Idea Lab</h2>
@@ -105,6 +117,29 @@
 <script>
 (() => {
   const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Agent Bunsen's question: the answer comes from the server only after you choose
+  JN.get('jn_crew?select=report&agent=eq.bunsen&order=id.desc&limit=1').then(rows => {
+    const q = rows[0] && rows[0].report, box = document.getElementById('quizBox');
+    if (!q || !Array.isArray(q.options)) { box.innerHTML = '<p class="small">Bunsen sets the first question soon.</p>'; return; }
+    let picked = null; try { picked = JSON.parse(localStorage.getItem('jn-quiz-' + q.id)); } catch (e) { /* private mode */ }
+    box.innerHTML = `<p class="small">${esc(q.topic || '')}</p><p class="q">${esc(q.question)}</p><div class="opts">${q.options.map((o, i) => `<button type="button" data-i="${i}">${'ABCD'[i]}. ${esc(o)}</button>`).join('')}</div><p class="why" id="quizWhy"></p>`;
+    const show = res => {
+      box.querySelectorAll('.opts button').forEach((b, i) => { b.disabled = true; if (i === res.answer_index) b.classList.add('right'); else if (i === res.choice && !res.correct) b.classList.add('wrong'); });
+      document.getElementById('quizWhy').textContent = (res.correct ? 'Right. ' : 'Not quite. ') + (res.explanation || '') + (res.total ? ` ${Math.round(100 * res.right / res.total)}% of ${res.total} people got it right.` : '');
+    };
+    if (picked) show(picked);
+    box.querySelector('.opts').addEventListener('click', async e => {
+      const b = e.target.closest('button'); if (!b || b.disabled) return;
+      const choice = Number(b.dataset.i);
+      try {
+        const res = await JN.rpc('jn_answer', { p_id: q.id, p_choice: choice });
+        if (!res || !res.ok) throw new Error();
+        res.choice = choice; show(res);
+        try { localStorage.setItem('jn-quiz-' + q.id, JSON.stringify(res)); } catch (e) { /* private mode */ }
+      } catch (err) { document.getElementById('quizWhy').textContent = 'Couldn’t check that just now. Try again.'; }
+    });
+  }).catch(() => { document.getElementById('quizBox').innerHTML = '<p class="small">Bunsen sets the first question soon.</p>'; });
+
   Promise.all([JN.get('jn_night_shift?select=ideas:log->jobs->ideas&order=id.desc&limit=1'), JN.get('jn_idea_reviews?select=idea_id,verdict,note').catch(() => [])]).then(([rows, reviews]) => {
     const byId = new Map(reviews.map(r => [r.idea_id, r]));
     const d = rows[0] && rows[0].ideas, box = document.getElementById('ideas');

@@ -240,6 +240,7 @@
   <span><a href="/security/">More security tools</a></span>
 </footer>
 
+<script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
 <script>
 (() => {
@@ -617,6 +618,7 @@ $('clearEdits').addEventListener('click', () => {
 // screen → ground grid (the inverse of the isometric projection)
 function toGrid(px, py) { const u = (px - OX) / (TW / 2), v = (py - OY) / (TW / 4); return [(u + v) / 2, (v - u) / 2]; }
 cv.addEventListener('click', e => {
+  if (window.JN && !window._cptedTold) { window._cptedTold = 1; JN.event('cpted-edit'); }
   if (tool === 'inspect') return;
   const r = cv.getBoundingClientRect(), [gx, gy] = toGrid(e.clientX - r.left, e.clientY - r.top);
   if (gx < 0 || gy < 0 || gx >= GW || gy >= GH) return;
