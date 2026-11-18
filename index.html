@@ -94,10 +94,11 @@
   @media(max-width:700px){.intro .line{letter-spacing:.3em}.pp{width:50px;height:50px}}
   @media (prefers-reduced-motion: reduce){.intro .name,.intro .line,.intro nav a{animation-duration:.01s!important}}
   .tag{display:block;font-size:.5rem;letter-spacing:.4em;color:var(--mid);margin-top:.5rem}
-  nav.site{display:flex;gap:1.4rem;flex-wrap:wrap;justify-content:center}
+  nav.site{display:flex;gap:.6rem 2rem;flex-wrap:wrap;justify-content:center}
   nav.site a{opacity:0;transition:opacity .35s}
   nav.site a.landed,body.intro-done nav.site a{opacity:1}
-  nav.site a{color:#d0d0d0;font-size:.66rem;letter-spacing:.28em}
+  nav.site a{color:#e0e0e0;font-size:.86rem;letter-spacing:.26em;padding:.3rem 0}
+  @media(max-width:700px){nav.site{gap:.15rem 1.1rem}nav.site a{font-size:.74rem;letter-spacing:.2em}}
   nav.site a:hover{color:#fff}
   .right{display:flex;flex-direction:column;align-items:flex-end;gap:.6rem;min-width:0}
   @media(max-width:700px){nav.site{gap:.9rem}.top{gap:.9rem}.right{align-items:center}}
