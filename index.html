@@ -428,7 +428,7 @@ async function loadScore(url) {
   } catch (e) { score = null; }
   $('cue').textContent = score ? `Choreography by ${score.by || 'Agent Pickle'} · ${score.mood || ''}` : '';
 }
-let lastScoreT = -1, nextGoat = 90 + Math.random() * 120;
+let lastScoreT = -1;
 function followScore() {
   if (source === 'sc' && score) {
     const t = (scPos + (scPlaying ? performance.now() - scPosAt : 0)) / 1000;
@@ -451,8 +451,7 @@ function followScore() {
     }
     return;
   }
-  // no cue sheet yet: every so often, a colour or scanner moment, and now and then a goat
-  if (source !== 'idle' && clockT > nextGoat) { nextGoat = clockT + 150 + Math.random() * 200; fireMoment({ type: 'goat' }); }
+  // no cue sheet yet: every so often, a colour or scanner moment
   if (clockT > freeLookUntil) {
     if (look !== 'plain') { look = 'plain'; lookColour = null; freeLookUntil = clockT + 25 + Math.random() * 35; }
     else {
@@ -978,8 +977,8 @@ function draw(phase) {
   drawScrub();
 }
 
-/* ─── Moments: lasers, a goat, colour flashes, barrel rolls, strobes ── */
-let lasers = [], goat = null, flash = null, lastLaser = -99;
+/* ─── Moments: lasers, colour flashes, barrel rolls, strobes ── */
+let lasers = [], flash = null, lastLaser = -99;
 // A red glow that appears from nowhere, very occasionally: fades up, drifts and pulses, fades away.
 let glows = [], nextGlow = 40 + Math.random() * 60;
 function autoGlow() {
@@ -996,11 +995,28 @@ function autoLasers() {
   if ((hit > 0.35 && since > gap) || (energy > 0.3 && since > gap * 2.5))
     fireMoment({ type: 'laser', colour: Object.keys(PALETTE)[Math.floor(Math.random() * 5)] });
 }
+// Lasers mounted on the waveform: pick the tallest peaks of a line just in from the far edge and
+// remember that line, so the emitters ride the surface towards you, rising and falling with the music.
+function mountPeaks() {
+  const idx = (head - 3 + TOTAL) % TOTAL, row = history[idx];
+  const cand = [];
+  for (let i = 4; i < POINTS - 4; i++) if (row[i] > 0.18 && row[i] >= row[i - 1] && row[i] >= row[i + 1]) cand.push(i);
+  if (!cand.length) return null;
+  cand.sort((a, b) => row[b] - row[a]);
+  const peaks = [];
+  for (const i of cand) { if (peaks.every(j => Math.abs(j - i) > 14)) peaks.push(i); if (peaks.length === 3) break; }
+  return { row: idx, peaks };
+}
 function fireMoment(m) {
+  if (!['strobe', 'laser', 'flash', 'flip'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
   const colour = PALETTE[m.colour] || null;
   if (m.type === 'strobe') strobe();
-  else if (m.type === 'laser') { lastLaser = clockT; if (lasers.length < 4) lasers.push({ t0: clockT, colour: colour || PALETTE.green, n: 6 + Math.floor(Math.random() * 6), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) }); }
-  else if (m.type === 'goat') { if (!goat) goat = { t0: clockT, u: (Math.random() - 0.5) * 1.2, dir: Math.random() < 0.5 ? -1 : 1 }; }
+  else if (m.type === 'laser') {
+    lastLaser = clockT;
+    const mounted = (m.mount ?? Math.random() < 0.55) && mountPeaks();      // JN_moment({type:'laser', mount:true}) to try it
+    if (mounted && lasers.length < 5) lasers.push({ t0: clockT, colour: colour || PALETTE.green, mount: mounted, life: 2.6, scissor: 0.25 + Math.random() * 0.35 });
+    else if (lasers.length < 4) lasers.push({ t0: clockT, colour: colour || PALETTE.green, n: 6 + Math.floor(Math.random() * 6), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
+  }
   else if (m.type === 'flash') flash = { t0: clockT, colour: colour || PALETTE.amber };
   else if (m.type === 'flip') { if (!reduceMotion) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }
   if (m.note) $('cue').textContent = `${score && score.by || 'Agent Pickle'}: “${m.note}”`;
@@ -1023,10 +1039,11 @@ function drawMoments(project) {
     ctx.restore();
   }
   // lasers: a fan of beams out of the rectangle, sweeping
-  lasers = lasers.filter(l => clockT - l.t0 < 3.2);
+  lasers = lasers.filter(l => clockT - l.t0 < (l.life || 3.2));
   if (lasers.length) {
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     for (const l of lasers) {
+      if (l.mount) { drawMountedLaser(l, project); continue; }
       const age = clockT - l.t0, k = Math.min(1, age / 0.15, (3.2 - age) / 0.6);
       project(surf(l.u, 0.55, 0.15), 0); if (PZ[0] < 0) continue;
       const ox = PX[0], oy = PY[0], len = Math.hypot(W, H) * 1.5;
@@ -1041,26 +1058,6 @@ function drawMoments(project) {
     }
     ctx.restore();
   }
-  // the goat: pops its head up over the far edge, looks about, ducks back down
-  if (goat) {
-    const age = clockT - goat.t0, LIFE = 4.2;
-    if (age > LIFE) goat = null;
-    else {
-      project(surf(goat.u, 1, 0), 0);
-      let gx = W * (0.5 + goat.u * 0.3), gy = H * 0.98;
-      if (PZ[0] > 0 && PX[0] > 40 && PX[0] < W - 40 && PY[0] > 60 && PY[0] < H) { gx = PX[0]; gy = PY[0]; }
-      const size = Math.min(W, H) * 0.13;
-      const up = age < 0.5 ? 1 - Math.pow(1 - age / 0.5, 3) : age > LIFE - 0.45 ? Math.max(0, (LIFE - age) / 0.45) : 1;
-      const look = age < 0.8 ? 0 : Math.sin((age - 0.8) * 2.2) * goat.dir;        // looks one way, then the other
-      ctx.save();
-      ctx.beginPath(); ctx.rect(0, 0, W, gy); ctx.clip();                          // hidden below the edge
-      ctx.translate(gx, gy + size * 1.05 - up * size * 1.6);
-      ctx.rotate(look * 0.18 + Math.sin(age * 9) * 0.02 * up);
-      ctx.scale(size, size);
-      drawGoat(look);
-      ctx.restore();
-    }
-  }
   // a colour flash: every white line takes the colour for a moment
   if (flash) {
     const age = clockT - flash.t0;
@@ -1068,28 +1065,30 @@ function drawMoments(project) {
     else { ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = Math.min(1, (0.7 - age) / 0.5); ctx.fillStyle = flash.colour; ctx.fillRect(0, 0, W, H); ctx.restore(); }
   }
 }
-function drawGoat(look) {
-  const line = pts => { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); };
-  ctx.lineWidth = 0.028; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = '#fff'; ctx.fillStyle = '#000'; ctx.globalAlpha = 1;
-  // horns, swept back
-  for (const sx of [-1, 1]) {
-    ctx.beginPath(); ctx.moveTo(sx * 0.2, -0.66); ctx.quadraticCurveTo(sx * 0.3, -1.25, sx * 0.72, -1.18);
-    ctx.quadraticCurveTo(sx * 0.42, -1.05, sx * 0.06, -0.68); ctx.closePath(); ctx.fill(); ctx.stroke();
+// A laser riding a peak of the waveform: beams fire up out of the peak (one straight up, two
+// scissoring either side), each as long as the screen, and the emitter moves with the line it sits on.
+function drawMountedLaser(l, project) {
+  const age = clockT - l.t0, row = history[l.mount.row];
+  const a = (head - l.mount.row + TOTAL) % TOTAL, v = 1 - (a + rowClock) / SHOW;
+  if (v < 0.02) { l.t0 = -99; return; }                                 // slid off the near edge
+  const k = Math.min(1, age / 0.12, (l.life - age) / 0.5, v / 0.08);
+  if (k <= 0) return;
+  const len = Math.hypot(W, H) * 1.5;
+  for (const i of l.mount.peaks) {
+    const u = -1 + 2 * i / (POINTS - 1), h = row[i] * AMP;
+    project(surf(u, v, h), 0); if (PZ[0] < 0) continue;
+    const ox = PX[0], oy = PY[0];
+    for (const side of [0, -1, 1]) {
+      const sw = side * (l.scissor + 0.18 * Math.sin(age * 3.1 + i)) ;      // the outer beams scissor open and shut
+      project(surf(u + sw, v + side * 0.04, h + 1.2), 1); if (PZ[1] < 0) continue;
+      let dx = PX[1] - ox, dy = PY[1] - oy; const m = Math.hypot(dx, dy) || 1; dx /= m; dy /= m;
+      const ex = ox + dx * len, ey = oy + dy * len;
+      ctx.strokeStyle = l.colour;
+      ctx.globalAlpha = 0.16 * k; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.globalAlpha = 0.9 * k; ctx.lineWidth = side ? 1.2 : 1.8; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+    }
+    ctx.globalAlpha = k; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ox, oy, 2.6, 0, TAU); ctx.fill();
   }
-  // ears, sticking out sideways
-  for (const sx of [-1, 1]) { line([[sx * 0.32, -0.5], [sx * 0.86, -0.42 + 0.06 * look * sx], [sx * 0.34, -0.3]]); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-  // the long face
-  line([[-0.3, -0.7], [-0.36, -0.3], [-0.24, 0.1], [-0.17, 0.42], [0, 0.52], [0.17, 0.42], [0.24, 0.1], [0.36, -0.3], [0.3, -0.7], [0, -0.76]]);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-  // eyes with goat pupils (sideways slits), looking where it looks
-  for (const sx of [-1, 1]) {
-    ctx.beginPath(); ctx.ellipse(sx * 0.16, -0.34, 0.085, 0.07, 0, 0, TAU); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(sx * 0.16 - 0.05 + look * 0.03, -0.34); ctx.lineTo(sx * 0.16 + 0.05 + look * 0.03, -0.34); ctx.lineWidth = 0.04; ctx.stroke(); ctx.lineWidth = 0.028;
-  }
-  // nostrils, mouth and beard
-  for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(sx * 0.07, 0.33, 0.022, 0, TAU); ctx.stroke(); }
-  line([[-0.08, 0.45], [0, 0.48], [0.08, 0.45]]); ctx.stroke();
-  line([[-0.09, 0.5], [-0.04, 0.82], [0, 0.95], [0.04, 0.82], [0.09, 0.5]]); ctx.stroke();
 }
 
 /* ─── Strobe: everything inverts, white to black and black to white ── */
