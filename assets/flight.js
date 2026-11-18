@@ -97,7 +97,9 @@ export function createFlight(canvas, opts = {}) {
       ctx.beginPath();
       ctx.moveTo(-pad, ground);
       for (let i = 0; i < POINTS; i++) ctx.lineTo(sx[i], sy[i]);
-      ctx.lineTo(W + pad, ground); ctx.lineTo(W + pad, H + pad); ctx.lineTo(-pad, H + pad);
+      // hide the farther lines behind this one: everything farther sits above this line's ground, so filling
+      // down to the ground (not the bottom of the screen) is enough, and saves painting the screen 70 times over
+      ctx.lineTo(W + pad, ground); ctx.lineTo(W + pad, ground + 2); ctx.lineTo(-pad, ground + 2);
       ctx.closePath(); ctx.fill();
       ctx.globalAlpha = Math.max(0, Math.min((FAR - z) / (SPAN * 0.4), (z - NEAR) / 0.35, 1));
       ctx.lineWidth = Math.min(3, Math.max(0.6, 0.35 * s / 100));

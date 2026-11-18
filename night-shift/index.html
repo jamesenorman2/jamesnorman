@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agents — James Norman</title>
 <meta name="description" content="While I sleep, a crew of AI agents patrols this site, writes the handover and picks the music.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://www.jamesnorman.co.uk/night-shift/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="James Norman">
+<meta property="og:title" content="Agents — James Norman">
+<meta property="og:description" content="While I sleep, a crew of AI agents patrols this site, writes the handover and picks the music.">
+<meta property="og:url" content="https://www.jamesnorman.co.uk/night-shift/">
+<meta property="og:image" content="https://www.jamesnorman.co.uk/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
@@ -15,7 +26,7 @@
   .findings{list-style:none;margin-top:.4rem}
   .findings li{margin:.7rem 0;font-size:.8rem}
   .findings b{font-weight:400}
-  .sev{display:inline-block;font-size:.55rem;letter-spacing:.25em;text-transform:uppercase;border:1px solid currentColor;padding:.05rem .4rem;margin-right:.5rem;vertical-align:1px}
+  .sev{display:inline-block;font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;border:1px solid currentColor;padding:.05rem .4rem;margin-right:.5rem;vertical-align:1px}
   .sev.action{color:var(--err)} .sev.watch{color:var(--warn)} .sev.info{color:var(--mid)}
   .findings p{color:var(--mid);font-size:.75rem;margin-top:.2rem}
   .crew{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:2rem}
@@ -26,16 +37,16 @@
   .shift{border-top:1px solid var(--line);padding:2rem 0}
   .shift-head{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:baseline}
   .shift-head h2{margin:0}
-  .status{font-size:.62rem;letter-spacing:.3em;padding:.25rem .6rem;border:1px solid currentColor}
+  .status{font-size:.7rem;letter-spacing:.3em;padding:.25rem .6rem;border:1px solid currentColor}
   .status.GREEN{color:var(--ok)} .status.AMBER{color:var(--warn)} .status.RED{color:var(--err)}
   .cols{display:grid;gap:2rem;grid-template-columns:1fr;margin-top:1.2rem}
   @media(min-width:820px){.cols{grid-template-columns:1.4fr 1fr}}
   .handover{font-size:.88rem;white-space:pre-wrap}
   table{width:100%;border-collapse:collapse;font-size:.72rem}
   th,td{text-align:left;padding:.35rem .4rem;border-bottom:1px solid var(--line)}
-  th{font-weight:400;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;font-size:.58rem}
+  th{font-weight:400;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;font-size:.7rem}
   td.bad{color:var(--err)}
-  .tag{font-size:.58rem;letter-spacing:.3em;color:var(--dim);text-transform:uppercase;margin:1.2rem 0 .4rem}
+  .tag{font-size:.7rem;letter-spacing:.3em;color:var(--dim);text-transform:uppercase;margin:1.2rem 0 .4rem}
   .daycrew{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));margin-top:1rem}
   .daycrew details{border:1px solid var(--line);padding:1rem}
   .daycrew summary{cursor:pointer;list-style:none}
@@ -43,11 +54,11 @@
   .daycrew b{font-family:'Syne',sans-serif;font-weight:600;letter-spacing:.25em;font-size:.85rem;display:block;margin-bottom:.3rem}
   .daycrew .job{font-size:.7rem;color:var(--mid);display:block}
   .daycrew .sum{display:block;margin-top:.55rem;font-size:.78rem;color:#e6e6e6}
-  .daycrew .when{display:block;margin-top:.3rem;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+  .daycrew .when{display:block;margin-top:.3rem;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
   .daycrew ul{margin:.8rem 0 0;padding-left:1rem;font-size:.74rem;color:#c4c4c4;line-height:1.6}
   .daycrew .sev-action{color:var(--err)} .daycrew .sev-watch{color:var(--warn)}
   .daycrew .note{font-style:italic;color:#bdbdbd;font-size:.74rem;margin-top:.6rem}
-  .agent-k{display:block;font-size:.55rem;letter-spacing:.35em;text-transform:uppercase;color:var(--mid);margin-bottom:.25rem}
+  .agent-k{display:block;font-size:.7rem;letter-spacing:.35em;text-transform:uppercase;color:var(--mid);margin-bottom:.25rem}
 </style>
 </head>
 <body>
@@ -56,9 +67,10 @@
     <a class="home" href="/">James Norman</a>
     <ul>
       <li><a href="/music/">Music</a></li>
-      <li class="has-sub"><a href="/security/">Security</a><ul class="sub" aria-label="Security tools"><li><a href="/security/layers/">Layers</a></li><li><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
       <li><a href="/night-shift/" aria-current="page">Agents</a></li>
       <li><a href="/blog/">Blog</a></li>
+      <li class="has-sub"><a href="/security/">Security</a><ul class="sub" aria-label="Security tools"><li><a href="/security/layers/">Layers</a></li><li><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
+      <li><a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">LinkedIn</a></li>
     </ul>
   </nav>
 </header>
