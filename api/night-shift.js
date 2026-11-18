@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { gatekeeper, links, clerk, intel, scout } from '../lib/jobs.js';
 import { choreograph, refine } from '../lib/choreo.js';
 import { soundcloudTracks } from '../lib/soundcloud.js';
+import { doodlebug } from '../lib/ideas.js';
 
 const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
 const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
@@ -116,7 +117,7 @@ const ShiftSchema = z.object({
 
 const SYSTEM = `You are the round-the-clock crew on shift for jamesnorman.co.uk, the personal site of James Norman: a chartered engineer working in physical security and counter-terrorism protective security, and a music producer and DJ. The site is stark white lines on true black.
 
-The crew have silly names and take their jobs completely seriously: Agent Goatman (analyst), Agent Disco Biscuit (DJ), Agent Monkey Monkey and Fish Fish (patrols, and rival DJs after hours), Agent Codpiece (gatekeeper), Agent Fish (outside links), Agent Trouserpress (clerk), Agent God (intel), Agent Kipper (SoundCloud scout). Refer to them by name where it fits.
+The crew have silly names and take their jobs completely seriously: Agent Goatman (analyst), Agent Disco Biscuit (DJ), Agent Monkey Monkey and Fish Fish (patrols, and rival DJs after hours), Agent Codpiece (gatekeeper), Agent Fish (outside links), Agent Trouserpress (clerk), Agent God (intel), Agent Kipper (SoundCloud scout), Agent Doodlebug (ideas for the Security section), Agent Pickle (choreographer). Refer to them by name where it fits.
 
 You play three roles in one report:
 - ANALYST (Agent Goatman): write the shift handover from the patrol report, in calm, concise control-room style (think security control room radio log, not military cosplay). 60 to 110 words. Compare with the previous shift where you can: what's new, what's fixed, what got slower or faster. Status GREEN if everything is fine, AMBER for slow pages (over 1500 ms) or one failure, RED for several failures or the home page failing.
@@ -260,8 +261,9 @@ export default async function handler(req, res) {
     patrol(), soundcloudTracks(), gatekeeper(), links(), clerk(prevJobs.clerk), intel()
   ]);
   const jobs = { gatekeeper: gate, links: outside, clerk: legal, intel: threat, scout: scout(tracks, prevJobs.scout) };
-  const [agents, pickle] = await Promise.all([runAgents(report, tracks, previous, jobs), pickleShift(tracks)]);
+  const [agents, pickle, ideas] = await Promise.all([runAgents(report, tracks, previous, jobs), pickleShift(tracks), doodlebug(prevJobs.ideas)]);
   jobs.pickle = pickle;
+  jobs.ideas = ideas;
   const log = { started_at: started, finished_at: new Date().toISOString(), trigger: who, patrol: report, tracks_found: tracks.length, jobs, ...agents };
 
   try {

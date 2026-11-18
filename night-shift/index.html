@@ -166,6 +166,10 @@ const CREW = [
     const a = L.analyst; if (!a) return [L.note || '–', 'warn'];
     return [`Status ${a.status} · ${(a.findings || []).length} findings`, a.status === 'RED' ? 'bad' : a.status === 'AMBER' ? 'warn' : ''];
   }],
+  ['AGENT DOODLEBUG', 'Ideas. Once a day, pitches new games and moving diagrams for the Security section; see the Idea Lab.', L => {
+    const d = (L.jobs || {}).ideas; if (!d || !d.archive) return ['–'];
+    return [d.archive.length ? `${d.archive.length} ideas · latest: ${d.archive[0].title}` : 'Sketching…'];
+  }],
   ['AGENT DISCO BISCUIT', 'DJ. Picks a track for the hour to suit the time of day, and sets up the DJ battle.', L => {
     const d = L.dj; return [d && d.track ? '♪ ' + d.track.title : '–'];
   }]
@@ -258,6 +262,7 @@ function jobLine(job) {
   }
   if (job === 'clerk') { const c = J.clerk || {}; return c.ok ? (c.changed ? 'Guidance UPDATED' : 'Guidance unchanged') : 'Guidance ?'; }
   if (job === 'intel') { const i = J.intel || {}; return i.ok ? 'UK threat: ' + i.level : 'Threat level ?'; }
+  if (job === 'ideas') { const d = J.ideas || {}; return d.archive && d.archive.length ? `${d.archive.length} ideas pitched` : 'Sketching…'; }
   if (job === 'scout') { const sc = J.scout || {}; return sc.count != null ? `${sc.count} tracks · ${sc.new && sc.new.length ? sc.new.length + ' new' : 'none new'}` : 'Tracks ?'; }
   return '';
 }
@@ -364,6 +369,7 @@ function drawFloor(dt) {
   if (floor.security) { const r = floor.security; fx.strokeRect(r.centre.x + 40 * s, r.centre.y - 6 * s, 22 * s, 14 * s); }   // the board
   post(floor.security, 'AGENT GOD', 'intel', 'check', -14);
   post(floor.vis || floor.rooms[1], 'KIPPER', 'scout', 'check', 0);
+  post(floor.rooms.find(r => r.path === '/security/layers/') || floor.security, 'DOODLEBUG', 'ideas', 'check', 16);
 
   // patrols walking the corridor and checking each room
   const speed = 60 * s;
