@@ -5,7 +5,7 @@ Agents read this file at run time (see lib/profile.js); pages quote it. Update i
 
 ## Summary
 
-As a Chartered Security Consultant and security leader with over 27 years of experience, I specialise in protecting people, assets, and operations across critical national infrastructure and large-scale global capital projects.
+As a technical director for AECOM, Chartered Security Consultant and security leader with over 27 years of experience, I specialise in protecting people, assets, and operations across critical national infrastructure and large-scale global capital projects.
 
 My approach is grounded in pragmatic problem-solving and risk-based engineering. I help clients navigate complex security requirements, translating evolving threat pictures into solutions that are proportionate, robust, and directly aligned with their operational objectives. Whether addressing physical and electronic security or complex counter-terrorism strategies, the goal is always to deliver guidance that is workable and right-sized to the risk.
 
