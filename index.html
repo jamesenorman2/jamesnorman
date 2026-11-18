@@ -406,12 +406,13 @@ let energy = 0, hit = 0, rowCount = 0;
 function sampleSoundCloud(row) {
   const pos = scPos + (scPlaying ? performance.now() - scPosAt : 0);
   const t = pos / 1000;
-  let level, kick;
+  let level, kick, raw = 1;
   if (wave && scDuration) {
     const n = wave.length, fi = Math.max(0, Math.min(n - 1.001, (pos / scDuration) * n));
     const i0 = Math.floor(fi), fr = fi - i0;
     const norm = v => Math.max(0, Math.min(1, (v - waveLo) / (waveHi - waveLo || 1)));
     level = norm(wave[i0]) * (1 - fr) + norm(wave[i0 + 1]) * fr;      // smooth between waveform points
+    raw = level;
     // local contrast: compare with the surrounding ±20 s, so every swell and dip shows even in a loud mix
     const win = Math.max(3, Math.round((20000 / scDuration) * n));
     let lmin = 1, lmax = 0;
@@ -427,7 +428,11 @@ function sampleSoundCloud(row) {
     level = 0.4 + 0.35 * Math.exp(-beat * 6);
     kick = Math.exp(-beat * 8) * 0.5;
   }
+  // silence is flat: no sound, no lines moving (fades in over the quietest few per cent)
+  const gate = Math.max(0, Math.min(1, (raw - 0.03) / 0.09));
+  if (gate <= 0) { row.fill(0); return; }
   shapeRow(row, t, level, kick);
+  if (gate < 1) for (let i = 0; i < POINTS; i++) row[i] *= gate;
 }
 
 // Peaks drift smoothly over time; loudness lifts them, hits throw up sharp spikes.
@@ -486,12 +491,16 @@ function sampleAnalyser(row) {
     const v = (freq[b0] * (1 - f) + freq[Math.min(b0 + 1, freq.length - 1)] * f) / 255;
     row[i] = Math.min(1.7, Math.pow(v, 1.25) * 1.35);
   }
+  // silence (or just background hiss on the mic) stays flat
+  let peak = 0; for (let i = 0; i < POINTS; i++) if (row[i] > peak) peak = row[i];
+  const gate = Math.max(0, Math.min(1, (peak - 0.06) / 0.12));
+  for (let i = 0; i < POINTS; i++) row[i] *= gate;
 
 }
 
 function sampleIdle(row) {
-  bumps(row, seeded(idleSeed++), 0.5, 0.1);
-  energy = 0.25;
+  row.fill(0);                // no sound playing: flat lines
+  energy = 0;
 }
 
 /* ─── Music analysis: kick, tempo, breaks and drops ───────── */
