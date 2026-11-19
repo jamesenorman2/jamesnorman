@@ -1274,7 +1274,7 @@ function drawMoments(project) {
     }
     ctx.restore();
   }
-  drawWeb(project); drawScan(project); drawSparks(project); drawMath(project); drawLightning(project);   // no sparks or crossing glow by default: clean, clear beams
+  drawWeb(project); drawScan(project); drawSparks(project); drawMath(project); drawRoots(project); drawLightning(project);   // no sparks or crossing glow by default: clean, clear beams
   // a colour flash: every white line takes the colour for a moment
   if (flash) {
     const age = clockT - flash.t0;
@@ -1287,7 +1287,61 @@ const rowV = idx => 1 - (((head - idx + TOTAL) % TOTAL) + rowClock) / SHOW;
 // Lightning: a jagged bolt from the sky striking one of the highest peaks, flickering once and fading.
 // The bolt's shape is made once (midpoint displacement, with a couple of forks) and stretched each
 // frame between the sky and the peak, so it stays on the peak as the surface moves.
-let bolts = [], lastBolt = -60;
+let bolts = [], lastBolt = -60, roots = [];
+// Where the bolt lands, the charge spreads through the waveform like tree roots: branches that run
+// along the existing ridge lines, now and then stepping across to the next line, forking as they go.
+const ROOT_SPEED = 110;                                                // grid steps per second
+function growRoots(idx0, i0) {
+  const branches = [], live = [];
+  const rowOK = idx => { const v = rowV(idx); return v > 0.03 && v < 0.99; };
+  for (const dir of [-1, 1]) live.push({ idx: idx0, i: i0, dir, t: 0, depth: 0, len: 45 + Math.random() * 40 });
+  live.push({ idx: (idx0 + 1) % TOTAL, i: i0, dir: Math.random() < 0.5 ? -1 : 1, t: 1, depth: 0, len: 35 + Math.random() * 30 });
+  live.push({ idx: (idx0 - 1 + TOTAL) % TOTAL, i: i0, dir: Math.random() < 0.5 ? -1 : 1, t: 1, depth: 0, len: 35 + Math.random() * 30 });
+  let total = 0;
+  while (live.length && total < 1400) {
+    const b = live.shift(), pts = [[b.idx, b.i, b.t]];
+    let { idx, i, t } = b, drift = Math.random() < 0.5 ? 1 : -1;
+    for (let s = 0; s < b.len; s++) {
+      if (Math.random() < 0.16) { const n = (idx + drift + TOTAL) % TOTAL; if (rowOK(n)) idx = n; }   // step across to a neighbouring ridge line
+      else i += b.dir;                                                                                 // or run along this one
+      if (i < 2 || i > POINTS - 3 || !rowOK(idx)) break;
+      t += 1; pts.push([idx, i, t]); total++;
+      if (Math.random() < 0.035 && b.depth < 3 && live.length < 40)                                   // fork
+        live.push({ idx, i, dir: Math.random() < 0.6 ? b.dir : -b.dir, t, depth: b.depth + 1, len: b.len * (0.35 + Math.random() * 0.4) });
+    }
+    if (pts.length > 2) branches.push({ pts, depth: b.depth });
+  }
+  return branches;
+}
+function drawRoots(project) {
+  if (!roots.length) return;
+  roots = roots.filter(r => clockT - r.t0 < 2.2);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  for (const r of roots) {
+    const age = clockT - r.t0; if (age < 0) continue;
+    const front = age * ROOT_SPEED, fade = Math.min(1, (2.2 - age) / 0.9);
+    for (const br of r.branches) {
+      const w = br.depth ? 1.1 : 1.7;
+      // the charge: bright where it has just arrived, dimming behind as it moves on
+      let prev = null;
+      for (const [idx, i, t] of br.pts) {
+        if (t > front) break;
+        const p = surf(-1 + 2 * i / (POINTS - 1), rowV(idx), history[idx][i] * AMP + 0.004);
+        project(p, 0); if (PZ[0] < 0) { prev = null; continue; }
+        const cur = [PX[0], PY[0]];
+        if (prev) {
+          const heat = Math.max(0, 1 - (front - t) / 55), a = (0.25 + 0.75 * heat) * fade;
+          if (a > 0.02) {
+            ctx.strokeStyle = r.colour; ctx.globalAlpha = 0.35 * a; ctx.lineWidth = w * 5; ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(cur[0], cur[1]); ctx.stroke();
+            ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = heat > 0.75 ? '#e6dcff' : r.colour; ctx.globalAlpha = a; ctx.lineWidth = w * 1.2; ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(cur[0], cur[1]); ctx.stroke(); ctx.globalCompositeOperation = 'lighter';
+          }
+        }
+        prev = cur;
+      }
+    }
+  }
+  ctx.restore();
+}
 function boltShape() {
   let pts = [[0, 0], [1, 0]];
   for (let d = 0; d < 6; d++) {                                   // midpoint displacement: each pass halves the jaggedness
@@ -1306,7 +1360,11 @@ function boltShape() {
 function strikeLightning(n, colour) {
   if (reduceMotion || calm) return;
   const pk = (typeof mathPeaks === 'function' ? mathPeaks(6) : []).slice(0, Math.max(1, n || 1));
-  pk.forEach((p, k) => bolts.push({ t0: clockT + k * 0.14, peak: p, sx: (Math.random() - 0.5) * 0.5, shape: boltShape(), colour: colour || '#cfd8ff' }));
+  pk.forEach((p, k) => {
+    const idx = (head - p.a + TOTAL) % TOTAL, t0 = clockT + k * 0.14;
+    bolts.push({ t0, peak: p, idx, sx: (Math.random() - 0.5) * 0.5, shape: boltShape(), colour: colour || '#cfd8ff' });
+    roots.push({ t0: t0 + 0.04, branches: growRoots(idx, p.i), colour: '#8f7bff' });   // the charge glows electric violet against the white lines
+  });
   lastBolt = clockT;
 }
 function drawLightning(project) {
@@ -1315,8 +1373,7 @@ function drawLightning(project) {
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   for (const b of bolts) {
     const age = clockT - b.t0; if (age < 0) continue;
-    if (b.peak.a >= SHOW - 1) continue;
-    project(gridPt(b.peak.a, b.peak.i, 0), 0); if (PZ[0] < 0) continue;
+    project(surf(-1 + 2 * b.peak.i / (POINTS - 1), rowV(b.idx), history[b.idx][b.peak.i] * AMP), 0); if (PZ[0] < 0) continue;
     const ex = PX[0], ey = PY[0], sx = ex + b.sx * H, sy = -20;
     // one strike, a brief dip, one re-strike, then it fades: no fast flicker
     const k = age < 0.08 ? 1 : age < 0.16 ? 0.35 : age < 0.26 ? 0.9 : Math.max(0, 1 - (age - 0.26) / 0.44);
