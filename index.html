@@ -828,6 +828,7 @@ function onDrop(breakLen) {
   if (breakLen >= Math.max(6, 16 * music.beat) && !sheet) strobe();
   fireMoment({ type: 'laser', colour: Object.keys(PALETTE)[Math.floor(Math.random() * 5)] });          // every drop gets lasers
   if (breakLen >= 8 && clockT - lastSmoke > 60 && !reduceMotion) startSmoke();          // smoke on the big drops
+  if (!reduceMotion && clockT - lastFog > 45 && Math.random() < 0.4) startFog();          // and sometimes the smoke machine
   nextPhrase = clockT + 0.01; sceneI = 0;                                                   // and the light show restarts on the drop
   const top = mountPeaks();                                                                       // and the red light lands on the tallest peak
   if (top) glows.push({ t0: clockT, life: 3.5 + Math.random() * 1.5, drop: true, mount: { row: top.row, i: top.peaks[0] }, du: (Math.random() - 0.5) * 0.08, size: 0.75 + Math.random() * 0.4 });
@@ -1047,7 +1048,7 @@ function autoLasers() {
     else if (energy < 0.2) scene = 'rest';
     else scene = SCENES[sceneI++ % SCENES.length];
     if (scene === 'mounted' || scene === 'fan' || scene === 'rgb') fireMoment({ type: 'laser', mount: scene === 'mounted' || (scene === 'rgb' && Math.random() < 0.5), rgb: scene === 'rgb', colour: sceneColour });
-    else if (scene === 'shine') fireMoment({ type: 'shine', colour: sceneColour });
+    else if (scene === 'shine') fireMoment({ type: 'shine', colour: ['red', 'red', 'cyan', 'violet'][Math.floor(Math.random() * 4)] });   // moody: mostly red and blue
     else if (scene === 'web') { lasers.length = 0; fireMoment({ type: 'web', colour: sceneColour }); }
     else if (scene === 'scan') fireMoment({ type: 'scan', colour: sceneColour });
     else if (scene === 'glow') nextGlow = clockT;                                    // the red light
@@ -1069,7 +1070,7 @@ function mountPeaks() {
   return { row: idx, peaks };
 }
 function fireMoment(m) {
-  if (!['strobe', 'laser', 'rgb', 'shine', 'flash', 'flip', 'web', 'scan', 'smoke'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
+  if (!['strobe', 'laser', 'rgb', 'shine', 'flash', 'flip', 'web', 'scan', 'smoke', 'fog'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
   const colour = PALETTE[m.colour] || null;
   if (m.type === 'rgb') { m = { ...m, type: 'laser', rgb: true }; }
   if (m.type === 'strobe') strobe();
@@ -1083,6 +1084,7 @@ function fireMoment(m) {
   else if (m.type === 'web') { if (!web && !lasers.length) { lastWeb = clockT; web = { t0: clockT, life: 7 + Math.random() * 3, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
   else if (m.type === 'scan') { if (!scan) { const period = Math.max(1.2, Math.min(4, (music.beat || 0.5) * 4)); scan = { t0: clockT, period, life: period * 2, colour: colour || PALETTE.violet }; lastScan = clockT; } }
   else if (m.type === 'shine') { const mp = mountPeaks(); if (mp && !shine) shine = { t0: clockT, life: 4.5 + Math.random() * 1.5, colour: colour || PALETTE.cyan, mount: mp }; }
+  else if (m.type === 'fog') { if (clockT - lastFog > 40) startFog(); }
   else if (m.type === 'smoke') { if (clockT - lastSmoke > 60) startSmoke(); }
   else if (m.type === 'flip') { if (!reduceMotion && clockT - lastRoll > 45) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }   // cue-sheet rolls too, at most one every 45 s
   if (m.note) $('cue').textContent = `${score && score.by || 'Agent Masterpiece'}: “${m.note}”`;
@@ -1095,6 +1097,55 @@ window.JN_glow = () => { nextGlow = clockT; };   // try it from the console   //
 // Dance-floor extras, kept on a black background: a very slight glow on the lines with each kick,
 // and smoke jets from the front edge on really big hits.
 let smoke = [], lastSmoke = -60, kickGlow = 0, atmoT = 0;
+// The smoke machine: every so often a bank of haze is pushed in from one side, drifts across the
+// waveform for a few seconds and clears. While it hangs there, the laser beams show up in it.
+let fog = null, lastFog = -40, fogK = 0;
+function startFog() {
+  if (fog) return;
+  lastFog = clockT;
+  const side = Math.random() < 0.5 ? -1 : 1;
+  fog = { t0: clockT, life: 7 + Math.random() * 3, side, puffs: Array.from({ length: 16 }, (_, i) => ({ u: side * (1.25 + Math.random() * 0.5), v: 0.12 + Math.random() * 0.8, r: 0.45 + Math.random() * 0.5, sp: 0.35 + Math.random() * 0.25, ph: Math.random() * TAU, delay: i * 0.12 })) };
+}
+// Moody lights from under the waveform: slow-breathing pools, mostly red and blue.
+const UPLIGHTS = [
+  { u: -0.55, v: 0.35, c: '#ff2a3a', ph: 0 }, { u: 0.5, v: 0.55, c: '#2f5bff', ph: 2.1 },
+  { u: 0.05, v: 0.8, c: '#ff2a3a', ph: 4.0 }, { u: -0.2, v: 0.15, c: '#2f5bff', ph: 5.2 }, { u: 0.75, v: 0.2, c: '#8a3bff', ph: 1.3 }
+];
+let upA = 0;
+function drawUplights(project, dt, playing) {
+  upA += ((playing ? 0.55 + energy * 0.45 - inBreak * 0.25 : 0) - upA) * Math.min(1, dt * 0.4);   // slow to swell, slow to fade
+  if (upA < 0.02) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const L of UPLIGHTS) {
+    const breathe = 0.5 + 0.5 * Math.sin(clockT * 0.25 + L.ph);           // each pool rises and falls over ~25 s
+    const u = L.u + Math.sin(clockT * 0.05 + L.ph) * 0.15, v = L.v + Math.cos(clockT * 0.04 + L.ph) * 0.08;
+    project(surf(u, v, -0.05), 0); if (PZ[0] < 0) continue;
+    project(surf(u + 0.55, v, -0.05), 1);
+    const R = Math.max(60, Math.abs(PX[1] - PX[0]) * 2.2), x = PX[0], y = PY[0];
+    const g = ctx.createRadialGradient(x, y, 0, x, y, R);
+    g.addColorStop(0, L.c); g.addColorStop(0.45, L.c + '44'); g.addColorStop(1, L.c + '00');
+    ctx.globalAlpha = 0.32 * upA * breathe * (0.85 + 0.3 * kickGlow); ctx.fillStyle = g; ctx.fillRect(x - R, y - R, R * 2, R * 2);
+  }
+  ctx.restore();
+}
+function drawFog(project, dt) {
+  if (!fog) { fogK += (0 - fogK) * Math.min(1, dt * 1.5); return; }
+  const age = clockT - fog.t0;
+  if (age > fog.life) { fog = null; return; }
+  fogK = Math.min(1, age / 1.5, (fog.life - age) / 2.5);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const f of fog.puffs) {
+    const t = age - f.delay; if (t < 0) continue;
+    const u = f.u - fog.side * t * f.sp + Math.sin(t * 0.7 + f.ph) * 0.05, h = 0.15 + t * 0.06;   // rolls across, rising slowly
+    project(surf(u, f.v, h), 0); if (PZ[0] < 0) continue;
+    project(surf(u + f.r + t * 0.05, f.v, h), 1);
+    const R = Math.max(40, Math.abs(PX[1] - PX[0]) * 1.5), x = PX[0], y = PY[0];
+    const g = ctx.createRadialGradient(x, y, 0, x, y, R);
+    g.addColorStop(0, '#7f8aa6'); g.addColorStop(1, '#7f8aa600');
+    ctx.globalAlpha = 0.12 * fogK * Math.min(1, t * 2); ctx.fillStyle = g; ctx.fillRect(x - R, y - R, R * 2, R * 2);
+  }
+  ctx.restore();
+}
 function startSmoke() {
   if (smoke.length) return;
   lastSmoke = clockT;
@@ -1105,6 +1156,9 @@ function atmosphere(project) {
   const dt = Math.max(0, Math.min(0.05, clockT - atmoT)); atmoT = clockT;
   const playing = source !== 'idle';
   kickGlow = Math.max(kickGlow * Math.exp(-dt * 7), playing ? hit : 0);
+  if (playing && !reduceMotion && !fog && inBreak < 0.5 && energy > 0.35 && clockT - lastFog > 80 + Math.random() * 70) startFog();
+  drawUplights(project, dt, playing);
+  drawFog(project, dt);
   if (playing && !reduceMotion && hit > 0.85 && energy > 0.5 && clockT - lastSmoke > 90 + Math.random() * 60) startSmoke();
   if (!smoke.length) return;
   smoke = smoke.filter(s => clockT - s.t0 < s.life);
@@ -1121,7 +1175,7 @@ function atmosphere(project) {
   }
   ctx.restore();
 }
-window.JN_atmos = () => ({ smoke: smoke.length, kick: +kickGlow.toFixed(2) });
+window.JN_atmos = () => ({ fog: +fogK.toFixed(2), up: +upA.toFixed(2), smoke: smoke.length, kick: +kickGlow.toFixed(2) });
 
 function drawMoments(project) {
   atmosphere(project);
@@ -1160,7 +1214,8 @@ function drawMoments(project) {
         const col = l.rgb ? rgbAt(age * 240 + i * 360 / l.n) : l.colour;          // RGB lasers chase round the colour wheel
         beams.push([ox, oy, ex, ey, col, k]);
         ctx.strokeStyle = col;
-        ctx.globalAlpha = 0.1 * k; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+        if (fogK > 0.02) { ctx.globalAlpha = 0.06 * fogK * k; ctx.lineWidth = 22; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke(); }   // the beam lit up in the smoke
+        ctx.globalAlpha = (0.1 + 0.1 * fogK) * k; ctx.lineWidth = 2.5 + 3 * fogK; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
         ctx.globalCompositeOperation = 'source-over';                                 // solid colour over the white lines: no glittery crossings
         ctx.globalAlpha = k; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
         ctx.globalCompositeOperation = 'lighter';
@@ -1363,7 +1418,8 @@ function drawMountedLaser(l, project) {
       const col = l.rgb ? rgbAt(age * 240 + (j++) * 40) : l.colour;
       beams.push([ox, oy, ex, ey, col, k]);
       ctx.strokeStyle = col;
-      ctx.globalAlpha = 0.1 * k; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+      if (fogK > 0.02) { ctx.globalAlpha = 0.06 * fogK * k; ctx.lineWidth = 22; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke(); }   // the beam lit up in the smoke
+        ctx.globalAlpha = (0.1 + 0.1 * fogK) * k; ctx.lineWidth = 2.5 + 3 * fogK; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = k; ctx.lineWidth = side ? 1 : 1.3; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
       ctx.globalCompositeOperation = 'lighter';
