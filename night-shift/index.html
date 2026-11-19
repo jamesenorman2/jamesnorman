@@ -184,7 +184,7 @@ const CREW = [
     const broken = l.filter(x => !x.ok && !x.blocked);
     return [broken.length ? 'Broken: ' + broken.map(x => x.name).join(', ') : `All ${l.length} reachable`, broken.length ? 'bad' : ''];
   }],
-  ['AGENT TROUSERPRESS', 'Clerk. Watches the official Martyn’s Law guidance on GOV.UK for updates.', L => {
+  ['AGENT GOATMAN', 'Clerk. Watches the official Martyn’s Law guidance on GOV.UK for updates.', L => {
     const c = (L.jobs || {}).clerk; if (!c) return ['–'];
     if (!c.ok) return ['Couldn’t check GOV.UK', 'warn'];
     return [(c.changed ? 'UPDATED since last shift' : 'No change') + (c.updated ? ' · last updated ' + new Date(c.updated).toLocaleDateString() : ''), c.changed ? 'warn' : ''];
@@ -197,7 +197,7 @@ const CREW = [
     const sc = (L.jobs || {}).scout; if (!sc) return ['–'];
     return [`${sc.count} tracks` + (sc.new && sc.new.length ? ' · new: ' + sc.new.map(t => t.title).join(', ') : ' · nothing new')];
   }],
-  ['AGENT GOATMAN', 'Analyst. Reads every report, compares with the last shift, writes the handover and raises findings.', L => {
+  ['AGENT NORMAL', 'Analyst. Reads every report, compares with the last shift, writes the handover and raises findings.', L => {
     const a = L.analyst; if (!a) return [L.note || '–', 'warn'];
     return [`Status ${a.status} · ${(a.findings || []).length} findings`, a.status === 'RED' ? 'bad' : a.status === 'AMBER' ? 'warn' : ''];
   }],
@@ -453,8 +453,8 @@ function drawFloor(dt) {
     const dx = c.centre.x - 14 * s, dy = c.centre.y + 10 * s;
     fx.beginPath(); fx.moveTo(dx + 12 * s, dy - 10 * s); fx.lineTo(dx + 28 * s, dy - 10 * s); fx.moveTo(dx + 26 * s, dy - 10 * s); fx.lineTo(dx + 26 * s, dy); fx.stroke();  // desk
     fx.strokeRect(dx + 16 * s, dy - 20 * s, 10 * s, 8 * s);                                                      // screen
-    stickMan(dx, dy, s, floor.t, 'type', 'GOATMAN');
-    text('GOATMAN', dx + 6 * s, dy + 12 * s, 8 * s, 0.6);
+    stickMan(dx, dy, s, floor.t, 'type', 'NORMAL');
+    text('NORMAL', dx + 6 * s, dy + 12 * s, 8 * s, 0.6);
     const lines = (floor.shift && floor.shift.analyst && floor.shift.analyst.handover || 'All quiet. Standing by.').split(/(?<=[.!?])\s+/);
     const li = Math.floor(floor.t / 4) % lines.length, typed = lines[li].slice(0, Math.floor((floor.t % 4) * 28));
     const maxW = Math.max(120, c.w - 16), words = typed.split(' '); let line = '', ly = c.upper ? c.y + 34 * s : c.y + 18 * s, n = 0;
@@ -486,7 +486,7 @@ function drawFloor(dt) {
   { const x = 22 * s + 8, y = floor.cy + floor.ch * 0.3;
     fx.beginPath(); fx.moveTo(8, floor.cy - floor.ch / 2 + 4); fx.lineTo(8, floor.cy + floor.ch / 2 - 4); fx.stroke();
     stickMan(x, y, s, floor.t, 'check', 'CODPIECE'); text('CODPIECE', x + 4, y + 12 * s, 8 * s, 0.6); text(jobLine('gatekeeper'), x + 30 * s, y - 34 * s, 9 * s, 0.85, 'left'); }
-  post(floor.legal, 'TROUSERPRESS', 'clerk', 'check', -20);
+  post(floor.legal, 'GOATMAN', 'clerk', 'check', -20);
   if (floor.security) { const r = floor.security; fx.strokeRect(r.centre.x + 40 * s, r.centre.y - 6 * s, 22 * s, 14 * s); }   // the board
   post(floor.security, 'GOD', 'intel', 'check', -14);
   post(floor.vis || floor.rooms[1], 'KIPPER', 'scout', 'check', 0);
@@ -573,8 +573,8 @@ function newsLine(name) {
   if (name === 'GOD' && J.intel && J.intel.ok) return `Threat level: ${J.intel.level}. Nobody panic. Except Codpiece.`;
   if (name === 'CODPIECE' && J.gatekeeper && J.gatekeeper.cert && J.gatekeeper.cert.days != null) return `${J.gatekeeper.cert.days} days on the certificate. I’m not counting. I’m counting.`;
   if (name === 'DISCO BISCUIT' && L.dj && L.dj.track) return `Next up: ${L.dj.track.title}. Banger. Probably.`;
-  if (name === 'GOATMAN' && L.analyst) return L.analyst.status === 'GREEN' ? 'Status GREEN. Suspicious.' : `Status ${L.analyst.status}. Someone owes me a biscuit.`;
-  if (name === 'TROUSERPRESS' && J.clerk) return J.clerk.changed ? 'The guidance CHANGED. I need a lie down.' : 'Guidance unchanged. Thrilling.';
+  if (name === 'NORMAL' && L.analyst) return L.analyst.status === 'GREEN' ? 'Status GREEN. Suspicious.' : `Status ${L.analyst.status}. Someone owes me a biscuit.`;
+  if (name === 'GOATMAN' && J.clerk) return J.clerk.changed ? 'The guidance CHANGED. I need a lie down.' : 'Guidance unchanged. Thrilling.';
   if (name === 'KIPPER' && J.scout) return `${J.scout.count} tracks. I counted twice.`;
   const slow = (L.patrol || []).filter(p => p.ms > 1500)[0];
   if ((name === 'MONKEY MONKEY' || name === 'FISH FISH') && slow) return `${slow.path} took ${slow.ms} ms. Who did this?`;

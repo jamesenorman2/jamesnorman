@@ -300,7 +300,7 @@ async function chosenTrack() {
   } catch (e) { /* no override */ }
   // Every track James has on SoundCloud, plus the agents' recent picks; choose at random, avoiding the
   // last few this browser has played, and credit the agent who picked it (or a random member of the crew).
-  const CREW = ['Agent Disco Biscuit', 'Agent Monkey Monkey', 'Fish Fish', 'Agent Pickle', 'Agent Kipper', 'Agent Goatman', 'Agent Codpiece', 'Agent Fish', 'Agent God', 'Agent Trouserpress'];
+  const CREW = ['Agent Disco Biscuit', 'Agent Monkey Monkey', 'Fish Fish', 'Agent Pickle', 'Agent Kipper', 'Agent Normal', 'Agent Codpiece', 'Agent Fish', 'Agent God', 'Agent Goatman'];
   const [catalogue, rows] = await Promise.all([
     fetch('/api/tracks').then(r => r.json()).then(d => d.tracks || []).catch(() => []),
     fetch(SETTINGS_URL.replace(/jn_site_settings.*$/, 'jn_night_shift?select=dj:log->dj,battle:log->battle&order=id.desc&limit=24'),
