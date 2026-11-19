@@ -87,6 +87,22 @@
   body.dragging .drop{opacity:1}
   /* SoundCloud's player does the playing; it stays out of sight and the visualiser is the interface */
   #sc{position:fixed;left:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
+  /* ─── shell: while music plays, other pages open over the homepage and the player shrinks to a bar ─── */
+  .shell-frame{position:fixed;left:0;top:0;width:100%;height:calc(100% - 4.4rem);border:0;z-index:20;background:#000;display:none}
+  body.shell-on .shell-frame{display:block}
+  body.shell-on::after{content:'';position:fixed;left:0;right:0;bottom:0;height:4.4rem;background:#000;border-top:1px solid #2a2a2a;z-index:19}
+  body.shell-on .ui{z-index:21}
+  body.shell-on .ui header.top,body.shell-on .intro{display:none!important}
+  body.shell-on footer.bottom{pointer-events:none}
+  body.shell-on footer.bottom .right,body.shell-on footer.bottom .right *{pointer-events:auto}
+  body.shell-on .bigplay,body.shell-on footer.bottom .controls,body.shell-on footer.bottom #status,body.shell-on footer.bottom #cue{display:none!important}
+  body.shell-on .transport{bottom:.6rem;left:1rem;z-index:21}
+  body.shell-on .skip{bottom:.6rem;right:1rem;z-index:21}
+  body.shell-on #scrub{bottom:.45rem;left:5.6rem;right:9rem;width:calc(100% - 14.6rem);height:2.6rem;z-index:21}
+  body.shell-on footer.bottom .right{position:fixed;left:5.6rem;bottom:3.15rem;z-index:22;text-align:left}
+  body.shell-on .now{font-size:.62rem;-webkit-line-clamp:1;max-width:60vw}
+  @media(max-width:700px){body.shell-on #scrub{left:4.4rem;right:7.4rem;width:calc(100% - 11.8rem)}body.shell-on footer.bottom .right{left:4.4rem}}
+
   input[type=file]{display:none}
   .po{position:fixed;inset:0;z-index:10000;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
   .po.active{display:flex}
@@ -200,6 +216,7 @@
     <button id="nextBtn" class="pp sk" title="Next track (N)" aria-label="Next track" disabled><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12,12 31,24 12,36"/><rect x="33" y="12" width="4" height="24"/></svg></button>
   </div>
 </div>
+<iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page"></iframe>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
 <input type="file" id="file" accept="audio/*">
@@ -849,6 +866,7 @@ const INK = getComputedStyle(document.documentElement).getPropertyValue('--ink')
 let last = performance.now();
 
 function frame(now) {
+  if (shellOn) { last = now; requestAnimationFrame(frame); return; }      // hidden behind a page: save the battery
   const dt = Math.max(0, Math.min((now - last) / 1000, 0.1));
   last = now;
   source = currentSource();
@@ -1549,6 +1567,54 @@ for (let r = 0; r < TOTAL; r++) {
   sampleIdle(history[head]);
   for (let i = 0; i < POINTS; i++) history[head][i] *= envelope[i];
 }
+
+/* ─── The site shell: music carries on across the site ───
+   While something is playing, a click on a link to another page opens that page over the homepage
+   instead of leaving it, so the player keeps going; the player shrinks to a bar along the bottom.
+   The address bar and the title follow the page on show, and the back button works as usual. */
+const shellFrame = $('shellFrame');
+let shellOn = false;
+const homeTitle = document.title;
+function shellSync() {
+  try {
+    const w = shellFrame.contentWindow, l = w.location;
+    if (l.href === 'about:blank') return;
+    if (l.pathname === '/' ) { closeShell(true); return; }
+    window.history.replaceState({ shell: 1 }, '', l.pathname + l.search + l.hash);
+    document.title = w.document.title || homeTitle;
+  } catch (e) { /* a page we can't read */ }
+}
+shellFrame.addEventListener('load', shellSync);
+function openShell(path, push) {
+  shellOn = true; document.body.classList.add('shell-on');
+  if (push !== false) window.history.pushState({ shell: 1 }, '', path);
+  try { shellFrame.contentWindow.location.replace(path); } catch (e) { shellFrame.src = path; }
+}
+function closeShell(push) {
+  if (!shellOn) return;
+  shellOn = false; document.body.classList.remove('shell-on');
+  shellFrame.src = 'about:blank'; document.title = homeTitle;
+  if (push) window.history.pushState(null, '', '/');
+}
+window.JN_SHELL = { open: openShell, home: () => closeShell(true) };
+const musicOn = () => scPlaying || (audioEl && !audioEl.paused);
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href]');
+  if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  if (a.target && a.target !== '_self') return;
+  let url; try { url = new URL(a.href, location.href); } catch (err) { return; }
+  if (url.origin !== location.origin || url.pathname === '/' || /^\/admin/.test(url.pathname)) return;
+  if (!musicOn() && !shellOn) return;                      // nothing playing: ordinary navigation
+  e.preventDefault();
+  openShell(url.pathname + url.search + url.hash);
+}, true);
+addEventListener('popstate', () => {
+  if (location.pathname === '/') closeShell(false);
+  else if (!shellOn) openShell(location.pathname + location.search + location.hash, false);
+});
+// arriving from another page's play button: open that page over the player, ready to play
+{ const then = new URLSearchParams(location.search).get('then');
+  if (then && /^\/[^/]/.test(then) && !/^\/admin/.test(then)) { window.history.replaceState(null, '', '/'); openShell(then); document.body.classList.add('needs-tap'); } }
 requestAnimationFrame(frame);
 startSoundCloud();
 })();

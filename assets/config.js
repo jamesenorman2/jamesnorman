@@ -45,3 +45,6 @@ window.JN = {
 };
 
 if (!/^\/admin/.test(location.pathname)) { JN.view(); setTimeout(() => JN.kickCrew(), 5000); }
+
+// music that carries on across the site (see /assets/player.js)
+if (!/^\/admin/.test(location.pathname)) { const ps = document.createElement('script'); ps.src = '/assets/player.js'; ps.defer = true; document.head.appendChild(ps); }
