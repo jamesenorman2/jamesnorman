@@ -80,13 +80,6 @@
   #scrub{position:fixed;top:auto;left:3rem;right:3rem;bottom:5.2rem;width:calc(100% - 6rem);height:4rem;z-index:3;cursor:pointer;touch-action:none;background:transparent}
   body.hide-ui #scrub{opacity:.5}
   @media(max-width:700px){#scrub{left:16px;right:16px;width:calc(100% - 32px);bottom:9.5rem;height:48px}}
-  .hint{position:fixed;left:50%;bottom:10rem;transform:translateX(-50%);font-size:.7rem;letter-spacing:.35em;
-    text-transform:uppercase;color:var(--mid);white-space:nowrap;opacity:0;pointer-events:none;animation:hint 7s 2s forwards}
-  @keyframes hint{0%{opacity:0}15%{opacity:1}75%{opacity:1}100%{opacity:0}}
-  body.hide-ui .hint{display:none}
-  /* the hint sits where the waveform will be (empty until something plays), clear of the big play button */
-  .hint{bottom:6.2rem}
-  @media(max-width:700px){.hint{bottom:auto;top:7.5rem;white-space:normal;width:calc(100% - 32px);text-align:center;line-height:1.8}}
   /* on short screens the intro's tabs reach down to the play button, so it waits for the intro there */
   @media(max-height:760px){body.sc-ready:not(.intro-done) .bigplay{opacity:0;pointer-events:none}body:not(.intro-done) .skip{visibility:hidden}}
   .drop{position:fixed;inset:1.5rem;border:1px dashed var(--mid);display:flex;align-items:center;justify-content:center;
@@ -208,7 +201,6 @@
   </div>
 </div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
-<div class="hint" id="hint">Drag to fly round it &middot; scroll to fly out and in &middot; double-click to ride it</div>
 <div class="drop">Release to play</div>
 <input type="file" id="file" accept="audio/*">
 <div class="po" id="pacOverlay">
@@ -1557,7 +1549,6 @@ for (let r = 0; r < TOTAL; r++) {
   sampleIdle(history[head]);
   for (let i = 0; i < POINTS; i++) history[head][i] *= envelope[i];
 }
-if (matchMedia('(pointer: coarse)').matches) $('hint').textContent = 'Drag to fly round it · double-tap to ride it';
 requestAnimationFrame(frame);
 startSoundCloud();
 })();
