@@ -326,7 +326,7 @@ let scSoundId = null, wave = null, waveLo = 0, waveHi = 1, scReady = false;
 
 // Each visit plays one of the tracks the agents picked recently (the DJ's
 // hourly pick and both battle picks), chosen at random, and credits the agent who picked it.
-let pickedBy = null, picks = [], queue = [], qi = -1;
+let pickedBy = null, picks = [], queue = [], qi = -1, nowSound = null;
 function remember(url) {
   try { const r = JSON.parse(localStorage.getItem('jn-recent') || '[]').filter(u => u !== url); r.unshift(url); localStorage.setItem('jn-recent', JSON.stringify(r.slice(0, 20))); } catch (e) { /* private mode */ }
 }   // the agents' picks, and the order played so far
@@ -497,7 +497,7 @@ function followScore() {
 function readSound() {
   sc.getCurrentSound(s => {
     if (!s || s.id === scSoundId) return;
-    scSoundId = s.id;
+    scSoundId = s.id; nowSound = s;
     scDuration = s.duration || s.full_duration || 0;
     nowEl.textContent = s.title || '';
     nowEl.href = s.permalink_url || DEFAULT_SOUNDCLOUD;
@@ -1622,6 +1622,15 @@ function closeShell(push) {
   if (push) window.history.pushState(null, '', '/');
 }
 window.JN_SHELL = { open: openShell, home: () => closeShell(true) };
+// what's playing, for the music page (open over the player): the track, where it's got to, who picked it
+window.JN_NOW = () => ({ playing: !!musicOn(), sound: nowSound, by: pickedBy, duration: scDuration,
+  pos: scPos + (scPlaying ? performance.now() - scPosAt : 0) });
+// and a way for that page to play one of the tracks in the site player
+window.JN_PLAY = (url, title, by) => {
+  if (!sc || !scReady || !SC_URL_RE.test(url || '')) return false;
+  const it = { url, key: url, title: title || '', by: by || null };
+  queue.push(it); qi = queue.length - 1; playItem(it); return true;
+};
 // what the agents page (open over the player) needs to dance: is music playing, which tune, and the beat
 window.JN_BEAT = () => ({ playing: !!musicOn(), title: (nowEl && nowEl.textContent) || '', hit,
   period: (source === 'file' || source === 'mic') && music.bpm >= 70 && music.bpm <= 190 ? music.beat : 60 / 124 });

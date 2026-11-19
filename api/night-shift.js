@@ -263,7 +263,9 @@ export default async function handler(req, res) {
   ]);
   const jobs = { gatekeeper: gate, links: outside, clerk: legal, intel: threat, scout: scout(tracks, prevJobs.scout) };
   const reviews = await db('jn_idea_reviews?select=idea_id,verdict,note').catch(() => []);
-  const [agents, pickle, ideas] = await Promise.all([runAgents(report, tracks, previous, jobs), pickleShift(tracks), doodlebug(prevJobs.ideas, reviews)]);
+  // the agents see the catalogue in a different random order each shift, so they don't just pick from the top
+  const shuffled = tracks.map(t => [Math.random(), t]).sort((x, y) => x[0] - y[0]).map(x => x[1]);
+  const [agents, pickle, ideas] = await Promise.all([runAgents(report, shuffled, previous, jobs), pickleShift(tracks), doodlebug(prevJobs.ideas, reviews)]);
   jobs.pickle = pickle;
   jobs.ideas = ideas;
   // flag Doodlebug's ideas that are waiting for James's verdict, as an action on the Agents page

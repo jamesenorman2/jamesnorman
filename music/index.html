@@ -271,7 +271,7 @@ function renderAgent(el, side, agent, shift) {
   const row = document.createElement('div'); row.className = 'row';
   const play = document.createElement('button'); play.className = 'ghost'; play.textContent = 'Play';
   play.disabled = !(track && SC_URL_RE.test(track.url));
-  play.addEventListener('click', () => { mountPlayer(track.url, true); $('playerBox').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+  play.addEventListener('click', () => { if (siteNow() && window.parent.JN_PLAY(track.url, track.title, agent.agent)) return; mountPlayer(track.url, true); $('playerBox').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
   const vote = document.createElement('button'); vote.textContent = 'Vote'; vote.dataset.vote = side;
   const count = document.createElement('span'); count.className = 'count small';
   row.append(play, vote, count);
@@ -318,7 +318,23 @@ async function loadBattle() {
 }
 
 /* ─── Start ─────────────────────────────────────────────── */
-mountPlayer(JN.soundcloud, false);   // your whole profile, so visitors can browse
+// Opened over the site player (music already playing on the front page)? Then this page shows what
+// that player is playing, and its own player stays out of the way so two tracks never play at once.
+function siteNow() { try { return window.parent !== window && window.parent.JN_NOW ? window.parent.JN_NOW() : null; } catch (e) { return null; } }
+let linked = false;
+function follow() {
+  const n = siteNow();
+  if (!n || !n.sound) return;
+  if (!linked) {
+    linked = true;
+    $('playerBox').innerHTML = '<p class="small">Playing now in the site player at the bottom of the screen. Use its buttons to pause or skip, or press play on a track in the battle below to put it on.</p>';
+  }
+  playing = n.playing; pos = n.pos; posAt = performance.now(); duration = n.duration || duration;
+  if (n.sound.id !== soundId) { soundId = n.sound.id; showArt(n.sound); loadWave(n.sound.waveform_url); $('scLink').href = (n.sound.permalink_url || JN.soundcloud).split('?')[0]; }
+  $('artWho').textContent = (n.playing ? 'Playing now' : 'Paused') + (n.by ? ' · picked by ' + n.by : '');
+}
+if (siteNow()) { follow(); setInterval(follow, 1000); }
+if (!linked) mountPlayer(JN.soundcloud, false);   // your whole profile, so visitors can browse
 loadBattle();
 JN.kickShift().then(ran => { if (ran) loadBattle(); });
 })();
