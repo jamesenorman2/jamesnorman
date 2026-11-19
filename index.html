@@ -194,6 +194,20 @@
     .controls{gap:.4rem 1rem;justify-content:center;letter-spacing:.12em}
     .status{text-align:center;max-width:100%}
   }
+  /* phones: tuck the player down so the visualiser gets the screen. The track name and status sit tight
+     at the bottom, the waveform scrubber just above them, the transport just above that. */
+  @media(max-width:700px){
+    :root{--sb:env(safe-area-inset-bottom,0px);--scrubB:calc(3.6rem + var(--sb));--scrubH:38px}
+    .bottom{padding:.5rem 1rem calc(.7rem + var(--sb));gap:.2rem}
+    .now{font-size:.66rem}
+    .status{font-size:.62rem}
+    #scrub{bottom:var(--scrubB);height:var(--scrubH)}
+    .transport,.skip{bottom:calc(var(--scrubB) + var(--scrubH) + .35rem)}
+    .pp{width:42px;height:42px}
+    .pp.sk{width:34px;height:34px}
+    .hush{bottom:calc(var(--scrubB) + var(--scrubH) + .35rem + 42px + .2rem)}
+    .peek,.chairman{bottom:calc(var(--scrubB) + var(--scrubH) + .5rem)}
+  }
 </style>
 </head>
 <body>
