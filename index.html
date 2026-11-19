@@ -200,7 +200,7 @@
     :root{--sb:env(safe-area-inset-bottom,0px);--scrubB:calc(4.1rem + var(--sb));--scrubH:38px}
     .bottom{padding:.5rem 1rem calc(.7rem + var(--sb));gap:.2rem}
     .now{font-size:.66rem}
-    .status{font-size:.62rem}
+    .status{font-size:.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92vw}
     #scrub{bottom:var(--scrubB);height:var(--scrubH)}
     .transport,.skip{bottom:calc(var(--scrubB) + var(--scrubH) + .35rem)}
     .pp{width:42px;height:42px}
