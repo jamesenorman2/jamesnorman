@@ -274,7 +274,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ─── Canvas ─────────────────────────────────────────────── */
 const cv = document.getElementById('plot');
-const ctx = cv.getContext('2d');
+const ctx = cv.getContext('2d', { alpha: false, desynchronized: true }) || cv.getContext('2d');   // opaque, low-latency canvas: frames reach the screen sooner
 let W = 0, H = 0, DPR = 1;
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -856,12 +856,12 @@ function updateView(dt) {
   const t = targets(), kk = Math.min(1, dt * (user ? 7 : 2.4));
   view.C = mix(view.C, t.C, kk); view.T = mix(view.T, t.T, kk); view.U = norm(mix(view.U, t.U, kk));
   if (!calm) {
-    view.zoom += ((1 + hit * 0.12 - inBreak * 0.1) - view.zoom) * Math.min(1, dt * 10);   // a softer punch on the beat
+    view.zoom += ((1 + hit * 0.12 - inBreak * 0.1) - view.zoom) * Math.min(1, dt * 22);   // a soft punch, but right on the beat
     view.shake = hit * 2.5;
   } else { view.zoom = 1; view.shake = 0; }
   if (view.spinV) { view.spin += view.spinV * dt; if (Math.abs(view.spin) >= TAU) { view.spin = 0; view.spinV = 0; } }
   view.speed = 0.9 + energy * 0.5;              // louder passages scroll only a little faster
-  hit *= Math.exp(-dt * 4);
+  hit *= Math.exp(-dt * 6);                         // short, snappy pulses
 }
 
 /* input: drag to orbit (over the top, underneath), wheel to fly right out and back in */
