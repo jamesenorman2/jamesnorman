@@ -101,6 +101,15 @@
   @keyframes peekWave{to{transform:rotate(-45deg)}}
   .peek .nm{font-size:.55rem;letter-spacing:.18em;color:#9a9a9a;margin-top:3px}
   body.shell-on .peek{bottom:4.8rem}
+  /* the agent who brings a chair to the breakdown */
+  .chairman{position:fixed;bottom:calc(5.2rem + 4rem + .5rem);z-index:6;width:96px;height:120px;pointer-events:none;opacity:0;transition:opacity .4s}
+  .chairman.on{opacity:1}
+  .chairman svg{position:absolute;left:0;bottom:0;width:96px;height:96px;overflow:visible}
+  .chairman .bub{position:absolute;bottom:100px;left:50%;translate:-50% 0;font-size:.72rem;letter-spacing:.04em;color:#fff;background:#000;border:1px solid #fff;border-radius:6px;padding:.32rem .6rem;white-space:nowrap;opacity:0;transition:opacity .25s}
+  .chairman .bub.on{opacity:1}
+  body.shell-on .chairman{bottom:4.8rem}
+  body.tv .chairman{display:none!important}
+  @media(max-width:700px){.chairman{bottom:calc(9.5rem + 48px + .5rem)}}
   @media(max-width:700px){.peek{bottom:calc(9.5rem + 48px + .5rem)}}
   /* ─── shell: while music plays, other pages open over the homepage and the player shrinks to a bar ─── */
   .shell-frame{position:fixed;left:0;top:0;width:100%;height:calc(100% - 4.4rem);border:0;z-index:20;background:#000;display:none}
@@ -241,6 +250,7 @@
   </div>
 </div>
 <iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page"></iframe>
+<div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><circle class="hd" r="4.5"/><path class="bd"/></svg></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
@@ -728,7 +738,7 @@ function analyse(dt) {
   else if (source === 'sc') analyseSC();
   else { energy = 0.25; music.breakTarget = 0; music.buildUp = 0; }
   // break bookkeeping and the drop
-  if (music.breakTarget) music.breakFor += dt;
+  if (music.breakTarget) { const was = music.breakFor; music.breakFor += dt; if (was < 4 && music.breakFor >= 4) onBigBreak(); }
   else {
     if (music.breakFor > 4) onDrop(music.breakFor);
     music.breakFor = 0;
@@ -1862,6 +1872,7 @@ const PEEK = {
   next: ['Hey, I was listening to that!', 'Don’t change my track!', 'Oi! That was my favourite.', 'Rude.', 'I was just getting into that one.', 'Skip? SKIP?!'],
   prev: ['Again? Fair enough.', 'Rewind! Good call.', 'This one again? Fine by me.'],
   seek: ['Don’t fast-forward my track!', 'Skipping the build-up? Criminal.', 'You’ve missed the best bit.', 'No skipping the breakdown!'],
+  break: ['This breakdown though!', 'Goosebumps. Actual goosebumps.', 'Hands in the air for this bit!', 'I’m not crying, you’re crying.', 'Wait for it… wait for it…', 'This is my favourite bit!', 'Somebody hold my tea.', 'Here it comes!', 'I love this tune so much.'],
   idle: ['Continue.', 'Carry on.', 'Nice choice.', 'Is this one of Disco Biscuit’s picks?', 'I’m on my break. Don’t tell Normal.', 'Turn it up!', 'Just checking you’re still here.', 'Great tune!', 'As you were.']
 };
 const PEEK_NAMES = ['DISCO BISCUIT', 'MONKEY MONKEY', 'FISH FISH', 'MASTERPIECE', 'KIPPER', 'NORMAL', 'CODPIECE', 'FISH', 'GOD', 'GOATMAN', 'WURZEL', 'BISCUIT TIN', 'GRUMBLE', 'PIGEON', 'TEACAKE', 'BUNSEN', 'CRUMPET', 'SPANNER', 'DOODLEBUG', 'BIN LID'];
@@ -1882,6 +1893,61 @@ $('prevBtn').addEventListener('click', () => maybePeek('prev', 0.5));
 $('scrub').addEventListener('pointerup', () => { if (musicOn()) maybePeek('seek', 0.5); });
 addEventListener('keydown', e => { if (e.target.closest && e.target.closest('input,textarea')) return; const k = e.key.toLowerCase(); if (k === 'n') maybePeek('next', 0.65); else if (k === 'p') maybePeek('prev', 0.5); });
 setInterval(() => { if (musicOn() && performance.now() - lastPeek > 240000 && Math.random() < 0.3) peek('idle'); }, 30000);   // very occasionally, out of nowhere
+// On a big breakdown: now and then an agent pops up to say how good it is, and once in a while
+// one brings a chair on, climbs up and dances on it with their hands in the air.
+let chairBusy = false, lastChair = -1e9;
+function onBigBreak() {
+  if (!document.body.classList.contains('intro-done') || calm) return;
+  const now = performance.now();
+  if (!chairBusy && now - lastChair > 150000 && Math.random() < 0.45) { chairDance(); return; }
+  if (Math.random() < 0.7) { if (now - lastPeek > 20000) peek('break'); }
+}
+function chairDance() {
+  const el = $('chairman'); if (!el || chairBusy) return;
+  chairBusy = true; lastChair = performance.now();
+  const ch = el.querySelector('.ch'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), bub = el.querySelector('.bub');
+  const from = Math.random() < 0.5 ? -1 : 1;                                  // walks in from the left or the right
+  el.style.left = (18 + Math.random() * 55) + 'vw'; el.classList.add('on');
+  const G = 92, SEAT = 14, CX = 48, T0 = performance.now(), END = 10.5;
+  const chairAt = (x, y, lift) => {                                             // a side-on chair: seat at y, legs to y+SEAT
+    const s = `M${x - 8} ${y}H${x + 8}M${x - 7} ${y}V${y + SEAT}M${x + 7} ${y}V${y + SEAT}M${x + 7} ${y}V${y - 15}`;
+    return lift ? s : s;
+  };
+  const man = (hx, hy, legA, legB, armL, armR) => {
+    hd.setAttribute('cx', hx); hd.setAttribute('cy', hy - 21);
+    const sh = hy - 12, L = 15, A = 12;
+    const leg = a => `M${hx} ${hy}L${hx + Math.sin(a) * L} ${hy + Math.cos(a) * L}`;
+    const arm = a => `M${hx} ${sh}L${hx + Math.sin(a) * A} ${sh - Math.cos(a) * A}`;
+    bd.setAttribute('d', `M${hx} ${hy - 16.5}V${hy}` + leg(legA) + leg(legB) + arm(armL) + arm(armR));
+  };
+  const tick = () => {
+    const t = (performance.now() - T0) / 1000, beat = music.beat || 0.47;
+    if (t > END) { el.classList.remove('on'); bub.classList.remove('on'); setTimeout(() => { chairBusy = false; }, 500); return; }
+    if (t < 2.4) {                                                               // walk in carrying the chair overhead
+      const k = t / 2.4, hx = CX - 10 + from * (1 - k) * 70, step = Math.sin(t * 9);
+      const hy = G - 15 - Math.abs(step) * 1.2;
+      man(hx, hy, step * 0.5, -step * 0.5, -0.75, 0.75);                       // both arms up, holding it
+      ch.setAttribute('d', chairAt(hx, hy - 21 - SEAT, true));                    // chair held clear above the head
+    } else if (t < 3.1) {                                                        // put it down
+      const k = (t - 2.4) / 0.7, hx = CX - 10;
+      man(hx, G - 15 + Math.sin(k * Math.PI) * 3, 0.15, -0.15, -0.75 + k * 2.2, 0.75 + k * 0.9);
+      ch.setAttribute('d', chairAt(CX - 10 + 12 * k, (G - 15 - 21 - SEAT) * (1 - k) + (G - SEAT) * k, false));
+    } else if (t < 4.0) {                                                        // climb up
+      const k = (t - 3.1) / 0.9, e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      man(CX - 10 + e * 12, G - 15 - e * SEAT - Math.sin(k * Math.PI) * 5, 0.9 * Math.sin(k * Math.PI), -0.2, 1.2, -1.2);
+      ch.setAttribute('d', chairAt(CX + 2, G - SEAT, false));
+    } else {                                                                     // dance, hands in the air
+      const ph = (t - 4) / beat * Math.PI, bounce = Math.abs(Math.sin(ph)) * 3.5, sway = Math.sin(ph / 2) * 1.5;
+      man(CX + 2 + sway, G - 15 - SEAT - bounce, 0.18 + Math.sin(ph) * 0.15, -0.18 + Math.sin(ph) * 0.15, -1.0 + Math.sin(ph) * 0.3, 1.0 + Math.sin(ph) * 0.3);   // hands in the air, waving on the beat
+      ch.setAttribute('d', chairAt(CX + 2, G - SEAT, false));
+      if (t > 4.3 && !bub.classList.contains('on')) { bub.textContent = pickOne(['I just don’t care!', 'I JUST DON’T CARE!', 'I just don’t caaaare!']); bub.classList.add('on'); }
+      if (t > END - 0.8) bub.classList.remove('on');
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+window.JN_chair = () => { chairBusy = false; chairDance(); };   // try it from the console
 window.JN_peek = k => { lastPeek = -1e9; peek(k || 'idle'); };      // try it from the console
 requestAnimationFrame(frame);
 startSoundCloud();
