@@ -455,6 +455,12 @@ async function startSoundCloud() {
 const PALETTE = { red: '#ff3b3b', amber: '#ffb000', cyan: '#22d3ee', violet: '#a78bfa', green: '#4ade80' };
 // RGB laser colours: the full hue wheel in 36 steps, as hex so the beam haze can fade them
 const HUES = Array.from({ length: 36 }, (_, i) => { const h = i / 36, f = n => { const k = (n + h * 12) % 12, c = 0.5 - 0.5 * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(255 * Math.min(1, c * 1.15 + 0.08)).toString(16).padStart(2, '0'); }; return '#' + f(0) + f(8) + f(4); });
+// UV blacklight colours, from white (0) to full UV (10)
+const mixHex = (a, b, t) => '#' + [0, 2, 4].map(i => Math.round(parseInt(a.substr(i + 1, 2), 16) * (1 - t) + parseInt(b.substr(i + 1, 2), 16) * t).toString(16).padStart(2, '0')).join('');
+const UV_LO = Array.from({ length: 11 }, (_, n) => mixHex('#ffffff', '#8f4bff', n / 10));
+const UV_HI = Array.from({ length: 11 }, (_, n) => mixHex('#ffffff', '#c58cff', n / 10));
+let uv = null, uvK = 0, lastUv = -30;
+function startUv() { if (uv) return; lastUv = clockT; uv = { t0: clockT, life: 4 + Math.random() * 2.5 }; }
 const rgbAt = deg => HUES[((Math.floor(deg / 10) % 36) + 36) % 36];
 let score = null, cueIdx = -1, look = 'plain', lookColour = null, freeLookUntil = 0;
 async function loadScore(url) {
@@ -950,6 +956,9 @@ function draw(phase) {
     PX[k] = cx + (d0 * r0 + d1 * r1 + d2 * r2) * s; PY[k] = cy - (d0 * u0 + d1 * u1 + d2 * u2) * s; PZ[k] = zc;
   };
   const project = (p, k) => projectXYZ(p[0], p[1], p[2], k);
+  // UV: for a few seconds the white lines go blacklight violet, every third one glowing paler
+  if (uv) { const age = clockT - uv.t0; uvK = age > uv.life ? 0 : Math.max(0, Math.min(1, age / 0.5, (uv.life - age) / 1.2)); if (age > uv.life) uv = null; } else uvK = 0;
+  const uvN = Math.round(uvK * 10);
   ctx.strokeStyle = INK; ctx.lineJoin = 'round';
   const curlK = shape.curl * Math.PI / RECT_D, rip = shape.ripple * 0.22;
 
@@ -990,7 +999,7 @@ function draw(phase) {
     ctx.lineWidth = Math.max(0.5, Math.min(2.2, 0.9 * F / zc / 260 / Math.sqrt(DENSE)));   // finer pen as the lines get denser
     // looks: a colour line sweeping through, a colour wash, or a bright scanner band
     const sweep = Math.floor(((clockT * 0.22) % 1) * SHOW);
-    ctx.strokeStyle = INK;
+    ctx.strokeStyle = uvN ? (a % 4 === 0 ? UV_HI[uvN] : UV_LO[uvN]) : INK;
     if (look === 'colour-line' && Math.abs(a - sweep) < 1.5) { ctx.strokeStyle = lookColour || INK; ctx.lineWidth *= 2.2; ctx.globalAlpha = 1; }
     else if (look === 'colour-wash' && a % 4 === 0 && lookColour) ctx.strokeStyle = lookColour;
     else if (look === 'scanner') {
@@ -1037,7 +1046,7 @@ function autoGlow() {
 // The light director: effects take turns a phrase at a time (16 beats), so the show has a shape.
 // Each phrase gets one scene, which runs for the first part of the phrase and then leaves space.
 let scene = 'rest', sceneEnd = 0, nextPhrase = 0, sceneI = 0, sceneColour = 'green';
-const SCENES = ['mounted', 'fan', 'shine', 'web', 'mounted', 'fan', 'scan', 'rgb', 'mounted', 'fan', 'web', 'shine', 'glow'];   // the RGB laser: one phrase in eleven
+const SCENES = ['mounted', 'fan', 'shine', 'web', 'mounted', 'fan', 'scan', 'rgb', 'mounted', 'uv', 'fan', 'web', 'shine', 'glow'];   // the RGB laser: one phrase in eleven
 function autoLasers() {
   if (source === 'idle' || calm) return;
   const beat = music.beat || 0.47, pick = () => Object.keys(PALETTE)[Math.floor(Math.random() * 5)];
@@ -1051,7 +1060,8 @@ function autoLasers() {
     else if (scene === 'shine') fireMoment({ type: 'shine', colour: ['red', 'red', 'cyan', 'violet'][Math.floor(Math.random() * 4)] });   // moody: mostly red and blue
     else if (scene === 'web') { lasers.length = 0; fireMoment({ type: 'web', colour: sceneColour }); }
     else if (scene === 'scan') fireMoment({ type: 'scan', colour: sceneColour });
-    else if (scene === 'glow') nextGlow = clockT;                                    // the red light
+    else if (scene === 'glow') nextGlow = clockT;
+    else if (scene === 'uv') { if (clockT - lastUv > 40) startUv(); fireMoment({ type: 'laser', mount: true, colour: 'violet' }); }                                    // the red light
   }
   // during a laser scene, the lasers go again on the kicks (or every two bars if the kicks are hard to hear)
   if (clockT < sceneEnd && (scene === 'mounted' || scene === 'fan' || scene === 'rgb') && clockT - lastLaser > Math.max(0.9, beat * 2) && (hit > 0.3 || clockT - lastLaser > beat * 4))
@@ -1070,7 +1080,7 @@ function mountPeaks() {
   return { row: idx, peaks };
 }
 function fireMoment(m) {
-  if (!['strobe', 'laser', 'rgb', 'shine', 'flash', 'flip', 'web', 'scan', 'smoke', 'fog'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
+  if (!['strobe', 'laser', 'rgb', 'shine', 'flash', 'flip', 'web', 'scan', 'smoke', 'fog', 'uv'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
   const colour = PALETTE[m.colour] || null;
   if (m.type === 'rgb') { m = { ...m, type: 'laser', rgb: true }; }
   if (m.type === 'strobe') strobe();
@@ -1084,6 +1094,7 @@ function fireMoment(m) {
   else if (m.type === 'web') { if (!web && !lasers.length) { lastWeb = clockT; web = { t0: clockT, life: 7 + Math.random() * 3, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
   else if (m.type === 'scan') { if (!scan) { const period = Math.max(1.2, Math.min(4, (music.beat || 0.5) * 4)); scan = { t0: clockT, period, life: period * 2, colour: colour || PALETTE.violet }; lastScan = clockT; } }
   else if (m.type === 'shine') { const mp = mountPeaks(); if (mp && !shine) shine = { t0: clockT, life: 4.5 + Math.random() * 1.5, colour: colour || PALETTE.cyan, mount: mp }; }
+  else if (m.type === 'uv') { if (clockT - lastUv > 30) startUv(); }
   else if (m.type === 'fog') { if (clockT - lastFog > 40) startFog(); }
   else if (m.type === 'smoke') { if (clockT - lastSmoke > 60) startSmoke(); }
   else if (m.type === 'flip') { if (!reduceMotion && clockT - lastRoll > 45) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }   // cue-sheet rolls too, at most one every 45 s
@@ -1124,7 +1135,8 @@ function drawUplights(project, dt, playing) {
     const R = Math.max(60, Math.abs(PX[1] - PX[0]) * 2.2), x = PX[0], y = PY[0];
     const g = ctx.createRadialGradient(x, y, 0, x, y, R);
     g.addColorStop(0, L.c); g.addColorStop(0.45, L.c + '44'); g.addColorStop(1, L.c + '00');
-    ctx.globalAlpha = 0.32 * upA * breathe * (0.85 + 0.3 * kickGlow); ctx.fillStyle = g; ctx.fillRect(x - R, y - R, R * 2, R * 2);
+    const uvBoost = L.c === '#8a3bff' ? 1 + 2.5 * uvK : 1 - 0.4 * uvK;      // under UV the violet pool takes over
+    ctx.globalAlpha = 0.32 * upA * breathe * uvBoost * (0.85 + 0.3 * kickGlow); ctx.fillStyle = g; ctx.fillRect(x - R, y - R, R * 2, R * 2);
   }
   ctx.restore();
 }
@@ -1175,7 +1187,7 @@ function atmosphere(project) {
   }
   ctx.restore();
 }
-window.JN_atmos = () => ({ fog: +fogK.toFixed(2), up: +upA.toFixed(2), smoke: smoke.length, kick: +kickGlow.toFixed(2) });
+window.JN_atmos = () => ({ uv: +uvK.toFixed(2), fog: +fogK.toFixed(2), up: +upA.toFixed(2), smoke: smoke.length, kick: +kickGlow.toFixed(2) });
 
 function drawMoments(project) {
   atmosphere(project);
