@@ -118,7 +118,7 @@ const ShiftSchema = z.object({
 
 const SYSTEM = `You are the round-the-clock crew on shift for jamesnorman.co.uk, the personal site of James Norman. ${WHO} The site is stark white lines on true black.
 
-The crew have silly names and take their jobs completely seriously: Agent Normal (analyst), Agent Disco Biscuit (DJ), Agent Monkey Monkey and Fish Fish (patrols, and rival DJs after hours), Agent Codpiece (gatekeeper), Agent Fish (outside links), Agent Goatman (clerk), Agent God (intel), Agent Kipper (SoundCloud scout), Agent Doodlebug (ideas for the Security section), Agent Pickle (choreographer). Refer to them by name where it fits.
+The crew have silly names and take their jobs completely seriously: Agent Normal (analyst), Agent Disco Biscuit (DJ), Agent Monkey Monkey and Fish Fish (patrols, and rival DJs after hours), Agent Codpiece (gatekeeper), Agent Fish (outside links), Agent Goatman (clerk), Agent God (intel), Agent Kipper (SoundCloud scout), Agent Doodlebug (ideas for the Security section), Agent Masterpiece (choreographer). Refer to them by name where it fits.
 
 You play three roles in one report:
 - ANALYST (Agent Normal): write the shift handover from the patrol report, in calm, concise control-room style (think security control room radio log, not military cosplay). 60 to 110 words. Compare with the previous shift where you can: what's new, what's fixed, what got slower or faster. Status GREEN if everything is fine, AMBER for slow pages (over 1500 ms) or one failure, RED for several failures or the home page failing.
@@ -202,7 +202,7 @@ ${list}`;
 
 const SHIFT_EVERY_MINUTES = 60;
 
-// AGENT PICKLE: choreograph one track that doesn't have a cue sheet yet.
+// AGENT MASTERPIECE: choreograph one track that doesn't have a cue sheet yet.
 async function pickleShift(tracks) {
   if (!process.env.ANTHROPIC_API_KEY || !tracks.length) return { ok: false, error: 'off duty' };
   try {

@@ -342,7 +342,7 @@ async function chosenTrack() {
   } catch (e) { /* no override */ }
   // Every track James has on SoundCloud, plus the agents' recent picks; choose at random, avoiding the
   // last few this browser has played, and credit the agent who picked it (or a random member of the crew).
-  const CREW = ['Agent Disco Biscuit', 'Agent Monkey Monkey', 'Fish Fish', 'Agent Pickle', 'Agent Kipper', 'Agent Normal', 'Agent Codpiece', 'Agent Fish', 'Agent God', 'Agent Goatman'];
+  const CREW = ['Agent Disco Biscuit', 'Agent Monkey Monkey', 'Fish Fish', 'Agent Masterpiece', 'Agent Kipper', 'Agent Normal', 'Agent Codpiece', 'Agent Fish', 'Agent God', 'Agent Goatman'];
   const [catalogue, rows] = await Promise.all([
     fetch('/api/tracks').then(r => r.json()).then(d => d.tracks || []).catch(() => []),
     fetch(SETTINGS_URL.replace(/jn_site_settings.*$/, 'jn_night_shift?select=dj:log->dj,battle:log->battle&order=id.desc&limit=24'),
@@ -450,7 +450,7 @@ async function startSoundCloud() {
   sc.bind(E.ERROR, () => setStatus('Couldn’t load that SoundCloud track'));
 }
 
-/* ─── Choreography: Agent Pickle's cue sheet for this track ── */
+/* ─── Choreography: Agent Masterpiece's cue sheet for this track ── */
 const PALETTE = { red: '#ff3b3b', amber: '#ffb000', cyan: '#22d3ee', violet: '#a78bfa', green: '#4ade80' };
 let score = null, cueIdx = -1, look = 'plain', lookColour = null, freeLookUntil = 0;
 async function loadScore(url) {
@@ -458,9 +458,9 @@ async function loadScore(url) {
   try {
     const rows = await (await fetch(SETTINGS_URL.replace(/jn_site_settings.*$/, 'jn_scores?select=score&track_url=eq.' + encodeURIComponent(url)),
       { headers: { apikey: SETTINGS_KEY } })).json();
-    if (rows[0] && rows[0].score && Array.isArray(rows[0].score.cues)) score = rows[0].score;
+    if (rows[0] && rows[0].score && Array.isArray(rows[0].score.cues)) { score = rows[0].score; if (score.by === 'Agent Pickle') score.by = 'Agent Masterpiece'; }   // older cue sheets carry the old name
   } catch (e) { score = null; }
-  $('cue').textContent = score ? `Choreography by ${score.by || 'Agent Pickle'} · ${score.mood || ''}` : '';
+  $('cue').textContent = score ? `Choreography by ${score.by || 'Agent Masterpiece'} · ${score.mood || ''}` : '';
 }
 let lastScoreT = -1;
 function followScore() {
@@ -480,7 +480,7 @@ function followScore() {
           shape.curlTo = c.curl; shape.twistTo = c.twist;
           if (c.shot === 'close') { setMode('orbit'); view.dist = 1.8; } else if (view.mode !== c.shot) setMode(c.shot);
         }
-        $('cue').textContent = `${score.by || 'Agent Pickle'}: “${c.note}”`;
+        $('cue').textContent = `${score.by || 'Agent Masterpiece'}: “${c.note}”`;
       }
     }
     return;
@@ -1070,7 +1070,7 @@ function fireMoment(m) {
   else if (m.type === 'confetti') { if (clockT - lastConfetti > 150) startConfetti(); }
   else if (m.type === 'smoke') { if (clockT - lastSmoke > 60) startSmoke(); }
   else if (m.type === 'flip') { if (!reduceMotion && clockT - lastRoll > 45) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }   // cue-sheet rolls too, at most one every 45 s
-  if (m.note) $('cue').textContent = `${score && score.by || 'Agent Pickle'}: “${m.note}”`;
+  if (m.note) $('cue').textContent = `${score && score.by || 'Agent Masterpiece'}: “${m.note}”`;
 }
 window.JN_moment = fireMoment;
 window.JN_sparks = () => spawnSparks(1);       // try the sparks from the console
@@ -1810,7 +1810,7 @@ const PEEK = {
   seek: ['Don’t fast-forward my track!', 'Skipping the build-up? Criminal.', 'You’ve missed the best bit.', 'No skipping the breakdown!'],
   idle: ['Continue.', 'Carry on.', 'Nice choice.', 'Is this one of Disco Biscuit’s picks?', 'I’m on my break. Don’t tell Normal.', 'Turn it up!', 'Just checking you’re still here.', 'Great tune!', 'As you were.']
 };
-const PEEK_NAMES = ['DISCO BISCUIT', 'MONKEY MONKEY', 'FISH FISH', 'PICKLE', 'KIPPER', 'NORMAL', 'CODPIECE', 'FISH', 'GOD', 'GOATMAN', 'WURZEL', 'BISCUIT TIN', 'GRUMBLE', 'PIGEON', 'TEACAKE', 'BUNSEN', 'CRUMPET', 'SPANNER', 'DOODLEBUG', 'BIN LID'];
+const PEEK_NAMES = ['DISCO BISCUIT', 'MONKEY MONKEY', 'FISH FISH', 'MASTERPIECE', 'KIPPER', 'NORMAL', 'CODPIECE', 'FISH', 'GOD', 'GOATMAN', 'WURZEL', 'BISCUIT TIN', 'GRUMBLE', 'PIGEON', 'TEACAKE', 'BUNSEN', 'CRUMPET', 'SPANNER', 'DOODLEBUG', 'BIN LID'];
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 let lastPeek = -1e9, peekTimer = 0;
 function peek(kind) {
