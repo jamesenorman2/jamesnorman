@@ -264,9 +264,10 @@ const SETTINGS_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
 const DEFAULT_SOUNDCLOUD = 'https://soundcloud.com/jamesnormal';
 const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;
 
-const ROWS = 72;            // number of ridge lines
+const ROWS = 100;           // number of ridge lines kept (twice this, for the loops)
 const POINTS = 160;         // samples per line
-const ROW_RATE = 35;        // new lines per second while music plays: calm, but not sluggish
+const DENSE = Math.min(innerWidth, innerHeight) < 600 ? 1.15 : 1.5;   // more lines on big screens, a few more on phones
+const ROW_RATE = 35 * DENSE; // new lines per second while music plays: same scroll speed, finer lines
 const FFT = 2048;
 const MIN_HZ = 30, MAX_HZ = 9000;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -452,6 +453,9 @@ async function startSoundCloud() {
 
 /* ─── Choreography: Agent Masterpiece's cue sheet for this track ── */
 const PALETTE = { red: '#ff3b3b', amber: '#ffb000', cyan: '#22d3ee', violet: '#a78bfa', green: '#4ade80' };
+// RGB laser colours: the full hue wheel in 36 steps, as hex so the beam haze can fade them
+const HUES = Array.from({ length: 36 }, (_, i) => { const h = i / 36, f = n => { const k = (n + h * 12) % 12, c = 0.5 - 0.5 * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(255 * Math.min(1, c * 1.15 + 0.08)).toString(16).padStart(2, '0'); }; return '#' + f(0) + f(8) + f(4); });
+const rgbAt = deg => HUES[((Math.floor(deg / 10) % 36) + 36) % 36];
 let score = null, cueIdx = -1, look = 'plain', lookColour = null, freeLookUntil = 0;
 async function loadScore(url) {
   score = null; cueIdx = -1;
@@ -732,7 +736,7 @@ function currentSource() {
 }
 
 /* ─── 3D: a floating rectangle of ridge lines, and a camera that can go anywhere ── */
-const RECT_W = 3.2, RECT_D = 4.6, AMP = 0.95, SHOW = 100;    // width, depth, peak height, lines on the rectangle
+const RECT_W = 3.2, RECT_D = 4.6, AMP = 0.95, SHOW = Math.round(100 * DENSE);    // width, depth, peak height, lines on the rectangle
 const TAU = Math.PI * 2;
 const keys = new Set();
 let lastInput = -1e9, calm = reduceMotion, clockT = 0, inBreak = 0, autoNow = false, lastLoop = 0, lastRoll = 0;
@@ -902,7 +906,7 @@ function frame(now) {
   followScore();
   autoLasers();
   autoGlow();
-  const base = source !== 'idle' ? (reduceMotion ? 28 : ROW_RATE) : (reduceMotion ? 3 : 10);
+  const base = source !== 'idle' ? (reduceMotion ? 28 * DENSE : ROW_RATE) : (reduceMotion ? 3 : 10) * DENSE;
   if (look !== 'freeze') rowClock += dt * base * view.speed;
   while (rowClock >= 1) {
     rowClock -= 1;
@@ -979,7 +983,7 @@ function draw(phase) {
     const edgeFade = Math.min(1, (a + 1 - phase) / 4, (SHOW - a - phase) / 4);
     ctx.globalAlpha = Math.max(0, Math.min(1, (fogFar - zc) / (fogFar * 0.45) * (1 + kickGlow * 0.22))) * edgeFade;   // lines brighten very slightly on the kick
     if (ctx.globalAlpha < 0.02) continue;
-    ctx.lineWidth = Math.max(0.6, Math.min(2.4, 0.9 * F / zc / 260));
+    ctx.lineWidth = Math.max(0.5, Math.min(2.2, 0.9 * F / zc / 260 / Math.sqrt(DENSE)));   // finer pen as the lines get denser
     // looks: a colour line sweeping through, a colour wash, or a bright scanner band
     const sweep = Math.floor(((clockT * 0.22) % 1) * SHOW);
     ctx.strokeStyle = INK;
@@ -1017,7 +1021,7 @@ function draw(phase) {
 }
 
 /* ─── Moments: lasers, colour flashes, barrel rolls, strobes ── */
-let lastWeb = -99, lasers = [], flash = null, lastLaser = -99, web = null, scan = null, lastScan = -99, sparks = [], lastSpark = -99, sparkT = 0, beams = [];
+let shine = null, lastWeb = -99, lasers = [], flash = null, lastLaser = -99, web = null, scan = null, lastScan = -99, sparks = [], lastSpark = -99, sparkT = 0, beams = [];
 // A red glow that appears from nowhere, very occasionally: fades up, drifts and pulses, fades away.
 let glows = [], nextGlow = 40 + Math.random() * 60;
 function autoGlow() {
@@ -1029,7 +1033,7 @@ function autoGlow() {
 // The light director: effects take turns a phrase at a time (16 beats), so the show has a shape.
 // Each phrase gets one scene, which runs for the first part of the phrase and then leaves space.
 let scene = 'rest', sceneEnd = 0, nextPhrase = 0, sceneI = 0, sceneColour = 'green';
-const SCENES = ['mounted', 'fan', 'web', 'mounted', 'scan', 'fan', 'web', 'glow'];
+const SCENES = ['mounted', 'fan', 'shine', 'web', 'mounted', 'scan', 'rgb', 'fan', 'web', 'shine', 'glow'];   // the RGB laser: one phrase in eleven
 function autoLasers() {
   if (source === 'idle' || calm) return;
   const beat = music.beat || 0.47, pick = () => Object.keys(PALETTE)[Math.floor(Math.random() * 5)];
@@ -1039,14 +1043,15 @@ function autoLasers() {
     if (inBreak > 0.5) scene = sceneI++ % 2 ? 'scan' : 'rest';                // breakdowns: space, the odd scan line
     else if (energy < 0.2) scene = 'rest';
     else scene = SCENES[sceneI++ % SCENES.length];
-    if (scene === 'mounted' || scene === 'fan') fireMoment({ type: 'laser', mount: scene === 'mounted', colour: sceneColour });
+    if (scene === 'mounted' || scene === 'fan' || scene === 'rgb') fireMoment({ type: 'laser', mount: scene === 'mounted' || (scene === 'rgb' && Math.random() < 0.5), rgb: scene === 'rgb', colour: sceneColour });
+    else if (scene === 'shine') fireMoment({ type: 'shine', colour: sceneColour });
     else if (scene === 'web') { lasers.length = 0; fireMoment({ type: 'web', colour: sceneColour }); }
     else if (scene === 'scan') fireMoment({ type: 'scan', colour: sceneColour });
     else if (scene === 'glow') nextGlow = clockT;                                    // the red light
   }
   // during a laser scene, the lasers go again on the kicks (or every two bars if the kicks are hard to hear)
-  if (clockT < sceneEnd && (scene === 'mounted' || scene === 'fan') && clockT - lastLaser > Math.max(1.2, beat * 2) && (hit > 0.35 || clockT - lastLaser > beat * 8))
-    fireMoment({ type: 'laser', mount: scene === 'mounted', colour: sceneColour });
+  if (clockT < sceneEnd && (scene === 'mounted' || scene === 'fan' || scene === 'rgb') && clockT - lastLaser > Math.max(1.2, beat * 2) && (hit > 0.35 || clockT - lastLaser > beat * 8))
+    fireMoment({ type: 'laser', mount: scene === 'mounted', rgb: scene === 'rgb', colour: sceneColour });
   // sparks off the sharpest spikes on hard hits
   if (hit > 0.55 && clockT - lastSpark > 0.18) { lastSpark = clockT; spawnSparks(hit); }
 }
@@ -1063,25 +1068,27 @@ function mountPeaks() {
   return { row: idx, peaks };
 }
 function fireMoment(m) {
-  if (!['strobe', 'laser', 'flash', 'flip', 'web', 'scan', 'smoke'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
+  if (!['strobe', 'laser', 'rgb', 'shine', 'flash', 'flip', 'web', 'scan', 'smoke'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
   const colour = PALETTE[m.colour] || null;
+  if (m.type === 'rgb') { m = { ...m, type: 'laser', rgb: true }; }
   if (m.type === 'strobe') strobe();
   else if (m.type === 'laser') {
     lastLaser = clockT; web = null;                 // lasers and the web take turns
     const mounted = (m.mount ?? Math.random() < 0.55) && mountPeaks();      // JN_moment({type:'laser', mount:true}) to try it
-    if (mounted && lasers.length < 3) lasers.push({ t0: clockT, colour: colour || PALETTE.green, mount: mounted, life: 2.6, scissor: 0.25 + Math.random() * 0.35 });
-    else if (lasers.length < 3) lasers.push({ t0: clockT, colour: colour || PALETTE.green, n: 4 + Math.floor(Math.random() * 4), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
+    if (mounted && lasers.length < 3) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, mount: mounted, life: 2.6, scissor: 0.25 + Math.random() * 0.35 });
+    else if (lasers.length < 3) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, n: 4 + Math.floor(Math.random() * 4), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
   }
   else if (m.type === 'flash') flash = { t0: clockT, colour: colour || PALETTE.amber };
   else if (m.type === 'web') { if (!web && !lasers.length) { lastWeb = clockT; web = { t0: clockT, life: 4.5 + Math.random() * 2, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
   else if (m.type === 'scan') { if (!scan) { const period = Math.max(1.2, Math.min(4, (music.beat || 0.5) * 4)); scan = { t0: clockT, period, life: period * 2, colour: colour || PALETTE.violet }; lastScan = clockT; } }
+  else if (m.type === 'shine') { const mp = mountPeaks(); if (mp && !shine) shine = { t0: clockT, life: 4.5 + Math.random() * 1.5, colour: colour || PALETTE.cyan, mount: mp }; }
   else if (m.type === 'smoke') { if (clockT - lastSmoke > 60) startSmoke(); }
   else if (m.type === 'flip') { if (!reduceMotion && clockT - lastRoll > 45) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }   // cue-sheet rolls too, at most one every 45 s
   if (m.note) $('cue').textContent = `${score && score.by || 'Agent Masterpiece'}: “${m.note}”`;
 }
 window.JN_moment = fireMoment;
 window.JN_sparks = () => spawnSparks(1);       // try the sparks from the console
-window.JN_fx = () => ({ lasers: lasers.length, mounted: lasers.filter(l => l.mount).length, glows: glows.length, sparks: sparks.length, web: !!web, scan: !!scan, flash: !!flash, look });
+window.JN_fx = () => ({ rgb: lasers.filter(l => l.rgb).length, shine: !!shine, scene, lasers: lasers.length, mounted: lasers.filter(l => l.mount).length, glows: glows.length, sparks: sparks.length, web: !!web, scan: !!scan, flash: !!flash, look });
 window.JN_glow = () => { nextGlow = clockT; };   // try it from the console   // so the moments can be tried from the console
 
 // Dance-floor extras, kept on a black background: a very slight glow on the lines with each kick,
@@ -1135,6 +1142,7 @@ function drawMoments(project) {
     ctx.fillStyle = grad; ctx.fillRect(PX[0] - r, PY[0] - r, r * 2, r * 2);
     ctx.restore();
   }
+  drawShine(project);
   // lasers: a fan of beams out of the rectangle, sweeping
   beams.length = 0;
   lasers = lasers.filter(l => clockT - l.t0 < (l.life || 3.2));
@@ -1148,8 +1156,9 @@ function drawMoments(project) {
       for (let i = 0; i < l.n; i++) {
         const a = -Math.PI / 2 + l.base + (i / (l.n - 1) - 0.5) * 2.2 + Math.sin(age * 2.4 + i) * 0.22 + age * (l.spin || 0) * 0.35;   // the fan sweeps round
         const ex = ox + Math.cos(a) * len, ey = oy + Math.sin(a) * len;
-        beams.push([ox, oy, ex, ey, l.colour, k]);
-        ctx.strokeStyle = l.colour;
+        const col = l.rgb ? rgbAt(age * 240 + i * 360 / l.n) : l.colour;          // RGB lasers chase round the colour wheel
+        beams.push([ox, oy, ex, ey, col, k]);
+        ctx.strokeStyle = col;
         ctx.globalAlpha = 0.18 * k; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
         ctx.globalAlpha = 0.9 * k; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
       }
@@ -1283,6 +1292,34 @@ function drawHaze() {
   ctx.restore();
 }
 
+// Light shining up out of the tallest peaks: soft coloured shafts that ride the line they sit on
+// and swell a little on the kicks.
+function drawShine(project) {
+  if (!shine) return;
+  const age = clockT - shine.t0, row = history[shine.mount.row];
+  const a = (head - shine.mount.row + TOTAL) % TOTAL, v = 1 - (a + rowClock) / SHOW;
+  if (age > shine.life || v < 0.02) { shine = null; return; }
+  const k = Math.min(1, age / 0.8, (shine.life - age) / 1.2, v / 0.08) * (0.85 + 0.3 * kickGlow);
+  const c = shine.colour, base = Math.min(W, H) * 0.018;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const i of shine.mount.peaks) {
+    const u = -1 + 2 * i / (POINTS - 1), h = row[i] * AMP;
+    project(surf(u, v, h), 0); if (PZ[0] < 0) continue;
+    project(surf(u, v, h + 2.2), 1); if (PZ[1] < 0) continue;
+    const ox = PX[0], oy = PY[0], tx = PX[1], ty = PY[1];
+    let dx = tx - ox, dy = ty - oy; const m = Math.hypot(dx, dy) || 1; dx /= m; dy /= m;
+    const L = Math.hypot(W, H) * 0.28, ex = ox + dx * L, ey = oy + dy * L, nx = -dy, ny = dx, top = base * 2.2;
+    const g = ctx.createLinearGradient(ox, oy, ex, ey);
+    g.addColorStop(0, c); g.addColorStop(0.25, c + '88'); g.addColorStop(0.8, c + '00');
+    ctx.fillStyle = g; ctx.globalAlpha = 0.3 * k;
+    ctx.beginPath(); ctx.moveTo(ox + nx * base, oy + ny * base); ctx.lineTo(ex + nx * top, ey + ny * top); ctx.lineTo(ex - nx * top, ey - ny * top); ctx.lineTo(ox - nx * base, oy - ny * base); ctx.closePath(); ctx.fill();
+    const r = base * 3.2, gl = ctx.createRadialGradient(ox, oy, 0, ox, oy, r);
+    gl.addColorStop(0, '#ffffff'); gl.addColorStop(0.25, c); gl.addColorStop(1, c + '00');
+    ctx.fillStyle = gl; ctx.globalAlpha = 0.6 * k; ctx.fillRect(ox - r, oy - r, r * 2, r * 2);
+  }
+  ctx.restore();
+}
+
 // A laser riding a peak of the waveform: beams fire up out of the peak (one straight up, two
 // scissoring either side), each as long as the screen, and the emitter moves with the line it sits on.
 function drawMountedLaser(l, project) {
@@ -1291,7 +1328,7 @@ function drawMountedLaser(l, project) {
   if (v < 0.02) { l.t0 = -99; return; }                                 // slid off the near edge
   const k = Math.min(1, age / 0.12, (l.life - age) / 0.5, v / 0.08);
   if (k <= 0) return;
-  const len = Math.hypot(W, H) * 1.5;
+  const len = Math.hypot(W, H) * 1.5; let j = 0;
   for (const i of l.mount.peaks) {
     const u = -1 + 2 * i / (POINTS - 1), h = row[i] * AMP;
     project(surf(u, v, h), 0); if (PZ[0] < 0) continue;
@@ -1301,8 +1338,9 @@ function drawMountedLaser(l, project) {
       project(surf(u + sw, v + side * 0.04, h + 1.2), 1); if (PZ[1] < 0) continue;
       let dx = PX[1] - ox, dy = PY[1] - oy; const m = Math.hypot(dx, dy) || 1; dx /= m; dy /= m;
       const ex = ox + dx * len, ey = oy + dy * len;
-      beams.push([ox, oy, ex, ey, l.colour, k]);
-      ctx.strokeStyle = l.colour;
+      const col = l.rgb ? rgbAt(age * 240 + (j++) * 40) : l.colour;
+      beams.push([ox, oy, ex, ey, col, k]);
+      ctx.strokeStyle = col;
       ctx.globalAlpha = 0.16 * k; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
       ctx.globalAlpha = 0.9 * k; ctx.lineWidth = side ? 1.2 : 1.8; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
     }
