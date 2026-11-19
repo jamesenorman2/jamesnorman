@@ -820,7 +820,6 @@ function onDrop(breakLen) {
   fireMoment({ type: 'laser', colour: Object.keys(PALETTE)[Math.floor(Math.random() * 5)] });          // every drop gets lasers
   const top = mountPeaks();                                                                       // and the red light lands on the tallest peak
   if (top) glows.push({ t0: clockT, life: 3.5 + Math.random() * 1.5, drop: true, mount: { row: top.row, i: top.peaks[0] }, du: (Math.random() - 0.5) * 0.08, size: 0.75 + Math.random() * 0.4 });
-  setTimeout(() => fireMoment({ type: 'laser', colour: Object.keys(PALETTE)[Math.floor(Math.random() * 5)] }), 450);
   if (autoNow) {
     shape.twistTo = (Math.random() - 0.5) * 1.2; shape.curlTo = 0.5 + Math.random() * 0.5;
     if (Math.random() < 0.5) setMode('ride'); else { setMode('orbit'); view.pitchSpin = TAU; }
@@ -1014,7 +1013,7 @@ function draw(phase) {
 }
 
 /* ─── Moments: lasers, colour flashes, barrel rolls, strobes ── */
-let lasers = [], flash = null, lastLaser = -99, web = null, scan = null, lastScan = -99, sparks = [], lastSpark = -99, sparkT = 0, beams = [];
+let lastWeb = -99, lasers = [], flash = null, lastLaser = -99, web = null, scan = null, lastScan = -99, sparks = [], lastSpark = -99, sparkT = 0, beams = [];
 // A red glow that appears from nowhere, very occasionally: fades up, drifts and pulses, fades away.
 let glows = [], nextGlow = 40 + Math.random() * 60;
 function autoGlow() {
@@ -1026,12 +1025,13 @@ function autoGlow() {
 // Lasers on the music's hits as well as on the drops: more often when it's loud, rarely in a break.
 function autoLasers() {
   if (source === 'idle' || calm) return;
-  const gap = inBreak > 0.5 ? 12 : 2.5 + 4 * (1 - energy);
+  const gap = inBreak > 0.5 ? 16 : 4.5 + 6 * (1 - energy);                          // a little less often than before
   const since = clockT - lastLaser;
   const pick = () => Object.keys(PALETTE)[Math.floor(Math.random() * 5)];
-  if ((hit > 0.35 && since > gap) || (energy > 0.3 && since > gap * 2.5)) {
-    fireMoment({ type: 'laser', colour: pick() });                                   // the lasers as before, always
-    if (!web && energy > 0.5 && Math.random() < 0.22) fireMoment({ type: 'web', colour: pick() });   // plus, now and then, a web
+  // the laser web and the main lasers take turns: never both at once
+  if (!web && (hit > 0.4 && since > gap) || (!web && energy > 0.3 && since > gap * 2.5)) {
+    if (!lasers.length && energy > 0.5 && clockT - lastWeb > 20 && Math.random() < 0.25) { lastLaser = clockT; fireMoment({ type: 'web', colour: pick() }); }
+    else fireMoment({ type: 'laser', colour: pick() });
   }
   // a scan line on the beat through steady, busy stretches, every half a minute or so
   if (!scan && inBreak < 0.3 && energy > 0.4 && clockT - lastScan > 25 + Math.random() * 20) fireMoment({ type: 'scan', colour: pick() });
@@ -1055,13 +1055,13 @@ function fireMoment(m) {
   const colour = PALETTE[m.colour] || null;
   if (m.type === 'strobe') strobe();
   else if (m.type === 'laser') {
-    lastLaser = clockT;
+    lastLaser = clockT; web = null;                 // lasers and the web take turns
     const mounted = (m.mount ?? Math.random() < 0.55) && mountPeaks();      // JN_moment({type:'laser', mount:true}) to try it
-    if (mounted && lasers.length < 5) lasers.push({ t0: clockT, colour: colour || PALETTE.green, mount: mounted, life: 2.6, scissor: 0.25 + Math.random() * 0.35 });
-    else if (lasers.length < 4) lasers.push({ t0: clockT, colour: colour || PALETTE.green, n: 6 + Math.floor(Math.random() * 6), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
+    if (mounted && lasers.length < 3) lasers.push({ t0: clockT, colour: colour || PALETTE.green, mount: mounted, life: 2.6, scissor: 0.25 + Math.random() * 0.35 });
+    else if (lasers.length < 3) lasers.push({ t0: clockT, colour: colour || PALETTE.green, n: 4 + Math.floor(Math.random() * 4), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
   }
   else if (m.type === 'flash') flash = { t0: clockT, colour: colour || PALETTE.amber };
-  else if (m.type === 'web') { if (!web) { web = { t0: clockT, life: 4.5 + Math.random() * 2, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
+  else if (m.type === 'web') { if (!web && !lasers.length) { lastWeb = clockT; web = { t0: clockT, life: 4.5 + Math.random() * 2, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
   else if (m.type === 'scan') { if (!scan) { const period = Math.max(1.2, Math.min(4, (music.beat || 0.5) * 4)); scan = { t0: clockT, period, life: period * 2, colour: colour || PALETTE.violet }; lastScan = clockT; } }
   else if (m.type === 'flip') { if (!reduceMotion && clockT - lastRoll > 45) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }   // cue-sheet rolls too, at most one every 45 s
   if (m.note) $('cue').textContent = `${score && score.by || 'Agent Pickle'}: “${m.note}”`;
