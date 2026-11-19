@@ -370,13 +370,20 @@ async function chosenTrack() {
 }
 
 // Choose at random from a list, avoiding what this browser played recently.
+// Every track in the catalogue can come up; the newest are only slightly more likely (the newest about
+// 1.4 times as likely as the oldest), so old tracks still turn up often.
+const trackWeight = (p, n) => 1 + 0.4 * (1 - (p.rank || 0) / Math.max(1, n - 1));
+function weightedPick(list, n) {
+  let total = 0; for (const p of list) total += trackWeight(p, n);
+  let r = Math.random() * total;
+  for (const p of list) { r -= trackWeight(p, n); if (r <= 0) return p; }
+  return list[list.length - 1];
+}
 function pickFrom(list) {
   let recent = [];
   try { recent = JSON.parse(localStorage.getItem('jn-recent') || '[]'); } catch (e) { /* private mode */ }
-  const a = list.slice();
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }   // shuffle
-  const fresh = a.filter(p => !recent.includes(p.key));
-  return (fresh.length ? fresh : a)[0];
+  const fresh = list.filter(p => !recent.includes(p.key));
+  return weightedPick(fresh.length ? fresh : list, list.length);
 }
 
 // The SoundCloud player loads the whole profile; wait until its track list stops growing, then read it.
@@ -424,20 +431,21 @@ async function startSoundCloud() {
     if (listing) {                         // first load: the whole profile, to get every track
       listing = false;
       const sounds = await readProfile();
-      const byUrl = new Map((choice.pool || []).map(p => [p.url, p]));
-      const list = sounds.map((t, index) => {
-        const url = (t.permalink_url || '').split('?')[0], known = byUrl.get(url);
-        return { index, url, key: url || 'id:' + t.id, title: t.title || (known && known.title) || '', by: known ? known.by : choice.crew[Math.floor(Math.random() * choice.crew.length)] };
-      });
+      // the player only loads the newest handful of the profile, so the full list comes from the feed
+      // (every public track, newest first); anything the player found that the feed missed is added at the end
+      const all = new Map();
+      for (const p of choice.pool || []) all.set(p.url, { url: p.url, key: p.url, title: p.title || '', by: p.by });
+      for (const t of sounds) { const url = (t.permalink_url || '').split('?')[0]; if (url && !all.has(url)) all.set(url, { url, key: url, title: t.title || '', by: choice.crew[Math.floor(Math.random() * choice.crew.length)] }); }
+      const list = [...all.values()].map((p, rank) => ({ ...p, rank }));
       if (list.length > 1) {
-        picks = list; profileMode = true;
+        picks = list; profileMode = false;                // play each pick by its own link, so any track in the catalogue works
         const pick = pickFrom(list); queue = [pick]; qi = 0;
         scReady = true; enableButtons();
         cue(pick);
         return;
       }
       // the profile list didn't come through: fall back to the RSS tracks and the agents' picks
-      const pool = (choice.pool || []).map(p => ({ ...p, key: p.url }));
+      const pool = (choice.pool || []).map((p, rank) => ({ ...p, key: p.url, rank }));
       if (pool.length) { picks = pool; const pick = pickFrom(pool); queue = [pick]; qi = 0; scReady = true; enableButtons(); cue(pick); return; }
     }
     scReady = true;
@@ -1886,6 +1894,7 @@ function playItem(item) {
   if (profileMode && item.index != null) { sc.skip(item.index); sc.play(); return; }    // jump within the whole profile
   sc.load(item.url, { auto_play: true, hide_related: true, show_comments: false, show_reposts: false, visual: false });
 }
+window.JN_queue = () => ({ played: queue.map(q => q.title), catalogue: picks.length });   // check the shuffle from the console
 function skip(dir) {
   if (!sc || !scReady) return;
   pending = null;
@@ -1898,11 +1907,11 @@ function skip(dir) {
     qi--; playItem(queue[qi]); return;
   }
   if (qi < queue.length - 1) { qi++; playItem(queue[qi]); return; }
-  const recent = new Set(queue.slice(-Math.max(1, picks.length - 1)).map(p => p.key || p.url));
+  const recent = new Set(queue.slice(-Math.max(1, Math.floor(picks.length / 2))).map(p => p.key || p.url));   // no repeats within half the catalogue, but never a fixed order
   const fresh = picks.filter(p => !recent.has(p.key || p.url));
   const pool = fresh.length ? fresh : picks.filter(p => (p.key || p.url) !== (queue[qi].key || queue[qi].url));
   if (!pool.length) { sc.seekTo(0); sc.play(); return; }
-  queue.push(pool[Math.floor(Math.random() * pool.length)]); qi = queue.length - 1;
+  queue.push(weightedPick(pool, picks.length)); qi = queue.length - 1;
   playItem(queue[qi]);
 }
 
