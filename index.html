@@ -820,7 +820,8 @@ function onDrop(breakLen) {
   const sheet = source === 'sc' && score && Array.isArray(score.moments) && score.moments.length;
   if (breakLen >= Math.max(6, 16 * music.beat) && !sheet) strobe();
   fireMoment({ type: 'laser', colour: Object.keys(PALETTE)[Math.floor(Math.random() * 5)] });          // every drop gets lasers
-  if (breakLen >= Math.max(8, 16 * music.beat) && clockT - lastConfetti > 180 && !reduceMotion) startConfetti();   // glitter: only the biggest drops
+  if (breakLen >= 8 && clockT - lastSmoke > 60 && !reduceMotion) startSmoke();          // smoke on the big drops
+  nextPhrase = clockT + 0.01; sceneI = 0;                                                   // and the light show restarts on the drop
   const top = mountPeaks();                                                                       // and the red light lands on the tallest peak
   if (top) glows.push({ t0: clockT, life: 3.5 + Math.random() * 1.5, drop: true, mount: { row: top.row, i: top.peaks[0] }, du: (Math.random() - 0.5) * 0.08, size: 0.75 + Math.random() * 0.4 });
   if (autoNow) {
@@ -1025,19 +1026,27 @@ function autoGlow() {
   glows.push({ t0: clockT, life: 6 + Math.random() * 4, u: (Math.random() - 0.5) * 1.6, v: 0.15 + Math.random() * 0.75, h: 0.2 + Math.random() * 0.9,
     du: (Math.random() - 0.5) * 0.04, size: 0.5 + Math.random() * 0.6 });
 }
-// Lasers on the music's hits as well as on the drops: more often when it's loud, rarely in a break.
+// The light director: effects take turns a phrase at a time (16 beats), so the show has a shape.
+// Each phrase gets one scene, which runs for the first part of the phrase and then leaves space.
+let scene = 'rest', sceneEnd = 0, nextPhrase = 0, sceneI = 0, sceneColour = 'green';
+const SCENES = ['mounted', 'fan', 'web', 'mounted', 'scan', 'fan', 'web', 'glow'];
 function autoLasers() {
   if (source === 'idle' || calm) return;
-  const gap = inBreak > 0.5 ? 16 : 4.5 + 6 * (1 - energy);                          // a little less often than before
-  const since = clockT - lastLaser;
-  const pick = () => Object.keys(PALETTE)[Math.floor(Math.random() * 5)];
-  // the laser web and the main lasers take turns: never both at once
-  if (!web && (hit > 0.4 && since > gap) || (!web && energy > 0.3 && since > gap * 2.5)) {
-    if (!lasers.length && energy > 0.5 && clockT - lastWeb > 20 && Math.random() < 0.25) { lastLaser = clockT; fireMoment({ type: 'web', colour: pick() }); }
-    else fireMoment({ type: 'laser', colour: pick() });
+  const beat = music.beat || 0.47, pick = () => Object.keys(PALETTE)[Math.floor(Math.random() * 5)];
+  if (clockT >= nextPhrase) {
+    const phrase = Math.max(6, Math.min(10, 16 * beat));
+    nextPhrase = clockT + phrase; sceneEnd = clockT + phrase * 0.6; sceneColour = pick();
+    if (inBreak > 0.5) scene = sceneI++ % 2 ? 'scan' : 'rest';                // breakdowns: space, the odd scan line
+    else if (energy < 0.2) scene = 'rest';
+    else scene = SCENES[sceneI++ % SCENES.length];
+    if (scene === 'mounted' || scene === 'fan') fireMoment({ type: 'laser', mount: scene === 'mounted', colour: sceneColour });
+    else if (scene === 'web') { lasers.length = 0; fireMoment({ type: 'web', colour: sceneColour }); }
+    else if (scene === 'scan') fireMoment({ type: 'scan', colour: sceneColour });
+    else if (scene === 'glow') nextGlow = clockT;                                    // the red light
   }
-  // a scan line on the beat through steady, busy stretches, every half a minute or so
-  if (!scan && inBreak < 0.3 && energy > 0.4 && clockT - lastScan > 25 + Math.random() * 20) fireMoment({ type: 'scan', colour: pick() });
+  // during a laser scene, the lasers go again on the kicks (or every two bars if the kicks are hard to hear)
+  if (clockT < sceneEnd && (scene === 'mounted' || scene === 'fan') && clockT - lastLaser > Math.max(1.2, beat * 2) && (hit > 0.35 || clockT - lastLaser > beat * 8))
+    fireMoment({ type: 'laser', mount: scene === 'mounted', colour: sceneColour });
   // sparks off the sharpest spikes on hard hits
   if (hit > 0.55 && clockT - lastSpark > 0.18) { lastSpark = clockT; spawnSparks(hit); }
 }
@@ -1054,7 +1063,7 @@ function mountPeaks() {
   return { row: idx, peaks };
 }
 function fireMoment(m) {
-  if (!['strobe', 'laser', 'flash', 'flip', 'web', 'scan', 'spots', 'confetti', 'smoke'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
+  if (!['strobe', 'laser', 'flash', 'flip', 'web', 'scan', 'smoke'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
   const colour = PALETTE[m.colour] || null;
   if (m.type === 'strobe') strobe();
   else if (m.type === 'laser') {
@@ -1066,8 +1075,6 @@ function fireMoment(m) {
   else if (m.type === 'flash') flash = { t0: clockT, colour: colour || PALETTE.amber };
   else if (m.type === 'web') { if (!web && !lasers.length) { lastWeb = clockT; web = { t0: clockT, life: 4.5 + Math.random() * 2, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
   else if (m.type === 'scan') { if (!scan) { const period = Math.max(1.2, Math.min(4, (music.beat || 0.5) * 4)); scan = { t0: clockT, period, life: period * 2, colour: colour || PALETTE.violet }; lastScan = clockT; } }
-  else if (m.type === 'spots') { if (clockT - lastSpots > 45) startSpots(colour); }
-  else if (m.type === 'confetti') { if (clockT - lastConfetti > 150) startConfetti(); }
   else if (m.type === 'smoke') { if (clockT - lastSmoke > 60) startSmoke(); }
   else if (m.type === 'flip') { if (!reduceMotion && clockT - lastRoll > 45) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }   // cue-sheet rolls too, at most one every 45 s
   if (m.note) $('cue').textContent = `${score && score.by || 'Agent Masterpiece'}: “${m.note}”`;
@@ -1077,26 +1084,9 @@ window.JN_sparks = () => spawnSparks(1);       // try the sparks from the consol
 window.JN_fx = () => ({ lasers: lasers.length, mounted: lasers.filter(l => l.mount).length, glows: glows.length, sparks: sparks.length, web: !!web, scan: !!scan, flash: !!flash, look });
 window.JN_glow = () => { nextGlow = clockT; };   // try it from the console   // so the moments can be tried from the console
 
-// Dance-floor atmosphere, kept sparse and led by the music: a faint haze that thickens in breakdowns,
-// moving-head spotlights in big steady sections, mirror-ball dots in breakdowns, glitter on the biggest
-// drops, smoke jets on really big hits, and a very slight glow on the lines with each kick.
-let spots = null, lastSpots = -60, confetti = [], lastConfetti = -999, smoke = [], lastSmoke = -60;
-let hazeA = 0.4, dotsA = 0, kickGlow = 0, atmoT = 0;
-const mirrorDots = Array.from({ length: 26 }, () => ({ a: Math.random() * TAU, r: 0.15 + Math.random() * 0.75, s: 0.6 + Math.random() * 0.8, tw: Math.random() * TAU }));
-function startSpots(colour) {
-  if (spots || lasers.length || web) return;
-  lastSpots = clockT;
-  const n = 2 + (Math.random() < 0.4 ? 1 : 0);
-  spots = { t0: clockT, life: 10 + Math.random() * 5, colour: colour || '#dfe8ff', beams: Array.from({ length: n }, (_, i) => ({ x: (i + 0.5) / n, ph: Math.random() * TAU, sp: 0.25 + Math.random() * 0.2 })) };
-}
-function startConfetti() {
-  if (confetti.length) return;
-  lastConfetti = clockT;
-  for (let i = 0; i < 70; i++) {
-    const p = surf((Math.random() - 0.5) * 1.6, 0.08 + Math.random() * 0.5, 1.6 + Math.random() * 1.2);
-    confetti.push({ p, vy: -(0.25 + Math.random() * 0.25), ph: Math.random() * TAU, t0: clockT + Math.random() * 1.2, life: 4.5 + Math.random() * 2, gold: Math.random() < 0.3 });
-  }
-}
+// Dance-floor extras, kept on a black background: a very slight glow on the lines with each kick,
+// and smoke jets from the front edge on really big hits.
+let smoke = [], lastSmoke = -60, kickGlow = 0, atmoT = 0;
 function startSmoke() {
   if (smoke.length) return;
   lastSmoke = clockT;
@@ -1106,90 +1096,24 @@ function startSmoke() {
 function atmosphere(project) {
   const dt = Math.max(0, Math.min(0.05, clockT - atmoT)); atmoT = clockT;
   const playing = source !== 'idle';
-  // levels follow the music slowly, so nothing pops in
-  const hazeTo = playing ? 0.25 + inBreak * 0.75 - hit * 0.2 : 0.3;
-  hazeA += (hazeTo - hazeA) * Math.min(1, dt * 0.5);
-  dotsA += ((playing && inBreak > 0.6 ? 1 : 0) - dotsA) * Math.min(1, dt * 0.6);
   kickGlow = Math.max(kickGlow * Math.exp(-dt * 7), playing ? hit : 0);
-  // the choreography: each one rare, and never on top of the lasers
-  if (playing && !reduceMotion) {
-    if (!spots && !lasers.length && !web && inBreak < 0.2 && energy > 0.55 && clockT - lastSpots > 70 + Math.random() * 40 && clockT - lastLaser > 6) startSpots();
-    if (hit > 0.85 && energy > 0.5 && clockT - lastSmoke > 100 + Math.random() * 60) startSmoke();
-  }
-  if (spots && lasers.length) spots.life = Math.min(spots.life, clockT - spots.t0 + 1.2);     // make way for the lasers
-  ctx.save(); ctx.globalCompositeOperation = 'lighter';
-  // 1. haze: three soft clouds hanging just over the surface
-  if (hazeA > 0.02) {
-    for (let i = 0; i < 3; i++) {
-      project(surf(Math.sin(clockT * 0.03 + i * 2.1) * 0.6, 0.25 + i * 0.22, 0.15), 0);
-      if (PZ[0] < 0) continue;
-      const R = Math.max(W, H) * (0.35 + i * 0.08), x = PX[0], y = PY[0];
-      const g = ctx.createRadialGradient(x, y, 0, x, y, R);
-      g.addColorStop(0, '#9fb4ff'); g.addColorStop(1, '#9fb4ff00');
-      ctx.globalAlpha = 0.035 * hazeA; ctx.fillStyle = g; ctx.fillRect(x - R, y - R, R * 2, R * 2);
-    }
-  }
-  // 2. moving-head spotlights sweeping the surface
-  if (spots) {
-    const age = clockT - spots.t0;
-    if (age > spots.life) spots = null;
-    else {
-      const k = Math.min(1, age / 2, (spots.life - age) / 2);
-      for (const b of spots.beams) {
-        project(surf(Math.sin(clockT * b.sp + b.ph) * 0.75, 0.3 + 0.2 * Math.sin(clockT * b.sp * 0.7 + b.ph * 2), 0), 0);
-        if (PZ[0] < 0) continue;
-        const sx = b.x * W, sy = -H * 0.05, ex = PX[0], ey = PY[0], half = Math.max(W, H) * 0.035;
-        const g = ctx.createLinearGradient(sx, sy, ex, ey);
-        g.addColorStop(0, spots.colour + '00'); g.addColorStop(0.25, spots.colour); g.addColorStop(1, spots.colour);
-        ctx.fillStyle = g; ctx.globalAlpha = 0.06 * k;
-        const ang = Math.atan2(ey - sy, ex - sx) + Math.PI / 2, ox = Math.cos(ang) * half, oy = Math.sin(ang) * half;
-        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex + ox, ey + oy); ctx.lineTo(ex - ox, ey - oy); ctx.closePath(); ctx.fill();
-        const pool = ctx.createRadialGradient(ex, ey, 0, ex, ey, half * 1.4);
-        pool.addColorStop(0, spots.colour); pool.addColorStop(1, spots.colour + '00');
-        ctx.globalAlpha = 0.12 * k; ctx.fillStyle = pool; ctx.fillRect(ex - half * 1.4, ey - half * 1.4, half * 2.8, half * 2.8);
-      }
-    }
-  }
-  // 3. mirror-ball dots, slowly turning, only in breakdowns
-  if (dotsA > 0.02) {
-    const cx = W / 2, cy = H * 0.42, R = Math.max(W, H) * 0.6, d = Math.max(1.2, Math.min(W, H) / 420);
-    ctx.fillStyle = '#fff';
-    for (const m of mirrorDots) {
-      const a = m.a + clockT * 0.06, x = cx + Math.cos(a) * m.r * R, y = cy + Math.sin(a) * m.r * R * 0.55;
-      ctx.globalAlpha = 0.35 * dotsA * (0.6 + 0.4 * Math.sin(clockT * m.s + m.tw));
-      ctx.fillRect(x - d, y - d, d * 2, d * 2);
-    }
-  }
-  // 4. glitter falling after the biggest drops
-  if (confetti.length) {
-    confetti = confetti.filter(c => clockT - c.t0 < c.life);
-    for (const c of confetti) {
-      const age = clockT - c.t0; if (age < 0) continue;
-      c.p[1] += c.vy * dt; c.p[0] += Math.sin(clockT * 1.7 + c.ph) * 0.05 * dt;
-      project([c.p[0], c.p[1], c.p[2]], 0); if (PZ[0] < 0) continue;
-      const tw = 0.5 + 0.5 * Math.sin(clockT * 9 + c.ph * 3), s = Math.max(0.8, Math.min(2, 160 / PZ[0] / 60));
-      ctx.fillStyle = c.gold ? '#ffd27a' : '#fff'; ctx.globalAlpha = 0.55 * tw * Math.min(1, (c.life - age) / 1.5);
-      ctx.fillRect(PX[0] - s, PY[0] - s * 0.5, s * 2, s);
-    }
-  }
-  // 5. smoke jets from the front edge
-  if (smoke.length) {
-    smoke = smoke.filter(s => clockT - s.t0 < s.life);
-    ctx.globalCompositeOperation = 'source-over';
-    for (const s of smoke) {
-      const age = clockT - s.t0; if (age < 0) continue;
-      s.vy *= 1 - dt * 0.9; s.p[1] += s.vy * dt; s.p[0] += s.dx * dt; s.r += 0.12 * dt;
-      project([s.p[0], s.p[1], s.p[2]], 0); if (PZ[0] < 0) continue;
-      project([s.p[0] + s.r, s.p[1], s.p[2]], 1);
-      const R = Math.max(4, Math.abs(PX[1] - PX[0])), x = PX[0], y = PY[0];
-      const g = ctx.createRadialGradient(x, y, 0, x, y, R);
-      g.addColorStop(0, '#c9d2e6'); g.addColorStop(1, '#c9d2e600');
-      ctx.globalAlpha = 0.12 * (1 - age / s.life) * Math.min(1, age * 6); ctx.fillStyle = g; ctx.fillRect(x - R, y - R, R * 2, R * 2);
-    }
+  if (playing && !reduceMotion && hit > 0.85 && energy > 0.5 && clockT - lastSmoke > 90 + Math.random() * 60) startSmoke();
+  if (!smoke.length) return;
+  smoke = smoke.filter(s => clockT - s.t0 < s.life);
+  ctx.save();
+  for (const s of smoke) {
+    const age = clockT - s.t0; if (age < 0) continue;
+    s.vy *= 1 - dt * 0.9; s.p[1] += s.vy * dt; s.p[0] += s.dx * dt; s.r += 0.12 * dt;
+    project([s.p[0], s.p[1], s.p[2]], 0); if (PZ[0] < 0) continue;
+    project([s.p[0] + s.r, s.p[1], s.p[2]], 1);
+    const R = Math.max(4, Math.abs(PX[1] - PX[0])), x = PX[0], y = PY[0];
+    const g = ctx.createRadialGradient(x, y, 0, x, y, R);
+    g.addColorStop(0, '#c9d2e6'); g.addColorStop(1, '#c9d2e600');
+    ctx.globalAlpha = 0.12 * (1 - age / s.life) * Math.min(1, age * 6); ctx.fillStyle = g; ctx.fillRect(x - R, y - R, R * 2, R * 2);
   }
   ctx.restore();
 }
-window.JN_atmos = () => ({ spots: !!spots, confetti: confetti.length, smoke: smoke.length, haze: +hazeA.toFixed(2), dots: +dotsA.toFixed(2), kick: +kickGlow.toFixed(2) });
+window.JN_atmos = () => ({ smoke: smoke.length, kick: +kickGlow.toFixed(2) });
 
 function drawMoments(project) {
   atmosphere(project);
