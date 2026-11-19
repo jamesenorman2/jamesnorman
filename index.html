@@ -1598,6 +1598,9 @@ function closeShell(push) {
   if (push) window.history.pushState(null, '', '/');
 }
 window.JN_SHELL = { open: openShell, home: () => closeShell(true) };
+// what the agents page (open over the player) needs to dance: is music playing, which tune, and the beat
+window.JN_BEAT = () => ({ playing: !!musicOn(), title: (nowEl && nowEl.textContent) || '', hit,
+  period: (source === 'file' || source === 'mic') && music.bpm >= 70 && music.bpm <= 190 ? music.beat : 60 / 124 });
 const musicOn = () => scPlaying || (audioEl && !audioEl.paused);
 document.addEventListener('click', e => {
   const a = e.target.closest && e.target.closest('a[href]');

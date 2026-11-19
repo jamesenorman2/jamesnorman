@@ -507,6 +507,74 @@ const RESIDENTS = [
 function dayLine(id) { const D = floor.day || {}, r = D[id], t = (r && r.report && r.report.summary) || 'first report due'; return t.length > 30 ? t.slice(0, 29) + '…' : t; }
 const res = {};
 
+/* ─── The rave: when the tune changes, everyone runs to the music room and dances to the beat ─── */
+const RAVE_LINES = ['Great tune!', 'Are you having a good night?', 'Are you having a fun day?', 'Wow, I love raving!', 'TUNE!', 'Rewind! Rewind!', 'Hands in the air!',
+  'This is my jam!', 'Big up the DJ!', 'One more tune!', 'Who picked this? Legend.', 'I can’t feel my legs. Brilliant.', 'Best night ever!', 'Is it Friday? It feels like Friday!',
+  'Do the robot! DO THE ROBOT!', 'Oi oi!', 'I love you all!', 'Mind the speaker stack!', 'Lasers! Where are the lasers?', 'This drop though!', 'My dad dances like this.'];
+const GROOVE_LINES = ['Little dance break!', 'Can’t stop, won’t stop.', 'Is that a tune I hear?', 'Shuffling while I work.', 'Groove first, work later.'];
+const DANCES = ['dance', 'fist', 'jump', 'robot', 'spin', 'shuffle'];
+const rave = { until: -1, title: null, next: 120 + Math.random() * 120, spots: {}, chat: 0 };
+const raving = () => floor.t < rave.until;
+// the homepage player (when this page is open over it) tells us whether music is playing, the tune and the beat
+function beatNow() {
+  try { if (window.parent !== window && window.parent.JN_BEAT) { const b = window.parent.JN_BEAT(); if (b) return b; } } catch (e) { /* no player */ }
+  return { playing: false, period: 60 / 124, title: '', hit: 0 };
+}
+const beatPhase = () => performance.now() / 1000 / (beatNow().period || 0.48);
+function startRave(secs, why) {
+  rave.until = floor.t + secs; rave.spots = {}; rave.chat = floor.t + 0.8;
+  bubbles.length = 0;
+  bubbles.push({ who: 'DISCO BISCUIT', text: why, t0: floor.t, life: 3.4 });
+}
+function raveTick() {
+  const b = beatNow(), title = b.playing ? b.title : (floor.shift && floor.shift.dj && floor.shift.dj.track && floor.shift.dj.track.title) || '';
+  if (rave.title === null) rave.title = title;
+  else if (title && title !== rave.title) { rave.title = title; startRave(b.playing ? 32 : 20, 'NEW TUNE! Everybody to the music room!'); }
+  if (floor.t > rave.next) { rave.next = floor.t + (b.playing ? 90 : 160) + Math.random() * 120; if (!raving()) startRave(16, pickOne(['Dance break! Music room, NOW.', 'Right, that’s it, everyone dance.', 'Mandatory boogie. Health and safety said so.'])); }
+  if (raving() && floor.t > rave.chat) {                  // the dance floor chatter
+    rave.chat = floor.t + 0.7 + Math.random() * 0.8;
+    const names = Object.keys(rave.spots).filter(n => seenAt[n] && floor.t - seenAt[n].at < 0.3);
+    if (names.length) { while (bubbles.length > 6) bubbles.shift(); bubbles.push({ who: pickOne(names), text: pickOne(RAVE_LINES), t0: floor.t, life: 2.4 }); }
+  }
+}
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+window.JN_rave = () => startRave(24, 'NEW TUNE! Everybody to the music room!');   // try it from the console
+const roomAt = (u, v) => floor.rooms.find(r => u >= r.u && u <= r.u + r.w && v >= r.v && v <= r.v + r.d);
+// a route through the doors and along the corridor, so nobody walks through walls
+function routeTo(u, v, room, spot) {
+  const pts = [], r0 = roomAt(u, v);
+  if (r0 !== room) {
+    if (r0) pts.push({ u: r0.door.u, v: r0.door.v }, { u: r0.door.u, v: floor.cv });
+    if (room) pts.push({ u: room.door.u, v: floor.cv }, { u: room.door.u, v: room.door.v });
+  }
+  if (spot) pts.push(spot);
+  return pts;
+}
+// moves an agent to the rave and back; returns true while the rave (or the trip home) is in charge of them
+function raveRoute(a, name, homeFn, sm, dt) {
+  const mus = floor.rooms.find(r => r.path === '/music/');
+  if (!mus) return false;
+  if (raving()) {
+    if (!a.raving) {
+      a.raving = true; a.style = DANCES[Math.floor(Math.random() * DANCES.length)];
+      const sp = rave.spots[name] || (rave.spots[name] = at(mus, 0.2 + Math.random() * 0.6, 0.15 + Math.random() * 0.55));
+      a.q = routeTo(a.u, a.v, mus, sp);
+    }
+  } else if (a.raving) { a.raving = false; const h = homeFn && homeFn(); a.q = h ? routeTo(a.u, a.v, roomAt(h.u, h.v), h) : routeTo(a.u, a.v, null, { u: a.u, v: floor.cv }); }
+  if (!a.q || !a.q.length) { a.moving = false; return a.raving; }
+  const p = a.q[0], du = p.u - a.u, dv = p.v - a.v, d = Math.hypot(du, dv), sp = (a.raving ? 95 : 55) * sm * dt;   // they run to a rave
+  if (d <= sp) { a.u = p.u; a.v = p.v; a.q.shift(); } else { a.u += du / d * sp; a.v += dv / d * sp; }
+  a.step = (a.step || 0) + sp * 0.3; a.moving = true;
+  return true;
+}
+// dancing on the beat: each agent has its own style; arms and bounces land on the beat
+function danceMan(x, y, s, a, name, k) {
+  const ph = beatPhase() + (k % 2) * 0.5, on = Math.abs(Math.sin(ph * Math.PI)), hit = Math.min(1, beatNow().hit || 0);
+  const style = a.style || 'dance', lift = (style === 'jump' ? 9 : 3) * s * on * (1 + hit);
+  if (style === 'spin' && Math.floor(ph) % 2) { fx.save(); fx.translate(x, 0); fx.scale(-1, 1); fx.translate(-x, 0); stickMan(x, y - lift, s, ph * Math.PI, 'dance', name); fx.restore(); return; }
+  stickMan(x, y - lift, s, ph * Math.PI, style === 'spin' ? 'dance' : style, name);
+}
+
 function drawFloor(dt) {
   floor.t += dt;
   const t = floor.t, s = Math.max(0.6, Math.min(1.8, FW / 1100)), sm = SM, PW = floor.PW, PD = floor.PD;
@@ -550,31 +618,38 @@ function drawFloor(dt) {
     // the furniture, and which pieces are in use
     const busy = st.map((_, k) => who.some(w => res[w.name] && res[w.name].room === r && res[w.name].st === k && res[w.name].dwell > 0));
     kit.items.forEach((it, k) => { const front = at(r, it[0], r.upper ? it[1] : it[1] + it[3]).v; const use = busy.some((b, j) => b && Math.hypot(st[j][0] - (it[0] + it[2] / 2), st[j][1] - (it[1] + it[3] / 2)) < 0.4); Z.push({ z: front, f: () => drawItem(r, it, use) }); });
-    // the people who work here, walking between the stations and working them
+    // the people who work here, walking between the stations and working them; in a rave they run to the music room
     who.forEach((w, i) => {
       let a = res[w.name];
       if (!a || a.room !== r) { const k0 = w.fav >= 0 && w.fav < st.length ? w.fav : i % st.length, p0 = at(r, st[k0][0], st[k0][1]); a = res[w.name] = { room: r, st: k0, u: p0.u, v: p0.v, dwell: 2 + Math.random() * 4, step: 0 }; }
-      const tgt = at(r, st[a.st][0], st[a.st][1]), du = tgt.u - a.u, dvv = tgt.v - a.v, dist = Math.hypot(du, dvv), sp = 34 * sm * dt;
-      if (dist > 0.8) { const k = Math.min(1, sp / dist); a.u += du * k; a.v += dvv * k; a.step += Math.min(dist, sp) * 0.3; }
-      else if (a.dwell > 0) a.dwell -= dt;
+      let moving, pose;
+      if (raveRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'rave'; }
       else {
-        const taken = new Set(who.filter(o => o !== w && res[o.name]).map(o => res[o.name].st));
-        const free = st.map((_, k) => k).filter(k => k !== a.st && !taken.has(k));
-        a.st = w.fav >= 0 && !taken.has(w.fav) && a.st !== w.fav && Math.random() < 0.6 ? w.fav : free.length ? free[Math.floor(Math.random() * free.length)] : a.st;
-        a.dwell = 4 + Math.random() * 6; a.said = false;
-      }
-      const moving = dist > 0.8, pose = moving ? 'walk' : st[a.st][2];
-      if (!moving && !a.said) {                         // says what they're doing when they get there
-        a.said = true;
-        const acts = st[a.st][3];
-        if (acts && acts.length && Math.random() < 0.8) bubbles.push({ who: w.name, text: acts[Math.floor(Math.random() * acts.length)], t0: floor.t + 0.2, life: 3.4, act: true });
+        const tgt = at(r, st[a.st][0], st[a.st][1]), du = tgt.u - a.u, dvv = tgt.v - a.v, dist = Math.hypot(du, dvv), sp = 34 * sm * dt;
+        if (dist > 0.8) { const k = Math.min(1, sp / dist); a.u += du * k; a.v += dvv * k; a.step += Math.min(dist, sp) * 0.3; }
+        else if (a.dwell > 0) a.dwell -= dt;
+        else {
+          const taken = new Set(who.filter(o => o !== w && res[o.name]).map(o => res[o.name].st));
+          const free = st.map((_, k) => k).filter(k => k !== a.st && !taken.has(k));
+          a.st = w.fav >= 0 && !taken.has(w.fav) && a.st !== w.fav && Math.random() < 0.6 ? w.fav : free.length ? free[Math.floor(Math.random() * free.length)] : a.st;
+          a.dwell = 4 + Math.random() * 6; a.said = false; a.groove = 0;
+        }
+        moving = dist > 0.8; pose = moving ? 'walk' : st[a.st][2];
+        if (!moving && !a.said) {                         // says what they're doing when they get there, or has a little dance instead
+          a.said = true;
+          if (Math.random() < (beatNow().playing ? 0.45 : 0.25)) { a.groove = floor.t + 3 + Math.random() * 4; a.style = DANCES[Math.floor(Math.random() * DANCES.length)];
+            bubbles.push({ who: w.name, text: GROOVE_LINES[Math.floor(Math.random() * GROOVE_LINES.length)], t0: floor.t + 0.2, life: 2.8 }); }
+          else { const acts = st[a.st][3]; if (acts && acts.length && Math.random() < 0.8) bubbles.push({ who: w.name, text: acts[Math.floor(Math.random() * acts.length)], t0: floor.t + 0.2, life: 3.4, act: true }); }
+        }
+        if (!moving && a.groove > floor.t) pose = 'rave';
       }
       Z.push({ z: a.v + 0.5, f: () => {
         const [x, y] = P(a.u, a.v);
-        stickMan(x, y - (pose === 'dance' ? Math.abs(Math.sin(t * 4)) * 2 * sm : 0), sm, moving ? a.step : t * 2 + i, pose, w.name);
+        if (pose === 'rave') danceMan(x, y, sm, a, w.name, i);
+        else stickMan(x, y, sm, moving ? a.step : t * 2 + i, pose, w.name);
         text(w.name, x, y + 9 * s, 7.5 * s, 0.65);
         const msg = w.line();
-        if (msg && !moving && r.w / Math.max(1, who.length) > 60) text(msg, Math.max(P(r.u, a.v)[0] + 46, Math.min(P(r.u + r.w, a.v)[0] - 46, x)), y - 36 * sm - (i % 2) * 10 * s, 8 * s, 0.8);
+        if (msg && !moving && !raving() && pose !== 'rave' && r.w / Math.max(1, who.length) > 60) text(msg, Math.max(P(r.u, a.v)[0] + 46, Math.min(P(r.u + r.w, a.v)[0] - 46, x)), y - 36 * sm - (i % 2) * 10 * s, 8 * s, 0.8);
       } });
     });
   });
@@ -590,25 +665,31 @@ function drawFloor(dt) {
     text(str + (Math.floor(t * 2) % 2 ? '▌' : ''), x, y, 8.5 * s, 0.75, 'left');
   } });
 
-  // Codpiece on the front door at the left end of the corridor
-  Z.push({ z: floor.cv, f: () => { const [x, y] = P(8 * sm, floor.cv + floor.Dc * 0.2); seg(P(0, floor.Dr + 2), P(0, floor.Dr + floor.Dc - 2));
-    stickMan(x + 6 * sm, y, sm, t, 'check', 'CODPIECE'); text('CODPIECE', x + 6 * sm, y + 9 * s, 7.5 * s, 0.65); text(jobLine('gatekeeper'), x + 24 * sm, y - 34 * sm, 8.5 * s, 0.85, 'left'); } });
+  // Codpiece on the front door at the left end of the corridor (and at the rave, when there is one)
+  { const home = { u: 14 * sm, v: floor.cv + floor.Dc * 0.2 };
+    const a = res.CODPIECE || (res.CODPIECE = { u: home.u, v: home.v, step: 0 });
+    const inRave = raveRoute(a, 'CODPIECE', () => home, sm, dt);
+    Z.push({ z: a.v + 0.5, f: () => { seg(P(0, floor.Dr + 2), P(0, floor.Dr + floor.Dc - 2)); const [x, y] = P(a.u, a.v);
+      if (inRave && !a.moving) danceMan(x, y, sm, a, 'CODPIECE', 3); else stickMan(x, y, sm, inRave ? a.step : t, inRave ? 'walk' : 'check', 'CODPIECE');
+      text('CODPIECE', x, y + 9 * s, 7.5 * s, 0.65); if (!inRave) text(jobLine('gatekeeper'), x + 18 * sm, y - 34 * sm, 8.5 * s, 0.85, 'left'); } }); }
 
   // patrols walking the corridor and checking each office
   const speed = 60 * sm;
   floor.men.forEach(m => {
     if (!m.path.length) return;
     let pose = 'walk';
-    if (m.pause > 0) { m.pause -= dt; pose = 'check'; }
+    if (raveRoute(m, m.name, null, sm, dt)) { pose = m.moving ? 'walk' : 'rave'; }
+    else if (m.pause > 0) { m.pause -= dt; pose = 'check'; }
     else {
       const p = m.path[m.i], du = p.u - m.u, dvv = p.v - m.v, dist = Math.hypot(du, dvv), stepLen = speed * dt;
       if (dist <= stepLen) { m.u = p.u; m.v = p.v; m.i = (m.i + 1) % m.path.length; if (p.check) { p.check.seen = 1; m.pause = 1.4; } if (p.hold) m.pause = p.hold; }
       else { m.u += du / dist * stepLen; m.v += dvv / dist * stepLen; m.step += stepLen * 0.25; }
     }
-    Z.push({ z: m.v + 0.5, f: () => { const [x, y] = P(m.u, m.v); stickMan(x, y, sm, pose === 'walk' ? m.step : 0, pose, m.name); text(m.name, x, y + 9 * s, 7.5 * s, 0.65);
+    Z.push({ z: m.v + 0.5, f: () => { const [x, y] = P(m.u, m.v); if (pose === 'rave') danceMan(x, y, sm, m, m.name, 5); else stickMan(x, y, sm, pose === 'walk' ? m.step : 0, pose, m.name); text(m.name, x, y + 9 * s, 7.5 * s, 0.65);
       if (m.name === 'FISH') { text(jobLine('links'), x, y - 34 * sm, 8.5 * s, 0.8); if (pose === 'check') text('OUTSIDE →', x - 4, y - 46 * sm, 8 * s, 0.5, 'right'); } } });
   });
 
+  raveTick(sm);
   Z.sort((p, q) => p.z - q.z).forEach(d => d.f());
   banter(s);
 }
@@ -711,6 +792,19 @@ function drawMan(x, y, s, phase, pose) {
     fx.moveTo(x, hip); fx.lineTo(x - 5 * s, y); fx.moveTo(x, hip); fx.lineTo(x + 5 * s, y);
     fx.moveTo(x, sh); fx.lineTo(x - 7 * s, sh - 6 * s - b * 3 * s);
     fx.moveTo(x, sh); fx.lineTo(x + 7 * s, sh + (b > 0 ? -8 : 4) * s);
+  } else if (pose === 'jump') {               // star jump
+    const b = Math.abs(Math.sin(phase));
+    fx.moveTo(x, hip); fx.lineTo(x - (3 + b * 4) * s, y); fx.moveTo(x, hip); fx.lineTo(x + (3 + b * 4) * s, y);
+    fx.moveTo(x, sh); fx.lineTo(x - 8 * s, sh - 8 * s * b); fx.moveTo(x, sh); fx.lineTo(x + 8 * s, sh - 8 * s * b);
+  } else if (pose === 'robot') {              // stiff right angles, one arm then the other
+    const up = Math.floor(phase / Math.PI) % 2;
+    fx.moveTo(x, hip); fx.lineTo(x - 4 * s, y); fx.moveTo(x, hip); fx.lineTo(x + 4 * s, y);
+    fx.moveTo(x, sh); fx.lineTo(x - 7 * s, sh); fx.lineTo(x - 7 * s, sh + (up ? -7 : 7) * s);
+    fx.moveTo(x, sh); fx.lineTo(x + 7 * s, sh); fx.lineTo(x + 7 * s, sh + (up ? 7 : -7) * s);
+  } else if (pose === 'shuffle') {            // the running man
+    const b = Math.sin(phase);
+    fx.moveTo(x, hip); fx.lineTo(x + b * 7 * s, y); fx.moveTo(x, hip); fx.lineTo(x - b * 4 * s, y - Math.max(0, -b) * 5 * s);
+    fx.moveTo(x, sh); fx.lineTo(x - 6 * s, sh + 2 * s - b * 3 * s); fx.moveTo(x, sh); fx.lineTo(x + 6 * s, sh + 2 * s + b * 3 * s);
   } else if (pose === 'fist') {               // both arms pumping in the air
     const b = Math.abs(Math.sin(phase * 3));
     fx.moveTo(x, hip); fx.lineTo(x - 5 * s, y); fx.moveTo(x, hip); fx.lineTo(x + 5 * s, y);
@@ -784,7 +878,7 @@ const bubbles = [];
 let nextChat = 2;
 function banter(s) {
   const names = Object.keys(seenAt).filter(n => floor.t - seenAt[n].at < 0.5);
-  if (floor.t > nextChat && names.length > 1) {
+  if (floor.t > nextChat && names.length > 1 && !raving()) {
     nextChat = floor.t + 4 + Math.random() * 4;
     const a = pick(names), ma = moodOf(a).kind;
     // the nearest other agent is who they talk to
