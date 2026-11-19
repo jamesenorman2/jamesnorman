@@ -65,7 +65,7 @@
   .bigplay{position:fixed;left:50%;top:auto;bottom:calc(5.2rem + 4rem + .6rem);transform:translate(-50%,0) scale(.92);z-index:5;display:flex;flex-direction:column;align-items:center;gap:.9rem;
     background:none;border:0;color:#fff;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .8s,transform .8s}
   body.intro-done:not(.is-playing) .bigplay,body.sc-ready:not(.is-playing) .bigplay{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
-  @media(max-width:700px){.bigplay{bottom:calc(9.5rem + 48px + .4rem)}}
+  @media(max-width:700px){.bigplay{bottom:calc(9.5rem + 48px + 3.8rem)}}
   body.hide-ui .bigplay{opacity:0!important;pointer-events:none!important}
   .bigplay svg{width:clamp(64px,6vw,6rem);height:auto;fill:none;stroke:#fff;stroke-width:1.2;stroke-linejoin:round;transition:transform .4s}
   /* fully inverted: the disc flips whatever is behind it, and the play triangle is cut out of it */
@@ -134,6 +134,11 @@
   .ph{font-size:.7rem;letter-spacing:.1em;color:#999;margin-top:1rem}
   #pacCanvas{position:static;width:auto;height:auto;max-width:100%}
   .pp{width:3.6rem;height:3.6rem;padding:0;color:#fff;opacity:.85;transition:opacity .3s,transform .3s}
+  /* Egg and Cast: plain text buttons beside the transport, clearly visible */
+  .tb{color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.7);border-radius:999px;padding:.55rem 1.1rem;font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;transition:background .2s,border-color .2s}
+  .tb:hover,.tb:focus-visible{background:#fff;color:#000;border-color:#fff}
+  body.shell-on .tb{display:none}
+  footer.bottom .controls[hidden]{display:none!important}
   .pp:hover{opacity:1;transform:scale(1.06)}
   .pp svg{width:100%;height:100%;display:block}
   .pp .ic-pause{display:none} .pp.playing .ic-pause{display:inline} .pp.playing .ic-play{display:none}
@@ -141,7 +146,8 @@
   /* transport: play/pause on the left and previous/next on the right, both sitting just above the seek waveform */
   .transport,.skip{position:fixed;bottom:calc(5.2rem + 4rem + .9rem);z-index:4;display:flex;gap:.9rem;align-items:center;pointer-events:auto}
   .transport{left:3rem} .skip{right:3rem}
-  body:not(.has-played) .transport{visibility:hidden}
+  body:not(.has-played) .transport #playBtn{visibility:hidden}     /* the big play button does that job until first play; Egg stays visible */
+  footer.bottom .right{margin-left:auto}
   .pp.sk{width:2.75rem;height:2.75rem}
   .pp:disabled{opacity:.3}
   @media(max-width:700px){.transport,.skip{bottom:calc(9.5rem + 48px + .7rem)}.transport{left:16px}.skip{right:16px}.pp.sk{width:40px;height:40px}}
@@ -215,14 +221,12 @@
     </nav>
   </header>
   <footer class="bottom">
-    <div class="controls">
+    <div class="controls" hidden>
       <button id="loadBtn" title="Play an audio file from your device instead (L)">Load file</button>
       <button id="micBtn" title="Use your microphone (M)" aria-pressed="false">Mic</button>
       <button id="wildBtn" title="Wild camera on or off (C)" aria-pressed="true">Wild</button>
       <button id="strobeBtn" title="Strobe on the biggest drops (3 flashes, max 3 a second). Off by default" aria-pressed="false">No strobe</button>
       <button id="uiBtn" title="Hide interface (H)">Hide</button>
-      <button id="castBtn" title="Show this on your TV">Cast</button>
-      <button id="eggBtn" onclick="openPac()">Egg</button>
     </div>
     <div class="right">
       <a class="now" id="now" target="_blank" rel="noopener"></a>
@@ -233,8 +237,10 @@
   <button class="bigplay" id="bigPlay" type="button" aria-label="Play"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring" cx="60" cy="60" r="56"/><circle class="disc" cx="60" cy="60" r="44"/><polygon class="tri" points="50,40 82,60 50,80"/></svg></button>
   <div class="transport">
     <button id="playBtn" class="pp" title="Play / pause (Space)" aria-label="Play" disabled><svg viewBox="0 0 48 48" aria-hidden="true"><polygon class="ic-play" points="16,11 37,24 16,37" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><g class="ic-pause" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="11" width="7" height="26"/><rect x="27" y="11" width="7" height="26"/></g></svg></button>
+      <button id="eggBtn" class="tb" type="button" title="A little game" onclick="openPac()">Egg</button>
   </div>
   <div class="skip" role="group" aria-label="Track">
+    <button id="castBtn" class="tb" type="button" title="Show this on your TV">Cast</button>
     <button id="prevBtn" class="pp sk" title="Previous track (P)" aria-label="Previous track" disabled><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="36,12 17,24 36,36"/><rect x="11" y="12" width="4" height="24"/></svg></button>
     <button id="nextBtn" class="pp sk" title="Next track (N)" aria-label="Next track" disabled><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12,12 31,24 12,36"/><rect x="33" y="12" width="4" height="24"/></svg></button>
   </div>
