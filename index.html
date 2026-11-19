@@ -146,7 +146,7 @@
   /* transport: play/pause on the left and previous/next on the right, both sitting just above the seek waveform */
   .transport,.skip{position:fixed;bottom:calc(5.2rem + 4rem + .9rem);z-index:4;display:flex;gap:.9rem;align-items:center;pointer-events:auto}
   .transport{left:3rem} .skip{right:3rem}
-  body:not(.has-played) .transport #playBtn{visibility:hidden}     /* the big play button does that job until first play; Egg stays visible */
+  .bigplay{display:none!important}            /* the outline play button on the left does the job from the start */
   footer.bottom .right{margin-left:auto}
   .pp.sk{width:2.75rem;height:2.75rem}
   .pp:disabled{opacity:.3}
