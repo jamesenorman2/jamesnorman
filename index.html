@@ -87,6 +87,28 @@
   body.dragging .drop{opacity:1}
   /* SoundCloud's player does the playing; it stays out of sight and the visualiser is the interface */
   #sc{position:fixed;left:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
+  /* TV mode (?tv=1): just the visualiser, for a TV or a cast screen */
+  body.tv .ui header.top,body.tv footer.bottom,body.tv .transport,body.tv .skip,body.tv #scrub,body.tv .intro{display:none!important}
+  body.tv.is-playing{cursor:none}
+  .casthelp{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:16px}
+  .casthelp[hidden]{display:none}
+  .casthelp .box{max-width:34rem;border:1px solid #fff;background:#000;padding:1.6rem 1.8rem;font-size:.8rem;line-height:1.7;color:#ddd}
+  .casthelp h2{font-family:'Syne',sans-serif;font-weight:600;font-size:1rem;letter-spacing:.12em;margin:0 0 .8rem;color:#fff}
+  .casthelp ul{padding-left:1.1rem;margin:.4rem 0 1rem} .casthelp li{margin:.35rem 0}
+  .casthelp .row{display:flex;gap:.8rem;flex-wrap:wrap}
+  .casthelp button{background:#000;color:#fff;border:1px solid #fff;padding:.5rem .9rem;font:inherit;letter-spacing:.15em;cursor:pointer}
+  /* an agent who pops up now and then to have a word */
+  .peek{position:fixed;bottom:calc(5.2rem + 4rem + .5rem);left:50%;translate:-50% 0;z-index:6;display:flex;flex-direction:column;align-items:center;pointer-events:none;
+    opacity:0;transform:translateY(34px) scale(.5);transition:opacity .25s,transform .4s cubic-bezier(.3,1.6,.5,1)}
+  .peek.on{opacity:1;transform:none}
+  .peek .bub{font-size:.72rem;letter-spacing:.04em;color:#fff;background:#000;border:1px solid #fff;border-radius:6px;padding:.32rem .6rem;white-space:nowrap;margin-bottom:7px;position:relative}
+  .peek .bub::after{content:'';position:absolute;left:50%;bottom:-5px;width:8px;height:8px;background:#000;border-right:1px solid #fff;border-bottom:1px solid #fff;transform:translateX(-50%) rotate(45deg)}
+  .peek svg{width:26px;height:44px;overflow:visible}
+  .peek .arm{transform-origin:13px 15px;animation:peekWave .45s ease-in-out infinite alternate}
+  @keyframes peekWave{to{transform:rotate(-45deg)}}
+  .peek .nm{font-size:.55rem;letter-spacing:.18em;color:#9a9a9a;margin-top:3px}
+  body.shell-on .peek{bottom:4.8rem}
+  @media(max-width:700px){.peek{bottom:calc(9.5rem + 48px + .5rem)}}
   /* ─── shell: while music plays, other pages open over the homepage and the player shrinks to a bar ─── */
   .shell-frame{position:fixed;left:0;top:0;width:100%;height:calc(100% - 4.4rem);border:0;z-index:20;background:#000;display:none}
   body.shell-on .shell-frame{display:block}
@@ -199,6 +221,7 @@
       <button id="wildBtn" title="Wild camera on or off (C)" aria-pressed="true">Wild</button>
       <button id="strobeBtn" title="Strobe on the biggest drops (3 flashes, max 3 a second). Off by default" aria-pressed="false">No strobe</button>
       <button id="uiBtn" title="Hide interface (H)">Hide</button>
+      <button id="castBtn" title="Show this on your TV">Cast</button>
       <button id="eggBtn" onclick="openPac()">Egg</button>
     </div>
     <div class="right">
@@ -217,6 +240,17 @@
   </div>
 </div>
 <iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page"></iframe>
+<div class="casthelp" id="castHelp" hidden role="dialog" aria-modal="true" aria-labelledby="castTitle"><div class="box">
+  <h2 id="castTitle">Show this on your TV</h2>
+  <ul>
+    <li><b>Chrome or Edge</b> (computer or Android) with a Chromecast or smart TV: press <b>Cast</b> and choose the TV. If nothing is listed, use the browser menu: ⋮ → Cast…</li>
+    <li><b>iPhone, iPad or Mac</b> with an Apple TV or AirPlay TV: open Control Centre → Screen Mirroring and choose the TV.</li>
+    <li><b>Android phone</b>: swipe down → Cast or Smart View, and choose the TV.</li>
+  </ul>
+  <p>Then switch on TV mode: just the visuals, full screen, no buttons.</p>
+  <div class="row"><button type="button" id="tvBtn">TV mode</button><button type="button" id="castClose">Close</button></div>
+</div></div>
+<div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
 <input type="file" id="file" accept="audio/*">
@@ -1502,7 +1536,8 @@ function landName() {
   document.body.classList.add('name-landed');
   const n = $('intro').querySelector('.name'); if (n) n.style.visibility = 'hidden';
 }
-runIntro();
+const TV = new URLSearchParams(location.search).has('tv');
+if (TV) { document.body.classList.add('tv', 'intro-done', 'name-landed'); $('intro').innerHTML = ''; } else runIntro();
 $('nameSlot').addEventListener('click', e => { e.preventDefault(); runIntro(); });
 
 function toggleUI() { document.body.classList.toggle('hide-ui'); }
@@ -1619,6 +1654,76 @@ addEventListener('popstate', () => {
 // arriving from another page's play button: open that page over the player, ready to play
 { const then = new URLSearchParams(location.search).get('then');
   if (then && /^\/[^/]/.test(then) && !/^\/admin/.test(then)) { window.history.replaceState(null, '', '/'); openShell(then); document.body.classList.add('needs-tap'); } }
+
+/* ─── Casting to a TV ───
+   Chrome and Edge can show a page on a Chromecast or other cast display (the Presentation API): the TV
+   opens this page in TV mode with the tune that's playing, and the buttons here become its remote.
+   Anywhere else, the help explains screen mirroring and offers TV mode on this screen. */
+let castConn = null;
+function castUrl() {
+  const cur = nowEl.href && /^https:\/\/(www\.|m\.)?soundcloud\.com\//.test(nowEl.href) ? '&track=' + encodeURIComponent(nowEl.href.split('?')[0]) : '';
+  return location.origin + '/?tv=1' + cur;
+}
+function castEnded() { castConn = null; $('castBtn').textContent = 'Cast'; setStatus('Stopped casting'); }
+$('castBtn').addEventListener('click', async () => {
+  if (castConn && castConn.state === 'connected') { castConn.terminate(); castEnded(); return; }
+  if (window.PresentationRequest) {
+    try {
+      castConn = await new PresentationRequest([castUrl()]).start();
+      if (musicOn()) togglePlay();                       // the music moves to the TV
+      $('castBtn').textContent = 'Stop casting'; setStatus('Showing on your TV · the buttons here control it');
+      castConn.addEventListener('close', castEnded); castConn.addEventListener('terminate', castEnded);
+      return;
+    } catch (e) { castConn = null; if (e && e.name === 'AbortError') return; }   // picker closed, or nothing to cast to
+  }
+  $('castHelp').hidden = false;
+});
+$('castClose').addEventListener('click', () => { $('castHelp').hidden = true; });
+$('tvBtn').addEventListener('click', () => { location.href = castUrl(); });
+// while casting, play / previous / next go to the TV
+[['playBtn', 'toggle'], ['bigPlay', 'toggle'], ['prevBtn', 'prev'], ['nextBtn', 'next']].forEach(([id, cmd]) => $(id).addEventListener('click', e => {
+  if (castConn && castConn.state === 'connected') { e.stopImmediatePropagation(); e.preventDefault(); castConn.send(JSON.stringify({ cmd })); }
+}, true));
+if (TV) {
+  let userPaused = false;
+  // on the TV: start playing as soon as a track is ready, unless someone has paused it
+  setInterval(() => { if (sc && scReady && !scPlaying && !userPaused) { if (!startPending()) sc.play(); } }, 1500);
+  document.addEventListener('click', () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {}); });
+  if (navigator.presentation && navigator.presentation.receiver) navigator.presentation.receiver.connectionList.then(list => {
+    const hook = c => c.addEventListener('message', ev => {
+      let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (m.cmd === 'toggle') { userPaused = scPlaying; togglePlay(); } else if (m.cmd === 'next') { userPaused = false; skip(1); } else if (m.cmd === 'prev') { userPaused = false; skip(-1); }
+    });
+    list.connections.forEach(hook); list.addEventListener('connectionavailable', e => hook(e.connection));
+  }).catch(() => {});
+}
+
+/* ─── Now and then an agent pops up to have a word, especially when you skip their track ─── */
+const PEEK = {
+  next: ['Hey, I was listening to that!', 'Don’t change my track!', 'Oi! That was my favourite.', 'Rude.', 'I was just getting into that one.', 'Skip? SKIP?!'],
+  prev: ['Again? Fair enough.', 'Rewind! Good call.', 'This one again? Fine by me.'],
+  seek: ['Don’t fast-forward my track!', 'Skipping the build-up? Criminal.', 'You’ve missed the best bit.', 'No skipping the breakdown!'],
+  idle: ['Continue.', 'Carry on.', 'Nice choice.', 'Is this one of Disco Biscuit’s picks?', 'I’m on my break. Don’t tell Normal.', 'Turn it up!', 'Just checking you’re still here.', 'Great tune!', 'As you were.']
+};
+const PEEK_NAMES = ['DISCO BISCUIT', 'MONKEY MONKEY', 'FISH FISH', 'PICKLE', 'KIPPER', 'NORMAL', 'CODPIECE', 'FISH', 'GOD', 'GOATMAN', 'WURZEL', 'BISCUIT TIN', 'GRUMBLE', 'PIGEON', 'TEACAKE', 'BUNSEN', 'CRUMPET', 'SPANNER', 'DOODLEBUG', 'BIN LID'];
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+let lastPeek = -1e9, peekTimer = 0;
+function peek(kind) {
+  const now = performance.now(), el = $('peek');
+  if (now - lastPeek < 20000 || !document.body.classList.contains('intro-done')) return;
+  lastPeek = now;
+  el.querySelector('.bub').textContent = pickOne(PEEK[kind]);
+  el.querySelector('.nm').textContent = 'AGENT ' + pickOne(PEEK_NAMES);
+  el.style.left = (20 + Math.random() * 60) + 'vw';
+  el.classList.add('on'); clearTimeout(peekTimer); peekTimer = setTimeout(() => el.classList.remove('on'), 3600);
+}
+const maybePeek = (kind, odds) => setTimeout(() => { if (Math.random() < odds) peek(kind); }, 900);
+$('nextBtn').addEventListener('click', () => maybePeek('next', 0.65));
+$('prevBtn').addEventListener('click', () => maybePeek('prev', 0.5));
+$('scrub').addEventListener('pointerup', () => { if (musicOn()) maybePeek('seek', 0.5); });
+addEventListener('keydown', e => { if (e.target.closest && e.target.closest('input,textarea')) return; const k = e.key.toLowerCase(); if (k === 'n') maybePeek('next', 0.65); else if (k === 'p') maybePeek('prev', 0.5); });
+setInterval(() => { if (musicOn() && performance.now() - lastPeek > 240000 && Math.random() < 0.3) peek('idle'); }, 30000);   // very occasionally, out of nowhere
+window.JN_peek = k => { lastPeek = -1e9; peek(k || 'idle'); };      // try it from the console
 requestAnimationFrame(frame);
 startSoundCloud();
 })();
