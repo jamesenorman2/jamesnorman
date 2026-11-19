@@ -207,21 +207,23 @@ function renderBriefs() {
 $('topics').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { topic = b.dataset.t; renderBriefs(); } });
 
 async function load() {
-  const want = Number(new URLSearchParams(location.search).get('p')) || null;
-  const [desk, posts] = await Promise.all([
+  const want = new URLSearchParams(location.search).get('p');
+  const [desk, dbPosts, filed] = await Promise.all([
     JN.get('jn_desk?select=created_at,incidents,briefs&order=id.desc&limit=1').then(r => r[0] || null).catch(() => null),
-    JN.get('jn_blog?select=id,created_at,topic,title,dek,author&order=id.desc&limit=40').catch(() => [])
+    JN.get('jn_blog?select=id,created_at,topic,title,dek,author&order=id.desc&limit=40').catch(() => []),
+    fetch('/blog/posts.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => [])   // posts published with the site
   ]);
   renderIncidents(desk);
   briefs = desk && Array.isArray(desk.briefs) ? desk.briefs : [];
   renderBriefs();
-  const pick = posts.find(p => p.id === want) || posts[0];
+  const posts = [...dbPosts, ...filed].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const pick = posts.find(p => String(p.id) === want) || posts[0];
   if (pick) {
-    const full = await JN.get(`jn_blog?select=*&id=eq.${pick.id}`).then(r => r[0]).catch(() => null);
+    const full = typeof pick.id === 'string' ? pick : await JN.get(`jn_blog?select=*&id=eq.${pick.id}`).then(r => r[0]).catch(() => null);
     renderPost(full);
   } else renderPost(null);
   const rest = posts.filter(p => !pick || p.id !== pick.id);
-  $('archive').innerHTML = rest.length ? rest.map(p => `<li><a href="/blog/?p=${p.id}"><span class="d">${fmtDate(p.created_at)}</span><span><span class="t">${esc(p.title)}</span><span class="w">${esc(TOPIC[p.topic] || p.topic)} · ${esc(p.author || '')}</span></span></a></li>`).join('')
+  $('archive').innerHTML = rest.length ? rest.map(p => `<li><a href="/blog/?p=${encodeURIComponent(p.id)}"><span class="d">${fmtDate(p.created_at)}</span><span><span class="t">${esc(p.title)}</span><span class="w">${esc(TOPIC[p.topic] || p.topic)} · ${esc(p.author || '')}</span></span></a></li>`).join('')
     : '<li class="small" style="padding:.9rem 0;color:var(--mid)">Nothing in the archive yet.</li>';
 }
 async function loadIdeas() {
