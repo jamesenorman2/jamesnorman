@@ -1059,7 +1059,7 @@ function autoGlow() {
 // The light director: effects take turns a phrase at a time (16 beats), so the show has a shape.
 // Each phrase gets one scene, which runs for the first part of the phrase and then leaves space.
 let scene = 'rest', sceneEnd = 0, nextPhrase = 0, sceneI = 0, sceneColour = 'green';
-const SCENES = ['mounted', 'fan', 'shine', 'web', 'mounted', 'fan', 'scan', 'rgb', 'mounted', 'uv', 'fan', 'web', 'shine', 'glow'];   // the RGB laser: one phrase in eleven
+const SCENES = ['mounted', 'fan', 'delaunay', 'web', 'mounted', 'rivers', 'scan', 'rgb', 'mounted', 'uv', 'fan', 'contour', 'web', 'shine', 'lissajous', 'glow', 'fan', 'fourier'];   // the RGB laser: one phrase in eleven
 function playScene(name, colour) {
   scene = name; sceneColour = colour;
   if (name === 'mounted' || name === 'fan' || name === 'rgb') fireMoment({ type: 'laser', mount: name === 'mounted' || (name === 'rgb' && Math.random() < 0.5), rgb: name === 'rgb', colour });
@@ -1067,6 +1067,7 @@ function playScene(name, colour) {
   else if (name === 'web') { lasers.length = 0; fireMoment({ type: 'web', colour }); }
   else if (name === 'scan') fireMoment({ type: 'scan', colour });
   else if (name === 'glow') nextGlow = clockT;                                          // the red light
+  else if (MATH.includes(name)) startMath(name, colour, name === 'fourier' || name === 'lissajous' ? 12 : 9);
   else if (name === 'uv') { if (clockT - lastUv > 40) startUv(); fireMoment({ type: 'laser', mount: true, colour: 'violet' }); }
 }
 // Agent Lloyd's plan: a lighting state per section of the track, played a phrase at a time,
@@ -1270,7 +1271,7 @@ function drawMoments(project) {
     }
     ctx.restore();
   }
-  drawWeb(project); drawScan(project); drawSparks(project);   // no sparks or crossing glow by default: clean, clear beams
+  drawWeb(project); drawScan(project); drawSparks(project); drawMath(project);   // no sparks or crossing glow by default: clean, clear beams
   // a colour flash: every white line takes the colour for a moment
   if (flash) {
     const age = clockT - flash.t0;
@@ -1280,6 +1281,158 @@ function drawMoments(project) {
 }
 // where a line of the history sits on the rectangle right now (0 near edge .. 1 far edge)
 const rowV = idx => 1 - (((head - idx + TOTAL) % TOTAL) + rowClock) / SHOW;
+// ─── Mathematical line effects (Agent Lloyd's geometry kit) ───
+// contour: marching-squares contour lines over the waveform, stepping up on the beat
+// delaunay: the tallest peaks joined by a live Delaunay triangulation
+// fourier: spinning circles (a Fourier series) tracing a ridge line, sharpening as harmonics join
+// lissajous: a 3D Lissajous knot above a peak, turning with the tempo
+// rivers: light running downhill along the steepest descent from the peaks
+const MATH = ['contour', 'delaunay', 'fourier', 'lissajous', 'rivers'];
+let math = null;
+function startMath(kind, colour, life) {
+  math = { kind, t0: clockT, life: life || 9, colour: PALETTE[colour] || colour || PALETTE.cyan, beatI: -1 };
+  if (kind === 'lissajous') { math.ratio = [[3, 2, 5], [5, 4, 3], [2, 3, 7], [4, 3, 5]][Math.floor(Math.random() * 4)]; }
+}
+const gridPt = (a, i, lift) => { const idx = (head - a + TOTAL) % TOTAL; return surf(-1 + 2 * i / (POINTS - 1), rowV(idx), history[idx][i] * AMP + (lift || 0)); };
+const gridH = (a, i) => history[(head - a + TOTAL) % TOTAL][i];
+function mathPeaks(n) {                                   // the tallest local peaks on the visible surface, spread out
+  const c = [];
+  for (let a = 3; a < SHOW - 3; a += 2) for (let i = 6; i < POINTS - 6; i += 2) {
+    const v = gridH(a, i); if (v < 0.25) continue;
+    if (v >= gridH(a, i - 2) && v >= gridH(a, i + 2) && v >= gridH(a - 2, i) && v >= gridH(a + 2, i)) c.push({ a, i, v });
+  }
+  c.sort((x, y) => y.v - x.v);
+  const out = [];
+  for (const p of c) { if (out.every(q => ((q.a - p.a) / (SHOW * 0.08)) ** 2 + ((q.i - p.i) / (POINTS * 0.08)) ** 2 > 1)) out.push(p); if (out.length >= n) break; }
+  return out;
+}
+function delaunay(pts) {                                  // Bowyer–Watson, in plan (u across, v along)
+  const big = [{ x: -10, y: -10 }, { x: 10, y: -10 }, { x: 0, y: 10 }];
+  let tris = [big];
+  const cc = ([a, b, c]) => { const d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)) || 1e-9;
+    const ux = ((a.x ** 2 + a.y ** 2) * (b.y - c.y) + (b.x ** 2 + b.y ** 2) * (c.y - a.y) + (c.x ** 2 + c.y ** 2) * (a.y - b.y)) / d;
+    const uy = ((a.x ** 2 + a.y ** 2) * (c.x - b.x) + (b.x ** 2 + b.y ** 2) * (a.x - c.x) + (c.x ** 2 + c.y ** 2) * (b.x - a.x)) / d;
+    return { x: ux, y: uy, r: Math.hypot(a.x - ux, a.y - uy) }; };
+  for (const p of pts) {
+    const bad = tris.filter(t => { const c = t.c || (t.c = cc(t)); return Math.hypot(p.x - c.x, p.y - c.y) < c.r; }), edges = [];
+    for (const t of bad) for (const [u, v] of [[t[0], t[1]], [t[1], t[2]], [t[2], t[0]]]) {
+      const k = edges.findIndex(e => (e[0] === u && e[1] === v) || (e[0] === v && e[1] === u)); if (k >= 0) edges.splice(k, 1); else edges.push([u, v]); }
+    tris = tris.filter(t => !bad.includes(t)).concat(edges.map(([u, v]) => [u, v, p]));
+  }
+  const seen = new Set(), out = [];
+  for (const t of tris) { if (!t.every(v => v.p)) continue; for (const [u, v] of [[t[0], t[1]], [t[1], t[2]], [t[2], t[0]]]) { const key = u.p.a < v.p.a || (u.p.a === v.p.a && u.p.i < v.p.i) ? `${u.p.a},${u.p.i},${v.p.a},${v.p.i}` : `${v.p.a},${v.p.i},${u.p.a},${u.p.i}`; if (!seen.has(key)) { seen.add(key); out.push([u.p, v.p]); } } }
+  return out;
+}
+function mathLine(project, pts, col, w, a) {             // a glowing polyline of world points (null breaks it)
+  ctx.strokeStyle = col; ctx.lineJoin = 'round';
+  for (const [ww, aa] of [[w * 3.5, 0.14], [w, 1]]) {
+    if (ww === w) ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = aa * a; ctx.lineWidth = ww; ctx.beginPath(); let pen = false;
+    for (const p of pts) { if (!p) { pen = false; continue; } project(p, 0); if (PZ[0] < 0) { pen = false; continue; } if (pen) ctx.lineTo(PX[0], PY[0]); else { ctx.moveTo(PX[0], PY[0]); pen = true; } }
+    ctx.stroke(); ctx.globalCompositeOperation = 'lighter';
+  }
+}
+let mathMs = 0;
+function drawMath(project) { const t0 = performance.now(); drawMathInner(project); mathMs = mathMs * 0.9 + (performance.now() - t0) * 0.1; }
+function drawMathInner(project) {
+  if (!math) return;
+  const age = clockT - math.t0, beat = Math.max(0.35, music.beat || 0.5);
+  if (age > math.life || calm) { math = null; return; }
+  const k = Math.min(1, age / 0.6, (math.life - age) / 1.2), bi = Math.floor(age / beat), newBeat = bi !== math.beatI;
+  math.beatI = bi;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  if (math.kind === 'contour') {
+    // five levels that step up the mountains one notch per beat; colour runs from blue (low) to red (high)
+    const N = 4, step = 0.72 / N, off = ((age / beat) % 1) * step, COLS = ['#2f5bff', '#22d3ee', '#a78bfa', '#ff4d6d'];
+    for (let li = 0; li < N; li++) {
+      const l = 0.12 + li * step + off, segs = [];
+      for (let a = 1; a < SHOW - 3; a += 2) { const R0 = history[(head - a + TOTAL) % TOTAL], R1 = history[(head - a - 2 + TOTAL) % TOTAL];
+      for (let i = 3; i < POINTS - 6; i += 3) {
+        const h00 = R0[i], h10 = R0[i + 3], h11 = R1[i + 3], h01 = R1[i];
+        if ((h00 > l) === (h10 > l) && (h10 > l) === (h11 > l) && (h11 > l) === (h01 > l)) continue;
+        const cr = [];
+        const E = [[h00, h10, a, i, a, i + 3], [h10, h11, a, i + 3, a + 2, i + 3], [h11, h01, a + 2, i + 3, a + 2, i], [h01, h00, a + 2, i, a, i]];
+        for (const [p, q, a0, i0, a1, i1] of E) if ((p - l) * (q - l) < 0) { const t = (l - p) / (q - p); cr.push([a0 + (a1 - a0) * t, i0 + (i1 - i0) * t]); }
+        if (cr.length >= 2) segs.push(cr[0], cr[1], null);
+      } }
+      const pts = segs.map(c => c && surf(-1 + 2 * c[1] / (POINTS - 1), rowV((head - Math.round(c[0]) + TOTAL) % TOTAL) - (c[0] - Math.round(c[0])) / SHOW, l * AMP));
+      mathLine(project, pts, COLS[li], 1.1, 0.85 * k);
+    }
+  } else if (math.kind === 'delaunay') {
+    // re-triangulate on every beat; the edges that are new this beat flare
+    if (newBeat || !math.edges) {
+      const pk = mathPeaks(16), pts = pk.map(p => ({ x: -1 + 2 * p.i / (POINTS - 1), y: rowV((head - p.a + TOTAL) % TOTAL) * 2, p }));
+      const old = new Set((math.edges || []).map(e => e.key));
+      math.edges = delaunay(pts).map(([u, v]) => ({ u, v, key: `${u.i},${v.i}`, fresh: !old.has(`${u.i},${v.i}`) }));
+      math.peaks = pk; math.snap = clockT;
+    }
+    const flare = Math.max(0, 1 - (clockT - math.snap) / (beat * 0.7));
+    for (const e of math.edges) mathLine(project, [gridPt(e.u.a, e.u.i, 0.02), gridPt(e.v.a, e.v.i, 0.02)], math.colour, e.fresh ? 1.2 + flare * 1.2 : 1.1, k * (e.fresh ? 0.7 + 0.3 * flare : 0.75));
+    ctx.fillStyle = '#fff';
+    for (const p of math.peaks) { project(gridPt(p.a, p.i, 0.02), 0); if (PZ[0] > 0) { ctx.globalAlpha = k; ctx.beginPath(); ctx.arc(PX[0], PY[0], 2.2, 0, TAU); ctx.fill(); } }
+  } else if (math.kind === 'fourier') {
+    // the Fourier series of one ridge line (projected), drawn as a chain of spinning circles whose tip traces it
+    const a = Math.floor(SHOW * 0.3), path = [];
+    for (let i = 0; i < POINTS; i += 2) { project(gridPt(a, i), 0); if (PZ[0] > 0) path.push([PX[0], PY[0]]); }
+    if (path.length > 8) {
+      const loop = path.concat(path.slice().reverse()), N = loop.length, K = Math.round(3 + Math.min(1, age / (math.life * 0.7)) * 37);   // harmonics join as it goes
+      const coef = [];
+      for (let q = -K; q <= K; q++) { let re = 0, im = 0; for (let n = 0; n < N; n++) { const an = -TAU * q * n / N, c = Math.cos(an), s = Math.sin(an); re += loop[n][0] * c - loop[n][1] * s; im += loop[n][0] * s + loop[n][1] * c; } coef.push({ q, re: re / N, im: im / N, r: Math.hypot(re, im) / N }); }
+      coef.sort((x, y) => (x.q === 0 ? -1 : y.q === 0 ? 1 : y.r - x.r));
+      const T = (age / (beat * 8)) % 1;                    // one trace every two bars
+      const at = t => { let x = 0, y = 0; for (const c of coef) { const an = TAU * c.q * t; x += c.re * Math.cos(an) - c.im * Math.sin(an); y += c.re * Math.sin(an) + c.im * Math.cos(an); } return [x, y]; };
+      ctx.strokeStyle = math.colour; ctx.lineWidth = 1.5; ctx.globalAlpha = k; ctx.beginPath();
+      for (let s = 0; s <= 160; s++) { const p = at(T * s / 160); if (s) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); }
+      ctx.stroke();
+      let x = 0, y = 0;
+      for (const c of coef) {
+        const an = TAU * c.q * T, nx = x + c.re * Math.cos(an) - c.im * Math.sin(an), ny = y + c.re * Math.sin(an) + c.im * Math.cos(an);
+        if (c.q !== 0) {
+          if (c.r > 1) { ctx.globalAlpha = 0.22 * k; ctx.lineWidth = 1; ctx.strokeStyle = math.colour; ctx.beginPath(); ctx.arc(x, y, c.r, 0, TAU); ctx.stroke(); }
+          ctx.globalAlpha = 0.7 * k; ctx.strokeStyle = '#fff'; ctx.lineWidth = 0.9; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(nx, ny); ctx.stroke();
+        }
+        x = nx; y = ny;
+      }
+      ctx.globalAlpha = k; ctx.fillStyle = math.colour; ctx.beginPath(); ctx.arc(x, y, 3, 0, TAU); ctx.fill();
+    }
+  } else if (math.kind === 'lissajous') {
+    // a 3D Lissajous knot hanging over a peak and turning with the tempo; it reties itself every four bars
+    if (!math.peak || rowV((head - math.peak.a + TOTAL) % TOTAL) < 0.15 || math.peak.a >= SHOW - 2) { const pk = mathPeaks(4); math.peak = pk[Math.floor(Math.random() * pk.length)] || { a: Math.floor(SHOW / 2), i: POINTS / 2 }; }
+    if (newBeat && bi > 0 && bi % 16 === 0) math.ratio = [[3, 2, 5], [5, 4, 3], [2, 3, 7], [4, 3, 5]][Math.floor(Math.random() * 4)];
+    math.peak.a = Math.min(SHOW - 2, math.peak.a);
+    const base = gridPt(math.peak.a, math.peak.i, 0), c = [base[0], base[1] + 0.55, base[2]], [p, q, r] = math.ratio, ph = age / (beat * 4) * TAU;
+    const curve = []; for (let s = 0; s <= 420; s++) { const t = s / 420 * TAU; curve.push([c[0] + 0.34 * Math.sin(p * t + ph), c[1] + 0.24 * Math.sin(q * t), c[2] + 0.34 * Math.sin(r * t + ph * 0.5)]); }
+    mathLine(project, [base, [c[0], c[1] - 0.24, c[2]]], math.colour, 1, 0.5 * k);
+    mathLine(project, curve, math.colour, 1.2, 0.95 * k);
+  } else if (math.kind === 'rivers') {
+    // steepest-descent paths from the peaks, worked out on each beat; light pulses run down them
+    if (newBeat || !math.paths) {
+      math.paths = [];
+      for (const p of mathPeaks(10)) for (const [da, di] of [[1, 0], [-1, 0], [0, 2], [0, -2], [1, 2], [-1, -2]]) {
+        let a = p.a + da, i = p.i + di; const path = [];
+        for (let s = 0; s < 120; s++) {
+          path.push([a, i]); let best = null, bh = gridH(a, i);
+          for (const [ea, ei] of [[1, 0], [-1, 0], [0, 2], [0, -2], [1, 2], [1, -2], [-1, 2], [-1, -2]]) { const na = a + ea, ni = i + ei; if (na < 1 || na >= SHOW - 1 || ni < 2 || ni >= POINTS - 2) continue; const nh = gridH(na, ni); if (nh < bh - 0.002) { bh = nh; best = [na, ni]; } }
+          if (!best) break; [a, i] = best;
+        }
+        if (path.length > 4) math.paths.push(path);
+      }
+    }
+    const flow = age * (6 + energy * 14);
+    for (const path of math.paths) {
+      const pts = [];
+      for (let s = 0; s < path.length; s++) {
+        const on = ((s - flow) % 10 + 10) % 10 < 6;           // dashes of light running downhill
+        pts.push(on ? gridPt(path[s][0], path[s][1], 0.01) : null);
+      }
+      mathLine(project, pts, math.colour, 1.8, k);
+    }
+  }
+  ctx.restore();
+}
+const s0col = n => n > 30 ? '#22d3ee' : '#2f5bff';
+window.JN_mathInfo = () => math && { ms: +mathMs.toFixed(2), kind: math.kind, paths: math.paths && math.paths.length, edges: math.edges && math.edges.length, peaks: mathPeaks(10).length };
+window.JN_math = kind => { startMath(kind || MATH[Math.floor(Math.random() * MATH.length)], 'cyan', 10); return math && math.kind; };   // try one from the console
 const peakAt = (idx, i, lift) => surf(-1 + 2 * i / (POINTS - 1), rowV(idx), history[idx][i] * AMP + (lift || 0));
 
 // 2. Laser web: thin beams strung between the highest peaks, snapping to new peaks on each kick.
