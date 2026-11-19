@@ -785,6 +785,8 @@ function onDrop(breakLen) {
   const sheet = source === 'sc' && score && Array.isArray(score.moments) && score.moments.length;
   if (breakLen >= Math.max(6, 16 * music.beat) && !sheet) strobe();
   fireMoment({ type: 'laser', colour: Object.keys(PALETTE)[Math.floor(Math.random() * 5)] });          // every drop gets lasers
+  const top = mountPeaks();                                                                       // and the red light lands on the tallest peak
+  if (top) glows.push({ t0: clockT, life: 3.5 + Math.random() * 1.5, drop: true, mount: { row: top.row, i: top.peaks[0] }, du: (Math.random() - 0.5) * 0.08, size: 0.75 + Math.random() * 0.4 });
   setTimeout(() => fireMoment({ type: 'laser', colour: Object.keys(PALETTE)[Math.floor(Math.random() * 5)] }), 450);
   if (autoNow) {
     shape.twistTo = (Math.random() - 0.5) * 1.2; shape.curlTo = 0.5 + Math.random() * 0.5;
@@ -978,7 +980,7 @@ function draw(phase) {
 }
 
 /* ─── Moments: lasers, colour flashes, barrel rolls, strobes ── */
-let lasers = [], flash = null, lastLaser = -99;
+let lasers = [], flash = null, lastLaser = -99, web = null, scan = null, lastScan = -99, sparks = [], lastSpark = -99, sparkT = 0, beams = [];
 // A red glow that appears from nowhere, very occasionally: fades up, drifts and pulses, fades away.
 let glows = [], nextGlow = 40 + Math.random() * 60;
 function autoGlow() {
@@ -992,8 +994,15 @@ function autoLasers() {
   if (source === 'idle' || calm) return;
   const gap = inBreak > 0.5 ? 12 : 2.5 + 4 * (1 - energy);
   const since = clockT - lastLaser;
-  if ((hit > 0.35 && since > gap) || (energy > 0.3 && since > gap * 2.5))
-    fireMoment({ type: 'laser', colour: Object.keys(PALETTE)[Math.floor(Math.random() * 5)] });
+  const pick = () => Object.keys(PALETTE)[Math.floor(Math.random() * 5)];
+  if ((hit > 0.35 && since > gap) || (energy > 0.3 && since > gap * 2.5)) {
+    fireMoment({ type: 'laser', colour: pick() });                                   // the lasers as before, always
+    if (!web && energy > 0.5 && Math.random() < 0.22) fireMoment({ type: 'web', colour: pick() });   // plus, now and then, a web
+  }
+  // a scan line on the beat through steady, busy stretches, every half a minute or so
+  if (!scan && inBreak < 0.3 && energy > 0.4 && clockT - lastScan > 25 + Math.random() * 20) fireMoment({ type: 'scan', colour: pick() });
+  // sparks off the sharpest spikes on hard hits
+  if (hit > 0.55 && clockT - lastSpark > 0.18) { lastSpark = clockT; spawnSparks(hit); }
 }
 // Lasers mounted on the waveform: pick the tallest peaks of a line just in from the far edge and
 // remember that line, so the emitters ride the surface towards you, rising and falling with the music.
@@ -1008,7 +1017,7 @@ function mountPeaks() {
   return { row: idx, peaks };
 }
 function fireMoment(m) {
-  if (!['strobe', 'laser', 'flash', 'flip'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
+  if (!['strobe', 'laser', 'flash', 'flip', 'web', 'scan'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
   const colour = PALETTE[m.colour] || null;
   if (m.type === 'strobe') strobe();
   else if (m.type === 'laser') {
@@ -1018,18 +1027,27 @@ function fireMoment(m) {
     else if (lasers.length < 4) lasers.push({ t0: clockT, colour: colour || PALETTE.green, n: 6 + Math.floor(Math.random() * 6), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
   }
   else if (m.type === 'flash') flash = { t0: clockT, colour: colour || PALETTE.amber };
+  else if (m.type === 'web') { if (!web) { web = { t0: clockT, life: 4.5 + Math.random() * 2, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
+  else if (m.type === 'scan') { if (!scan) { const period = Math.max(1.2, Math.min(4, (music.beat || 0.5) * 4)); scan = { t0: clockT, period, life: period * 2, colour: colour || PALETTE.violet }; lastScan = clockT; } }
   else if (m.type === 'flip') { if (!reduceMotion) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }
   if (m.note) $('cue').textContent = `${score && score.by || 'Agent Pickle'}: “${m.note}”`;
 }
 window.JN_moment = fireMoment;
+window.JN_sparks = () => spawnSparks(1);       // try the sparks from the console
+window.JN_fx = () => ({ lasers: lasers.length, mounted: lasers.filter(l => l.mount).length, glows: glows.length, sparks: sparks.length, web: !!web, scan: !!scan, flash: !!flash, look });
 window.JN_glow = () => { nextGlow = clockT; };   // try it from the console   // so the moments can be tried from the console
 
 function drawMoments(project) {
   // the red glow, from nowhere
   glows = glows.filter(g => clockT - g.t0 < g.life);
   for (const g of glows) {
-    const age = clockT - g.t0, k = Math.min(1, age / 1.8, (g.life - age) / 2.2), pulse = 0.8 + 0.2 * Math.sin(age * 2.6);
-    project(surf(g.u + g.du * age, g.v, g.h), 0);
+    const age = clockT - g.t0, k = Math.min(1, age / (g.drop ? 0.1 : 1.8), (g.life - age) / 2.2), pulse = 0.8 + 0.2 * Math.sin(age * 2.6);
+    if (g.mount) {                                       // a drop's glow rides its peak, then drifts off it
+      const a = (head - g.mount.row + TOTAL) % TOTAL, v = 1 - (a + rowClock) / SHOW;
+      if (v < 0.02) { g.life = 0; continue; }
+      const i = g.mount.i, u = -1 + 2 * i / (POINTS - 1) + g.du * age;
+      project(surf(u, v, history[g.mount.row][i] * AMP + 0.04 + age * 0.05), 0);
+    } else project(surf(g.u + g.du * age, g.v, g.h), 0);
     if (PZ[0] < 0) continue;
     const r = Math.max(30, Math.min(W, H) * 0.12 * g.size * pulse);
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -1039,6 +1057,7 @@ function drawMoments(project) {
     ctx.restore();
   }
   // lasers: a fan of beams out of the rectangle, sweeping
+  beams.length = 0;
   lasers = lasers.filter(l => clockT - l.t0 < (l.life || 3.2));
   if (lasers.length) {
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -1050,6 +1069,7 @@ function drawMoments(project) {
       for (let i = 0; i < l.n; i++) {
         const a = -Math.PI / 2 + l.base + (i / (l.n - 1) - 0.5) * 2.2 + Math.sin(age * 2.4 + i) * 0.22 + age * (l.spin || 0) * 0.35;   // the fan sweeps round
         const ex = ox + Math.cos(a) * len, ey = oy + Math.sin(a) * len;
+        beams.push([ox, oy, ex, ey, l.colour, k]);
         ctx.strokeStyle = l.colour;
         ctx.globalAlpha = 0.18 * k; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
         ctx.globalAlpha = 0.9 * k; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
@@ -1058,6 +1078,7 @@ function drawMoments(project) {
     }
     ctx.restore();
   }
+  drawWeb(project); drawScan(project); drawSparks(project); drawHaze();
   // a colour flash: every white line takes the colour for a moment
   if (flash) {
     const age = clockT - flash.t0;
@@ -1065,6 +1086,124 @@ function drawMoments(project) {
     else { ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = Math.min(1, (0.7 - age) / 0.5); ctx.fillStyle = flash.colour; ctx.fillRect(0, 0, W, H); ctx.restore(); }
   }
 }
+// where a line of the history sits on the rectangle right now (0 near edge .. 1 far edge)
+const rowV = idx => 1 - (((head - idx + TOTAL) % TOTAL) + rowClock) / SHOW;
+const peakAt = (idx, i, lift) => surf(-1 + 2 * i / (POINTS - 1), rowV(idx), history[idx][i] * AMP + (lift || 0));
+
+// 2. Laser web: thin beams strung between the highest peaks, snapping to new peaks on each kick.
+function snapWeb() {
+  const found = [];
+  for (let a = 4; a < SHOW * 0.75; a += 5) {
+    const idx = (head - a + TOTAL) % TOTAL, row = history[idx];
+    let best = -1, bv = 0.2;
+    for (let i = 6; i < POINTS - 6; i++) if (row[i] > bv) { bv = row[i]; best = i; }
+    if (best >= 0) found.push({ idx, i: best, val: bv });
+  }
+  found.sort((x, y) => y.val - x.val);
+  web.anchors = found.slice(0, 6); web.snapAt = clockT;
+}
+function drawWeb(project) {
+  if (!web) return;
+  const age = clockT - web.t0;
+  if (age > web.life || calm) { web = null; return; }
+  if ((hit > 0.4 && clockT - web.snapAt > Math.max(0.2, (music.beat || 0.5) * 0.9)) || web.anchors.some(p => rowV(p.idx) < 0.05)) snapWeb();
+  const pts = [];
+  for (const p of web.anchors) { project(peakAt(p.idx, p.i, 0.03), 0); if (PZ[0] > 0) pts.push([PX[0], PY[0]]); }
+  if (pts.length < 2) return;
+  pts.sort((p, q) => p[0] - q[0]);
+  const k = Math.min(1, age / 0.15, (web.life - age) / 0.6), flick = 0.75 + 0.25 * Math.min(1, (clockT - web.snapAt) / 0.12);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = web.colour;
+  const pairs = [];
+  for (let j = 0; j < pts.length - 1; j++) pairs.push([pts[j], pts[j + 1]]);           // the strands
+  for (let j = 0; j < pts.length - 2; j++) pairs.push([pts[j], pts[j + 2]]);           // and the cross-bracing
+  for (const [p, q] of pairs) {
+    beams.push([p[0], p[1], q[0], q[1], web.colour, k]);
+    ctx.globalAlpha = 0.14 * k; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+    ctx.globalAlpha = 0.85 * k * flick; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+  }
+  ctx.fillStyle = '#fff';
+  for (const p of pts) { ctx.globalAlpha = k; ctx.beginPath(); ctx.arc(p[0], p[1], 2.2, 0, TAU); ctx.fill(); }
+  ctx.restore();
+}
+
+// 3. Scan line: one line of the waveform lit as a laser, sweeping from the far edge to the near
+// edge once a bar (four beats), so it pulses through the landscape in time.
+function drawScan(project) {
+  if (!scan) return;
+  const age = clockT - scan.t0;
+  if (age > scan.life) { scan = null; return; }
+  const pos = (age / scan.period) % 1, a = Math.min(SHOW - 1, Math.floor(pos * SHOW)), idx = (head - a + TOTAL) % TOTAL, row = history[idx], v = rowV(idx);
+  const k = Math.min(1, age / 0.2, (scan.life - age) / 0.4) * Math.min(1, v / 0.1);
+  if (k <= 0) return;
+  const pts = [];
+  for (let i = 0; i < POINTS; i += 2) { project(surf(-1 + 2 * i / (POINTS - 1), v, row[i] * AMP), 0); pts.push(PZ[0] > 0 ? [PX[0], PY[0]] : null); }
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = scan.colour; ctx.lineJoin = 'round';
+  for (const [w, al] of [[10, 0.12], [4, 0.3], [1.6, 1]]) {
+    ctx.globalAlpha = al * k; ctx.lineWidth = w; ctx.beginPath(); let pen = false;
+    for (const p of pts) { if (!p) { pen = false; continue; } if (pen) ctx.lineTo(p[0], p[1]); else { ctx.moveTo(p[0], p[1]); pen = true; } }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// 4. Sparks: on a hard hit, embers fly off the sharpest spikes of the newest lines and fall away.
+function spawnSparks(strength) {
+  if (sparks.length > 160) return;
+  const cand = [];
+  for (let a = 1; a <= 5; a++) {
+    const idx = (head - a + TOTAL) % TOTAL, row = history[idx];
+    for (let i = 4; i < POINTS - 4; i++) {
+      const sharp = row[i] - (row[i - 3] + row[i + 3]) / 2;
+      if (sharp > 0.25) cand.push({ idx, i, sharp });
+    }
+  }
+  cand.sort((x, y) => y.sharp - x.sharp);
+  for (const c of cand.slice(0, 4)) {
+    const p = peakAt(c.idx, c.i);
+    for (let n = 0, N = 5 + Math.floor(Math.random() * 6 * strength); n < N; n++)
+      sparks.push({ p: p.slice(), vel: [(Math.random() - 0.5) * 0.9, (0.8 + Math.random() * 1.6) * strength, (Math.random() - 0.5) * 0.7], t0: clockT, life: 0.7 + Math.random() * 0.8, hot: Math.random() < 0.3 });
+  }
+}
+function drawSparks(project) {
+  const dt = Math.max(0, Math.min(0.05, clockT - sparkT)); sparkT = clockT;
+  if (!sparks.length) return;
+  sparks = sparks.filter(s => clockT - s.t0 < s.life);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  for (const s of sparks) {
+    s.vel[1] -= 3.2 * dt; s.vel[0] *= 1 - dt * 0.6; s.vel[2] *= 1 - dt * 0.6;
+    s.p[0] += s.vel[0] * dt; s.p[1] += s.vel[1] * dt; s.p[2] += s.vel[2] * dt;
+    project(s.p, 0); if (PZ[0] < 0) continue;
+    project([s.p[0] - s.vel[0] * 0.035, s.p[1] - s.vel[1] * 0.035, s.p[2] - s.vel[2] * 0.035], 1); if (PZ[1] < 0) continue;
+    const f = 1 - (clockT - s.t0) / s.life;
+    ctx.strokeStyle = s.hot ? '#ffd27a' : '#fff'; ctx.globalAlpha = Math.max(0, f);
+    ctx.lineWidth = Math.max(0.8, Math.min(2.2, 220 / PZ[0] / 60));
+    ctx.beginPath(); ctx.moveTo(PX[1], PY[1]); ctx.lineTo(PX[0], PY[0]); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// 5. Haze: in the big moments a faint smoke glow along the beams, brighter where they cross.
+function drawHaze() {
+  if (beams.length < 2) return;
+  const big = Math.min(1, energy * 1.1 + hit * 0.6);
+  if (big < 0.25) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  for (const b of beams) { ctx.strokeStyle = b[4]; ctx.globalAlpha = 0.035 * big * b[5]; ctx.lineWidth = 34; ctx.beginPath(); ctx.moveTo(b[0], b[1]); ctx.lineTo(b[2], b[3]); ctx.stroke(); }
+  const R = Math.min(W, H) * 0.045; let n = 0;
+  for (let i = 0; i < beams.length && n < 28; i++) for (let j = i + 1; j < beams.length && n < 28; j++) {
+    const [x1, y1, x2, y2, c, k1] = beams[i], [x3, y3, x4, y4, , k2] = beams[j];
+    const d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4); if (Math.abs(d) < 1e-6) continue;
+    const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / d, u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / d;
+    if (t < 0.002 || t > 1 || u < 0.002 || u > 1) continue;                 // must cross away from where they start
+    const x = x1 + t * (x2 - x1), y = y1 + t * (y2 - y1);
+    if (x < 0 || y < 0 || x > W || y > H) continue;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, R);
+    g.addColorStop(0, c); g.addColorStop(1, c + '00');
+    ctx.globalAlpha = 0.22 * big * Math.min(k1, k2); ctx.fillStyle = g; ctx.fillRect(x - R, y - R, R * 2, R * 2); n++;
+  }
+  ctx.restore();
+}
+
 // A laser riding a peak of the waveform: beams fire up out of the peak (one straight up, two
 // scissoring either side), each as long as the screen, and the emitter moves with the line it sits on.
 function drawMountedLaser(l, project) {
@@ -1083,6 +1222,7 @@ function drawMountedLaser(l, project) {
       project(surf(u + sw, v + side * 0.04, h + 1.2), 1); if (PZ[1] < 0) continue;
       let dx = PX[1] - ox, dy = PY[1] - oy; const m = Math.hypot(dx, dy) || 1; dx /= m; dy /= m;
       const ex = ox + dx * len, ey = oy + dy * len;
+      beams.push([ox, oy, ex, ey, l.colour, k]);
       ctx.strokeStyle = l.colour;
       ctx.globalAlpha = 0.16 * k; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
       ctx.globalAlpha = 0.9 * k; ctx.lineWidth = side ? 1.2 : 1.8; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
