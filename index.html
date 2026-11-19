@@ -1052,8 +1052,6 @@ function autoLasers() {
   // during a laser scene, the lasers go again on the kicks (or every two bars if the kicks are hard to hear)
   if (clockT < sceneEnd && (scene === 'mounted' || scene === 'fan' || scene === 'rgb') && clockT - lastLaser > Math.max(1.2, beat * 2) && (hit > 0.35 || clockT - lastLaser > beat * 8))
     fireMoment({ type: 'laser', mount: scene === 'mounted', rgb: scene === 'rgb', colour: sceneColour });
-  // sparks off the sharpest spikes on hard hits
-  if (hit > 0.55 && clockT - lastSpark > 0.18) { lastSpark = clockT; spawnSparks(hit); }
 }
 // Lasers mounted on the waveform: pick the tallest peaks of a line just in from the far edge and
 // remember that line, so the emitters ride the surface towards you, rising and falling with the music.
@@ -1159,14 +1157,14 @@ function drawMoments(project) {
         const col = l.rgb ? rgbAt(age * 240 + i * 360 / l.n) : l.colour;          // RGB lasers chase round the colour wheel
         beams.push([ox, oy, ex, ey, col, k]);
         ctx.strokeStyle = col;
-        ctx.globalAlpha = 0.18 * k; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.globalAlpha = 0.12 * k; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
         ctx.globalAlpha = 0.9 * k; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
       }
       ctx.globalAlpha = k; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ox, oy, 3, 0, TAU); ctx.fill();
     }
     ctx.restore();
   }
-  drawWeb(project); drawScan(project); drawSparks(project); drawHaze();
+  drawWeb(project); drawScan(project); drawSparks(project);   // no sparks or crossing glow by default: clean, clear beams
   // a colour flash: every white line takes the colour for a moment
   if (flash) {
     const age = clockT - flash.t0;
@@ -1341,7 +1339,7 @@ function drawMountedLaser(l, project) {
       const col = l.rgb ? rgbAt(age * 240 + (j++) * 40) : l.colour;
       beams.push([ox, oy, ex, ey, col, k]);
       ctx.strokeStyle = col;
-      ctx.globalAlpha = 0.16 * k; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.globalAlpha = 0.12 * k; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
       ctx.globalAlpha = 0.9 * k; ctx.lineWidth = side ? 1.2 : 1.8; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
     }
     ctx.globalAlpha = k; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ox, oy, 2.6, 0, TAU); ctx.fill();
