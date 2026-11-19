@@ -119,5 +119,10 @@
       "destination": "/favicon.svg",
       "permanent": true
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "claude/**": false
+    }
+  }
 }
