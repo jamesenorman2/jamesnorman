@@ -128,7 +128,9 @@
   #pacCanvas{position:static;width:auto;height:auto;max-width:100%}
   .pp{width:3.6rem;height:3.6rem;padding:0;color:#fff;opacity:.85;transition:opacity .3s,transform .3s}
   /* Full screen and Egg: tucked away, faint until you look for them */
-  .hush{display:flex;gap:1.4rem;align-self:flex-end}
+  .hush{position:fixed;right:3rem;bottom:calc(5.2rem + 4rem + .9rem + 3.6rem + .5rem);z-index:4;display:flex;gap:1.4rem;justify-content:flex-end;pointer-events:auto}
+  @media(max-width:700px){.hush{right:16px;bottom:calc(9.5rem + 48px + .7rem + 40px + .4rem)}}
+  body.tv .hush{display:none}
   .hush button{color:#fff;background:none;border:0;padding:.3rem 0;font-size:.6rem;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;opacity:.28;transition:opacity .2s}
   .hush button:hover,.hush button:focus-visible{opacity:.9}
   body.shell-on .hush{display:none}
