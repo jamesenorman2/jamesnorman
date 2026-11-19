@@ -266,7 +266,7 @@ const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;
 
 const ROWS = 72;            // number of ridge lines
 const POINTS = 160;         // samples per line
-const ROW_RATE = 42;        // new lines per second while music plays (each line is ~24 ms of music)
+const ROW_RATE = 30;        // new lines per second while music plays: a calmer scroll
 const FFT = 2048;
 const MIN_HZ = 30, MAX_HZ = 9000;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -804,7 +804,7 @@ function direct(dt) {
   // the shape follows the music: climb a curl when riding, twist and ripple with the energy
   if (inBreak > 0.3) { shape.curlTo = 0; shape.twistTo = 0; shape.rippleTo = 0.1; if (view.mode !== 'far' && view.modeT > 2) setMode('far'); }
   else {
-    shape.rippleTo = e * 0.9;
+    shape.rippleTo = e * 0.55;                    // the surface moves with the music, gently
     if (view.mode === 'ride' && view.modeT < 0.1) shape.curlTo = 0.6 + Math.random() * 0.45;
     if (view.mode === 'orbit' && view.modeT < 0.1) { shape.curlTo = (Math.random() - 0.3) * 0.6; shape.twistTo = (Math.random() - 0.5) * 0.8; }
     if (view.mode === 'under' && view.modeT < 0.1) { shape.curlTo = -0.3; shape.twistTo = 0; }
@@ -850,11 +850,11 @@ function updateView(dt) {
   const t = targets(), kk = Math.min(1, dt * (user ? 7 : 2.4));
   view.C = mix(view.C, t.C, kk); view.T = mix(view.T, t.T, kk); view.U = norm(mix(view.U, t.U, kk));
   if (!calm) {
-    view.zoom += ((1 + hit * 0.25 - inBreak * 0.1) - view.zoom) * Math.min(1, dt * 10);
-    view.shake = hit * 5;
+    view.zoom += ((1 + hit * 0.12 - inBreak * 0.1) - view.zoom) * Math.min(1, dt * 10);   // a softer punch on the beat
+    view.shake = hit * 2.5;
   } else { view.zoom = 1; view.shake = 0; }
   if (view.spinV) { view.spin += view.spinV * dt; if (Math.abs(view.spin) >= TAU) { view.spin = 0; view.spinV = 0; } }
-  view.speed = 0.8 + energy * 0.8;
+  view.speed = 0.85 + energy * 0.4;              // louder passages scroll only a little faster
   hit *= Math.exp(-dt * 4);
 }
 
