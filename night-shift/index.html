@@ -78,7 +78,7 @@
 <main class="wrap">
   <div class="kicker">AI agents on duty · round the clock</div>
   <h1>Agents</h1>
-  <p class="lede">A crew of agents with very silly names works this site like a control room. The day shift each do one job a day; the night shift walks the whole site every hour. They check real things: every page, the certificate and domain, the outside links, the official Martyn’s Law guidance, the UK threat level and my SoundCloud. The Analyst writes it all up, and the DJ sets up the next battle on the <a href="/music/">Music</a> tab.</p>
+  <p class="lede">This site is run by a team of AI agents, organised like a security control room. The day shift each carry out one task a day; the night shift patrols the whole site every hour. They check real things: every page, the certificate and domain, outbound links, the official Martyn’s Law guidance, the UK threat level and new music. Each shift ends with a written handover, and findings that need action come to me.</p>
 
   <section class="floor" aria-label="The crew at work: stick men walking the site, checking each page">
     <canvas id="floor"></canvas>
@@ -285,45 +285,246 @@ const NAMES = { '/': 'Home', '/music/': 'Music', '/security/': 'Security', '/sec
   '/security/cpted/': 'CPTED', '/security/martyns-law/': 'Martyn’s Law', '/night-shift/': 'Control room', '/admin/': 'Admin', '/blog/': 'Blog' };
 const label = p => NAMES[p] || p.replace(/^\/|\/$/g, '').split('/').pop().replace(/-/g, ' ') || 'Home';
 
+/* ─── The building: a ground floor seen from above at a slight angle ───
+   Plan coordinates (u across, v front-to-back, z up) are projected with a gentle shear so the floor
+   reads as 3D while still filling the panel. Offices sit either side of a central corridor; every
+   office is furnished for its job and its agents walk the whole floor between the furniture. */
+const ISO = { sh: 0.3, sq: 0.62, ox: 10, oy: 10 };
+const P = (u, v, z) => [ISO.ox + u + v * ISO.sh, ISO.oy + v * ISO.sq - (z || 0)];
+let SM = 1;                                                   // the size of people and furniture
+
 function layout() {
   const r = fcv.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
   FW = r.width; FH = r.height; fcv.width = FW * d; fcv.height = FH * d; fx.setTransform(d, 0, 0, d, 0, 0);
   const pages = (floor.shift && floor.shift.patrol || []).filter(p => !/\.(css|js|json)$/.test(p.path)).slice(0, 12);
   const list = pages.length ? pages : Object.keys(NAMES).map(path => ({ path, ok: true }));
-  const top = Math.ceil(list.length / 2), m = 10, cy = FH / 2, ch = Math.max(46, FH * 0.17);
-  const rw = (FW - m * 2) / top;
-  floor.cy = cy; floor.ch = ch;
+  ISO.sh = FW < 700 ? 0.06 : 0.16;
+  const m = 10, wallH = 34;
+  const PD = (FH - 2 * m - wallH) / ISO.sq, PW = FW - 2 * m - PD * ISO.sh;
+  ISO.ox = m; ISO.oy = m + wallH;
+  const Dc = PD * 0.15, Dr = (PD - Dc) / 2, top = Math.ceil(list.length / 2);
+  floor.PW = PW; floor.PD = PD; floor.Dr = Dr; floor.Dc = Dc; floor.cv = Dr + Dc / 2;
   floor.rooms = list.map((p, i) => {
     const upper = i < top, col = upper ? i : i - top, cols = upper ? top : list.length - top;
-    const w = (FW - m * 2) / cols, x = m + col * w;
-    const y = upper ? m : cy + ch / 2, h = cy - ch / 2 - m;
-    return { ...p, name: label(p.path), x, y, w, h, upper, door: { x: x + w / 2, y: upper ? y + h : y }, centre: { x: x + w / 2, y: y + h * (upper ? 0.62 : 0.42) }, seen: 0 };
+    const w = PW / cols, u = col * w, v = upper ? 0 : Dr + Dc;
+    const doorV = upper ? Dr : Dr + Dc;
+    return { ...p, name: label(p.path), u, v, w, d: Dr, upper, door: { u: u + w / 2, v: doorV }, centre: { u: u + w / 2, v: v + Dr / 2 }, seen: 0 };
   });
+  SM = Math.max(0.55, Math.min(2.1, Math.min(Dr, PW / top) / 100));
   const find = path => floor.rooms.find(r => r.path === path) || floor.rooms[0];
   floor.control = find('/night-shift/');
-  floor.music = find('/music/');
-  floor.security = floor.rooms.find(r => r.path === '/security/');
-  floor.legal = floor.rooms.find(r => r.path === '/security/martyns-law/');
-  floor.vis = floor.rooms.find(r => r.path === '/');
-  void rw;
 }
 
-// a route through every room: corridor → door → inside (check) → door → corridor
+// a patrol's route through every office: corridor → door → into the room → back out
 function route(reverse) {
   const rooms = reverse ? [...floor.rooms].reverse() : floor.rooms, pts = [];
   rooms.forEach(r => {
-    pts.push({ x: r.door.x, y: floor.cy }, { x: r.door.x, y: r.door.y }, { x: r.centre.x, y: r.centre.y, check: r }, { x: r.door.x, y: r.door.y }, { x: r.door.x, y: floor.cy });
+    const inner = r.upper ? r.v + r.d * 0.35 : r.v + r.d * 0.65;
+    pts.push({ u: r.door.u, v: floor.cv }, { u: r.door.u, v: r.door.v }, { u: r.door.u + (Math.random() - 0.5) * r.w * 0.3, v: inner, check: r }, { u: r.door.u, v: r.door.v }, { u: r.door.u, v: floor.cv });
   });
   return pts;
 }
-
 function makeMen() {
+  const cv = floor.cv, PW = floor.PW;
   floor.men = [
-    { name: 'MONKEY MONKEY', path: route(false), i: 0, x: 0, y: floor.cy, pause: 0, step: 0 },
-    { name: 'FISH FISH', path: route(true), i: 0, x: FW, y: floor.cy, pause: 0, step: 0 },
-    { name: 'FISH', path: [{ x: FW * 0.55, y: floor.cy + floor.ch * 0.25 }, { x: FW - 8, y: floor.cy + floor.ch * 0.25, hold: 2.2 }], i: 0, x: FW * 0.55, y: floor.cy, pause: 0, step: 0 }
+    { name: 'MONKEY MONKEY', path: route(false), i: 0, u: 0, v: cv, pause: 0, step: 0 },
+    { name: 'FISH FISH', path: route(true), i: 0, u: PW, v: cv, pause: 0, step: 0 },
+    { name: 'FISH', path: [{ u: PW * 0.55, v: cv + floor.Dc * 0.25 }, { u: PW - 6, v: cv + floor.Dc * 0.25, hold: 2.2 }], i: 0, u: PW * 0.55, v: cv, pause: 0, step: 0 }
   ];
-  floor.men.forEach(m => { const p = m.path[0]; if (p) { m.x = p.x; m.y = p.y; } });
+  floor.men.forEach(m => { const p = m.path[0]; if (p) { m.u = p.u; m.v = p.v; } });
+}
+
+// ─── drawing primitives in plan space ───
+const poly = (pts, fill) => { fx.beginPath(); pts.forEach(([x, y], i) => i ? fx.lineTo(x, y) : fx.moveTo(x, y)); fx.closePath(); if (fill) { fx.fillStyle = fill; fx.fill(); } fx.stroke(); };
+// a solid block: the side, the front and the top, filled black so nearer things hide farther ones
+function block(u, v, w, d, h, z0) {
+  z0 = z0 || 0;
+  poly([P(u, v, z0), P(u, v + d, z0), P(u, v + d, z0 + h), P(u, v, z0 + h)], '#000');
+  poly([P(u, v + d, z0), P(u + w, v + d, z0), P(u + w, v + d, z0 + h), P(u, v + d, z0 + h)], '#000');
+  poly([P(u, v, z0 + h), P(u + w, v, z0 + h), P(u + w, v + d, z0 + h), P(u, v + d, z0 + h)], '#000');
+  const [fx0, fy0] = P(u, v + d, z0 + h), [fx1] = P(u + w, v + d, z0);
+  return { x: fx0, y: fy0, w: fx1 - fx0, h, top: (a, b, z) => P(u + a * w, v + b * d, z0 + h + (z || 0)) };   // front face rect, and a point on the top
+}
+const seg = (a, b) => { fx.beginPath(); fx.moveTo(a[0], a[1]); fx.lineTo(b[0], b[1]); fx.stroke(); };
+const ell = (c, rx) => { fx.beginPath(); fx.ellipse(c[0], c[1], rx, rx * ISO.sq, 0, 0, Math.PI * 2); fx.stroke(); };
+
+// ─── what is in each office: [fu, fv, fw, fd, height, kind, z0] with fv measured from the door
+//     wall, and stations [fu, fv, pose] the agents work at ───
+const KITS = {
+  '/night-shift/': { items: [[0.18, 0.84, 0.64, 0.1, 30, 'screens'], [0.1, 0.42, 0.32, 0.16, 9, 'desk'], [0.2, 0.5, 0.12, 0.04, 8, 'monitor', 9], [0.58, 0.42, 0.32, 0.16, 9, 'faders'], [0.86, 0.1, 0.1, 0.1, 12, 'kettle']],
+    stations: [[0.26, 0.3, 'type'], [0.74, 0.3, 'type'], [0.5, 0.74, 'check'], [0.82, 0.22, 'check']] },
+  '/music/': { items: [[0.03, 0.78, 0.13, 0.16, 32, 'speaker'], [0.84, 0.78, 0.13, 0.16, 32, 'speaker'], [0.34, 0.62, 0.32, 0.16, 12, 'decks'], [0.7, 0.18, 0.15, 0.13, 9, 'crate'], [0.2, 0.92, 0.24, 0.05, 24, 'chart']],
+    stations: [[0.5, 0.5, 'dance'], [0.77, 0.1, 'check'], [0.32, 0.8, 'check'], [0.3, 0.3, 'dance']] },
+  '/': { items: [[0.14, 0.9, 0.72, 0.06, 32, 'tv'], [0.3, 0.32, 0.38, 0.14, 8, 'sofa'], [0.85, 0.55, 0.1, 0.06, 26, 'tally']],
+    stations: [[0.49, 0.24, 'type'], [0.5, 0.72, 'check'], [0.88, 0.42, 'check']] },
+  '/security/': { items: [[0.06, 0.9, 0.38, 0.06, 26, 'threat'], [0.55, 0.9, 0.32, 0.06, 26, 'quiz'], [0.36, 0.42, 0.28, 0.15, 9, 'desk'], [0.44, 0.48, 0.12, 0.04, 8, 'monitor', 9], [0.9, 0.2, 0.05, 0.05, 32, 'camera']],
+    stations: [[0.25, 0.76, 'check'], [0.71, 0.76, 'check'], [0.5, 0.3, 'type'], [0.84, 0.3, 'check']] },
+  '/security/layers/': { items: [[0.08, 0.36, 0.14, 0.08, 24, 'easel'], [0.3, 0.9, 0.38, 0.06, 28, 'layers'], [0.62, 0.52, 0.32, 0.18, 9, 'bench']],
+    stations: [[0.15, 0.24, 'check'], [0.49, 0.76, 'check'], [0.78, 0.4, 'type']] },
+  '/security/cpted/': { items: [[0.26, 0.38, 0.44, 0.26, 9, 'model'], [0.78, 0.9, 0.16, 0.06, 26, 'list']],
+    stations: [[0.22, 0.26, 'check'], [0.74, 0.5, 'check'], [0.86, 0.78, 'check']] },
+  '/security/martyns-law/': { items: [[0.04, 0.84, 0.42, 0.12, 32, 'shelf'], [0.5, 0.42, 0.3, 0.16, 9, 'papers'], [0.85, 0.16, 0.09, 0.09, 10, 'bin']],
+    stations: [[0.25, 0.72, 'check'], [0.65, 0.3, 'type'], [0.8, 0.1, 'check']] },
+  '/admin/': { items: [[0.05, 0.78, 0.15, 0.16, 36, 'rack'], [0.4, 0.42, 0.3, 0.16, 9, 'desk'], [0.48, 0.5, 0.12, 0.04, 8, 'monitor', 9], [0.8, 0.74, 0.15, 0.16, 16, 'safe']],
+    stations: [[0.13, 0.66, 'check'], [0.55, 0.3, 'type'], [0.87, 0.6, 'check']] },
+  '/blog/': { items: [[0.3, 0.42, 0.32, 0.16, 9, 'typewriter'], [0.74, 0.58, 0.17, 0.15, 13, 'printer'], [0.05, 0.9, 0.3, 0.06, 24, 'notice']],
+    stations: [[0.46, 0.3, 'type'], [0.82, 0.44, 'check'], [0.2, 0.78, 'check']] }
+};
+const KIT_PLAIN = { items: [[0.2, 0.42, 0.32, 0.16, 9, 'desk'], [0.3, 0.5, 0.12, 0.04, 8, 'monitor', 9], [0.75, 0.7, 0.1, 0.1, 8, 'plant']], stations: [[0.36, 0.3, 'type'], [0.7, 0.55, 'check']] };
+
+// plan position of a point given as fractions of a room, fv measured from the door wall
+const at = (r, fu, fv) => ({ u: r.u + fu * r.w, v: r.upper ? r.v + r.d * (1 - fv) : r.v + r.d * fv });
+
+function drawItem(r, it, busy) {
+  const [fu, fv, fw, fd, h0, kind, zz] = it, t = floor.t, s = SM, h = h0 * s, z0 = (zz || 0) * s;
+  const a = at(r, fu, r.upper ? fv + fd : fv), w = fw * r.w, d = fd * r.d;
+  const B = block(a.u, a.v, w, d, h, z0), X = B.x, Y = B.y, W = B.w;
+  const lines = (n, pad, f) => { for (let k = 1; k <= n; k++) { const yy = Y + (B.h - pad * 2) * k / (n + 1) + pad, len = f(k); seg([X + 3, yy], [X + 3 + len, yy]); } };
+  fx.save(); fx.globalAlpha = 0.85;
+  if (kind === 'screens') { const cols = 3, rows = 2, cw = (W - 6) / cols, rh = (B.h - 6) / rows;
+    for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) { fx.strokeRect(X + 3 + i * cw + 1, Y + 3 + j * rh + 1, cw - 2, rh - 2); for (let k = 1; k < 3; k++) seg([X + 5 + i * cw, Y + 3 + j * rh + k * rh / 3], [X + 5 + i * cw + (cw - 8) * (0.4 + 0.6 * Math.abs(Math.sin(t * (busy ? 5 : 1) + i + j * 2 + k))), Y + 3 + j * rh + k * rh / 3]); } }
+  else if (kind === 'monitor') lines(2, 2, k => (W - 6) * (0.3 + 0.7 * Math.abs(Math.sin(t * (busy ? 6 : 1) + k))));
+  else if (kind === 'speaker') { const beat = Math.abs(Math.sin(t * 4.2)); [0.3, 0.72].forEach((f, k) => { fx.beginPath(); fx.arc(X + W / 2, Y + B.h * f, Math.min(W, B.h) * (k ? 0.22 : 0.14) * (1 + beat * 0.15), 0, 7); fx.stroke(); }); }
+  else if (kind === 'decks') { [0.28, 0.72].forEach(f => { const c = B.top(f, 0.5); ell(c, Math.min(w, d) * 0.28); seg(c, [c[0] + Math.cos(t * 5) * Math.min(w, d) * 0.26, c[1] + Math.sin(t * 5) * Math.min(w, d) * 0.26 * ISO.sq]); });
+    for (let k = 0; k < 3; k++) { const ph = (t * 0.6 + k / 3) % 1, c = B.top(0.5, 0.5, 10 * s + ph * 30 * s); text('♪', c[0] + Math.sin(ph * 6 + k) * 8, c[1], 10 * s, 1 - ph); } }
+  else if (kind === 'crate') for (let k = 0; k < 6; k++) { const c = B.top((k + 0.5) / 6, 0.5); seg(c, [c[0] + (busy && k === Math.floor(t * 3) % 6 ? 3 : 0), c[1] - 6 * s]); }
+  else if (kind === 'chart') for (let k = 0; k < 5; k++) { const bh = (0.25 + 0.65 * Math.abs(Math.sin(k * 1.9 + (busy ? t : 0)))) * (B.h - 6); seg([X + 4 + k * (W - 8) / 5, Y + B.h - 3], [X + 4 + k * (W - 8) / 5, Y + B.h - 3 - bh]); }
+  else if (kind === 'tv') for (let k = 1; k < 5; k++) { fx.beginPath(); const yy = Y + B.h * k / 5; for (let i = 0; i <= 24; i++) { const xx = X + 3 + (W - 6) * i / 24, e = Math.exp(-((i / 24 - 0.5) ** 2) / 0.04), yv = yy - e * Math.abs(Math.sin(t * 3 + i * 0.7 + k)) * B.h * 0.16; i ? fx.lineTo(xx, yv) : fx.moveTo(xx, yv); } fx.stroke(); }
+  else if (kind === 'sofa') { block(a.u, a.v + (r.upper ? 0 : d * 0.7), w, d * 0.3, h * 2, 0); }
+  else if (kind === 'tally') { const n = 4 + Math.floor(t / 7) % 6; for (let k = 0; k < n; k++) seg([X + 3 + (k % 5) * (W - 6) / 5, Y + 4 + Math.floor(k / 5) * B.h * 0.4], [X + 3 + (k % 5) * (W - 6) / 5, Y + 4 + Math.floor(k / 5) * B.h * 0.4 + B.h * 0.3]); }
+  else if (kind === 'threat') { const lvl = floor.shift && floor.shift.jobs && floor.shift.jobs.intel && floor.shift.jobs.intel.ok ? floor.shift.jobs.intel.level : '?'; text(String(lvl).toUpperCase().slice(0, 12), X + W / 2, Y + B.h * 0.62, Math.min(9 * s, W / 7), busy ? 1 : 0.7); }
+  else if (kind === 'quiz') text('?', X + W / 2, Y + B.h * 0.78, Math.min(B.h * 0.8, 20 * s), busy ? 0.6 + 0.4 * Math.abs(Math.sin(t * 3)) : 0.6);
+  else if (kind === 'camera') { const c = B.top(0.5, 0.5), ang = Math.sin(t * 0.7) * 0.6 + (r.upper ? Math.PI * 0.6 : -Math.PI * 0.4); fx.strokeRect(c[0] - 6 * s, c[1] - 4 * s, 10 * s, 6 * s);
+    fx.globalAlpha = 0.12; fx.beginPath(); fx.moveTo(c[0], c[1]); fx.lineTo(c[0] + Math.cos(ang - 0.3) * 60 * s, c[1] + Math.abs(Math.sin(ang - 0.3)) * 40 * s); fx.lineTo(c[0] + Math.cos(ang + 0.3) * 60 * s, c[1] + Math.abs(Math.sin(ang + 0.3)) * 40 * s); fx.closePath(); fx.fillStyle = '#fff'; fx.fill(); }
+  else if (kind === 'easel') { if (busy) { fx.beginPath(); for (let i = 0; i < 8; i++) { const xx = X + 2 + i * (W - 4) / 7, yy = Y + B.h * 0.35 + Math.sin(i + t * 4) * B.h * 0.12; i ? fx.lineTo(xx, yy) : fx.moveTo(xx, yy); } fx.stroke(); } }
+  else if (kind === 'layers') for (let k = 0; k < 4; k++) { const iw = (W - 6) * (1 - k * 0.22), ih = (B.h - 6) * (1 - k * 0.22); fx.globalAlpha = busy && Math.floor(t * 2) % 4 === k ? 1 : 0.55; fx.strokeRect(X + W / 2 - iw / 2, Y + B.h / 2 - ih / 2, iw, ih); }
+  else if (kind === 'bench') { const c = B.top(0.3, 0.5); seg(c, [c[0] + 8 * s, c[1] - 5 * s]); ell(B.top(0.7, 0.5), 3 * s);
+    if (busy && Math.floor(t * 6) % 3 === 0) for (let k = 0; k < 4; k++) { const an = Math.random() * Math.PI; seg(c, [c[0] + Math.cos(an) * 8 * s, c[1] - Math.sin(an) * 8 * s]); } }
+  else if (kind === 'model') { const hs = B.top(0.25, 0.5); fx.strokeRect(hs[0] - 6 * s, hs[1] - 9 * s, 12 * s, 9 * s); seg([hs[0] - 8 * s, hs[1] - 9 * s], [hs[0], hs[1] - 15 * s]); seg([hs[0], hs[1] - 15 * s], [hs[0] + 8 * s, hs[1] - 9 * s]);
+    const tr = B.top(0.55, 0.4); seg(tr, [tr[0], tr[1] - 7 * s]); fx.beginPath(); fx.arc(tr[0], tr[1] - 10 * s, 4 * s, 0, 7); fx.stroke();
+    const lp = B.top(0.8, 0.6); seg(lp, [lp[0], lp[1] - 18 * s]); seg([lp[0], lp[1] - 18 * s], [lp[0] + 4 * s, lp[1] - 18 * s]);
+    fx.globalAlpha = busy ? 0.3 : 0.12; fx.beginPath(); fx.moveTo(lp[0] + 4 * s, lp[1] - 18 * s); fx.lineTo(lp[0] + 12 * s, lp[1]); fx.lineTo(lp[0] - 4 * s, lp[1]); fx.closePath(); fx.fillStyle = '#fff'; fx.fill(); }
+  else if (kind === 'list') lines(4, 3, () => (W - 8) * 0.7);
+  else if (kind === 'shelf') { const n = 3; for (let sh = 1; sh < n; sh++) seg([X, Y + B.h * sh / n], [X + W, Y + B.h * sh / n]); for (let sh = 0; sh < n; sh++) for (let k = 0; k < 8; k++) { const bx = X + 3 + k * (W - 6) / 8; seg([bx + (busy && sh === 1 && k === Math.floor(t) % 8 ? 2 : 0), Y + B.h * (sh + 1) / n - 2], [bx, Y + B.h * sh / n + 4]); } }
+  else if (kind === 'papers') for (let k = 0; k < 4 + (busy ? Math.floor(t) % 3 : 0); k++) { const c = B.top(0.6, 0.5, k * 1.6 * s); seg([c[0] - 7 * s, c[1]], [c[0] + 7 * s, c[1]]); }
+  else if (kind === 'bin') { const c = B.top(0.5, 0.5); if (busy) for (let k = 0; k < 3; k++) { const dd = (t * 1.5 + k / 3) % 1; seg([c[0] - 3 * s + k * 3 * s, c[1] - 14 * s + dd * 12 * s], [c[0] - 3 * s + k * 3 * s, c[1] - 10 * s + dd * 12 * s]); } }
+  else if (kind === 'rack') for (let k = 0; k < 7; k++) { const yy = Y + 4 + k * (B.h - 8) / 7; seg([X + 3, yy], [X + W - 8, yy]); if (Math.sin(t * (busy ? 9 : 3) + k * 2) > 0) { fx.beginPath(); fx.arc(X + W - 4, yy, 1.2, 0, 7); fx.stroke(); } }
+  else if (kind === 'safe') { const cx = X + W / 2, cy = Y + B.h / 2, rr = Math.min(W, B.h) * 0.25; fx.beginPath(); fx.arc(cx, cy, rr, 0, 7); fx.stroke(); const an = t * (busy ? 4 : 0.3); seg([cx, cy], [cx + Math.cos(an) * rr, cy + Math.sin(an) * rr]); }
+  else if (kind === 'typewriter') { const c = B.top(0.5, 0.5); fx.strokeRect(c[0] - 7 * s, c[1] - 5 * s, 14 * s, 5 * s); fx.strokeRect(c[0] - 5 * s, c[1] - 12 * s - (busy ? (t * 2 % 1) * 4 * s : 0), 10 * s, 7 * s); }
+  else if (kind === 'printer') { const c = B.top(0.5, 0.5); if (busy) { const dd = (t * 0.7) % 1; fx.strokeRect(c[0] - 6 * s, c[1] - 6 * s - dd * 12 * s, 12 * s, 6 * s); } }
+  else if (kind === 'notice') for (let k = 0; k < 4; k++) fx.strokeRect(X + 3 + (k % 2) * (W - 6) / 2 + 1, Y + 3 + Math.floor(k / 2) * (B.h - 6) / 2 + 1, (W - 6) / 2 - 3, (B.h - 6) / 2 - 3);
+  else if (kind === 'kettle' && busy) for (let k = 0; k < 2; k++) { const dd = (t * 0.8 + k * 0.5) % 1, c = B.top(0.5, 0.5, 4 * s + dd * 14 * s); fx.globalAlpha = 0.6 * (1 - dd); seg(c, [c[0] + 2 * s, c[1] - 4 * s]); }
+  else if (kind === 'plant') { const c = B.top(0.5, 0.5); fx.beginPath(); fx.moveTo(c[0], c[1]); fx.quadraticCurveTo(c[0] - 10 * s, c[1] - 14 * s, c[0] - 3 * s, c[1] - 20 * s); fx.moveTo(c[0], c[1]); fx.quadraticCurveTo(c[0] + 8 * s, c[1] - 12 * s, c[0] + 4 * s, c[1] - 22 * s); fx.stroke(); }
+  fx.restore();
+}
+
+// who works where: [name, offices to try, what they report, favourite station or -1]
+const RESIDENTS = [
+  ['NORMAL', ['/night-shift/'], () => '', 0], ['PICKLE', ['/night-shift/', '/music/'], () => jobLine('pickle'), 1],
+  ['DISCO BISCUIT', ['/music/'], () => '', 0], ['WURZEL', ['/music/'], () => dayLine('wurzel'), 1], ['BISCUIT TIN', ['/music/'], () => dayLine('biscuittin'), 2],
+  ['GOD', ['/security/'], () => jobLine('intel'), 0], ['BUNSEN', ['/security/', '/security/layers/'], () => dayLine('bunsen'), 1],
+  ['DOODLEBUG', ['/security/layers/', '/security/'], () => jobLine('ideas'), 0], ['SPANNER', ['/security/layers/', '/security/'], () => dayLine('spanner'), 2],
+  ['CRUMPET', ['/security/cpted/', '/security/'], () => dayLine('crumpet'), -1],
+  ['GOATMAN', ['/security/martyns-law/', '/security/'], () => jobLine('clerk'), 0], ['BIN LID', ['/security/martyns-law/', '/security/'], () => dayLine('binlid'), 2],
+  ['TEACAKE', ['/admin/', '/night-shift/'], () => dayLine('teacake'), -1],
+  ['KIPPER', ['/', '/music/'], () => jobLine('scout'), 1], ['PIGEON', ['/', '/blog/'], () => dayLine('pigeon'), 2],
+  ['GRUMBLE', ['/blog/', '/'], () => dayLine('grumble'), 0]
+];
+function dayLine(id) { const D = floor.day || {}, r = D[id], t = (r && r.report && r.report.summary) || 'first report due'; return t.length > 30 ? t.slice(0, 29) + '…' : t; }
+const res = {};
+
+function drawFloor(dt) {
+  floor.t += dt;
+  const t = floor.t, s = Math.max(0.6, Math.min(1.8, FW / 1100)), sm = SM, PW = floor.PW, PD = floor.PD;
+  fx.clearRect(0, 0, FW, FH);
+  fx.strokeStyle = '#fff'; fx.lineWidth = 1; fx.lineCap = 'round'; fx.lineJoin = 'round';
+  if (!floor.rooms.length) return;
+  const wallLo = 9 * sm, wallHi = 30 * sm;
+
+  // the slab, the corridor floor and the building's back wall with its windows
+  fx.globalAlpha = 0.5; poly([P(0, 0), P(PW, 0), P(PW, PD), P(0, PD)]);
+  fx.globalAlpha = 0.12; for (let u = 0; u <= PW; u += 26 * sm) seg(P(u, floor.Dr), P(u, floor.Dr + floor.Dc));
+  fx.globalAlpha = 0.8; block(0, -3, PW, 3, wallHi);
+  fx.globalAlpha = 0.45; for (let u = 14 * sm; u < PW - 20 * sm; u += 46 * sm) { const a = P(u, -3, wallHi * 0.3), b = P(u + 26 * sm, -3, wallHi * 0.85); fx.strokeRect(a[0], b[1], b[0] - a[0], a[1] - b[1]); }
+  fx.globalAlpha = 1;
+
+  // everything with depth goes in one list and is drawn far to near, so near things hide far ones
+  const Z = [];
+  const roomFor = paths => { for (const p of paths) { const r = floor.rooms.find(q => q.path === p); if (r) return r; } return floor.rooms[floor.rooms.length - 1]; };
+  const inRoom = new Map();
+  RESIDENTS.forEach(([name, paths, line, fav]) => { const r = roomFor(paths); if (!inRoom.has(r)) inRoom.set(r, []); inRoom.get(r).push({ name, line, fav }); });
+
+  floor.rooms.forEach(r => {
+    r.seen = Math.max(0, r.seen - dt * 0.25);
+    const kit = KITS[r.path] || KIT_PLAIN, who = inRoom.get(r) || [], st = kit.stations;
+    // walls: a low cut-away wall all round, with a doorway onto the corridor; drawn in short pieces so depth sorts properly
+    const gap = Math.min(30 * sm, r.w * 0.3), dv = r.door.v, near = r.v + r.d;
+    const wallU = (v, u0, u1) => Z.push({ z: v, f: () => { fx.globalAlpha = 0.4 + r.seen * 0.6; block(u0, v - 2, u1 - u0, 2, wallLo); fx.globalAlpha = 1; } });
+    [[r.v, r.upper], [near, !r.upper]].forEach(([v, hasDoor]) => { if (v === 0) return; if (hasDoor) { wallU(v, r.u, r.door.u - gap / 2); wallU(v, r.door.u + gap / 2, r.u + r.w); } else wallU(v, r.u, r.u + r.w); });
+    if (r.u > 0) for (let v = r.v; v < near - 0.5; v += 14 * sm) { const v1 = Math.min(near, v + 14 * sm); Z.push({ z: v1, f: () => { fx.globalAlpha = 0.4 + r.seen * 0.6; block(r.u - 1, v, 2, v1 - v, wallLo); fx.globalAlpha = 1; } }); }
+    // the office name painted on the floor, and the patrol's result when it's just been checked
+    const lab = P(r.u + 6, r.upper ? r.v + 16 * sm : near - 4 * sm, 0);
+    Z.push({ z: 1e6, f: () => { text(r.name.toUpperCase(), lab[0], lab[1], 8.5 * s, 0.6, 'left');
+      if (r.seen > 0.05) { const msg = r.ok ? `✓ ${r.ms != null ? r.ms + ' ms' : 'ok'}` : `✗ ${r.status}`; text(msg, lab[0], lab[1] + 11 * s, 8.5 * s, Math.min(1, r.seen * 1.5), 'left'); } } });
+    // the furniture, and which pieces are in use
+    const busy = st.map((_, k) => who.some(w => res[w.name] && res[w.name].room === r && res[w.name].st === k && res[w.name].dwell > 0));
+    kit.items.forEach((it, k) => { const front = at(r, it[0], r.upper ? it[1] : it[1] + it[3]).v; const use = busy.some((b, j) => b && Math.hypot(st[j][0] - (it[0] + it[2] / 2), st[j][1] - (it[1] + it[3] / 2)) < 0.4); Z.push({ z: front, f: () => drawItem(r, it, use) }); });
+    // the people who work here, walking between the stations and working them
+    who.forEach((w, i) => {
+      let a = res[w.name];
+      if (!a || a.room !== r) { const k0 = w.fav >= 0 && w.fav < st.length ? w.fav : i % st.length, p0 = at(r, st[k0][0], st[k0][1]); a = res[w.name] = { room: r, st: k0, u: p0.u, v: p0.v, dwell: 2 + Math.random() * 4, step: 0 }; }
+      const tgt = at(r, st[a.st][0], st[a.st][1]), du = tgt.u - a.u, dvv = tgt.v - a.v, dist = Math.hypot(du, dvv), sp = 34 * sm * dt;
+      if (dist > 0.8) { const k = Math.min(1, sp / dist); a.u += du * k; a.v += dvv * k; a.step += Math.min(dist, sp) * 0.3; }
+      else if (a.dwell > 0) a.dwell -= dt;
+      else {
+        const taken = new Set(who.filter(o => o !== w && res[o.name]).map(o => res[o.name].st));
+        const free = st.map((_, k) => k).filter(k => k !== a.st && !taken.has(k));
+        a.st = w.fav >= 0 && !taken.has(w.fav) && a.st !== w.fav && Math.random() < 0.6 ? w.fav : free.length ? free[Math.floor(Math.random() * free.length)] : a.st;
+        a.dwell = 3 + Math.random() * 6;
+      }
+      const moving = dist > 0.8, pose = moving ? 'walk' : st[a.st][2];
+      Z.push({ z: a.v + 0.5, f: () => {
+        const [x, y] = P(a.u, a.v);
+        stickMan(x, y - (pose === 'dance' ? Math.abs(Math.sin(t * 4)) * 2 * sm : 0), sm, moving ? a.step : t * 2 + i, pose, w.name);
+        text(w.name, x, y + 9 * s, 7.5 * s, 0.65);
+        const msg = w.line();
+        if (msg && !moving && r.w / Math.max(1, who.length) > 60) text(msg, Math.max(P(r.u, a.v)[0] + 46, Math.min(P(r.u + r.w, a.v)[0] - 46, x)), y - 36 * sm - (i % 2) * 10 * s, 8 * s, 0.8);
+      } });
+    });
+  });
+
+  // the handover being typed in the control room, on its back wall
+  const c = floor.control;
+  if (c) Z.push({ z: 1e6, f: () => {
+    const lines = (floor.shift && floor.shift.analyst && floor.shift.analyst.handover || 'All quiet. Standing by.').split(/(?<=[.!?])\s+/);
+    const li = Math.floor(t / 4) % lines.length, typed = lines[li].slice(0, Math.floor((t % 4) * 28));
+    const [x, y] = P(c.u + 6, c.upper ? c.v + c.d * 0.12 + 22 * sm : c.v + c.d - 4 * sm);
+    fx.font = `300 ${8.5 * s}px "IBM Plex Mono", monospace`;
+    let str = typed; while (str && fx.measureText(str).width > c.w - 14) str = str.slice(1);
+    text(str + (Math.floor(t * 2) % 2 ? '▌' : ''), x, y, 8.5 * s, 0.75, 'left');
+  } });
+
+  // Codpiece on the front door at the left end of the corridor
+  Z.push({ z: floor.cv, f: () => { const [x, y] = P(8 * sm, floor.cv + floor.Dc * 0.2); seg(P(0, floor.Dr + 2), P(0, floor.Dr + floor.Dc - 2));
+    stickMan(x + 6 * sm, y, sm, t, 'check', 'CODPIECE'); text('CODPIECE', x + 6 * sm, y + 9 * s, 7.5 * s, 0.65); text(jobLine('gatekeeper'), x + 24 * sm, y - 34 * sm, 8.5 * s, 0.85, 'left'); } });
+
+  // patrols walking the corridor and checking each office
+  const speed = 60 * sm;
+  floor.men.forEach(m => {
+    if (!m.path.length) return;
+    let pose = 'walk';
+    if (m.pause > 0) { m.pause -= dt; pose = 'check'; }
+    else {
+      const p = m.path[m.i], du = p.u - m.u, dvv = p.v - m.v, dist = Math.hypot(du, dvv), stepLen = speed * dt;
+      if (dist <= stepLen) { m.u = p.u; m.v = p.v; m.i = (m.i + 1) % m.path.length; if (p.check) { p.check.seen = 1; m.pause = 1.4; } if (p.hold) m.pause = p.hold; }
+      else { m.u += du / dist * stepLen; m.v += dvv / dist * stepLen; m.step += stepLen * 0.25; }
+    }
+    Z.push({ z: m.v + 0.5, f: () => { const [x, y] = P(m.u, m.v); stickMan(x, y, sm, pose === 'walk' ? m.step : 0, pose, m.name); text(m.name, x, y + 9 * s, 7.5 * s, 0.65);
+      if (m.name === 'FISH') { text(jobLine('links'), x, y - 34 * sm, 8.5 * s, 0.8); if (pose === 'check') text('OUTSIDE →', x - 4, y - 46 * sm, 8 * s, 0.5, 'right'); } } });
+  });
+
+  Z.sort((p, q) => p.z - q.z).forEach(d => d.f());
+  banter(s);
 }
 
 function jobLine(job) {
@@ -425,52 +626,6 @@ function text(str, x, y, size, alpha, align) {
   fx.fillText(str, x, y); fx.globalAlpha = 1;
 }
 
-function drawFloor(dt) {
-  floor.t += dt;
-  fx.clearRect(0, 0, FW, FH);
-  fx.strokeStyle = '#fff'; fx.lineWidth = 1; fx.lineCap = 'round';
-  const s = Math.max(0.6, Math.min(1.8, FW / 1100));
-
-  // rooms with doorways onto the corridor
-  floor.rooms.forEach(r => {
-    r.seen = Math.max(0, r.seen - dt * 0.25);
-    fx.globalAlpha = 0.35 + r.seen * 0.65;
-    const gap = Math.min(28 * s, r.w * 0.3), dl = r.door.x - gap / 2, dr = r.door.x + gap / 2;
-    fx.beginPath();
-    if (r.upper) { fx.moveTo(dl, r.y + r.h); fx.lineTo(r.x, r.y + r.h); fx.lineTo(r.x, r.y); fx.lineTo(r.x + r.w, r.y); fx.lineTo(r.x + r.w, r.y + r.h); fx.lineTo(dr, r.y + r.h); }
-    else { fx.moveTo(dl, r.y); fx.lineTo(r.x, r.y); fx.lineTo(r.x, r.y + r.h); fx.lineTo(r.x + r.w, r.y + r.h); fx.lineTo(r.x + r.w, r.y); fx.lineTo(dr, r.y); }
-    fx.stroke(); fx.globalAlpha = 1;
-    text(r.name.toUpperCase(), r.x + 7, r.y + 14 * s, 9 * s, 0.55, 'left');
-    if (r.seen > 0.05) {
-      const ok = r.ok, msg = ok ? `✓ ${r.ms != null ? r.ms + ' ms' : 'ok'}` : `✗ ${r.status}`;
-      text(msg, r.x + r.w - 7, r.y + 14 * s, 9 * s, Math.min(1, r.seen * 1.5), 'right');
-    }
-  });
-
-  drawRooms(dt, s);
-  // CODPIECE on the front door (left end of the corridor), checking the certificate and DNS
-  { const x = 22 * s + 8, y = floor.cy + floor.ch * 0.3;
-    fx.beginPath(); fx.moveTo(8, floor.cy - floor.ch / 2 + 4); fx.lineTo(8, floor.cy + floor.ch / 2 - 4); fx.stroke();
-    stickMan(x, y, s, floor.t, 'check', 'CODPIECE'); text('CODPIECE', x + 4, y + 12 * s, 8 * s, 0.6); text(jobLine('gatekeeper'), x + 30 * s, y - 34 * s, 9 * s, 0.85, 'left'); }
-
-  // patrols walking the corridor and checking each room
-  const speed = 60 * s;
-  floor.men.forEach(m => {
-    if (!m.path.length) return;
-    if (m.pause > 0) { m.pause -= dt; stickMan(m.x, m.y, s, 0, 'check', m.name); text(m.name, m.x, m.y + 12 * s, 8 * s, 0.6); if (m.name === 'FISH') { text('OUTSIDE →', FW - 30, floor.cy - floor.ch * 0.15, 8 * s, 0.5); text(jobLine('links'), m.x - 20 * s, m.y - 34 * s, 9 * s, 0.8); } return; }
-    const p = m.path[m.i], dx = p.x - m.x, dy = p.y - m.y, dist = Math.hypot(dx, dy), stepLen = speed * dt;
-    if (dist <= stepLen) {
-      m.x = p.x; m.y = p.y; m.i = (m.i + 1) % m.path.length;
-      if (p.check) { p.check.seen = 1; m.pause = 1.4; }
-      if (p.hold) m.pause = p.hold;
-    } else { m.x += dx / dist * stepLen; m.y += dy / dist * stepLen; m.step += stepLen * 0.25; }
-    stickMan(m.x, m.y, s, m.step, 'walk', m.name);
-    text(m.name, m.x, m.y + 12 * s, 8 * s, 0.6);
-    if (m.name === 'FISH') text(jobLine('links'), m.x, m.y - 34 * s, 9 * s, 0.8);
-  });
-  banter(s);
-}
-
 // ─── Banter: who says what to whom ───
 const LINES = {
   stressed: ['I can’t do this. I CAN’T do this.', 'Who touched my spreadsheet?', 'Deadline was when?!', 'Breathe. Just breathe, you pillock.', 'Everything is fine. Nothing is fine.', 'Has anyone seen my stapler? ANYONE?', 'If one more page loads slowly I’m resigning.'],
@@ -552,186 +707,6 @@ function floorLoop(now) {
   requestAnimationFrame(floorLoop);
 }
 
-/* ─── Rooms: each room is furnished for its job, and its agents work the furniture ───
-   Every room is drawn as a side view: back wall, floor along the bottom. A kit draws the scaffold
-   and lists its stations (f = position across the room, pose). Agents walk between their room's
-   stations and the furniture reacts when someone is using it. */
-const ln = (x1, y1, x2, y2) => { fx.beginPath(); fx.moveTo(x1, y1); fx.lineTo(x2, y2); fx.stroke(); };
-const box = (x, y, w, h) => fx.strokeRect(x, y, w, h);
-const circ = (x, y, r) => { fx.beginPath(); fx.arc(x, y, r, 0, Math.PI * 2); fx.stroke(); };
-function desk(x, fl, w, s, chair) {                      // a desk, and a chair to its left
-  ln(x - w / 2, fl - 13 * s, x + w / 2, fl - 13 * s); ln(x + w / 2 - 2 * s, fl - 13 * s, x + w / 2 - 2 * s, fl);
-  if (chair) { ln(chair - 3 * s, fl - 12 * s, chair + 4 * s, fl - 12 * s); ln(chair - 3 * s, fl - 12 * s, chair - 3 * s, fl - 24 * s); ln(chair + 2 * s, fl - 12 * s, chair + 2 * s, fl); }
-}
-function screen(x, y, w, h, t, busy) {                   // a monitor with lines of something going on
-  box(x - w / 2, y, w, h);
-  const n = Math.max(2, Math.floor(h / 4)), sp = h / (n + 1);
-  fx.globalAlpha *= busy ? 0.9 : 0.4;
-  for (let k = 1; k <= n; k++) { const a = (Math.sin(t * (busy ? 6 : 1.2) + k * 2.1 + x) * 0.5 + 0.5) * (w - 4); ln(x - w / 2 + 2, y + k * sp, x - w / 2 + 2 + a, y + k * sp); }
-  fx.globalAlpha /= busy ? 0.9 : 0.4;
-}
-const KITS = {
-  '/night-shift/': { stations: [{ f: 0.3, pose: 'type' }, { f: 0.64, pose: 'type' }, { f: 0.47, pose: 'check' }, { f: 0.88, pose: 'check' }],
-    draw(r, s, fl, t, busy) {
-      const top = fl - 66 * s, mw = Math.min(26 * s, r.w * 0.11);
-      for (let row = 0; row < 2; row++) for (let c = -1; c <= 1; c++) screen(r.x + r.w * 0.47 + c * (mw + 4 * s), top + row * (mw * 0.7 + 4 * s), mw, mw * 0.7, t, busy[2] || busy[0]);
-      desk(r.x + r.w * 0.36, fl, r.w * 0.2, s, r.x + r.w * 0.3 - 9 * s); screen(r.x + r.w * 0.37, fl - 25 * s, 12 * s, 9 * s, t, busy[0]);
-      desk(r.x + r.w * 0.7, fl, r.w * 0.2, s, r.x + r.w * 0.64 - 9 * s);
-      for (let k = 0; k < 5; k++) box(r.x + r.w * 0.66 + k * 4 * s, fl - 17 * s - (busy[1] ? Math.abs(Math.sin(t * 4 + k)) * 3 * s : 0), 2 * s, 4 * s);   // Pickle's cue faders
-      ln(r.x + r.w * 0.88, fl, r.x + r.w * 0.88, fl - 30 * s); box(r.x + r.w * 0.88 - 7 * s, fl - 40 * s, 14 * s, 10 * s);                            // the kettle stand
-      if (busy[3]) for (let k = 0; k < 2; k++) { const d = (t * 0.8 + k * 0.5) % 1; fx.globalAlpha = 0.6 * (1 - d); ln(r.x + r.w * 0.88 + (k - 0.5) * 4 * s, fl - 42 * s - d * 12 * s, r.x + r.w * 0.88 + (k - 0.5) * 4 * s + 2 * s, fl - 46 * s - d * 12 * s); fx.globalAlpha = 1; }
-    } },
-  '/music/': { stations: [{ f: 0.5, pose: 'dance' }, { f: 0.76, pose: 'check' }, { f: 0.27, pose: 'check' }, { f: 0.15, pose: 'dance' }],
-    draw(r, s, fl, t, busy) {
-      const beat = Math.abs(Math.sin(t * 4.2));
-      for (const f of [0.06, 0.94]) {                                           // the speaker stacks, cones pumping
-        const x = r.x + r.w * f, w = 16 * s, h = 44 * s; box(x - w / 2, fl - h, w, h);
-        circ(x, fl - h * 0.3, (4.5 + beat * 1.2) * s); circ(x, fl - h * 0.72, (3 + beat * 0.8) * s);
-      }
-      const bx = r.x + r.w * 0.5; box(bx - 22 * s, fl - 18 * s, 44 * s, 18 * s);   // the DJ booth and the decks
-      [-11, 11].forEach(o => { fx.beginPath(); fx.arc(bx + o * s, fl - 22 * s, 6 * s, t * 5, t * 5 + 5.2); fx.stroke(); });
-      const cx = r.x + r.w * 0.76; box(cx - 12 * s, fl - 12 * s, 24 * s, 12 * s);   // the record crate
-      for (let k = 0; k < 6; k++) ln(cx - 10 * s + k * 4 * s, fl - 12 * s, cx - 10 * s + k * 4 * s + (busy[1] && k === Math.floor(t * 3) % 6 ? 3 : 0) * s, fl - 20 * s);
-      const gx = r.x + r.w * 0.27, gy = fl - 70 * s; box(gx - 16 * s, gy, 32 * s, 22 * s);   // Biscuit Tin's play-count chart
-      for (let k = 0; k < 5; k++) { const hgt = (0.3 + 0.7 * Math.abs(Math.sin(k * 1.9 + (busy[2] ? t : 0)))) * 18 * s; ln(gx - 12 * s + k * 6 * s, gy + 20 * s, gx - 12 * s + k * 6 * s, gy + 20 * s - hgt); }
-      for (let k = 0; k < 3; k++) { const ph = (t * 0.6 + k / 3) % 1; text('♪', bx + 26 * s + Math.sin(ph * 6 + k) * 6, fl - 26 * s - ph * 30 * s, 10 * s, 1 - ph); }
-      const pickT = floor.shift && floor.shift.dj && floor.shift.dj.track && floor.shift.dj.track.title;
-      if (pickT && r.w > 140) text('♪ ' + (pickT.length > 24 ? pickT.slice(0, 23) + '…' : pickT), bx, fl - 80 * s, 8.5 * s, 0.7);
-    } },
-  '/': { stations: [{ f: 0.55, pose: 'check' }, { f: 0.86, pose: 'check' }, { f: 0.3, pose: 'type' }],
-    draw(r, s, fl, t, busy) {
-      const x0 = r.x + r.w * 0.18, x1 = r.x + r.w * 0.82, y0 = fl - 84 * s, y1 = fl - 46 * s;      // the big screen with the visualiser on it
-      box(x0, y0, x1 - x0, y1 - y0);
-      for (let k = 1; k < 6; k++) { fx.beginPath(); const yy = y0 + (y1 - y0) * (k / 6); for (let i = 0; i <= 20; i++) { const xx = x0 + 3 + (x1 - x0 - 6) * i / 20, e = Math.exp(-((i / 20 - 0.5) ** 2) / 0.04); const yv = yy - e * Math.abs(Math.sin(t * 3 + i * 0.7 + k)) * 6 * s; i ? fx.lineTo(xx, yv) : fx.moveTo(xx, yv); } fx.stroke(); }
-      const sx = r.x + r.w * 0.33; ln(sx - 16 * s, fl - 8 * s, sx + 16 * s, fl - 8 * s); ln(sx - 16 * s, fl - 8 * s, sx - 16 * s, fl - 16 * s); ln(sx + 16 * s, fl - 8 * s, sx + 16 * s, fl - 14 * s); ln(sx - 14 * s, fl, sx - 14 * s, fl - 8 * s); ln(sx + 14 * s, fl, sx + 14 * s, fl - 8 * s);   // the sofa
-      const tx = r.x + r.w * 0.9; box(tx - 9 * s, fl - 46 * s, 18 * s, 24 * s); ln(tx, fl - 22 * s, tx, fl);              // Pigeon's tally board
-      const n = (floor.day && floor.day.pigeon && floor.day.pigeon.report && floor.day.pigeon.report.views) || 4 + Math.floor(t / 7) % 6;
-      for (let k = 0; k < Math.min(n, 9); k++) ln(tx - 7 * s + (k % 5) * 3 * s, fl - 43 * s + Math.floor(k / 5) * 10 * s, tx - 7 * s + (k % 5) * 3 * s, fl - 36 * s + Math.floor(k / 5) * 10 * s);
-    } },
-  '/security/': { stations: [{ f: 0.25, pose: 'check' }, { f: 0.68, pose: 'check' }, { f: 0.46, pose: 'type' }, { f: 0.9, pose: 'check' }],
-    draw(r, s, fl, t, busy) {
-      const bx = r.x + r.w * 0.25, by = fl - 80 * s; box(bx - 22 * s, by, 44 * s, 26 * s);                      // God's threat board
-      const lvl = floor.shift && floor.shift.jobs && floor.shift.jobs.intel && floor.shift.jobs.intel.ok ? floor.shift.jobs.intel.level : '?';
-      text(String(lvl).toUpperCase().slice(0, 12), bx, by + 16 * s, 7 * s, busy[0] ? 1 : 0.6);
-      const wx = r.x + r.w * 0.68, wy = fl - 80 * s; box(wx - 18 * s, wy, 36 * s, 24 * s); text('?', wx, wy + 18 * s, 14 * s, busy[1] ? 0.5 + 0.5 * Math.abs(Math.sin(t * 3)) : 0.5);   // Bunsen's quiz board
-      desk(r.x + r.w * 0.52, fl, r.w * 0.16, s, r.x + r.w * 0.46 - 9 * s); screen(r.x + r.w * 0.53, fl - 25 * s, 12 * s, 9 * s, t, busy[2]);
-      const cx = r.x + r.w - 6, cy = fl - 84 * s, a = Math.PI * 0.75 + Math.sin(t * 0.7) * 0.35;                // a camera on the wall, sweeping
-      ln(cx, cy, cx - 8 * s, cy); box(cx - 20 * s, cy - 4 * s, 12 * s, 7 * s);
-      fx.globalAlpha = 0.18; fx.beginPath(); fx.moveTo(cx - 20 * s, cy); fx.lineTo(cx - 20 * s + Math.cos(a - 0.25) * 42 * s, cy + Math.abs(Math.sin(a - 0.25)) * 42 * s); fx.lineTo(cx - 20 * s + Math.cos(a + 0.25) * 42 * s, cy + Math.abs(Math.sin(a + 0.25)) * 42 * s); fx.closePath(); fx.stroke(); fx.globalAlpha = 1;
-    } },
-  '/security/layers/': { stations: [{ f: 0.13, pose: 'check' }, { f: 0.72, pose: 'type' }, { f: 0.4, pose: 'check' }],
-    draw(r, s, fl, t, busy) {
-      const ex = r.x + r.w * 0.13; ln(ex - 9 * s, fl, ex, fl - 40 * s); ln(ex + 9 * s, fl, ex, fl - 40 * s); box(ex - 11 * s, fl - 38 * s, 22 * s, 16 * s);   // Doodlebug's easel
-      if (busy[0]) { fx.beginPath(); for (let i = 0; i < 8; i++) { const xx = ex - 9 * s + i * 2.5 * s, yy = fl - 30 * s + Math.sin(i + t * 4) * 4 * s; i ? fx.lineTo(xx, yy) : fx.moveTo(xx, yy); } fx.stroke(); }
-      const lx = r.x + r.w * 0.42, ly = fl - 66 * s;                                                              // the layers diagram
-      for (let k = 0; k < 4; k++) { const w = (44 - k * 10) * s, h = (30 - k * 7) * s; fx.globalAlpha = busy[2] && Math.floor(t * 2) % 4 === k ? 1 : 0.55; box(lx - w / 2, ly + (30 * s - h) / 2, w, h); fx.globalAlpha = 1; }
-      desk(r.x + r.w * 0.78, fl, r.w * 0.22, s, r.x + r.w * 0.72 - 9 * s);                                      // Spanner's workbench and tools
-      ln(r.x + r.w * 0.8, fl - 13 * s, r.x + r.w * 0.8 + 8 * s, fl - 19 * s); circ(r.x + r.w * 0.86, fl - 16 * s, 3 * s);
-      for (let k = 0; k < 3; k++) ln(r.x + r.w * 0.72 + k * 7 * s, fl - 76 * s, r.x + r.w * 0.72 + k * 7 * s, fl - 64 * s);
-      if (busy[1] && Math.floor(t * 6) % 3 === 0) for (let k = 0; k < 4; k++) { const a = Math.random() * Math.PI; ln(r.x + r.w * 0.8, fl - 14 * s, r.x + r.w * 0.8 + Math.cos(a) * 7 * s, fl - 14 * s - Math.sin(a) * 7 * s); }
-    } },
-  '/security/cpted/': { stations: [{ f: 0.28, pose: 'check' }, { f: 0.72, pose: 'check' }, { f: 0.9, pose: 'check' }],
-    draw(r, s, fl, t, busy) {
-      const mx = r.x + r.w * 0.5, ty = fl - 14 * s; ln(mx - 30 * s, ty, mx + 30 * s, ty); ln(mx - 26 * s, ty, mx - 26 * s, fl); ln(mx + 26 * s, ty, mx + 26 * s, fl);   // the model table
-      box(mx - 20 * s, ty - 12 * s, 14 * s, 12 * s); ln(mx - 22 * s, ty - 12 * s, mx - 13 * s, ty - 19 * s); ln(mx - 13 * s, ty - 19 * s, mx - 4 * s, ty - 12 * s);   // a little house
-      ln(mx + 4 * s, ty, mx + 4 * s, ty - 8 * s); circ(mx + 4 * s, ty - 11 * s, 4 * s);                                                                      // a tree
-      ln(mx + 18 * s, ty, mx + 18 * s, ty - 20 * s); ln(mx + 18 * s, ty - 20 * s, mx + 22 * s, ty - 20 * s);                                                // a street lamp
-      fx.globalAlpha = busy[0] || busy[1] ? 0.35 : 0.15; fx.beginPath(); fx.moveTo(mx + 22 * s, ty - 20 * s); fx.lineTo(mx + 30 * s, ty); fx.lineTo(mx + 14 * s, ty); fx.closePath(); fx.stroke(); fx.globalAlpha = 1;
-      const px = r.x + r.w * 0.85, py = fl - 76 * s; box(px - 12 * s, py, 24 * s, 30 * s); for (let k = 0; k < 4; k++) { ln(px - 9 * s, py + 7 * s + k * 6 * s, px - 6 * s, py + 7 * s + k * 6 * s); ln(px - 4 * s, py + 7 * s + k * 6 * s, px + 8 * s, py + 7 * s + k * 6 * s); }   // checklist on the wall
-    } },
-  '/security/martyns-law/': { stations: [{ f: 0.16, pose: 'check' }, { f: 0.52, pose: 'type' }, { f: 0.86, pose: 'check' }],
-    draw(r, s, fl, t, busy) {
-      const sx = r.x + r.w * 0.16; box(sx - 16 * s, fl - 52 * s, 32 * s, 52 * s);                               // the law books
-      for (let sh = 0; sh < 3; sh++) { const yy = fl - 52 * s + (sh + 1) * 17 * s; ln(sx - 16 * s, yy, sx + 16 * s, yy); for (let k = 0; k < 6; k++) ln(sx - 13 * s + k * 5 * s, yy, sx - 13 * s + k * 5 * s + (busy[0] && sh === 1 && k === Math.floor(t) % 6 ? 3 * s : 0), yy - 13 * s); }
-      desk(r.x + r.w * 0.58, fl, r.w * 0.18, s, r.x + r.w * 0.52 - 9 * s);                                      // the desk with the paperwork piling up
-      for (let k = 0; k < 4 + (busy[1] ? Math.floor(t) % 3 : 0); k++) ln(r.x + r.w * 0.6 - 6 * s, fl - 15 * s - k * 2 * s, r.x + r.w * 0.6 + 6 * s, fl - 15 * s - k * 2 * s);
-      const bx = r.x + r.w * 0.86; box(bx - 7 * s, fl - 16 * s, 14 * s, 16 * s); ln(bx - 9 * s, fl - 16 * s, bx + 9 * s, fl - 16 * s);    // Bin Lid's bin, lid up when in use
-      if (busy[2]) { ln(bx - 9 * s, fl - 18 * s, bx + 6 * s, fl - 28 * s); for (let k = 0; k < 3; k++) { const d = (t * 1.5 + k / 3) % 1; ln(bx - 3 * s + k * 3 * s, fl - 30 * s + d * 14 * s, bx - 3 * s + k * 3 * s, fl - 26 * s + d * 14 * s); } }
-      else ln(bx - 9 * s, fl - 18 * s, bx + 9 * s, fl - 18 * s);
-    } },
-  '/admin/': { stations: [{ f: 0.16, pose: 'check' }, { f: 0.52, pose: 'type' }, { f: 0.86, pose: 'check' }],
-    draw(r, s, fl, t, busy) {
-      const rx = r.x + r.w * 0.16; box(rx - 11 * s, fl - 50 * s, 22 * s, 50 * s);                                // the server rack, lights blinking
-      for (let k = 0; k < 6; k++) { ln(rx - 8 * s, fl - 44 * s + k * 7 * s, rx + 4 * s, fl - 44 * s + k * 7 * s); if (Math.sin(t * (busy[0] ? 9 : 3) + k * 2) > 0) circ(rx + 7 * s, fl - 44 * s + k * 7 * s, 1 * s); }
-      desk(r.x + r.w * 0.58, fl, r.w * 0.18, s, r.x + r.w * 0.52 - 9 * s); screen(r.x + r.w * 0.59, fl - 25 * s, 12 * s, 9 * s, t, busy[1]);
-      const sx = r.x + r.w * 0.86; box(sx - 11 * s, fl - 22 * s, 22 * s, 22 * s); circ(sx, fl - 11 * s, 4 * s);    // the safe, dial turning
-      ln(sx, fl - 11 * s, sx + Math.cos(t * (busy[2] ? 4 : 0.3)) * 4 * s, fl - 11 * s + Math.sin(t * (busy[2] ? 4 : 0.3)) * 4 * s);
-    } },
-  '/blog/': { stations: [{ f: 0.42, pose: 'type' }, { f: 0.8, pose: 'check' }, { f: 0.14, pose: 'check' }],
-    draw(r, s, fl, t, busy) {
-      desk(r.x + r.w * 0.48, fl, r.w * 0.2, s, r.x + r.w * 0.42 - 9 * s);                                       // Grumble's desk and typewriter
-      box(r.x + r.w * 0.49 - 7 * s, fl - 19 * s, 14 * s, 6 * s); box(r.x + r.w * 0.49 - 5 * s, fl - 26 * s - (busy[0] ? (t * 2 % 1) * 4 * s : 0), 10 * s, 7 * s);
-      const px = r.x + r.w * 0.8; box(px - 10 * s, fl - 22 * s, 20 * s, 22 * s);                                   // the printer and the drafts it spits out
-      for (let k = 0; k < 3; k++) ln(px - 7 * s, fl - 25 * s - k * 2 * s, px + 7 * s, fl - 25 * s - k * 2 * s);
-      if (busy[1]) { const d = (t * 0.7) % 1; box(px - 6 * s, fl - 30 * s - d * 10 * s, 12 * s, 8 * s); }
-      const nx = r.x + r.w * 0.14, ny = fl - 80 * s; box(nx - 16 * s, ny, 32 * s, 24 * s);                         // the noticeboard of published posts
-      for (let k = 0; k < 4; k++) box(nx - 13 * s + (k % 2) * 14 * s, ny + 3 * s + Math.floor(k / 2) * 11 * s, 11 * s, 8 * s);
-    } }
-};
-const KIT_PLAIN = { stations: [{ f: 0.3, pose: 'type' }, { f: 0.7, pose: 'check' }],
-  draw(r, s, fl, t, busy) { desk(r.x + r.w * 0.36, fl, r.w * 0.2, s, r.x + r.w * 0.3 - 9 * s); screen(r.x + r.w * 0.37, fl - 25 * s, 12 * s, 9 * s, t, busy[0]);
-    const px = r.x + r.w * 0.7; box(px - 6 * s, fl - 10 * s, 12 * s, 10 * s); fx.beginPath(); fx.moveTo(px, fl - 10 * s); fx.quadraticCurveTo(px - 10 * s, fl - 26 * s, px - 2 * s, fl - 30 * s); fx.moveTo(px, fl - 10 * s); fx.quadraticCurveTo(px + 8 * s, fl - 24 * s, px + 4 * s, fl - 32 * s); fx.stroke(); } };   // a desk and a pot plant
-
-// who works where: [name, rooms to try, what they report, favourite station or -1]
-const RESIDENTS = [
-  ['NORMAL', ['/night-shift/'], () => jobLine('analyst'), 0], ['PICKLE', ['/night-shift/', '/music/'], () => jobLine('pickle'), 1],
-  ['DISCO BISCUIT', ['/music/'], () => '', 0], ['WURZEL', ['/music/'], () => dayLine('wurzel'), 1], ['BISCUIT TIN', ['/music/'], () => dayLine('biscuittin'), 2],
-  ['GOD', ['/security/'], () => jobLine('intel'), 0], ['BUNSEN', ['/security/', '/security/layers/'], () => dayLine('bunsen'), 1],
-  ['DOODLEBUG', ['/security/layers/', '/security/'], () => jobLine('ideas'), 0], ['SPANNER', ['/security/layers/', '/security/'], () => dayLine('spanner'), 1],
-  ['CRUMPET', ['/security/cpted/', '/security/'], () => dayLine('crumpet'), -1],
-  ['GOATMAN', ['/security/martyns-law/', '/security/'], () => jobLine('clerk'), 0], ['BIN LID', ['/security/martyns-law/', '/security/'], () => dayLine('binlid'), 2],
-  ['TEACAKE', ['/admin/', '/night-shift/'], () => dayLine('teacake'), -1],
-  ['KIPPER', ['/', '/music/'], () => jobLine('scout'), 0], ['PIGEON', ['/', '/blog/'], () => dayLine('pigeon'), 1],
-  ['GRUMBLE', ['/blog/', '/'], () => dayLine('grumble'), 0]
-];
-function dayLine(id) { const D = floor.day || {}, r = D[id], t = (r && r.report && r.report.summary) || 'first report due'; return t.length > 30 ? t.slice(0, 29) + '…' : t; }
-const res = {};                                           // each resident's position and what it's doing
-function drawRooms(dt, sFloor) {
-  let s = sFloor;
-  const t = floor.t, walk = 34 * s;
-  const roomFor = paths => { for (const p of paths) { const r = floor.rooms.find(q => q.path === p); if (r) return r; } return floor.rooms[floor.rooms.length - 1]; };
-  const inRoom = new Map();
-  RESIDENTS.forEach(([name, paths, line, fav]) => { const r = roomFor(paths); if (!r) return; if (!inRoom.has(r)) inRoom.set(r, []); inRoom.get(r).push({ name, line, fav }); });
-  floor.rooms.forEach(r => {
-    const s0 = s; { const rs = Math.max(0.5, Math.min((r.h - 34) / 92, r.w / 108, 2.4)); s = rs; }   // people and furniture fill the room
-    const kit = KITS[r.path] || KIT_PLAIN, fl = r.y + r.h - 12 * s, st = kit.stations, who = inRoom.get(r) || [];
-    { const lx = r.x + r.w * 0.5 + (r.upper ? 0 : r.w * 0.25), drop = Math.min(r.h * 0.18, 26 * s);  // a lamp hanging from the ceiling
-      fx.globalAlpha = 0.5; ln(lx, r.y, lx, r.y + drop); fx.beginPath(); fx.moveTo(lx - 6 * s, r.y + drop + 5 * s); fx.lineTo(lx - 3 * s, r.y + drop); fx.lineTo(lx + 3 * s, r.y + drop); fx.lineTo(lx + 6 * s, r.y + drop + 5 * s); fx.stroke();
-      fx.globalAlpha = 0.06; fx.beginPath(); fx.moveTo(lx - 6 * s, r.y + drop + 5 * s); fx.lineTo(lx - 30 * s, fl); fx.lineTo(lx + 30 * s, fl); fx.lineTo(lx + 6 * s, r.y + drop + 5 * s); fx.fill(); fx.globalAlpha = 1; }
-    const busy = st.map((_, k) => who.some(w => res[w.name] && res[w.name].room === r && res[w.name].st === k && res[w.name].dwell > 0));
-    fx.globalAlpha = 0.75; kit.draw(r, s, fl, t, busy); fx.globalAlpha = 1;
-    if (r === floor.control) {                         // the handover being typed, under the label
-      const lines = (floor.shift && floor.shift.analyst && floor.shift.analyst.handover || 'All quiet. Standing by.').split(/(?<=[.!?])\s+/);
-      const li = Math.floor(t / 4) % lines.length, typed = lines[li].slice(0, Math.floor((t % 4) * 28));
-      const maxW = Math.max(100, r.w - 16), words = typed.split(' '); let line = '', ly = r.y + 26 * sFloor, n = 0;
-      fx.font = `300 ${8.5 * sFloor}px "IBM Plex Mono", monospace`;
-      for (const w of words) { const t2 = line ? line + ' ' + w : w; if (fx.measureText(t2).width > maxW && line) { if (n < 1) text(line, r.x + 7, ly, 8.5 * sFloor, 0.75, 'left'); ly += 10 * sFloor; n++; line = w; } else line = t2; }
-      if (n < 2) text(line + (Math.floor(t * 2) % 2 ? '▌' : ''), r.x + 7, ly, 8.5 * sFloor, 0.75, 'left');
-    }
-    who.forEach((w, i) => {
-      let a = res[w.name];
-      const stationX = k => r.x + r.w * st[k].f + (st[k].pose === 'type' ? -12 * s : -8 * s * (i % 2 ? -1 : 1));
-      if (!a || a.room !== r) a = res[w.name] = { room: r, st: w.fav >= 0 && w.fav < st.length ? w.fav : i % st.length, x: 0, dwell: 2 + Math.random() * 4, step: 0 };
-      if (!a.x) a.x = stationX(a.st);
-      const target = stationX(a.st), d = target - a.x;
-      if (Math.abs(d) > 1) { const mv = Math.sign(d) * Math.min(Math.abs(d), walk * dt); a.x += mv; a.step += Math.abs(mv) * 0.3; }
-      else if (a.dwell > 0) a.dwell -= dt;
-      else {                                            // pick another station: favourites more often, never one that's taken
-        const taken = new Set(who.filter(o => o !== w && res[o.name]).map(o => res[o.name].st));
-        const free = st.map((_, k) => k).filter(k => k !== a.st && !taken.has(k));
-        a.st = w.fav >= 0 && !taken.has(w.fav) && a.st !== w.fav && Math.random() < 0.6 ? w.fav : free.length ? free[Math.floor(Math.random() * free.length)] : a.st;
-        a.dwell = 3 + Math.random() * 6;
-      }
-      const moving = Math.abs(target - a.x) > 1, pose = moving ? 'walk' : st[a.st].pose;
-      const y = pose === 'type' ? fl : fl;
-      stickMan(a.x, y - (pose === 'dance' ? Math.abs(Math.sin(t * 4)) * 2 * s : 0), s, moving ? a.step : t * 2 + i, pose, w.name);
-      text(w.name, a.x + (pose === 'type' ? 4 * s : 0), fl + 9 * sFloor, 7.5 * sFloor, 0.6);
-      const msg = w.line();
-      if (msg && !moving && r.w / Math.max(1, who.length) > 64) text(msg, Math.max(r.x + 50, Math.min(r.x + r.w - 50, a.x)), fl - 36 * s - (i % 2) * 10 * sFloor, 8 * sFloor, 0.8);
-    });
-    s = s0;
-  });
-}
 function setFloorShift(log) { floor.shift = log; layout(); makeMen(); }
 addEventListener('resize', () => { layout(); makeMen(); });
 layout(); makeMen(); requestAnimationFrame(floorLoop);
