@@ -88,15 +88,8 @@
   /* SoundCloud's player does the playing; it stays out of sight and the visualiser is the interface */
   #sc{position:fixed;left:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
   /* TV mode (?tv=1): just the visualiser, for a TV or a cast screen */
-  body.tv .ui header.top,body.tv footer.bottom,body.tv .transport,body.tv .skip,body.tv #scrub,body.tv .intro{display:none!important}
+  body.tv .ui header.top,body.tv footer.bottom,body.tv .transport,body.tv .skip,body.tv #scrub,body.tv .intro,body.tv .peek{display:none!important}
   body.tv.is-playing{cursor:none}
-  .casthelp{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:16px}
-  .casthelp[hidden]{display:none}
-  .casthelp .box{max-width:34rem;border:1px solid #fff;background:#000;padding:1.6rem 1.8rem;font-size:.8rem;line-height:1.7;color:#ddd}
-  .casthelp h2{font-family:'Syne',sans-serif;font-weight:600;font-size:1rem;letter-spacing:.12em;margin:0 0 .8rem;color:#fff}
-  .casthelp ul{padding-left:1.1rem;margin:.4rem 0 1rem} .casthelp li{margin:.35rem 0}
-  .casthelp .row{display:flex;gap:.8rem;flex-wrap:wrap}
-  .casthelp button{background:#000;color:#fff;border:1px solid #fff;padding:.5rem .9rem;font:inherit;letter-spacing:.15em;cursor:pointer}
   /* an agent who pops up now and then to have a word */
   .peek{position:fixed;bottom:calc(5.2rem + 4rem + .5rem);left:50%;translate:-50% 0;z-index:6;display:flex;flex-direction:column;align-items:center;pointer-events:none;
     opacity:0;transform:translateY(34px) scale(.5);transition:opacity .25s,transform .4s cubic-bezier(.3,1.6,.5,1)}
@@ -134,10 +127,11 @@
   .ph{font-size:.7rem;letter-spacing:.1em;color:#999;margin-top:1rem}
   #pacCanvas{position:static;width:auto;height:auto;max-width:100%}
   .pp{width:3.6rem;height:3.6rem;padding:0;color:#fff;opacity:.85;transition:opacity .3s,transform .3s}
-  /* Egg and Cast: plain text buttons beside the transport, clearly visible */
-  .tb{color:#fff;background:none;border:0;padding:.5rem .2rem;font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;opacity:.6;transition:opacity .2s}
-  .tb:hover,.tb:focus-visible{opacity:1}
-  body.shell-on .tb{display:none}
+  /* Full screen and Egg: tucked away, faint until you look for them */
+  .hush{display:flex;gap:1.4rem;align-self:flex-end}
+  .hush button{color:#fff;background:none;border:0;padding:.3rem 0;font-size:.6rem;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;opacity:.28;transition:opacity .2s}
+  .hush button:hover,.hush button:focus-visible{opacity:.9}
+  body.shell-on .hush{display:none}
   footer.bottom .controls[hidden]{display:none!important}
   .pp:hover{opacity:1;transform:scale(1.06)}
   .pp svg{width:100%;height:100%;display:block}
@@ -221,6 +215,7 @@
     </nav>
   </header>
   <footer class="bottom">
+    <div class="hush"><button id="fullBtn" type="button" title="Full screen: just the visuals (Esc to leave)">Full screen</button><button id="eggBtn" type="button" title="A little game" onclick="openPac()">Egg</button></div>
     <div class="controls" hidden>
       <button id="loadBtn" title="Play an audio file from your device instead (L)">Load file</button>
       <button id="micBtn" title="Use your microphone (M)" aria-pressed="false">Mic</button>
@@ -237,25 +232,13 @@
   <button class="bigplay" id="bigPlay" type="button" aria-label="Play"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring" cx="60" cy="60" r="56"/><circle class="disc" cx="60" cy="60" r="44"/><polygon class="tri" points="50,40 82,60 50,80"/></svg></button>
   <div class="transport">
     <button id="playBtn" class="pp" title="Play / pause (Space)" aria-label="Play" disabled><svg viewBox="0 0 48 48" aria-hidden="true"><polygon class="ic-play" points="16,11 37,24 16,37" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><g class="ic-pause" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="11" width="7" height="26"/><rect x="27" y="11" width="7" height="26"/></g></svg></button>
-      <button id="eggBtn" class="tb" type="button" title="A little game" onclick="openPac()">Egg</button>
-  </div>
+    </div>
   <div class="skip" role="group" aria-label="Track">
-    <button id="castBtn" class="tb" type="button" title="Show this on your TV">Cast</button>
     <button id="prevBtn" class="pp sk" title="Previous track (P)" aria-label="Previous track" disabled><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="36,12 17,24 36,36"/><rect x="11" y="12" width="4" height="24"/></svg></button>
     <button id="nextBtn" class="pp sk" title="Next track (N)" aria-label="Next track" disabled><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12,12 31,24 12,36"/><rect x="33" y="12" width="4" height="24"/></svg></button>
   </div>
 </div>
 <iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page"></iframe>
-<div class="casthelp" id="castHelp" hidden role="dialog" aria-modal="true" aria-labelledby="castTitle"><div class="box">
-  <h2 id="castTitle">Show this on your TV</h2>
-  <ul>
-    <li><b>Chrome or Edge</b> (computer or Android) with a Chromecast or smart TV: press <b>Cast</b> and choose the TV. If nothing is listed, use the browser menu: ⋮ → Cast…</li>
-    <li><b>iPhone, iPad or Mac</b> with an Apple TV or AirPlay TV: open Control Centre → Screen Mirroring and choose the TV.</li>
-    <li><b>Android phone</b>: swipe down → Cast or Smart View, and choose the TV.</li>
-  </ul>
-  <p>Then switch on TV mode: just the visuals, full screen, no buttons.</p>
-  <div class="row"><button type="button" id="tvBtn">TV mode</button><button type="button" id="castClose">Close</button></div>
-</div></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
@@ -1665,31 +1648,17 @@ addEventListener('popstate', () => {
    Chrome and Edge can show a page on a Chromecast or other cast display (the Presentation API): the TV
    opens this page in TV mode with the tune that's playing, and the buttons here become its remote.
    Anywhere else, the help explains screen mirroring and offers TV mode on this screen. */
-let castConn = null;
-function castUrl() {
-  const cur = nowEl.href && /^https:\/\/(www\.|m\.)?soundcloud\.com\//.test(nowEl.href) ? '&track=' + encodeURIComponent(nowEl.href.split('?')[0]) : '';
-  return location.origin + '/?tv=1' + cur;
+// Full screen: just the visuals, nothing else on screen. Esc (or a tap, where full screen isn't
+// available, as on iPhone) brings everything back.
+let fullOn = false;
+function setFull(on) {
+  fullOn = on; document.body.classList.toggle('tv', on || TV);
+  if (on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+  if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
-function castEnded() { castConn = null; $('castBtn').textContent = 'Cast'; setStatus('Stopped casting'); }
-$('castBtn').addEventListener('click', async () => {
-  if (castConn && castConn.state === 'connected') { castConn.terminate(); castEnded(); return; }
-  if (window.PresentationRequest) {
-    try {
-      castConn = await new PresentationRequest([castUrl()]).start();
-      if (musicOn()) togglePlay();                       // the music moves to the TV
-      $('castBtn').textContent = 'Stop casting'; setStatus('Showing on your TV · the buttons here control it');
-      castConn.addEventListener('close', castEnded); castConn.addEventListener('terminate', castEnded);
-      return;
-    } catch (e) { castConn = null; if (e && e.name === 'AbortError') return; }   // picker closed, or nothing to cast to
-  }
-  $('castHelp').hidden = false;
-});
-$('castClose').addEventListener('click', () => { $('castHelp').hidden = true; });
-$('tvBtn').addEventListener('click', () => { location.href = castUrl(); });
-// while casting, play / previous / next go to the TV
-[['playBtn', 'toggle'], ['bigPlay', 'toggle'], ['prevBtn', 'prev'], ['nextBtn', 'next']].forEach(([id, cmd]) => $(id).addEventListener('click', e => {
-  if (castConn && castConn.state === 'connected') { e.stopImmediatePropagation(); e.preventDefault(); castConn.send(JSON.stringify({ cmd })); }
-}, true));
+$('fullBtn').addEventListener('click', e => { e.stopPropagation(); setFull(true); });
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && fullOn) setFull(false); });
+cv.addEventListener('click', () => { if (fullOn && !document.fullscreenElement) setFull(false); });
 if (TV) {
   let userPaused = false;
   // on the TV: start playing as soon as a track is ready, unless someone has paused it
