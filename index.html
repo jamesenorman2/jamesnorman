@@ -1026,20 +1026,20 @@ let shine = null, lastWeb = -99, lasers = [], flash = null, lastLaser = -99, web
 let glows = [], nextGlow = 40 + Math.random() * 60;
 function autoGlow() {
   if (clockT < nextGlow) return;
-  nextGlow = clockT + 70 + Math.random() * 110;              // roughly every one to three minutes
+  nextGlow = clockT + 40 + Math.random() * 50;               // roughly every minute
   glows.push({ t0: clockT, life: 6 + Math.random() * 4, u: (Math.random() - 0.5) * 1.6, v: 0.15 + Math.random() * 0.75, h: 0.2 + Math.random() * 0.9,
     du: (Math.random() - 0.5) * 0.04, size: 0.5 + Math.random() * 0.6 });
 }
 // The light director: effects take turns a phrase at a time (16 beats), so the show has a shape.
 // Each phrase gets one scene, which runs for the first part of the phrase and then leaves space.
 let scene = 'rest', sceneEnd = 0, nextPhrase = 0, sceneI = 0, sceneColour = 'green';
-const SCENES = ['mounted', 'fan', 'shine', 'web', 'mounted', 'scan', 'rgb', 'fan', 'web', 'shine', 'glow'];   // the RGB laser: one phrase in eleven
+const SCENES = ['mounted', 'fan', 'shine', 'web', 'mounted', 'fan', 'scan', 'rgb', 'mounted', 'fan', 'web', 'shine', 'glow'];   // the RGB laser: one phrase in eleven
 function autoLasers() {
   if (source === 'idle' || calm) return;
   const beat = music.beat || 0.47, pick = () => Object.keys(PALETTE)[Math.floor(Math.random() * 5)];
   if (clockT >= nextPhrase) {
     const phrase = Math.max(6, Math.min(10, 16 * beat));
-    nextPhrase = clockT + phrase; sceneEnd = clockT + phrase * 0.6; sceneColour = pick();
+    nextPhrase = clockT + phrase; sceneEnd = clockT + phrase * 0.8; sceneColour = pick();
     if (inBreak > 0.5) scene = sceneI++ % 2 ? 'scan' : 'rest';                // breakdowns: space, the odd scan line
     else if (energy < 0.2) scene = 'rest';
     else scene = SCENES[sceneI++ % SCENES.length];
@@ -1050,7 +1050,7 @@ function autoLasers() {
     else if (scene === 'glow') nextGlow = clockT;                                    // the red light
   }
   // during a laser scene, the lasers go again on the kicks (or every two bars if the kicks are hard to hear)
-  if (clockT < sceneEnd && (scene === 'mounted' || scene === 'fan' || scene === 'rgb') && clockT - lastLaser > Math.max(1.2, beat * 2) && (hit > 0.35 || clockT - lastLaser > beat * 8))
+  if (clockT < sceneEnd && (scene === 'mounted' || scene === 'fan' || scene === 'rgb') && clockT - lastLaser > Math.max(0.9, beat * 2) && (hit > 0.3 || clockT - lastLaser > beat * 4))
     fireMoment({ type: 'laser', mount: scene === 'mounted', rgb: scene === 'rgb', colour: sceneColour });
 }
 // Lasers mounted on the waveform: pick the tallest peaks of a line just in from the far edge and
@@ -1073,8 +1073,8 @@ function fireMoment(m) {
   else if (m.type === 'laser') {
     lastLaser = clockT; web = null;                 // lasers and the web take turns
     const mounted = (m.mount ?? Math.random() < 0.55) && mountPeaks();      // JN_moment({type:'laser', mount:true}) to try it
-    if (mounted && lasers.length < 3) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, mount: mounted, life: 2.6, scissor: 0.25 + Math.random() * 0.35 });
-    else if (lasers.length < 3) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, n: 4 + Math.floor(Math.random() * 4), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
+    if (mounted && lasers.length < 4) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, mount: mounted, life: 2.6, scissor: 0.25 + Math.random() * 0.35 });
+    else if (lasers.length < 4) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, n: 4 + Math.floor(Math.random() * 4), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
   }
   else if (m.type === 'flash') flash = { t0: clockT, colour: colour || PALETTE.amber };
   else if (m.type === 'web') { if (!web && !lasers.length) { lastWeb = clockT; web = { t0: clockT, life: 4.5 + Math.random() * 2, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
@@ -1158,7 +1158,9 @@ function drawMoments(project) {
         beams.push([ox, oy, ex, ey, col, k]);
         ctx.strokeStyle = col;
         ctx.globalAlpha = 0.12 * k; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
-        ctx.globalAlpha = 0.9 * k; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.globalCompositeOperation = 'source-over';                                 // solid colour over the white lines: no glittery crossings
+        ctx.globalAlpha = k; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.globalCompositeOperation = 'lighter';
       }
       ctx.globalAlpha = k; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ox, oy, 3, 0, TAU); ctx.fill();
     }
@@ -1197,7 +1199,7 @@ function drawWeb(project) {
   for (const p of web.anchors) { project(peakAt(p.idx, p.i, 0.03), 0); if (PZ[0] > 0) pts.push([PX[0], PY[0]]); }
   if (pts.length < 2) return;
   pts.sort((p, q) => p[0] - q[0]);
-  const k = Math.min(1, age / 0.15, (web.life - age) / 0.6), flick = 0.75 + 0.25 * Math.min(1, (clockT - web.snapAt) / 0.12);
+  const k = Math.min(1, age / 0.15, (web.life - age) / 0.6), flick = 1;
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = web.colour;
   const pairs = [];
   for (let j = 0; j < pts.length - 1; j++) pairs.push([pts[j], pts[j + 1]]);           // the strands
@@ -1205,7 +1207,9 @@ function drawWeb(project) {
   for (const [p, q] of pairs) {
     beams.push([p[0], p[1], q[0], q[1], web.colour, k]);
     ctx.globalAlpha = 0.14 * k; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
-    ctx.globalAlpha = 0.85 * k * flick; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = k * flick; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+    ctx.globalCompositeOperation = 'lighter';
   }
   ctx.fillStyle = '#fff';
   for (const p of pts) { ctx.globalAlpha = k; ctx.beginPath(); ctx.arc(p[0], p[1], 2.2, 0, TAU); ctx.fill(); }
@@ -1225,6 +1229,7 @@ function drawScan(project) {
   for (let i = 0; i < POINTS; i += 2) { project(surf(-1 + 2 * i / (POINTS - 1), v, row[i] * AMP), 0); pts.push(PZ[0] > 0 ? [PX[0], PY[0]] : null); }
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = scan.colour; ctx.lineJoin = 'round';
   for (const [w, al] of [[10, 0.12], [4, 0.3], [1.6, 1]]) {
+    if (w < 2) ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = al * k; ctx.lineWidth = w; ctx.beginPath(); let pen = false;
     for (const p of pts) { if (!p) { pen = false; continue; } if (pen) ctx.lineTo(p[0], p[1]); else { ctx.moveTo(p[0], p[1]); pen = true; } }
     ctx.stroke();
@@ -1340,7 +1345,9 @@ function drawMountedLaser(l, project) {
       beams.push([ox, oy, ex, ey, col, k]);
       ctx.strokeStyle = col;
       ctx.globalAlpha = 0.12 * k; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
-      ctx.globalAlpha = 0.9 * k; ctx.lineWidth = side ? 1.2 : 1.8; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = k; ctx.lineWidth = side ? 1.3 : 1.8; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.globalCompositeOperation = 'lighter';
     }
     ctx.globalAlpha = k; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ox, oy, 2.6, 0, TAU); ctx.fill();
   }
