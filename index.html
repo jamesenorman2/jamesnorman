@@ -785,7 +785,8 @@ function direct(dt) {
     if (view.mode === 'under' && view.modeT < 0.1) { shape.curlTo = -0.3; shape.twistTo = 0; }
   }
   // a barrel roll on a big hit
-  if (hit > 0.5 && clockT - lastRoll > 6 && view.mode !== 'far') { lastRoll = clockT; view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; }
+  // a barrel roll now and then: only on a really big hit, and never more than about one a minute
+  if (hit > 0.8 && clockT - lastRoll > 60 + Math.random() * 30 && view.mode !== 'far') { lastRoll = clockT; view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; }
 }
 
 // The drop: punch, change shot, loop round the rectangle; a big break (4 bars+) earns the strobe.
@@ -1039,7 +1040,7 @@ function fireMoment(m) {
   else if (m.type === 'flash') flash = { t0: clockT, colour: colour || PALETTE.amber };
   else if (m.type === 'web') { if (!web) { web = { t0: clockT, life: 4.5 + Math.random() * 2, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
   else if (m.type === 'scan') { if (!scan) { const period = Math.max(1.2, Math.min(4, (music.beat || 0.5) * 4)); scan = { t0: clockT, period, life: period * 2, colour: colour || PALETTE.violet }; lastScan = clockT; } }
-  else if (m.type === 'flip') { if (!reduceMotion) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }
+  else if (m.type === 'flip') { if (!reduceMotion && clockT - lastRoll > 45) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }   // cue-sheet rolls too, at most one every 45 s
   if (m.note) $('cue').textContent = `${score && score.by || 'Agent Pickle'}: “${m.note}”`;
 }
 window.JN_moment = fireMoment;
