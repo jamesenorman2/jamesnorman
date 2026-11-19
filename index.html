@@ -847,6 +847,7 @@ function onDrop(breakLen) {
   fireMoment({ type: 'laser', colour: Object.keys(PALETTE)[Math.floor(Math.random() * 5)] });          // every drop gets lasers
   if (breakLen >= 8 && clockT - lastSmoke > 60 && !reduceMotion) startSmoke();          // smoke on the big drops
   if (!reduceMotion && clockT - lastFog > 45 && Math.random() < 0.4) startFog();          // and sometimes the smoke machine
+  if (Math.random() < 0.3 && clockT - lastBolt > 20) strikeLightning(2);              // sometimes the drop brings lightning
   if (Math.random() < 0.15) setTimeout(() => peek('scut'), 1500);                        // now and then, on a drop
   nextPhrase = clockT + 0.01; sceneI = 0;                                                   // and the light show restarts on the drop
   const top = mountPeaks();                                                                       // and the red light lands on the tallest peak
@@ -1115,7 +1116,7 @@ function mountPeaks() {
   return { row: idx, peaks };
 }
 function fireMoment(m) {
-  if (!['strobe', 'laser', 'rgb', 'shine', 'flash', 'flip', 'web', 'scan', 'smoke', 'fog', 'uv'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
+  if (!['strobe', 'laser', 'rgb', 'shine', 'flash', 'flip', 'web', 'scan', 'smoke', 'fog', 'uv', 'lightning'].includes(m.type)) return;     // e.g. goats in older cue sheets: retired
   const colour = PALETTE[m.colour] || null;
   if (m.type === 'rgb') { m = { ...m, type: 'laser', rgb: true }; }
   if (m.type === 'strobe') strobe();
@@ -1129,6 +1130,7 @@ function fireMoment(m) {
   else if (m.type === 'web') { if (!web && !lasers.length) { lastWeb = clockT; web = { t0: clockT, life: 9 + Math.random() * 3, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
   else if (m.type === 'scan') { if (!scan) { const period = Math.max(1.2, Math.min(4, (music.beat || 0.5) * 4)); scan = { t0: clockT, period, life: period * 2, colour: colour || PALETTE.violet }; lastScan = clockT; } }
   else if (m.type === 'shine') { const mp = mountPeaks(); if (mp && !shine) shine = { t0: clockT, life: 4.5 + Math.random() * 1.5, colour: colour || PALETTE.cyan, mount: mp }; }
+  else if (m.type === 'lightning') { if (clockT - lastBolt > 6) strikeLightning(m.count || 1 + Math.floor(Math.random() * 2), colour || undefined); }
   else if (m.type === 'uv') { if (clockT - lastUv > 30) startUv(); }
   else if (m.type === 'fog') { if (clockT - lastFog > 40) startFog(); }
   else if (m.type === 'smoke') { if (clockT - lastSmoke > 60) startSmoke(); }
@@ -1206,6 +1208,7 @@ function atmosphere(project) {
   if (playing && !reduceMotion && !fog && inBreak < 0.5 && energy > 0.35 && clockT - lastFog > 80 + Math.random() * 70) startFog();
   drawUplights(project, dt, playing);
   drawFog(project, dt);
+  if (playing && !reduceMotion && hit > 0.9 && clockT - lastBolt > 45 + Math.random() * 45 && Math.random() < 0.3) strikeLightning(1);   // and the odd big hit
   if (playing && !reduceMotion && hit > 0.85 && energy > 0.5 && clockT - lastSmoke > 90 + Math.random() * 60) startSmoke();
   if (!smoke.length) return;
   smoke = smoke.filter(s => clockT - s.t0 < s.life);
@@ -1271,7 +1274,7 @@ function drawMoments(project) {
     }
     ctx.restore();
   }
-  drawWeb(project); drawScan(project); drawSparks(project); drawMath(project);   // no sparks or crossing glow by default: clean, clear beams
+  drawWeb(project); drawScan(project); drawSparks(project); drawMath(project); drawLightning(project);   // no sparks or crossing glow by default: clean, clear beams
   // a colour flash: every white line takes the colour for a moment
   if (flash) {
     const age = clockT - flash.t0;
@@ -1281,6 +1284,55 @@ function drawMoments(project) {
 }
 // where a line of the history sits on the rectangle right now (0 near edge .. 1 far edge)
 const rowV = idx => 1 - (((head - idx + TOTAL) % TOTAL) + rowClock) / SHOW;
+// Lightning: a jagged bolt from the sky striking one of the highest peaks, flickering once and fading.
+// The bolt's shape is made once (midpoint displacement, with a couple of forks) and stretched each
+// frame between the sky and the peak, so it stays on the peak as the surface moves.
+let bolts = [], lastBolt = -60;
+function boltShape() {
+  let pts = [[0, 0], [1, 0]];
+  for (let d = 0; d < 6; d++) {                                   // midpoint displacement: each pass halves the jaggedness
+    const out = [pts[0]], amp = 0.16 / Math.pow(1.8, d);
+    for (let k = 1; k < pts.length; k++) { const a = pts[k - 1], b = pts[k]; out.push([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + (Math.random() - 0.5) * amp], b); }
+    pts = out;
+  }
+  const forks = [];
+  for (let f = 0; f < 2 + Math.floor(Math.random() * 2); f++) {   // forks branching off part-way down
+    const at = 0.2 + Math.random() * 0.5, i0 = Math.floor(at * (pts.length - 1)), [x0, y0] = pts[i0], dir = Math.random() < 0.5 ? -1 : 1, len = 0.15 + Math.random() * 0.2, fk = [[x0, y0]];
+    for (let k = 1; k <= 8; k++) fk.push([x0 + len * k / 8, y0 + dir * len * k / 8 * (0.5 + Math.random() * 0.6) + (Math.random() - 0.5) * 0.03]);
+    forks.push(fk);
+  }
+  return { pts, forks };
+}
+function strikeLightning(n, colour) {
+  if (reduceMotion || calm) return;
+  const pk = (typeof mathPeaks === 'function' ? mathPeaks(6) : []).slice(0, Math.max(1, n || 1));
+  pk.forEach((p, k) => bolts.push({ t0: clockT + k * 0.14, peak: p, sx: (Math.random() - 0.5) * 0.5, shape: boltShape(), colour: colour || '#cfd8ff' }));
+  lastBolt = clockT;
+}
+function drawLightning(project) {
+  if (!bolts.length) return;
+  bolts = bolts.filter(b => clockT - b.t0 < 0.7);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  for (const b of bolts) {
+    const age = clockT - b.t0; if (age < 0) continue;
+    if (b.peak.a >= SHOW - 1) continue;
+    project(gridPt(b.peak.a, b.peak.i, 0), 0); if (PZ[0] < 0) continue;
+    const ex = PX[0], ey = PY[0], sx = ex + b.sx * H, sy = -20;
+    // one strike, a brief dip, one re-strike, then it fades: no fast flicker
+    const k = age < 0.08 ? 1 : age < 0.16 ? 0.35 : age < 0.26 ? 0.9 : Math.max(0, 1 - (age - 0.26) / 0.44);
+    const L = Math.hypot(ex - sx, ey - sy), ux = (ex - sx) / L, uy = (ey - sy) / L;
+    const map = ([t, o]) => [sx + ux * t * L - uy * o * L, sy + uy * t * L + ux * o * L];
+    const path = (pts, w, a, col) => { ctx.strokeStyle = col; ctx.globalAlpha = a * k; ctx.lineWidth = w; ctx.beginPath(); pts.forEach((p, i) => { const [x, y] = map(p); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); };
+    path(b.shape.pts, 14, 0.08, b.colour); path(b.shape.pts, 5, 0.25, b.colour); path(b.shape.pts, 1.6, 1, '#ffffff');
+    for (const f of b.shape.forks) { path(f, 4, 0.18, b.colour); path(f, 1, 0.7, '#ffffff'); }
+    const r = 26 + 30 * k, g = ctx.createRadialGradient(ex, ey, 0, ex, ey, r);       // the strike lights up the peak
+    g.addColorStop(0, '#ffffff'); g.addColorStop(0.3, b.colour); g.addColorStop(1, b.colour + '00');
+    ctx.globalAlpha = 0.6 * k; ctx.fillStyle = g; ctx.fillRect(ex - r, ey - r, r * 2, r * 2);
+  }
+  ctx.restore();
+}
+window.JN_lightning = n => { lastBolt = -99; strikeLightning(n || 1); };   // try it from the console
+
 // ─── Mathematical line effects (Agent Lloyd's geometry kit) ───
 // contour: marching-squares contour lines over the waveform, stepping up on the beat
 // delaunay: the tallest peaks joined by a live Delaunay triangulation
