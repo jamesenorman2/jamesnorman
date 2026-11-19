@@ -1125,7 +1125,7 @@ function fireMoment(m) {
     else if (lasers.length < 2) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, n: 4 + Math.floor(Math.random() * 4), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
   }
   else if (m.type === 'flash') flash = { t0: clockT, colour: colour || PALETTE.amber };
-  else if (m.type === 'web') { if (!web && !lasers.length) { lastWeb = clockT; web = { t0: clockT, life: 7 + Math.random() * 3, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
+  else if (m.type === 'web') { if (!web && !lasers.length) { lastWeb = clockT; web = { t0: clockT, life: 9 + Math.random() * 3, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
   else if (m.type === 'scan') { if (!scan) { const period = Math.max(1.2, Math.min(4, (music.beat || 0.5) * 4)); scan = { t0: clockT, period, life: period * 2, colour: colour || PALETTE.violet }; lastScan = clockT; } }
   else if (m.type === 'shine') { const mp = mountPeaks(); if (mp && !shine) shine = { t0: clockT, life: 4.5 + Math.random() * 1.5, colour: colour || PALETTE.cyan, mount: mp }; }
   else if (m.type === 'uv') { if (clockT - lastUv > 30) startUv(); }
@@ -1283,8 +1283,8 @@ const rowV = idx => 1 - (((head - idx + TOTAL) % TOTAL) + rowClock) / SHOW;
 const peakAt = (idx, i, lift) => surf(-1 + 2 * i / (POINTS - 1), rowV(idx), history[idx][i] * AMP + (lift || 0));
 
 // 2. Laser web: thin beams strung between the highest peaks, snapping to new peaks on each kick.
-function snapWeb() {
-  // candidates: the tallest point on every few lines across the whole surface
+function webCandidates() {
+  // the tallest point on every few lines across the whole surface
   const cand = [];
   for (let a = 3; a < SHOW * 0.95; a += 3) {
     const idx = (head - a + TOTAL) % TOTAL, row = history[idx];
@@ -1292,47 +1292,69 @@ function snapWeb() {
     for (let i = 6; i < POINTS - 6; i++) if (row[i] > bv) { bv = row[i]; best = i; }
     if (best >= 0) cand.push({ idx, i: best, val: bv, a });
   }
-  cand.sort((x, y) => y.val - x.val);
-  // take a spread of the higher peaks, shuffled a little each time, so the web roams over them
-  const pool = cand.slice(0, 36), pick = [];
-  while (pool.length && pick.length < 11) {
-    const j = Math.floor(Math.pow(Math.random(), 1.6) * pool.length), c = pool.splice(j, 1)[0];
-    if (pick.every(q => ((q.a - c.a) / 12) ** 2 + ((q.i - c.i) / 26) ** 2 > 1)) pick.push(c);   // spread out, not bunched on one ridge
-  }
-  pick.sort((x, y) => x.i - y.i);                                   // left to right, so the strands keep their order as they glide
-  web.prev = web.shown || null; web.anchors = pick; web.snapAt = clockT;
+  return cand.sort((x, y) => y.val - x.val).slice(0, 36);
 }
+const spread = (list, c) => list.every(q => q === c || ((q.a - c.a) / 12) ** 2 + ((q.i - c.i) / 26) ** 2 > 1);   // not bunched on one ridge
+function snapWeb() {
+  const pool = webCandidates(), pick = [];
+  while (pool.length && pick.length < 11) {
+    const c = pool.splice(Math.floor(Math.pow(Math.random(), 1.6) * pool.length), 1)[0];
+    if (spread(pick, c)) pick.push(c);
+  }
+  pick.sort((x, y) => x.i - y.i);
+  web.anchors = pick; web.links = 0; web.beatI = -1; web.lastLink = -1;
+  // the connections, in the order they light up: neighbours first, then the bracing, then the long ties
+  const n = pick.length, pairs = [];
+  for (let j = 0; j < n - 1; j++) pairs.push([j, j + 1]);
+  for (let j = 0; j < n - 2; j++) pairs.push([j, j + 2]);
+  for (let j = 0; j < n - 3; j += 2) pairs.push([j, j + 3]);
+  web.pairs = pairs;
+}
+// one peak moves to a fresh peak, gliding there over a fraction of a beat
+function hopAnchor(j) {
+  const A = web.anchors, pool = webCandidates().filter(c => A.every(q => q.idx !== c.idx));
+  for (let tries = 0; tries < 12 && pool.length; tries++) {
+    const c = pool.splice(Math.floor(Math.pow(Math.random(), 1.4) * pool.length), 1)[0];
+    if (spread(A.filter((_, k) => k !== j), c)) { c.from = A[j].shown || null; c.t0 = clockT; A[j] = c; return; }
+  }
+}
+// The web moves on the beat: as it appears it is strung one connection per beat (two when the
+// tempo is quick), and once it is complete one peak moves to a new peak on each beat.
 function drawWeb(project) {
   if (!web) return;
-  const age = clockT - web.t0, beat = music.beat || 0.5;
+  const age = clockT - web.t0, beat = Math.max(0.35, music.beat || 0.5);
   if (age > web.life || calm) { web = null; return; }
-  // hop to new peaks on every kick, and at least every half beat, gliding there rather than jumping
-  if ((hit > 0.25 && clockT - web.snapAt > Math.max(0.14, beat * 0.45)) || clockT - web.snapAt > beat * 0.5 || web.anchors.some(p => rowV(p.idx) < 0.05)) snapWeb();
-  const pts = [];
-  for (const p of web.anchors) { project(peakAt(p.idx, p.i, 0.03), 0); pts.push(PZ[0] > 0 ? [PX[0], PY[0]] : null); }
-  const g = Math.min(1, (clockT - web.snapAt) / Math.min(0.18, beat * 0.4)), e = 1 - (1 - g) * (1 - g);
-  if (web.prev && e < 1) for (let j = 0; j < pts.length; j++) {
-    const a = pts[j], b = web.prev[Math.min(web.prev.length - 1, Math.round(j * (web.prev.length - 1) / Math.max(1, pts.length - 1)))];
-    if (a && b) pts[j] = [b[0] + (a[0] - b[0]) * e, b[1] + (a[1] - b[1]) * e];
+  if (!web.anchors) snapWeb();
+  const bi = Math.floor(age / beat);
+  if (bi !== web.beatI) {                                           // a new beat
+    web.beatI = bi;
+    const gone = web.anchors.findIndex(p => rowV(p.idx) < 0.06);    // a peak about to slide off the near edge goes first
+    if (web.links < web.pairs.length) { web.links = Math.min(web.pairs.length, web.links + (beat < 0.42 ? 2 : 1) + (bi === 0 ? 2 : 0)); web.lastLink = clockT; }
+    else hopAnchor(gone >= 0 ? gone : Math.floor(Math.random() * web.anchors.length));
+    if (gone >= 0 && web.links < web.pairs.length) hopAnchor(gone);
   }
-  web.shown = pts.filter(Boolean);
-  const live = web.shown;
-  if (live.length < 2) return;
+  const glide = beat * 0.35;
+  for (const p of web.anchors) {
+    project(peakAt(p.idx, p.i, 0.03), 0);
+    let pt = PZ[0] > 0 ? [PX[0], PY[0]] : null;
+    if (pt && p.from && clockT - p.t0 < glide) { const g = (clockT - p.t0) / glide, e = 1 - (1 - g) * (1 - g); pt = [p.from[0] + (pt[0] - p.from[0]) * e, p.from[1] + (pt[1] - p.from[1]) * e]; }
+    p.shown = pt;
+  }
   const k = Math.min(1, age / 0.15, (web.life - age) / 0.6);
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = web.colour;
-  const pairs = [];
-  for (let j = 0; j < live.length - 1; j++) pairs.push([live[j], live[j + 1]]);         // the strands
-  for (let j = 0; j < live.length - 2; j++) pairs.push([live[j], live[j + 2]]);         // the cross-bracing
-  for (let j = 0; j < live.length - 3; j += 2) pairs.push([live[j], live[j + 3]]);      // and longer ties, for a bigger web
-  for (const [p, q] of pairs) {
+  for (let n = 0; n < web.links; n++) {
+    const [ia, ib] = web.pairs[n], p = web.anchors[ia].shown, q = web.anchors[ib].shown;
+    if (!p || !q) continue;
+    const fresh = n >= web.links - 2 ? Math.max(0, 1 - (clockT - web.lastLink) / (beat * 0.6)) : 0;   // the newest strands flare as they land
     beams.push([p[0], p[1], q[0], q[1], web.colour, k]);
-    ctx.globalAlpha = 0.14 * k; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+    ctx.globalAlpha = (0.14 + 0.3 * fresh) * k; ctx.lineWidth = 5 + 4 * fresh; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = k; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
     ctx.globalCompositeOperation = 'lighter';
   }
   ctx.fillStyle = '#fff';
-  for (const p of live) { ctx.globalAlpha = k; ctx.beginPath(); ctx.arc(p[0], p[1], 2.2, 0, TAU); ctx.fill(); }
+  const used = new Set(web.pairs.slice(0, web.links).flat());
+  web.anchors.forEach((p, j) => { if (p.shown && used.has(j)) { ctx.globalAlpha = k; ctx.beginPath(); ctx.arc(p.shown[0], p.shown[1], 2.2, 0, TAU); ctx.fill(); } });
   ctx.restore();
 }
 
