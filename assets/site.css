@@ -11,9 +11,9 @@
   --err:#ff6b5a;
 }
 html{font-size:16px}
-@media(min-width:1800px){html{font-size:18px}}
-@media(min-width:2400px){html{font-size:22px}}
-@media(min-width:3200px){html{font-size:28px}}
+/* text scale: the same as a laptop up to 1440p, a touch larger on very wide screens */
+@media(min-width:2500px){html{font-size:17px}}
+@media(min-width:3200px){html{font-size:20px}}
 body{background:var(--bg);color:var(--fg);font-family:'IBM Plex Mono',monospace;font-weight:300;
   -webkit-font-smoothing:antialiased;line-height:1.6;min-height:100vh}
 a{color:var(--fg)}
