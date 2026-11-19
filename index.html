@@ -274,7 +274,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ─── Canvas ─────────────────────────────────────────────── */
 const cv = document.getElementById('plot');
-const ctx = cv.getContext('2d', { alpha: false, desynchronized: true }) || cv.getContext('2d');   // opaque, low-latency canvas: frames reach the screen sooner
+const ctx = cv.getContext('2d', { alpha: false }) || cv.getContext('2d');   // opaque canvas (no low-latency mode: it tears on some screens)
 let W = 0, H = 0, DPR = 1;
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
