@@ -440,89 +440,18 @@ function drawFloor(dt) {
     if (r.upper) { fx.moveTo(dl, r.y + r.h); fx.lineTo(r.x, r.y + r.h); fx.lineTo(r.x, r.y); fx.lineTo(r.x + r.w, r.y); fx.lineTo(r.x + r.w, r.y + r.h); fx.lineTo(dr, r.y + r.h); }
     else { fx.moveTo(dl, r.y); fx.lineTo(r.x, r.y); fx.lineTo(r.x, r.y + r.h); fx.lineTo(r.x + r.w, r.y + r.h); fx.lineTo(r.x + r.w, r.y); fx.lineTo(dr, r.y); }
     fx.stroke(); fx.globalAlpha = 1;
-    text(r.name.toUpperCase(), r.x + r.w / 2, r.upper ? r.y + 16 : r.y + r.h - 8, 9 * s, 0.55);
+    text(r.name.toUpperCase(), r.x + 7, r.y + 14 * s, 9 * s, 0.55, 'left');
     if (r.seen > 0.05) {
       const ok = r.ok, msg = ok ? `✓ ${r.ms != null ? r.ms + ' ms' : 'ok'}` : `✗ ${r.status}`;
-      text(msg, r.x + r.w / 2, r.upper ? r.y + 30 * s : r.y + r.h - 22 * s, 10 * s, Math.min(1, r.seen * 1.5));
+      text(msg, r.x + r.w - 7, r.y + 14 * s, 9 * s, Math.min(1, r.seen * 1.5), 'right');
     }
   });
 
-  // the control room desk and the analyst typing the handover
-  const c = floor.control, mus = floor.music;
-  if (c) {
-    const dx = c.centre.x - 14 * s, dy = c.centre.y + 10 * s;
-    fx.beginPath(); fx.moveTo(dx + 12 * s, dy - 10 * s); fx.lineTo(dx + 28 * s, dy - 10 * s); fx.moveTo(dx + 26 * s, dy - 10 * s); fx.lineTo(dx + 26 * s, dy); fx.stroke();  // desk
-    fx.strokeRect(dx + 16 * s, dy - 20 * s, 10 * s, 8 * s);                                                      // screen
-    stickMan(dx, dy, s, floor.t, 'type', 'NORMAL');
-    text('NORMAL', dx + 6 * s, dy + 12 * s, 8 * s, 0.6);
-    const lines = (floor.shift && floor.shift.analyst && floor.shift.analyst.handover || 'All quiet. Standing by.').split(/(?<=[.!?])\s+/);
-    const li = Math.floor(floor.t / 4) % lines.length, typed = lines[li].slice(0, Math.floor((floor.t % 4) * 28));
-    const maxW = Math.max(120, c.w - 16), words = typed.split(' '); let line = '', ly = c.upper ? c.y + 34 * s : c.y + 18 * s, n = 0;
-    fx.font = `300 ${9 * s}px "IBM Plex Mono", monospace`;
-    for (const w of words) { const t2 = line ? line + ' ' + w : w; if (fx.measureText(t2).width > maxW && line) { if (n < 2) text(line, c.x + 8, ly, 9 * s, 0.75, 'left'); ly += 11 * s; n++; line = w; } else line = t2; }
-    if (n < 3) text(line + (Math.floor(floor.t * 2) % 2 ? '▌' : ''), c.x + 8, ly, 9 * s, 0.75, 'left');
-  }
-  // the DJ at the decks
-  if (mus && mus !== c) {
-    const x = mus.centre.x, y = mus.centre.y + 10 * s;
-    fx.strokeRect(x - 18 * s, y - 12 * s, 36 * s, 6 * s);
-    [-9, 9].forEach(o => { fx.beginPath(); fx.arc(x + o * s, y - 15 * s, 4 * s, floor.t * 4, floor.t * 4 + 5); fx.stroke(); });
-    stickMan(x, y + 6 * s - Math.abs(Math.sin(floor.t * 4)) * 2 * s, s, floor.t * 2, 'dance', 'DISCO BISCUIT');
-    text('DISCO BISCUIT', x, y + 18 * s, 8 * s, 0.6);
-    const pick = floor.shift && floor.shift.dj && floor.shift.dj.track && floor.shift.dj.track.title;
-    if (pick) text('♪ ' + (pick.length > 26 ? pick.slice(0, 25) + '…' : pick), x, mus.upper ? mus.y + 30 * s : mus.y + mus.h - 22 * s, 9 * s, 0.7);
-    for (let k = 0; k < 3; k++) { const ph = (floor.t * 0.6 + k / 3) % 1; text('♪', x + 22 * s + Math.sin(ph * 6 + k) * 6, y - 18 * s - ph * 28 * s, 10 * s, 1 - ph); }
-  }
-
-  // specialists at their posts, each showing its real latest result
-  const post = (room, name, job, pose, dx) => {
-    if (!room) return;
-    const x = room.centre.x + (dx || 0) * s, y = room.centre.y + 14 * s;
-    stickMan(x, y, s, floor.t * 1.3, pose, name);
-    text(name, x, y + 12 * s, 8 * s, 0.6);
-    text(jobLine(job), x, y - 34 * s, 9 * s, 0.85);
-  };
-  // GATEKEEPER at the front door (left end of the corridor)
+  drawRooms(dt, s);
+  // CODPIECE on the front door (left end of the corridor), checking the certificate and DNS
   { const x = 22 * s + 8, y = floor.cy + floor.ch * 0.3;
     fx.beginPath(); fx.moveTo(8, floor.cy - floor.ch / 2 + 4); fx.lineTo(8, floor.cy + floor.ch / 2 - 4); fx.stroke();
     stickMan(x, y, s, floor.t, 'check', 'CODPIECE'); text('CODPIECE', x + 4, y + 12 * s, 8 * s, 0.6); text(jobLine('gatekeeper'), x + 30 * s, y - 34 * s, 9 * s, 0.85, 'left'); }
-  post(floor.legal, 'GOATMAN', 'clerk', 'check', -20);
-  if (floor.security) { const r = floor.security; fx.strokeRect(r.centre.x + 40 * s, r.centre.y - 6 * s, 22 * s, 14 * s); }   // the board
-  post(floor.security, 'GOD', 'intel', 'check', -14);
-  post(floor.vis || floor.rooms[1], 'KIPPER', 'scout', 'check', 0);
-  post(floor.rooms.find(r => r.path === '/security/layers/') || floor.security, 'DOODLEBUG', 'ideas', 'check', 16);
-
-  // the day shift: each agent paces its own room, carrying its prop and its latest report
-  const roomOf = (...paths) => { for (const p of paths) { const r = floor.rooms.find(q => q.path === p); if (r) return r; } return floor.rooms[floor.rooms.length - 1]; };
-  const D = floor.day || {};
-  const dayLine = id => { const r = D[id], t = (r && r.report && r.report.summary) || 'first report due'; return t.length > 28 ? t.slice(0, 27) + '…' : t; };
-  const DAYCREW = [
-    [roomOf('/blog/', '/'), 'GRUMBLE', () => dayLine('grumble'), '✎'],
-    [roomOf('/security/martyns-law/', '/security/'), 'BIN LID', () => dayLine('binlid'), '◫'],
-    [roomOf('/admin/', '/night-shift/'), 'TEACAKE', () => dayLine('teacake'), '⌕'],
-    [roomOf('/', '/blog/'), 'PIGEON', () => dayLine('pigeon'), '#'],
-    [roomOf('/security/', '/security/layers/'), 'BUNSEN', () => dayLine('bunsen'), '?'],
-    [roomOf('/music/'), 'BISCUIT TIN', () => dayLine('biscuittin'), '▤'],
-    [roomOf('/music/'), 'WURZEL', () => dayLine('wurzel'), '◉'],
-    [roomOf('/security/cpted/', '/security/'), 'CRUMPET', () => dayLine('crumpet'), '❏'],
-    [roomOf('/security/layers/', '/security/'), 'SPANNER', () => dayLine('spanner'), '⚒'],
-    [roomOf('/night-shift/', '/music/'), 'PICKLE', () => jobLine('pickle'), '♫']
-  ];
-  const slots = new Map();
-  DAYCREW.forEach(([room]) => slots.set(room, (slots.get(room) || 0) + 1));
-  const used = new Map();
-  DAYCREW.forEach(([room, name, line, glyph], k) => {
-    if (!room) return;
-    const n = slots.get(room), i = used.get(room) || 0; used.set(room, i + 1);
-    const lane = room.x + room.w * ((i + 1) / (n + 1)), range = Math.min(room.w / (n + 1) * 0.35, 40 * s);
-    const ph = k * 1.7, sway = Math.sin(floor.t * 0.45 + ph);
-    const x = lane + sway * range, y = room.y + room.h - (room.upper ? 16 : 28) * s;
-    const moving = Math.abs(Math.cos(floor.t * 0.45 + ph)) > 0.25;
-    stickMan(x, y, s, floor.t * 5 + ph, moving ? 'walk' : 'check', name);
-    text(glyph, x + 9 * s, y - 30 * s + Math.sin(floor.t * 3 + ph) * 2 * s, 10 * s, 0.9);    // the prop, bobbing
-    text(name, x, y + 10 * s, 7.5 * s, 0.6);
-    if (room.w / n > 70) text(line(), lane, y - 42 * s - (i % 2) * 11 * s, 8 * s, 0.75);   // too narrow on a phone: names only
-  });
 
   // patrols walking the corridor and checking each room
   const speed = 60 * s;
@@ -621,6 +550,187 @@ function floorLoop(now) {
   const dt = Math.max(0, Math.min(0.05, (now - floorLast) / 1000)); floorLast = now;
   drawFloor(matchMedia('(prefers-reduced-motion: reduce)').matches ? dt * 0.3 : dt);
   requestAnimationFrame(floorLoop);
+}
+
+/* ─── Rooms: each room is furnished for its job, and its agents work the furniture ───
+   Every room is drawn as a side view: back wall, floor along the bottom. A kit draws the scaffold
+   and lists its stations (f = position across the room, pose). Agents walk between their room's
+   stations and the furniture reacts when someone is using it. */
+const ln = (x1, y1, x2, y2) => { fx.beginPath(); fx.moveTo(x1, y1); fx.lineTo(x2, y2); fx.stroke(); };
+const box = (x, y, w, h) => fx.strokeRect(x, y, w, h);
+const circ = (x, y, r) => { fx.beginPath(); fx.arc(x, y, r, 0, Math.PI * 2); fx.stroke(); };
+function desk(x, fl, w, s, chair) {                      // a desk, and a chair to its left
+  ln(x - w / 2, fl - 13 * s, x + w / 2, fl - 13 * s); ln(x + w / 2 - 2 * s, fl - 13 * s, x + w / 2 - 2 * s, fl);
+  if (chair) { ln(chair - 3 * s, fl - 12 * s, chair + 4 * s, fl - 12 * s); ln(chair - 3 * s, fl - 12 * s, chair - 3 * s, fl - 24 * s); ln(chair + 2 * s, fl - 12 * s, chair + 2 * s, fl); }
+}
+function screen(x, y, w, h, t, busy) {                   // a monitor with lines of something going on
+  box(x - w / 2, y, w, h);
+  const n = Math.max(2, Math.floor(h / 4)), sp = h / (n + 1);
+  fx.globalAlpha *= busy ? 0.9 : 0.4;
+  for (let k = 1; k <= n; k++) { const a = (Math.sin(t * (busy ? 6 : 1.2) + k * 2.1 + x) * 0.5 + 0.5) * (w - 4); ln(x - w / 2 + 2, y + k * sp, x - w / 2 + 2 + a, y + k * sp); }
+  fx.globalAlpha /= busy ? 0.9 : 0.4;
+}
+const KITS = {
+  '/night-shift/': { stations: [{ f: 0.3, pose: 'type' }, { f: 0.64, pose: 'type' }, { f: 0.47, pose: 'check' }, { f: 0.88, pose: 'check' }],
+    draw(r, s, fl, t, busy) {
+      const top = fl - 66 * s, mw = Math.min(26 * s, r.w * 0.11);
+      for (let row = 0; row < 2; row++) for (let c = -1; c <= 1; c++) screen(r.x + r.w * 0.47 + c * (mw + 4 * s), top + row * (mw * 0.7 + 4 * s), mw, mw * 0.7, t, busy[2] || busy[0]);
+      desk(r.x + r.w * 0.36, fl, r.w * 0.2, s, r.x + r.w * 0.3 - 9 * s); screen(r.x + r.w * 0.37, fl - 25 * s, 12 * s, 9 * s, t, busy[0]);
+      desk(r.x + r.w * 0.7, fl, r.w * 0.2, s, r.x + r.w * 0.64 - 9 * s);
+      for (let k = 0; k < 5; k++) box(r.x + r.w * 0.66 + k * 4 * s, fl - 17 * s - (busy[1] ? Math.abs(Math.sin(t * 4 + k)) * 3 * s : 0), 2 * s, 4 * s);   // Pickle's cue faders
+      ln(r.x + r.w * 0.88, fl, r.x + r.w * 0.88, fl - 30 * s); box(r.x + r.w * 0.88 - 7 * s, fl - 40 * s, 14 * s, 10 * s);                            // the kettle stand
+      if (busy[3]) for (let k = 0; k < 2; k++) { const d = (t * 0.8 + k * 0.5) % 1; fx.globalAlpha = 0.6 * (1 - d); ln(r.x + r.w * 0.88 + (k - 0.5) * 4 * s, fl - 42 * s - d * 12 * s, r.x + r.w * 0.88 + (k - 0.5) * 4 * s + 2 * s, fl - 46 * s - d * 12 * s); fx.globalAlpha = 1; }
+    } },
+  '/music/': { stations: [{ f: 0.5, pose: 'dance' }, { f: 0.76, pose: 'check' }, { f: 0.27, pose: 'check' }, { f: 0.15, pose: 'dance' }],
+    draw(r, s, fl, t, busy) {
+      const beat = Math.abs(Math.sin(t * 4.2));
+      for (const f of [0.06, 0.94]) {                                           // the speaker stacks, cones pumping
+        const x = r.x + r.w * f, w = 16 * s, h = 44 * s; box(x - w / 2, fl - h, w, h);
+        circ(x, fl - h * 0.3, (4.5 + beat * 1.2) * s); circ(x, fl - h * 0.72, (3 + beat * 0.8) * s);
+      }
+      const bx = r.x + r.w * 0.5; box(bx - 22 * s, fl - 18 * s, 44 * s, 18 * s);   // the DJ booth and the decks
+      [-11, 11].forEach(o => { fx.beginPath(); fx.arc(bx + o * s, fl - 22 * s, 6 * s, t * 5, t * 5 + 5.2); fx.stroke(); });
+      const cx = r.x + r.w * 0.76; box(cx - 12 * s, fl - 12 * s, 24 * s, 12 * s);   // the record crate
+      for (let k = 0; k < 6; k++) ln(cx - 10 * s + k * 4 * s, fl - 12 * s, cx - 10 * s + k * 4 * s + (busy[1] && k === Math.floor(t * 3) % 6 ? 3 : 0) * s, fl - 20 * s);
+      const gx = r.x + r.w * 0.27, gy = fl - 70 * s; box(gx - 16 * s, gy, 32 * s, 22 * s);   // Biscuit Tin's play-count chart
+      for (let k = 0; k < 5; k++) { const hgt = (0.3 + 0.7 * Math.abs(Math.sin(k * 1.9 + (busy[2] ? t : 0)))) * 18 * s; ln(gx - 12 * s + k * 6 * s, gy + 20 * s, gx - 12 * s + k * 6 * s, gy + 20 * s - hgt); }
+      for (let k = 0; k < 3; k++) { const ph = (t * 0.6 + k / 3) % 1; text('♪', bx + 26 * s + Math.sin(ph * 6 + k) * 6, fl - 26 * s - ph * 30 * s, 10 * s, 1 - ph); }
+      const pickT = floor.shift && floor.shift.dj && floor.shift.dj.track && floor.shift.dj.track.title;
+      if (pickT && r.w > 140) text('♪ ' + (pickT.length > 24 ? pickT.slice(0, 23) + '…' : pickT), bx, fl - 80 * s, 8.5 * s, 0.7);
+    } },
+  '/': { stations: [{ f: 0.55, pose: 'check' }, { f: 0.86, pose: 'check' }, { f: 0.3, pose: 'type' }],
+    draw(r, s, fl, t, busy) {
+      const x0 = r.x + r.w * 0.18, x1 = r.x + r.w * 0.82, y0 = fl - 84 * s, y1 = fl - 46 * s;      // the big screen with the visualiser on it
+      box(x0, y0, x1 - x0, y1 - y0);
+      for (let k = 1; k < 6; k++) { fx.beginPath(); const yy = y0 + (y1 - y0) * (k / 6); for (let i = 0; i <= 20; i++) { const xx = x0 + 3 + (x1 - x0 - 6) * i / 20, e = Math.exp(-((i / 20 - 0.5) ** 2) / 0.04); const yv = yy - e * Math.abs(Math.sin(t * 3 + i * 0.7 + k)) * 6 * s; i ? fx.lineTo(xx, yv) : fx.moveTo(xx, yv); } fx.stroke(); }
+      const sx = r.x + r.w * 0.33; ln(sx - 16 * s, fl - 8 * s, sx + 16 * s, fl - 8 * s); ln(sx - 16 * s, fl - 8 * s, sx - 16 * s, fl - 16 * s); ln(sx + 16 * s, fl - 8 * s, sx + 16 * s, fl - 14 * s); ln(sx - 14 * s, fl, sx - 14 * s, fl - 8 * s); ln(sx + 14 * s, fl, sx + 14 * s, fl - 8 * s);   // the sofa
+      const tx = r.x + r.w * 0.9; box(tx - 9 * s, fl - 46 * s, 18 * s, 24 * s); ln(tx, fl - 22 * s, tx, fl);              // Pigeon's tally board
+      const n = (floor.day && floor.day.pigeon && floor.day.pigeon.report && floor.day.pigeon.report.views) || 4 + Math.floor(t / 7) % 6;
+      for (let k = 0; k < Math.min(n, 9); k++) ln(tx - 7 * s + (k % 5) * 3 * s, fl - 43 * s + Math.floor(k / 5) * 10 * s, tx - 7 * s + (k % 5) * 3 * s, fl - 36 * s + Math.floor(k / 5) * 10 * s);
+    } },
+  '/security/': { stations: [{ f: 0.25, pose: 'check' }, { f: 0.68, pose: 'check' }, { f: 0.46, pose: 'type' }, { f: 0.9, pose: 'check' }],
+    draw(r, s, fl, t, busy) {
+      const bx = r.x + r.w * 0.25, by = fl - 80 * s; box(bx - 22 * s, by, 44 * s, 26 * s);                      // God's threat board
+      const lvl = floor.shift && floor.shift.jobs && floor.shift.jobs.intel && floor.shift.jobs.intel.ok ? floor.shift.jobs.intel.level : '?';
+      text(String(lvl).toUpperCase().slice(0, 12), bx, by + 16 * s, 7 * s, busy[0] ? 1 : 0.6);
+      const wx = r.x + r.w * 0.68, wy = fl - 80 * s; box(wx - 18 * s, wy, 36 * s, 24 * s); text('?', wx, wy + 18 * s, 14 * s, busy[1] ? 0.5 + 0.5 * Math.abs(Math.sin(t * 3)) : 0.5);   // Bunsen's quiz board
+      desk(r.x + r.w * 0.52, fl, r.w * 0.16, s, r.x + r.w * 0.46 - 9 * s); screen(r.x + r.w * 0.53, fl - 25 * s, 12 * s, 9 * s, t, busy[2]);
+      const cx = r.x + r.w - 6, cy = fl - 84 * s, a = Math.PI * 0.75 + Math.sin(t * 0.7) * 0.35;                // a camera on the wall, sweeping
+      ln(cx, cy, cx - 8 * s, cy); box(cx - 20 * s, cy - 4 * s, 12 * s, 7 * s);
+      fx.globalAlpha = 0.18; fx.beginPath(); fx.moveTo(cx - 20 * s, cy); fx.lineTo(cx - 20 * s + Math.cos(a - 0.25) * 42 * s, cy + Math.abs(Math.sin(a - 0.25)) * 42 * s); fx.lineTo(cx - 20 * s + Math.cos(a + 0.25) * 42 * s, cy + Math.abs(Math.sin(a + 0.25)) * 42 * s); fx.closePath(); fx.stroke(); fx.globalAlpha = 1;
+    } },
+  '/security/layers/': { stations: [{ f: 0.13, pose: 'check' }, { f: 0.72, pose: 'type' }, { f: 0.4, pose: 'check' }],
+    draw(r, s, fl, t, busy) {
+      const ex = r.x + r.w * 0.13; ln(ex - 9 * s, fl, ex, fl - 40 * s); ln(ex + 9 * s, fl, ex, fl - 40 * s); box(ex - 11 * s, fl - 38 * s, 22 * s, 16 * s);   // Doodlebug's easel
+      if (busy[0]) { fx.beginPath(); for (let i = 0; i < 8; i++) { const xx = ex - 9 * s + i * 2.5 * s, yy = fl - 30 * s + Math.sin(i + t * 4) * 4 * s; i ? fx.lineTo(xx, yy) : fx.moveTo(xx, yy); } fx.stroke(); }
+      const lx = r.x + r.w * 0.42, ly = fl - 66 * s;                                                              // the layers diagram
+      for (let k = 0; k < 4; k++) { const w = (44 - k * 10) * s, h = (30 - k * 7) * s; fx.globalAlpha = busy[2] && Math.floor(t * 2) % 4 === k ? 1 : 0.55; box(lx - w / 2, ly + (30 * s - h) / 2, w, h); fx.globalAlpha = 1; }
+      desk(r.x + r.w * 0.78, fl, r.w * 0.22, s, r.x + r.w * 0.72 - 9 * s);                                      // Spanner's workbench and tools
+      ln(r.x + r.w * 0.8, fl - 13 * s, r.x + r.w * 0.8 + 8 * s, fl - 19 * s); circ(r.x + r.w * 0.86, fl - 16 * s, 3 * s);
+      for (let k = 0; k < 3; k++) ln(r.x + r.w * 0.72 + k * 7 * s, fl - 76 * s, r.x + r.w * 0.72 + k * 7 * s, fl - 64 * s);
+      if (busy[1] && Math.floor(t * 6) % 3 === 0) for (let k = 0; k < 4; k++) { const a = Math.random() * Math.PI; ln(r.x + r.w * 0.8, fl - 14 * s, r.x + r.w * 0.8 + Math.cos(a) * 7 * s, fl - 14 * s - Math.sin(a) * 7 * s); }
+    } },
+  '/security/cpted/': { stations: [{ f: 0.28, pose: 'check' }, { f: 0.72, pose: 'check' }, { f: 0.9, pose: 'check' }],
+    draw(r, s, fl, t, busy) {
+      const mx = r.x + r.w * 0.5, ty = fl - 14 * s; ln(mx - 30 * s, ty, mx + 30 * s, ty); ln(mx - 26 * s, ty, mx - 26 * s, fl); ln(mx + 26 * s, ty, mx + 26 * s, fl);   // the model table
+      box(mx - 20 * s, ty - 12 * s, 14 * s, 12 * s); ln(mx - 22 * s, ty - 12 * s, mx - 13 * s, ty - 19 * s); ln(mx - 13 * s, ty - 19 * s, mx - 4 * s, ty - 12 * s);   // a little house
+      ln(mx + 4 * s, ty, mx + 4 * s, ty - 8 * s); circ(mx + 4 * s, ty - 11 * s, 4 * s);                                                                      // a tree
+      ln(mx + 18 * s, ty, mx + 18 * s, ty - 20 * s); ln(mx + 18 * s, ty - 20 * s, mx + 22 * s, ty - 20 * s);                                                // a street lamp
+      fx.globalAlpha = busy[0] || busy[1] ? 0.35 : 0.15; fx.beginPath(); fx.moveTo(mx + 22 * s, ty - 20 * s); fx.lineTo(mx + 30 * s, ty); fx.lineTo(mx + 14 * s, ty); fx.closePath(); fx.stroke(); fx.globalAlpha = 1;
+      const px = r.x + r.w * 0.85, py = fl - 76 * s; box(px - 12 * s, py, 24 * s, 30 * s); for (let k = 0; k < 4; k++) { ln(px - 9 * s, py + 7 * s + k * 6 * s, px - 6 * s, py + 7 * s + k * 6 * s); ln(px - 4 * s, py + 7 * s + k * 6 * s, px + 8 * s, py + 7 * s + k * 6 * s); }   // checklist on the wall
+    } },
+  '/security/martyns-law/': { stations: [{ f: 0.16, pose: 'check' }, { f: 0.52, pose: 'type' }, { f: 0.86, pose: 'check' }],
+    draw(r, s, fl, t, busy) {
+      const sx = r.x + r.w * 0.16; box(sx - 16 * s, fl - 52 * s, 32 * s, 52 * s);                               // the law books
+      for (let sh = 0; sh < 3; sh++) { const yy = fl - 52 * s + (sh + 1) * 17 * s; ln(sx - 16 * s, yy, sx + 16 * s, yy); for (let k = 0; k < 6; k++) ln(sx - 13 * s + k * 5 * s, yy, sx - 13 * s + k * 5 * s + (busy[0] && sh === 1 && k === Math.floor(t) % 6 ? 3 * s : 0), yy - 13 * s); }
+      desk(r.x + r.w * 0.58, fl, r.w * 0.18, s, r.x + r.w * 0.52 - 9 * s);                                      // the desk with the paperwork piling up
+      for (let k = 0; k < 4 + (busy[1] ? Math.floor(t) % 3 : 0); k++) ln(r.x + r.w * 0.6 - 6 * s, fl - 15 * s - k * 2 * s, r.x + r.w * 0.6 + 6 * s, fl - 15 * s - k * 2 * s);
+      const bx = r.x + r.w * 0.86; box(bx - 7 * s, fl - 16 * s, 14 * s, 16 * s); ln(bx - 9 * s, fl - 16 * s, bx + 9 * s, fl - 16 * s);    // Bin Lid's bin, lid up when in use
+      if (busy[2]) { ln(bx - 9 * s, fl - 18 * s, bx + 6 * s, fl - 28 * s); for (let k = 0; k < 3; k++) { const d = (t * 1.5 + k / 3) % 1; ln(bx - 3 * s + k * 3 * s, fl - 30 * s + d * 14 * s, bx - 3 * s + k * 3 * s, fl - 26 * s + d * 14 * s); } }
+      else ln(bx - 9 * s, fl - 18 * s, bx + 9 * s, fl - 18 * s);
+    } },
+  '/admin/': { stations: [{ f: 0.16, pose: 'check' }, { f: 0.52, pose: 'type' }, { f: 0.86, pose: 'check' }],
+    draw(r, s, fl, t, busy) {
+      const rx = r.x + r.w * 0.16; box(rx - 11 * s, fl - 50 * s, 22 * s, 50 * s);                                // the server rack, lights blinking
+      for (let k = 0; k < 6; k++) { ln(rx - 8 * s, fl - 44 * s + k * 7 * s, rx + 4 * s, fl - 44 * s + k * 7 * s); if (Math.sin(t * (busy[0] ? 9 : 3) + k * 2) > 0) circ(rx + 7 * s, fl - 44 * s + k * 7 * s, 1 * s); }
+      desk(r.x + r.w * 0.58, fl, r.w * 0.18, s, r.x + r.w * 0.52 - 9 * s); screen(r.x + r.w * 0.59, fl - 25 * s, 12 * s, 9 * s, t, busy[1]);
+      const sx = r.x + r.w * 0.86; box(sx - 11 * s, fl - 22 * s, 22 * s, 22 * s); circ(sx, fl - 11 * s, 4 * s);    // the safe, dial turning
+      ln(sx, fl - 11 * s, sx + Math.cos(t * (busy[2] ? 4 : 0.3)) * 4 * s, fl - 11 * s + Math.sin(t * (busy[2] ? 4 : 0.3)) * 4 * s);
+    } },
+  '/blog/': { stations: [{ f: 0.42, pose: 'type' }, { f: 0.8, pose: 'check' }, { f: 0.14, pose: 'check' }],
+    draw(r, s, fl, t, busy) {
+      desk(r.x + r.w * 0.48, fl, r.w * 0.2, s, r.x + r.w * 0.42 - 9 * s);                                       // Grumble's desk and typewriter
+      box(r.x + r.w * 0.49 - 7 * s, fl - 19 * s, 14 * s, 6 * s); box(r.x + r.w * 0.49 - 5 * s, fl - 26 * s - (busy[0] ? (t * 2 % 1) * 4 * s : 0), 10 * s, 7 * s);
+      const px = r.x + r.w * 0.8; box(px - 10 * s, fl - 22 * s, 20 * s, 22 * s);                                   // the printer and the drafts it spits out
+      for (let k = 0; k < 3; k++) ln(px - 7 * s, fl - 25 * s - k * 2 * s, px + 7 * s, fl - 25 * s - k * 2 * s);
+      if (busy[1]) { const d = (t * 0.7) % 1; box(px - 6 * s, fl - 30 * s - d * 10 * s, 12 * s, 8 * s); }
+      const nx = r.x + r.w * 0.14, ny = fl - 80 * s; box(nx - 16 * s, ny, 32 * s, 24 * s);                         // the noticeboard of published posts
+      for (let k = 0; k < 4; k++) box(nx - 13 * s + (k % 2) * 14 * s, ny + 3 * s + Math.floor(k / 2) * 11 * s, 11 * s, 8 * s);
+    } }
+};
+const KIT_PLAIN = { stations: [{ f: 0.3, pose: 'type' }, { f: 0.7, pose: 'check' }],
+  draw(r, s, fl, t, busy) { desk(r.x + r.w * 0.36, fl, r.w * 0.2, s, r.x + r.w * 0.3 - 9 * s); screen(r.x + r.w * 0.37, fl - 25 * s, 12 * s, 9 * s, t, busy[0]);
+    const px = r.x + r.w * 0.7; box(px - 6 * s, fl - 10 * s, 12 * s, 10 * s); fx.beginPath(); fx.moveTo(px, fl - 10 * s); fx.quadraticCurveTo(px - 10 * s, fl - 26 * s, px - 2 * s, fl - 30 * s); fx.moveTo(px, fl - 10 * s); fx.quadraticCurveTo(px + 8 * s, fl - 24 * s, px + 4 * s, fl - 32 * s); fx.stroke(); } };   // a desk and a pot plant
+
+// who works where: [name, rooms to try, what they report, favourite station or -1]
+const RESIDENTS = [
+  ['NORMAL', ['/night-shift/'], () => jobLine('analyst'), 0], ['PICKLE', ['/night-shift/', '/music/'], () => jobLine('pickle'), 1],
+  ['DISCO BISCUIT', ['/music/'], () => '', 0], ['WURZEL', ['/music/'], () => dayLine('wurzel'), 1], ['BISCUIT TIN', ['/music/'], () => dayLine('biscuittin'), 2],
+  ['GOD', ['/security/'], () => jobLine('intel'), 0], ['BUNSEN', ['/security/', '/security/layers/'], () => dayLine('bunsen'), 1],
+  ['DOODLEBUG', ['/security/layers/', '/security/'], () => jobLine('ideas'), 0], ['SPANNER', ['/security/layers/', '/security/'], () => dayLine('spanner'), 1],
+  ['CRUMPET', ['/security/cpted/', '/security/'], () => dayLine('crumpet'), -1],
+  ['GOATMAN', ['/security/martyns-law/', '/security/'], () => jobLine('clerk'), 0], ['BIN LID', ['/security/martyns-law/', '/security/'], () => dayLine('binlid'), 2],
+  ['TEACAKE', ['/admin/', '/night-shift/'], () => dayLine('teacake'), -1],
+  ['KIPPER', ['/', '/music/'], () => jobLine('scout'), 0], ['PIGEON', ['/', '/blog/'], () => dayLine('pigeon'), 1],
+  ['GRUMBLE', ['/blog/', '/'], () => dayLine('grumble'), 0]
+];
+function dayLine(id) { const D = floor.day || {}, r = D[id], t = (r && r.report && r.report.summary) || 'first report due'; return t.length > 30 ? t.slice(0, 29) + '…' : t; }
+const res = {};                                           // each resident's position and what it's doing
+function drawRooms(dt, sFloor) {
+  let s = sFloor;
+  const t = floor.t, walk = 34 * s;
+  const roomFor = paths => { for (const p of paths) { const r = floor.rooms.find(q => q.path === p); if (r) return r; } return floor.rooms[floor.rooms.length - 1]; };
+  const inRoom = new Map();
+  RESIDENTS.forEach(([name, paths, line, fav]) => { const r = roomFor(paths); if (!r) return; if (!inRoom.has(r)) inRoom.set(r, []); inRoom.get(r).push({ name, line, fav }); });
+  floor.rooms.forEach(r => {
+    const s0 = s; { const rs = Math.max(0.5, Math.min((r.h - 34) / 92, r.w / 108, 2.4)); s = rs; }   // people and furniture fill the room
+    const kit = KITS[r.path] || KIT_PLAIN, fl = r.y + r.h - 12 * s, st = kit.stations, who = inRoom.get(r) || [];
+    { const lx = r.x + r.w * 0.5 + (r.upper ? 0 : r.w * 0.25), drop = Math.min(r.h * 0.18, 26 * s);  // a lamp hanging from the ceiling
+      fx.globalAlpha = 0.5; ln(lx, r.y, lx, r.y + drop); fx.beginPath(); fx.moveTo(lx - 6 * s, r.y + drop + 5 * s); fx.lineTo(lx - 3 * s, r.y + drop); fx.lineTo(lx + 3 * s, r.y + drop); fx.lineTo(lx + 6 * s, r.y + drop + 5 * s); fx.stroke();
+      fx.globalAlpha = 0.06; fx.beginPath(); fx.moveTo(lx - 6 * s, r.y + drop + 5 * s); fx.lineTo(lx - 30 * s, fl); fx.lineTo(lx + 30 * s, fl); fx.lineTo(lx + 6 * s, r.y + drop + 5 * s); fx.fill(); fx.globalAlpha = 1; }
+    const busy = st.map((_, k) => who.some(w => res[w.name] && res[w.name].room === r && res[w.name].st === k && res[w.name].dwell > 0));
+    fx.globalAlpha = 0.75; kit.draw(r, s, fl, t, busy); fx.globalAlpha = 1;
+    if (r === floor.control) {                         // the handover being typed, under the label
+      const lines = (floor.shift && floor.shift.analyst && floor.shift.analyst.handover || 'All quiet. Standing by.').split(/(?<=[.!?])\s+/);
+      const li = Math.floor(t / 4) % lines.length, typed = lines[li].slice(0, Math.floor((t % 4) * 28));
+      const maxW = Math.max(100, r.w - 16), words = typed.split(' '); let line = '', ly = r.y + 26 * sFloor, n = 0;
+      fx.font = `300 ${8.5 * sFloor}px "IBM Plex Mono", monospace`;
+      for (const w of words) { const t2 = line ? line + ' ' + w : w; if (fx.measureText(t2).width > maxW && line) { if (n < 1) text(line, r.x + 7, ly, 8.5 * sFloor, 0.75, 'left'); ly += 10 * sFloor; n++; line = w; } else line = t2; }
+      if (n < 2) text(line + (Math.floor(t * 2) % 2 ? '▌' : ''), r.x + 7, ly, 8.5 * sFloor, 0.75, 'left');
+    }
+    who.forEach((w, i) => {
+      let a = res[w.name];
+      const stationX = k => r.x + r.w * st[k].f + (st[k].pose === 'type' ? -12 * s : -8 * s * (i % 2 ? -1 : 1));
+      if (!a || a.room !== r) a = res[w.name] = { room: r, st: w.fav >= 0 && w.fav < st.length ? w.fav : i % st.length, x: 0, dwell: 2 + Math.random() * 4, step: 0 };
+      if (!a.x) a.x = stationX(a.st);
+      const target = stationX(a.st), d = target - a.x;
+      if (Math.abs(d) > 1) { const mv = Math.sign(d) * Math.min(Math.abs(d), walk * dt); a.x += mv; a.step += Math.abs(mv) * 0.3; }
+      else if (a.dwell > 0) a.dwell -= dt;
+      else {                                            // pick another station: favourites more often, never one that's taken
+        const taken = new Set(who.filter(o => o !== w && res[o.name]).map(o => res[o.name].st));
+        const free = st.map((_, k) => k).filter(k => k !== a.st && !taken.has(k));
+        a.st = w.fav >= 0 && !taken.has(w.fav) && a.st !== w.fav && Math.random() < 0.6 ? w.fav : free.length ? free[Math.floor(Math.random() * free.length)] : a.st;
+        a.dwell = 3 + Math.random() * 6;
+      }
+      const moving = Math.abs(target - a.x) > 1, pose = moving ? 'walk' : st[a.st].pose;
+      const y = pose === 'type' ? fl : fl;
+      stickMan(a.x, y - (pose === 'dance' ? Math.abs(Math.sin(t * 4)) * 2 * s : 0), s, moving ? a.step : t * 2 + i, pose, w.name);
+      text(w.name, a.x + (pose === 'type' ? 4 * s : 0), fl + 9 * sFloor, 7.5 * sFloor, 0.6);
+      const msg = w.line();
+      if (msg && !moving && r.w / Math.max(1, who.length) > 64) text(msg, Math.max(r.x + 50, Math.min(r.x + r.w - 50, a.x)), fl - 36 * s - (i % 2) * 10 * sFloor, 8 * sFloor, 0.8);
+    });
+    s = s0;
+  });
 }
 function setFloorShift(log) { floor.shift = log; layout(); makeMen(); }
 addEventListener('resize', () => { layout(); makeMen(); });
