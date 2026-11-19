@@ -534,7 +534,10 @@ async function loadWave(url) {
 let energy = 0, hit = 0, rowCount = 0;
 
 function sampleSoundCloud(row) {
-  const pos = scPos + (scPlaying ? performance.now() - scPosAt : 0);
+  // Lines are born at the far edge and travel towards you, so sample ahead by the time a line takes
+  // to reach the front part of the surface: the peaks arrive there exactly as you hear them.
+  const lead = scPlaying ? 1000 * (SHOW * 0.6) / (ROW_RATE * Math.max(0.5, view.speed)) : 0;
+  const pos = scPos + (scPlaying ? performance.now() - scPosAt : 0) + lead;
   const t = pos / 1000;
   let level, kick, raw = 1;
   if (wave && scDuration) {
@@ -1073,8 +1076,8 @@ function fireMoment(m) {
   else if (m.type === 'laser') {
     lastLaser = clockT; web = null;                 // lasers and the web take turns
     const mounted = (m.mount ?? Math.random() < 0.55) && mountPeaks();      // JN_moment({type:'laser', mount:true}) to try it
-    if (mounted && lasers.length < 4) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, mount: mounted, life: 2.6, scissor: 0.25 + Math.random() * 0.35 });
-    else if (lasers.length < 4) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, n: 4 + Math.floor(Math.random() * 4), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
+    if (mounted && lasers.length < 2) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, mount: mounted, life: 2.6, scissor: 0.25 + Math.random() * 0.35 });
+    else if (lasers.length < 2) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, n: 4 + Math.floor(Math.random() * 4), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
   }
   else if (m.type === 'flash') flash = { t0: clockT, colour: colour || PALETTE.amber };
   else if (m.type === 'web') { if (!web && !lasers.length) { lastWeb = clockT; web = { t0: clockT, life: 7 + Math.random() * 3, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
@@ -1157,9 +1160,9 @@ function drawMoments(project) {
         const col = l.rgb ? rgbAt(age * 240 + i * 360 / l.n) : l.colour;          // RGB lasers chase round the colour wheel
         beams.push([ox, oy, ex, ey, col, k]);
         ctx.strokeStyle = col;
-        ctx.globalAlpha = 0.12 * k; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.globalAlpha = 0.1 * k; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
         ctx.globalCompositeOperation = 'source-over';                                 // solid colour over the white lines: no glittery crossings
-        ctx.globalAlpha = k; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.globalAlpha = k; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
         ctx.globalCompositeOperation = 'lighter';
       }
       ctx.globalAlpha = k; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ox, oy, 3, 0, TAU); ctx.fill();
@@ -1360,9 +1363,9 @@ function drawMountedLaser(l, project) {
       const col = l.rgb ? rgbAt(age * 240 + (j++) * 40) : l.colour;
       beams.push([ox, oy, ex, ey, col, k]);
       ctx.strokeStyle = col;
-      ctx.globalAlpha = 0.12 * k; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.globalAlpha = 0.1 * k; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
       ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = k; ctx.lineWidth = side ? 1.3 : 1.8; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.globalAlpha = k; ctx.lineWidth = side ? 1 : 1.3; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
       ctx.globalCompositeOperation = 'lighter';
     }
     ctx.globalAlpha = k; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ox, oy, 2.6, 0, TAU); ctx.fill();
