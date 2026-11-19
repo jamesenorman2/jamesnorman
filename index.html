@@ -981,8 +981,11 @@ function draw(phase) {
   let r = norm(cross(f, view.U)); if (!isFinite(r[0])) r = [1, 0, 0];
   let u = cross(r, f);
   if (view.spin) { const c = Math.cos(view.spin), s = Math.sin(view.spin), r2 = add(mul(r, c), mul(u, s)), u2 = sub(mul(u, c), mul(r, s)); r = r2; u = u2; }
-  const F = Math.max(W, H) * 0.62 * view.zoom;
-  const cx = W / 2 + (Math.random() - 0.5) * view.shake, cy = H / 2 + (Math.random() - 0.5) * view.shake;
+  // on a tall phone screen, size the view by the width (so the sides of the waveform stay on screen)
+  // and centre it in the space between the title and the controls, not the middle of the glass
+  const portrait = H > W * 1.15;
+  const F = (portrait ? Math.min(Math.max(W, H) * 0.62, W * 0.92) : Math.max(W, H) * 0.62) * view.zoom;
+  const cx = W / 2 + (Math.random() - 0.5) * view.shake, cy = (portrait ? H * 0.47 : H / 2) + (Math.random() - 0.5) * view.shake;
   const fogFar = Math.hypot(...sub(C, view.T)) + RECT_D + 3;
   const c0 = C[0], c1 = C[1], c2 = C[2], f0 = f[0], f1 = f[1], f2 = f[2], r0 = r[0], r1 = r[1], r2 = r[2], u0 = u[0], u1 = u[1], u2 = u[2];
   const projectXYZ = (x, y, z, k) => {
@@ -1817,7 +1820,7 @@ function drawScrub() {
   // the size is cached (ResizeObserver) so drawing never forces a layout in the middle of a frame
   if (!scrubBox.w) { const b = scrub.getBoundingClientRect(); scrubBox.w = b.width; scrubBox.h = b.height; }
   const r = { width: scrubBox.w, height: scrubBox.h }, d = Math.min(devicePixelRatio || 1, 2);
-  if (scrub.width !== Math.round(r.width * d)) { scrub.width = Math.round(r.width * d); scrub.height = Math.round(r.height * d); }
+  if (scrub.width !== Math.round(r.width * d) || scrub.height !== Math.round(r.height * d)) { scrub.width = Math.round(r.width * d); scrub.height = Math.round(r.height * d); }   // redraw at its real size, whichever side changed
   sctx.setTransform(d, 0, 0, d, 0, 0);
   sctx.clearRect(0, 0, r.width, r.height);
   const n = info.peaks.length, step = 3, mid = r.height / 2, lo = info.lo || 0, hi = info.hi || 1;
