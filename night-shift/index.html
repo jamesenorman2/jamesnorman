@@ -495,7 +495,7 @@ function drawItem(r, it, busy) {
 // who works where: [name, offices to try, what they report, favourite station or -1]
 const RESIDENTS = [
   ['NORMAL', ['/night-shift/'], () => '', 0], ['MASTERPIECE', ['/night-shift/', '/music/'], () => jobLine('pickle'), 1],
-  ['DISCO BISCUIT', ['/music/'], () => '', 0], ['WURZEL', ['/music/'], () => dayLine('wurzel'), 1], ['BISCUIT TIN', ['/music/'], () => dayLine('biscuittin'), 2],
+  ['DISCO BISCUIT', ['/music/'], () => '', 0], ['LLOYD', ['/music/'], () => jobLine('pickle'), -1], ['WURZEL', ['/music/'], () => dayLine('wurzel'), 1], ['BISCUIT TIN', ['/music/'], () => dayLine('biscuittin'), 2],
   ['GOD', ['/security/'], () => jobLine('intel'), 0], ['BUNSEN', ['/security/', '/security/layers/'], () => dayLine('bunsen'), 1],
   ['DOODLEBUG', ['/security/layers/', '/security/'], () => jobLine('ideas'), 0], ['SPANNER', ['/security/layers/', '/security/'], () => dayLine('spanner'), 2],
   ['CRUMPET', ['/security/cpted/', '/security/'], () => dayLine('crumpet'), -1],

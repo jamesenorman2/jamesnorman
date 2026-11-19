@@ -107,6 +107,7 @@
   .chairman svg{position:absolute;left:0;bottom:0;width:96px;height:96px;overflow:visible}
   .chairman .bub{position:absolute;bottom:100px;left:50%;translate:-50% 0;font-size:.72rem;letter-spacing:.04em;color:#fff;background:#000;border:1px solid #fff;border-radius:6px;padding:.32rem .6rem;white-space:nowrap;opacity:0;transition:opacity .25s}
   .chairman .bub.on{opacity:1}
+  .chairman .fx{filter:drop-shadow(0 0 2px #a55bff) drop-shadow(0 0 5px #8f4bff)}
   body.shell-on .chairman{bottom:4.8rem}
   body.tv .chairman{display:none!important}
   @media(max-width:700px){.chairman{bottom:calc(9.5rem + 48px + .5rem)}}
@@ -250,7 +251,7 @@
   </div>
 </div>
 <iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page"></iframe>
-<div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><circle class="hd" r="4.5"/><path class="bd"/></svg></div>
+<div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/></svg></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
@@ -470,11 +471,12 @@ const mixHex = (a, b, t) => '#' + [0, 2, 4].map(i => Math.round(parseInt(a.subst
 const UV_LO = Array.from({ length: 11 }, (_, n) => mixHex('#ffffff', '#8f4bff', n / 10));
 const UV_HI = Array.from({ length: 11 }, (_, n) => mixHex('#ffffff', '#c58cff', n / 10));
 let uv = null, uvK = 0, lastUv = -30;
-function startUv() { if (uv) return; lastUv = clockT; uv = { t0: clockT, life: 4 + Math.random() * 2.5 }; }
+function startUv() { if (uv) return; lastUv = clockT; uv = { t0: clockT, life: 4 + Math.random() * 2.5 }; if (Math.random() < 0.5) setTimeout(uvPaint, 300); }   // sometimes an agent gets the face paint out
 const rgbAt = deg => HUES[((Math.floor(deg / 10) % 36) + 36) % 36];
+let lloydKey = '', lloydState = null, lloydI = 0;          // where Agent Lloyd's lighting plan is up to
 let score = null, cueIdx = -1, look = 'plain', lookColour = null, freeLookUntil = 0;
 async function loadScore(url) {
-  score = null; cueIdx = -1;
+  score = null; cueIdx = -1; lloydKey = ''; lloydState = null;
   try {
     const rows = await (await fetch(SETTINGS_URL.replace(/jn_site_settings.*$/, 'jn_scores?select=score&track_url=eq.' + encodeURIComponent(url)),
       { headers: { apikey: SETTINGS_KEY } })).json();
@@ -845,6 +847,7 @@ function onDrop(breakLen) {
   fireMoment({ type: 'laser', colour: Object.keys(PALETTE)[Math.floor(Math.random() * 5)] });          // every drop gets lasers
   if (breakLen >= 8 && clockT - lastSmoke > 60 && !reduceMotion) startSmoke();          // smoke on the big drops
   if (!reduceMotion && clockT - lastFog > 45 && Math.random() < 0.4) startFog();          // and sometimes the smoke machine
+  if (Math.random() < 0.15) setTimeout(() => peek('scut'), 1500);                        // now and then, on a drop
   nextPhrase = clockT + 0.01; sceneI = 0;                                                   // and the light show restarts on the drop
   const top = mountPeaks();                                                                       // and the red light lands on the tallest peak
   if (top) glows.push({ t0: clockT, life: 3.5 + Math.random() * 1.5, drop: true, mount: { row: top.row, i: top.peaks[0] }, du: (Math.random() - 0.5) * 0.08, size: 0.75 + Math.random() * 0.4 });
@@ -1057,24 +1060,45 @@ function autoGlow() {
 // Each phrase gets one scene, which runs for the first part of the phrase and then leaves space.
 let scene = 'rest', sceneEnd = 0, nextPhrase = 0, sceneI = 0, sceneColour = 'green';
 const SCENES = ['mounted', 'fan', 'shine', 'web', 'mounted', 'fan', 'scan', 'rgb', 'mounted', 'uv', 'fan', 'web', 'shine', 'glow'];   // the RGB laser: one phrase in eleven
+function playScene(name, colour) {
+  scene = name; sceneColour = colour;
+  if (name === 'mounted' || name === 'fan' || name === 'rgb') fireMoment({ type: 'laser', mount: name === 'mounted' || (name === 'rgb' && Math.random() < 0.5), rgb: name === 'rgb', colour });
+  else if (name === 'shine') fireMoment({ type: 'shine', colour });
+  else if (name === 'web') { lasers.length = 0; fireMoment({ type: 'web', colour }); }
+  else if (name === 'scan') fireMoment({ type: 'scan', colour });
+  else if (name === 'glow') nextGlow = clockT;                                          // the red light
+  else if (name === 'uv') { if (clockT - lastUv > 40) startUv(); fireMoment({ type: 'laser', mount: true, colour: 'violet' }); }
+}
+// Agent Lloyd's plan: a lighting state per section of the track, played a phrase at a time,
+// with the phrases counted from the start of each section so the changes land on the music.
+const LLOYD_SHARE = { off: 0, low: 0.5, medium: 0.6, high: 0.8, peak: 1 };
+function lloydLights() {
+  const t = (scPos + (scPlaying ? performance.now() - scPosAt : 0)) / 1000;
+  const st = score.states.find(x => t >= x.at && t < x.until), P = Math.max(6, Math.min(40, score.phrase || 16));
+  const k = st ? Math.floor((t - st.at) / P) : -1, key = st ? st.at + ':' + k : 'none';
+  if (key === lloydKey) return;
+  lloydKey = key;
+  if (st !== lloydState) { lloydState = st; lloydI = 0; if (st && st.note) $('cue').textContent = `Agent Lloyd: “${st.note}”`; }
+  if (!st || st.intensity === 'off' || (st.intensity === 'low' && k % 2)) { scene = 'rest'; return; }
+  const cols = st.colours && st.colours.length ? st.colours : ['red'];
+  playScene(st.scenes[lloydI++ % st.scenes.length], cols[Math.floor(Math.random() * cols.length)]);
+  sceneEnd = clockT + P * LLOYD_SHARE[st.intensity];
+}
 function autoLasers() {
   if (source === 'idle' || calm) return;
   const beat = music.beat || 0.47, pick = () => Object.keys(PALETTE)[Math.floor(Math.random() * 5)];
-  if (clockT >= nextPhrase) {
+  if (source === 'sc' && score && Array.isArray(score.states) && score.states.length) lloydLights();
+  else if (clockT >= nextPhrase) {
+    // no plan from Lloyd yet: effects take turns a phrase (16 beats) at a time
     const phrase = Math.max(6, Math.min(10, 16 * beat));
-    nextPhrase = clockT + phrase; sceneEnd = clockT + phrase * 0.8; sceneColour = pick();
-    if (inBreak > 0.5) scene = sceneI++ % 2 ? 'scan' : 'rest';                // breakdowns: space, the odd scan line
+    nextPhrase = clockT + phrase; sceneEnd = clockT + phrase * 0.8;
+    if (inBreak > 0.5) { if (sceneI++ % 2) playScene('scan', pick()); else scene = 'rest'; }   // breakdowns: space, the odd scan line
     else if (energy < 0.2) scene = 'rest';
-    else scene = SCENES[sceneI++ % SCENES.length];
-    if (scene === 'mounted' || scene === 'fan' || scene === 'rgb') fireMoment({ type: 'laser', mount: scene === 'mounted' || (scene === 'rgb' && Math.random() < 0.5), rgb: scene === 'rgb', colour: sceneColour });
-    else if (scene === 'shine') fireMoment({ type: 'shine', colour: ['red', 'red', 'cyan', 'violet'][Math.floor(Math.random() * 4)] });   // moody: mostly red and blue
-    else if (scene === 'web') { lasers.length = 0; fireMoment({ type: 'web', colour: sceneColour }); }
-    else if (scene === 'scan') fireMoment({ type: 'scan', colour: sceneColour });
-    else if (scene === 'glow') nextGlow = clockT;
-    else if (scene === 'uv') { if (clockT - lastUv > 40) startUv(); fireMoment({ type: 'laser', mount: true, colour: 'violet' }); }                                    // the red light
+    else { const name = SCENES[sceneI++ % SCENES.length]; playScene(name, name === 'shine' ? ['red', 'red', 'cyan', 'violet'][Math.floor(Math.random() * 4)] : pick()); }
   }
   // during a laser scene, the lasers go again on the kicks (or every two bars if the kicks are hard to hear)
-  if (clockT < sceneEnd && (scene === 'mounted' || scene === 'fan' || scene === 'rgb') && clockT - lastLaser > Math.max(0.9, beat * 2) && (hit > 0.3 || clockT - lastLaser > beat * 4))
+  const busy = lloydState && lloydState.intensity === 'peak' ? 0.7 : 1;
+  if (clockT < sceneEnd && (scene === 'mounted' || scene === 'fan' || scene === 'rgb') && clockT - lastLaser > Math.max(0.9, beat * 2) * busy && (hit > 0.3 || clockT - lastLaser > beat * 4))
     fireMoment({ type: 'laser', mount: scene === 'mounted', rgb: scene === 'rgb', colour: sceneColour });
 }
 // Lasers mounted on the waveform: pick the tallest peaks of a line just in from the far edge and
@@ -1108,7 +1132,7 @@ function fireMoment(m) {
   else if (m.type === 'fog') { if (clockT - lastFog > 40) startFog(); }
   else if (m.type === 'smoke') { if (clockT - lastSmoke > 60) startSmoke(); }
   else if (m.type === 'flip') { if (!reduceMotion && clockT - lastRoll > 45) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }   // cue-sheet rolls too, at most one every 45 s
-  if (m.note) $('cue').textContent = `${score && score.by || 'Agent Masterpiece'}: “${m.note}”`;
+  if (m.note) $('cue').textContent = `${m.by || (score && (score.lights || score.by)) || 'Agent Lloyd'}: “${m.note}”`;
 }
 window.JN_moment = fireMoment;
 window.JN_sparks = () => spawnSparks(1);       // try the sparks from the console
@@ -1872,10 +1896,11 @@ const PEEK = {
   next: ['Hey, I was listening to that!', 'Don’t change my track!', 'Oi! That was my favourite.', 'Rude.', 'I was just getting into that one.', 'Skip? SKIP?!'],
   prev: ['Again? Fair enough.', 'Rewind! Good call.', 'This one again? Fine by me.'],
   seek: ['Don’t fast-forward my track!', 'Skipping the build-up? Criminal.', 'You’ve missed the best bit.', 'No skipping the breakdown!'],
+  scut: ['Time for a scut monkey.'],
   break: ['This breakdown though!', 'Goosebumps. Actual goosebumps.', 'Hands in the air for this bit!', 'I’m not crying, you’re crying.', 'Wait for it… wait for it…', 'This is my favourite bit!', 'Somebody hold my tea.', 'Here it comes!', 'I love this tune so much.'],
   idle: ['Continue.', 'Carry on.', 'Nice choice.', 'Is this one of Disco Biscuit’s picks?', 'I’m on my break. Don’t tell Normal.', 'Turn it up!', 'Just checking you’re still here.', 'Great tune!', 'As you were.']
 };
-const PEEK_NAMES = ['DISCO BISCUIT', 'MONKEY MONKEY', 'FISH FISH', 'MASTERPIECE', 'KIPPER', 'NORMAL', 'CODPIECE', 'FISH', 'GOD', 'GOATMAN', 'WURZEL', 'BISCUIT TIN', 'GRUMBLE', 'PIGEON', 'TEACAKE', 'BUNSEN', 'CRUMPET', 'SPANNER', 'DOODLEBUG', 'BIN LID'];
+const PEEK_NAMES = ['DISCO BISCUIT', 'MONKEY MONKEY', 'FISH FISH', 'MASTERPIECE', 'LLOYD', 'KIPPER', 'NORMAL', 'CODPIECE', 'FISH', 'GOD', 'GOATMAN', 'WURZEL', 'BISCUIT TIN', 'GRUMBLE', 'PIGEON', 'TEACAKE', 'BUNSEN', 'CRUMPET', 'SPANNER', 'DOODLEBUG', 'BIN LID'];
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 let lastPeek = -1e9, peekTimer = 0;
 function peek(kind) {
@@ -1906,6 +1931,7 @@ function chairDance() {
   const el = $('chairman'); if (!el || chairBusy) return;
   chairBusy = true; lastChair = performance.now();
   const ch = el.querySelector('.ch'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), bub = el.querySelector('.bub');
+  el.querySelector('.pt').setAttribute('d', ''); el.querySelector('.fx').setAttribute('d', '');
   const from = Math.random() < 0.5 ? -1 : 1;                                  // walks in from the left or the right
   el.style.left = (18 + Math.random() * 55) + 'vw'; el.classList.add('on');
   const G = 92, SEAT = 14, CX = 48, T0 = performance.now(), END = 10.5;
@@ -1947,6 +1973,51 @@ function chairDance() {
   };
   requestAnimationFrame(tick);
 }
+// UV: an agent pops up, gets the UV paint out, paints their face and goes "Woohoo!"
+let lastPaint = -1e9;
+function uvPaint() {
+  const el = $('chairman');
+  if (!el || chairBusy || calm || !document.body.classList.contains('intro-done') || performance.now() - lastPaint < 120000) return;
+  chairBusy = true; lastPaint = performance.now();
+  const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub');
+  ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', '');
+  el.style.left = (18 + Math.random() * 55) + 'vw'; el.classList.add('on');
+  const G = 92, CX = 48, T0 = performance.now(), END = 8.5;
+  const pose = (hx, hy, legA, legB, armL, armR) => {
+    hd.setAttribute('cx', hx); hd.setAttribute('cy', hy - 21);
+    const sh = hy - 12, leg = a => `M${hx} ${hy}L${hx + Math.sin(a) * 15} ${hy + Math.cos(a) * 15}`, hand = a => [hx + Math.sin(a) * 12, sh - Math.cos(a) * 12];
+    const [lx, ly] = hand(armL), [rx, ry] = hand(armR);
+    bd.setAttribute('d', `M${hx} ${hy - 16.5}V${hy}` + leg(legA) + leg(legB) + `M${hx} ${sh}L${lx} ${ly}M${hx} ${sh}L${rx} ${ry}`);
+    return { lx, ly, rx, ry };
+  };
+  const paint = (hx, hy, n) => {                                             // up to three glowing stripes on the face
+    const fy = hy - 21, d = [`M${hx - 3.6} ${fy}L${hx - 1.4} ${fy + 1.6}`, `M${hx + 1.4} ${fy + 1.6}L${hx + 3.6} ${fy}`, `M${hx - 3} ${fy - 2.6}l1.5 -1l1.5 1l1.5 -1l1.5 1`];
+    fx.setAttribute('d', d.slice(0, n).join(''));
+  };
+  const tick = () => {
+    const t = (performance.now() - T0) / 1000, beat = music.beat || 0.47, hy0 = G - 15;
+    if (t > END) { el.classList.remove('on'); bub.classList.remove('on'); setTimeout(() => { fx.setAttribute('d', ''); pt.setAttribute('d', ''); chairBusy = false; }, 500); return; }
+    if (t < 1.2) {                                                             // pops up, reaches into a pocket
+      const k = Math.min(1, t / 1.2);
+      const h = pose(CX, hy0 + Math.sin(k * Math.PI) * 2, 0.2, -0.2, -2.4, 2.6 * k);
+      if (t > 0.9) pt.setAttribute('d', `M${h.lx - 3} ${h.ly}h6v5h-6z`);       // the paint pot
+    } else if (t < 4.0) {                                                      // paints: brush to the face, stripe by stripe
+      const wig = Math.sin(t * 14) * 0.08, h = pose(CX, hy0, 0.2, -0.2, -1.9, 0.33 + wig);
+      pt.setAttribute('d', `M${h.lx - 3} ${h.ly}h6v5h-6zM${h.rx} ${h.ry}l3 3`);
+      paint(CX, hy0, t < 2.0 ? 1 : t < 2.9 ? 2 : 3);
+    } else {                                                                   // Woohoo! arms up, jumping
+      const ph = (t - 4) / beat * Math.PI, hy = hy0 - Math.abs(Math.sin(ph)) * 6;
+      pose(CX, hy, 0.25, -0.25, -1.0 + Math.sin(ph) * 0.3, 1.0 + Math.sin(ph) * 0.3);
+      pt.setAttribute('d', ''); paint(CX, hy, 3);
+      if (!bub.classList.contains('on') && t < END - 1) { bub.textContent = pickOne(['Woohoo!', 'WOOHOO!', 'Woooohooo!']); bub.classList.add('on'); }
+      if (t > END - 0.8) bub.classList.remove('on');
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+window.JN_lights = sc => { if (sc) { score = sc; lloydKey = ''; lloydState = null; } return { scene, state: lloydState && lloydState.intensity, note: lloydState && lloydState.note }; };   // try a lighting plan from the console
+window.JN_paint = () => { chairBusy = false; lastPaint = -1e9; uvPaint(); };   // try it from the console
 window.JN_chair = () => { chairBusy = false; chairDance(); };   // try it from the console
 window.JN_peek = k => { lastPeek = -1e9; peek(k || 'idle'); };      // try it from the console
 requestAnimationFrame(frame);
