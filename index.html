@@ -1913,7 +1913,12 @@ function playItem(item) {
   remember(item.key || item.url);
   setStatus('Loading…');
   if (profileMode && item.index != null) { sc.skip(item.index); sc.play(); return; }    // jump within the whole profile
-  sc.load(item.url, { auto_play: true, hide_related: true, show_comments: false, show_reposts: false, visual: false });
+  // load the track, then tell it to play: the widget's own auto-play isn't reliable (often not on phones),
+  // which left Next changing the track but not starting it. If a newer pick has been made meanwhile, leave it.
+  const want = item;
+  sc.load(item.url, { auto_play: true, hide_related: true, show_comments: false, show_reposts: false, visual: false,
+    callback: () => { if (queue[qi] === want || pending === null) { try { sc.play(); } catch (e) {} } } });
+  setTimeout(() => { if (queue[qi] === want && !scPlaying) { try { sc.play(); } catch (e) {} } }, 2500);   // and once more if it still hasn't started
 }
 window.JN_queue = () => ({ played: queue.map(q => q.title), catalogue: picks.length });   // check the shuffle from the console
 function skip(dir) {
