@@ -472,6 +472,7 @@ async function startSoundCloud() {
     if (!scPlaying) setStatus('Ready: press play');       // nothing plays until the visitor asks
   });
   sc.bind(E.PLAY, () => {
+    startedSinceLoad = true;
     if (!window._homePlayed && window.JN) { window._homePlayed = 1; JN.event('home-play'); }
     scPlaying = true;
     document.body.classList.remove('needs-tap');
@@ -1906,7 +1907,7 @@ function loadFile(file) {
 }
 
 // Previous / next: through the agents' picks (a new random one at the end of the list), or SoundCloud's own list.
-let profileMode = false;
+let profileMode = false, startedSinceLoad = true;
 function enableButtons() { document.body.classList.add('sc-ready'); playBtn.disabled = false; $('prevBtn').disabled = false; $('nextBtn').disabled = false; }
 function playItem(item) {
   pickedBy = item.by || null;
@@ -1915,10 +1916,10 @@ function playItem(item) {
   if (profileMode && item.index != null) { sc.skip(item.index); sc.play(); return; }    // jump within the whole profile
   // load the track, then tell it to play: the widget's own auto-play isn't reliable (often not on phones),
   // which left Next changing the track but not starting it. If a newer pick has been made meanwhile, leave it.
-  const want = item;
+  const want = item; startedSinceLoad = false;
   sc.load(item.url, { auto_play: true, hide_related: true, show_comments: false, show_reposts: false, visual: false,
     callback: () => { if (queue[qi] === want || pending === null) { try { sc.play(); } catch (e) {} } } });
-  setTimeout(() => { if (queue[qi] === want && !scPlaying) { try { sc.play(); } catch (e) {} } }, 2500);   // and once more if it still hasn't started
+  setTimeout(() => { if (queue[qi] === want && !startedSinceLoad) { try { sc.play(); } catch (e) {} } }, 2500);   // once more if it never started (never after a pause)
 }
 window.JN_queue = () => ({ played: queue.map(q => q.title), catalogue: picks.length });   // check the shuffle from the console
 function skip(dir) {
