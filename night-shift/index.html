@@ -21,7 +21,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">
 <style>
-  .floor{margin:2.5rem 0 0;border:1px solid var(--line)}
+  .floor{margin:2.5rem 0 0}
   .floor canvas{display:block;width:100%;height:clamp(420px,52vw,40rem)}
   .findings{list-style:none;margin-top:.4rem}
   .findings li{margin:.7rem 0;font-size:.8rem}
@@ -86,7 +86,7 @@
 
   <section aria-labelledby="day-h">
     <h2 id="day-h">The day shift</h2>
-    <p class="small">Once a day (Wurzel weekly), each of these agents does one job and files a report. Open a card for the detail.</p>
+    <p class="small">Once a day (Old School weekly), each of these agents does one job and files a report. Open a card for the detail.</p>
     <div class="daycrew" id="daycrew"><p class="small">Waking the day crew…</p></div>
   </section>
 
@@ -184,28 +184,28 @@ const CREW = [
     const broken = l.filter(x => !x.ok && !x.blocked);
     return [broken.length ? 'Broken: ' + broken.map(x => x.name).join(', ') : `All ${l.length} reachable`, broken.length ? 'bad' : ''];
   }],
-  ['AGENT GOATMAN', 'Clerk. Watches the official Martyn’s Law guidance on GOV.UK for updates.', L => {
+  ['AGENT BORING', 'Clerk. Watches the official Martyn’s Law guidance on GOV.UK for updates.', L => {
     const c = (L.jobs || {}).clerk; if (!c) return ['–'];
     if (!c.ok) return ['Couldn’t check GOV.UK', 'warn'];
     return [(c.changed ? 'UPDATED since last shift' : 'No change') + (c.updated ? ' · last updated ' + new Date(c.updated).toLocaleDateString() : ''), c.changed ? 'warn' : ''];
   }],
-  ['AGENT GOD', 'Intel. Reads the UK national threat level as published on GOV.UK.', L => {
+  ['AGENT GCHQ', 'Intel. Reads the UK national threat level as published on GOV.UK.', L => {
     const i = (L.jobs || {}).intel; if (!i) return ['–'];
     return [i.ok ? 'UK national threat level: ' + i.level : 'Couldn’t read it this shift', i.ok ? '' : 'warn'];
   }],
-  ['AGENT KIPPER', 'Scout. Watches my SoundCloud for new uploads.', L => {
+  ['AGENT JACK MAN', 'Scout. Watches my SoundCloud for new uploads.', L => {
     const sc = (L.jobs || {}).scout; if (!sc) return ['–'];
     return [`${sc.count} tracks` + (sc.new && sc.new.length ? ' · new: ' + sc.new.map(t => t.title).join(', ') : ' · nothing new')];
   }],
-  ['AGENT NORMAL', 'Analyst. Reads every report, compares with the last shift, writes the handover and raises findings.', L => {
+  ['AGENT FRANKIE', 'Analyst. Reads every report, compares with the last shift, writes the handover and raises findings.', L => {
     const a = L.analyst; if (!a) return [L.note || '–', 'warn'];
     return [`Status ${a.status} · ${(a.findings || []).length} findings`, a.status === 'RED' ? 'bad' : a.status === 'AMBER' ? 'warn' : ''];
   }],
-  ['AGENT DOODLEBUG', 'Ideas. Once a day, pitches new games and moving diagrams for the Security section; see the Idea Lab.', L => {
+  ['AGENT OATIE MAN', 'Ideas. Once a day, pitches new games and moving diagrams for the Security section; see the Idea Lab.', L => {
     const d = (L.jobs || {}).ideas; if (!d || !d.archive) return ['–'];
     return [d.archive.length ? `${d.archive.length} ideas · latest: ${d.archive[0].title}` : 'Sketching…'];
   }],
-  ['AGENT DISCO BISCUIT', 'DJ. Picks a track for the hour to suit the time of day, and sets up the DJ battle.', L => {
+  ['AGENT NORMAL', 'DJ. Picks a track for the hour to suit the time of day, and sets up the DJ battle.', L => {
     const d = L.dj; return [d && d.track ? '♪ ' + d.track.title : '–'];
   }]
 ];
@@ -224,15 +224,15 @@ renderCrew(null);
 
 // The day crew: one report each, read from the database.
 const DAY = [
-  ['grumble', 'AGENT GRUMBLE', 'Editor. Checks every blog post and incident report against its sources before it goes out.'],
+  ['grumble', 'AGENT BLOG-HEAD', 'Editor. Checks every blog post and incident report against its sources before it goes out.'],
   ['binlid', 'AGENT BIN LID', 'Regulation watcher. New GOV.UK guidance on Martyn’s Law, the SIA, protective security and the Building Regulations.'],
-  ['teacake', 'AGENT TEACAKE', 'Hostile reconnaissance on this site: exposed files, the database’s public key, the proxy, headers, strobe safety.'],
-  ['pigeon', 'AGENT PIGEON', 'Visitor analyst. Reads the week’s privacy-friendly visit counts and suggests improvements.'],
-  ['bunsen', 'AGENT BUNSEN', 'Question setter. One security question a day on the Security page, and a LinkedIn post for James.'],
-  ['biscuittin', 'AGENT BISCUIT TIN', 'SoundCloud stats: plays, likes and reposts, and what’s climbing.'],
-  ['wurzel', 'AGENT WURZEL', 'Crate digger. Each week, new records that fit James’s sound, with which set they’d go in.'],
-  ['crumpet', 'AGENT CRUMPET', 'Handbook quality: contradictions, broken citations, out-of-date standards and thin pages, ranked to fix next.'],
-  ['spanner', 'AGENT SPANNER', 'Builder. Turns ideas James agreed into build plans and rough working versions on a preview link.']
+  ['teacake', 'AGENT MR. PARTICULAR', 'Hostile reconnaissance on this site: exposed files, the database’s public key, the proxy, headers, strobe safety.'],
+  ['pigeon', 'AGENT SNOOPY', 'Visitor analyst. Reads the week’s privacy-friendly visit counts and suggests improvements.'],
+  ['bunsen', 'AGENT QUIZZY RASCAL', 'Question setter. One security question a day on the Security page, and a LinkedIn post for James.'],
+  ['biscuittin', 'AGENT NORMAL', 'SoundCloud stats: plays, likes and reposts, and what’s climbing.'],
+  ['wurzel', 'AGENT OLD SCHOOL', 'Crate digger. Each week, new records that fit James’s sound, with which set they’d go in.'],
+  ['crumpet', 'AGENT HANDBOOK', 'Handbook quality: contradictions, broken citations, out-of-date standards and thin pages, ranked to fix next.'],
+  ['spanner', 'AGENT ENGINEER', 'Builder. Turns ideas James agreed into build plans and rough working versions on a preview link.']
 ];
 const escD = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeHref = u => /^https:\/\/[^\s"<>]+$/.test(u || '') ? u : null;
@@ -299,9 +299,9 @@ function layout() {
   const pages = (floor.shift && floor.shift.patrol || []).filter(p => !/\.(css|js|json)$/.test(p.path)).slice(0, 12);
   const list = pages.length ? pages : Object.keys(NAMES).map(path => ({ path, ok: true }));
   ISO.sh = FW < 700 ? 0.06 : 0.16;
-  const m = 10, wallH = 34;
-  const PD = (FH - 2 * m - wallH) / ISO.sq, PW = FW - 2 * m - PD * ISO.sh;
-  ISO.ox = m; ISO.oy = m + wallH;
+  const m = 10, wallH = 34, lab = 26;                       // lab: a strip above and below for the room names
+  const PD = (FH - 2 * m - wallH - 2 * lab) / ISO.sq, PW = FW - 2 * m - PD * ISO.sh;
+  ISO.ox = m; ISO.oy = m + wallH + lab;
   const Dc = PD * 0.15, Dr = (PD - Dc) / 2, top = Math.ceil(list.length / 2);
   floor.PW = PW; floor.PD = PD; floor.Dr = Dr; floor.Dc = Dc; floor.cv = Dr + Dc / 2;
   floor.rooms = list.map((p, i) => {
@@ -329,7 +329,7 @@ function makeMen() {
   floor.men = [
     { name: 'MONKEY MONKEY', path: route(false), i: 0, u: 0, v: cv, pause: 0, step: 0 },
     { name: 'FISH FISH', path: route(true), i: 0, u: PW, v: cv, pause: 0, step: 0 },
-    { name: 'FISH', path: [{ u: PW * 0.55, v: cv + floor.Dc * 0.25 }, { u: PW - 6, v: cv + floor.Dc * 0.25, hold: 2.2 }], i: 0, u: PW * 0.55, v: cv, pause: 0, step: 0 }
+    { name: 'FISH', path: [{ u: PW * 0.55, v: cv + floor.Dc * 0.25 }, { u: PW - 22 * SM, v: cv, hold: 3 }], i: 0, u: PW * 0.55, v: cv, pause: 0, step: 0 }
   ];
   floor.men.forEach(m => { const p = m.path[0]; if (p) { m.u = p.u; m.v = p.v; } });
 }
@@ -353,7 +353,7 @@ const ell = (c, rx) => { fx.beginPath(); fx.ellipse(c[0], c[1], rx, rx * ISO.sq,
 const KITS = {
   '/night-shift/': { title: 'CONTROL ROOM',
     items: [[0.2, 0.86, 0.6, 0.1, 30, 'screens'], [0.46, 0.88, 0.08, 0.05, 6, 'beacon', 30], [0.1, 0.42, 0.32, 0.16, 9, 'desk'], [0.2, 0.5, 0.12, 0.04, 8, 'monitor', 9], [0.58, 0.42, 0.32, 0.16, 9, 'faders'], [0.84, 0.1, 0.12, 0.1, 12, 'kettle'], [0.03, 0.86, 0.13, 0.06, 24, 'rota']],
-    stations: [[0.07, 0.5, 'type', ['Typing up the shift handover', 'Writing the shift log', 'Reading last night’s report']],
+    stations: [[0.07, 0.5, 'type', ['Typing up the shift handover', 'Writing the shift log', 'Reading last night’s report', 'Where’s my tiger baby?', 'Yeah, freaking out, freaking out.']],
       [0.55, 0.5, 'type', ['Cueing the visuals for the next track', 'Riding the faders', 'Programming a laser for the drop']],
       [0.5, 0.74, 'point', ['Watching every page on the monitor wall', 'Is that page slow? Zooming in', 'All screens green. Suspicious.']],
       [0.86, 0.22, 'check', ['Making tea. Eleven sugars.', 'Kettle’s on. The shift can wait.']],
@@ -370,11 +370,13 @@ const KITS = {
       [0.48, 0.32, 'dance', ['Middle of the dance floor', 'Under the mirror ball!']],
       [0.9, 0.18, 'check', ['Digging the crate for new music', 'Found a rare white label']]] },
   '/': { title: 'LOBBY',
-    items: [[0.14, 0.9, 0.72, 0.06, 32, 'tv'], [0.3, 0.32, 0.38, 0.14, 8, 'sofa'], [0.38, 0.12, 0.2, 0.1, 6, 'table'], [0.85, 0.55, 0.1, 0.06, 26, 'tally'], [0.04, 0.4, 0.2, 0.12, 12, 'reception'], [0.9, 0.1, 0.07, 0.07, 8, 'plant']],
+    items: [[0.14, 0.9, 0.72, 0.06, 32, 'tv'], [0.3, 0.32, 0.38, 0.14, 8, 'sofa'], [0.38, 0.12, 0.2, 0.1, 6, 'table'], [0.85, 0.55, 0.1, 0.06, 26, 'tally'], [0.04, 0.4, 0.2, 0.12, 12, 'reception'], [0.26, 0.05, 0.07, 0.07, 8, 'plant'],
+      [0.62, 0.08, 0.16, 0.26, 15, 'cubicle'], [0.8, 0.08, 0.16, 0.26, 15, 'cubicle']],
     stations: [[0.49, 0.25, 'lie', ['On the sofa watching the visualiser', 'Five minutes on the sofa. Promise.']],
       [0.5, 0.72, 'point', ['Checking the visualiser looks right', 'Pointing at the pretty lines']],
       [0.88, 0.42, 'check', ['Counting today’s visitors', 'Another visitor! Tally mark.']],
-      [0.02, 0.46, 'type', ['On reception: welcome in', 'Signing in a visitor']]] },
+      [0.02, 0.46, 'type', ['On reception: welcome in', 'Signing in a visitor']],
+      [0.7, 0.2, 'drum', ['Slams the lid shut. Not today.', 'Drum solo on the toilet lid!', 'Ba-dum tss!', 'This lid has a lovely tone.']]] },
   '/security/': { title: 'SECURITY OPS',
     items: [[0.05, 0.9, 0.36, 0.06, 26, 'threat'], [0.55, 0.9, 0.32, 0.06, 26, 'quiz'], [0.34, 0.42, 0.28, 0.15, 9, 'desk'], [0.42, 0.48, 0.12, 0.04, 8, 'monitor', 9], [0.93, 0.86, 0.05, 0.05, 6, 'camera', 30], [0.72, 0.22, 0.22, 0.08, 34, 'arch']],
     stations: [[0.24, 0.76, 'point', ['Updating the threat level board', 'Checking the threat level with MI5']],
@@ -383,7 +385,7 @@ const KITS = {
       [0.83, 0.26, 'walk', ['Walking through the scanner. BEEP.', 'Forgot my keys again. BEEP.']]] },
   '/security/layers/': { title: 'LAYERS LAB',
     items: [[0.06, 0.36, 0.14, 0.08, 24, 'easel'], [0.3, 0.9, 0.38, 0.06, 28, 'layers'], [0.62, 0.52, 0.32, 0.18, 9, 'bench'], [0.3, 0.12, 0.36, 0.06, 10, 'bollards'], [0.82, 0.2, 0.12, 0.08, 7, 'toolbox']],
-    stations: [[0.14, 0.24, 'think', ['Sketching a new idea for the site', 'Doodling a game about layers']],
+    stations: [[0.14, 0.24, 'think', ['Sketching a new idea for the site', 'Doodling a game about layers', 'Goo goo. I have invented a game.', 'Ga ga. Detect, delay, respond.', 'Nap later. Game now.']],
       [0.49, 0.76, 'point', ['Explaining detect, delay, respond', 'This layer is the important one']],
       [0.59, 0.61, 'type', ['Building the idea James agreed', 'Soldering something. Probably fine.']],
       [0.48, 0.26, 'kick', ['Testing the bollards. Ow.', 'Crash-testing a bollard with my foot']]] },
@@ -452,6 +454,19 @@ function drawItem(r, it, busy) {
     const m = B.top(0.5, 0.5); fx.strokeRect(m[0] - 5 * s, m[1] - 3 * s, 10 * s, 6 * s); for (let k = 0; k < 3; k++) seg([m[0] - 3 * s + k * 3 * s, m[1] + 2 * s], [m[0] - 3 * s + k * 3 * s, m[1] - 1 * s - Math.abs(Math.sin(t * 3 + k)) * 1.5 * s]);
     block(a.u - w * 0.08, a.v, w * 0.1, d * 0.7, 10 * s, h); block(a.u + w * 0.98, a.v, w * 0.1, d * 0.7, 10 * s, h);   // booth monitors
     for (let k = 0; k < 3; k++) { const ph = (t * 0.6 + k / 3) % 1, c = B.top(0.5, 0.5, 14 * s + ph * 30 * s); text('♪', c[0] + Math.sin(ph * 6 + k) * 8, c[1], 10 * s, 1 - ph); }
+    fx.restore(); return; }
+  if (kind === 'cubicle') {
+    const wt = 2;
+    block(a.u, a.v, wt, d, h); block(a.u + w - wt, a.v, wt, d, h);                                   // side partitions
+    block(a.u, r.upper ? a.v : a.v + d - wt, w, wt, h);                                                // back wall
+    const tw = w * 0.42, td = d * 0.3, tu = a.u + w / 2 - tw / 2, tv = r.upper ? a.v + 2 : a.v + d - td - 2;
+    const T = block(tu, tv, tw, td, 7 * s);                                                           // the toilet
+    if (busy) {                                                                                       // lid down, and being drummed
+      const c = T.top(0.5, 0.5, 0.5 * s); fx.beginPath(); fx.ellipse(c[0], c[1], tw * 0.45, td * 0.45 * ISO.sq * 2, 0, 0, 7); fx.stroke();
+      if (Math.floor(t * 4) % 2 === 0) text(['BANG', 'ba-dum', 'tss'][Math.floor(t * 4) % 3], c[0] + 10 * s, c[1] - 14 * s, 7 * s, 0.8);
+    } else { const c = T.top(0.5, r.upper ? 0.1 : 0.9); seg(c, [c[0], c[1] - 9 * s]); seg([c[0] - tw * 0.35, c[1] - 9 * s], [c[0] + tw * 0.35, c[1] - 9 * s]); }   // lid up
+    const door = P(a.u + w * 0.1, r.upper ? a.v + d : a.v, 0), dt2 = P(a.u + w * 0.55, r.upper ? a.v + d + d * 0.25 : a.v - d * 0.25, 0);
+    fx.beginPath(); fx.moveTo(door[0], door[1]); fx.lineTo(dt2[0], dt2[1]); fx.lineTo(dt2[0], dt2[1] - h); fx.lineTo(door[0], door[1] - h); fx.closePath(); fx.fillStyle = '#000'; fx.fill(); fx.stroke();   // door ajar
     fx.restore(); return; }
   if (kind === 'podium') {                        // a dance podium with a light-up edge
     fx.globalAlpha = 0.4 + 0.5 * Math.abs(Math.sin(t * 4.2 + fu * 7)); seg([X + 2, Y + B.h - 2], [X + W - 2, Y + B.h - 2]);
@@ -523,15 +538,15 @@ function drawItem(r, it, busy) {
 
 // who works where: [name, offices to try, what they report, favourite station or -1]
 const RESIDENTS = [
-  ['NORMAL', ['/night-shift/'], () => '', 0], ['MASTERPIECE', ['/night-shift/', '/music/'], () => jobLine('pickle'), 1],
-  ['DISCO BISCUIT', ['/music/'], () => '', 0], ['LLOYD', ['/music/'], () => jobLine('pickle'), -1], ['WURZEL', ['/music/'], () => dayLine('wurzel'), 1], ['BISCUIT TIN', ['/music/'], () => dayLine('biscuittin'), 2],
-  ['GOD', ['/security/'], () => jobLine('intel'), 0], ['BUNSEN', ['/security/', '/security/layers/'], () => dayLine('bunsen'), 1],
-  ['DOODLEBUG', ['/security/layers/', '/security/'], () => jobLine('ideas'), 0], ['SPANNER', ['/security/layers/', '/security/'], () => dayLine('spanner'), 2],
-  ['CRUMPET', ['/security/cpted/', '/security/'], () => dayLine('crumpet'), -1],
-  ['GOATMAN', ['/security/martyns-law/', '/security/'], () => jobLine('clerk'), 0], ['BIN LID', ['/security/martyns-law/', '/security/'], () => dayLine('binlid'), 2],
-  ['TEACAKE', ['/admin/', '/night-shift/'], () => dayLine('teacake'), -1],
-  ['KIPPER', ['/', '/music/'], () => jobLine('scout'), 1], ['PIGEON', ['/', '/blog/'], () => dayLine('pigeon'), 2],
-  ['GRUMBLE', ['/blog/', '/'], () => dayLine('grumble'), 0]
+  ['FRANKIE', ['/night-shift/'], () => '', 0], ['MASTERPIECE', ['/night-shift/', '/music/'], () => jobLine('pickle'), 1],
+  ['NORMAL', ['/music/'], () => '', 0], ['LLOYD', ['/music/'], () => jobLine('pickle'), -1], ['OLD SCHOOL', ['/music/'], () => dayLine('wurzel'), 1], ['NORMAL~STATS', ['/music/'], () => dayLine('biscuittin'), 2],
+  ['GCHQ', ['/security/'], () => jobLine('intel'), 0], ['QUIZZY RASCAL', ['/security/', '/security/layers/'], () => dayLine('bunsen'), 1],
+  ['OATIE MAN', ['/security/layers/', '/security/'], () => jobLine('ideas'), 0], ['ENGINEER', ['/security/layers/', '/security/'], () => dayLine('spanner'), 2],
+  ['HANDBOOK', ['/security/cpted/', '/security/'], () => dayLine('crumpet'), -1],
+  ['BORING', ['/security/martyns-law/', '/security/'], () => jobLine('clerk'), 0], ['BIN LID', ['/security/martyns-law/', '/security/'], () => dayLine('binlid'), 2],
+  ['MR. PARTICULAR', ['/admin/', '/night-shift/'], () => dayLine('teacake'), -1],
+  ['JACK MAN', ['/', '/music/'], () => jobLine('scout'), 1], ['SNOOPY', ['/', '/blog/'], () => dayLine('pigeon'), 2],
+  ['BLOG-HEAD', ['/blog/', '/'], () => dayLine('grumble'), 0]
 ];
 function dayLine(id) { const D = floor.day || {}, r = D[id], t = (r && r.report && r.report.summary) || 'first report due'; return t.length > 30 ? t.slice(0, 29) + '…' : t; }
 const res = {};
@@ -553,7 +568,7 @@ const beatPhase = () => performance.now() / 1000 / (beatNow().period || 0.48);
 function startRave(secs, why) {
   rave.until = floor.t + secs; rave.spots = {}; rave.chat = floor.t + 0.8;
   bubbles.length = 0;
-  bubbles.push({ who: 'DISCO BISCUIT', text: why, t0: floor.t, life: 3.4 });
+  bubbles.push({ who: 'NORMAL', text: why, t0: floor.t, life: 3.4 });
 }
 function raveTick() {
   const b = beatNow(), title = b.playing ? b.title : (floor.shift && floor.shift.dj && floor.shift.dj.track && floor.shift.dj.track.title) || '';
@@ -636,10 +651,10 @@ function drawFloor(dt) {
     // the office name painted on the floor, and the patrol's result when it's just been checked
     const lab = P(r.u + 6, r.upper ? r.v + 16 * sm : near - 4 * sm, 0);
     Z.push({ z: 1e6, f: () => {
-      // the room's sign over its door on the corridor: what this room is
-      const title = kit.title || r.name.toUpperCase(), sp = P(r.door.u, r.door.v, wallLo + 3 * sm);
+      // the room's name: above the building for the back row, below it for the front row
+      const title = kit.title || r.name.toUpperCase(), sp = r.upper ? P(r.u + r.w / 2, -3, 30 * sm) : P(r.u + r.w / 2, r.v + r.d, 0);
       let fs = 11 * s; fx.font = `600 ${fs}px "Syne", sans-serif`; while (fx.measureText(title).width > r.w * 0.86 && fs > 6) { fs -= 0.5; fx.font = `600 ${fs}px "Syne", sans-serif`; }
-      const tw = fx.measureText(title).width + 12, th = fs + 8, sx = sp[0] - tw / 2, sy = sp[1] - th;
+      const tw = fx.measureText(title).width + 12, th = fs + 8, sx = sp[0] - tw / 2, sy = r.upper ? sp[1] - th - 4 : sp[1] + 5;
       fx.fillStyle = '#000'; fx.fillRect(sx, sy, tw, th); fx.strokeRect(sx, sy, tw, th);
       fx.fillStyle = '#fff'; fx.textAlign = 'center'; fx.globalAlpha = 1; fx.fillText(title, sp[0], sy + th - 5);
       if (kit.title) text(r.name.toUpperCase(), lab[0], lab[1], 7.5 * s, 0.45, 'left');                 // the page it stands for
@@ -657,7 +672,7 @@ function drawFloor(dt) {
         const tgt = at(r, st[a.st][0], st[a.st][1]), du = tgt.u - a.u, dvv = tgt.v - a.v, dist = Math.hypot(du, dvv), sp = 34 * sm * dt;
         if (dist > 0.8) { const k = Math.min(1, sp / dist); a.u += du * k; a.v += dvv * k; a.step += Math.min(dist, sp) * 0.3; }
         else if (a.dwell > 0) a.dwell -= dt;
-        else if (w.name === 'DISCO BISCUIT' && r.path === '/music/') a.dwell = 6;          // the DJ never leaves the booth
+        else if (w.name === 'NORMAL' && r.path === '/music/') a.dwell = 6;          // the DJ never leaves the booth
         else {
           const taken = new Set(who.filter(o => o !== w && res[o.name]).map(o => res[o.name].st));
           const free = st.map((_, k) => k).filter(k => k !== a.st && !taken.has(k));
@@ -672,6 +687,7 @@ function drawFloor(dt) {
           else { const acts = st[a.st][3]; if (acts && acts.length && Math.random() < 0.8) bubbles.push({ who: w.name, text: acts[Math.floor(Math.random() * acts.length)], t0: floor.t + 0.2, life: 3.4, act: true }); }
         }
         if (!moving && a.groove > floor.t) pose = 'rave';
+        if (w.name === 'FRANKIE' && cat && cat.phase === 'sit' && !moving) pose = 'stroke';   // stroking the tiger baby
         if (!moving && pose === 'dance') { pose = 'rave'; if (!a.style) a.style = DANCES[Math.floor(Math.random() * DANCES.length)]; }   // dance stations: on the beat
       }
       const stn = st[a.st] || [], up = !moving && !a.raving && stn[4] ? stn[4] * sm : 0, nudge = up && stn[5] ? stn[5] * r.d : 0;
@@ -701,9 +717,16 @@ function drawFloor(dt) {
   { const home = { u: 14 * sm, v: floor.cv + floor.Dc * 0.2 };
     const a = res.CODPIECE || (res.CODPIECE = { u: home.u, v: home.v, step: 0 });
     const inRave = raveRoute(a, 'CODPIECE', () => home, sm, dt);
-    Z.push({ z: a.v + 0.5, f: () => { seg(P(0, floor.Dr + 2), P(0, floor.Dr + floor.Dc - 2)); const [x, y] = P(a.u, a.v);
+    Z.push({ z: floor.Dr + floor.Dc * 0.85, f: () => frontDoor(sm, s) });
+    Z.push({ z: a.v + 0.5, f: () => { const [x, y] = P(a.u, a.v);
       if (inRave && !a.moving) danceMan(x, y, sm, a, 'CODPIECE', 3); else stickMan(x, y, sm, inRave ? a.step : t, inRave ? 'walk' : 'check', 'CODPIECE');
       text('CODPIECE', x, y + 9 * s, 7.5 * s, 0.65); if (!inRave) text(jobLine('gatekeeper'), x + 18 * sm, y - 34 * sm, 8.5 * s, 0.85, 'left'); } }); }
+
+  // the wormhole at the far end of the corridor: Fish's way out to the sites this one relies on
+  { const wu = PW - 12 * sm, wv = floor.cv; Z.push({ z: wv + floor.Dc * 0.3, f: () => wormhole(P(wu, wv, 16 * sm), sm, s, t) }); }
+  // Frankie's cat wanders into the control room now and then
+  catTick(dt, sm);
+  if (cat) Z.push({ z: cat.v + 0.4, f: () => drawCat(cat, sm) });
 
   // patrols walking the corridor and checking each office
   const speed = 60 * sm;
@@ -717,8 +740,9 @@ function drawFloor(dt) {
       if (dist <= stepLen) { m.u = p.u; m.v = p.v; m.i = (m.i + 1) % m.path.length; if (p.check) { p.check.seen = 1; m.pause = 1.4; } if (p.hold) m.pause = p.hold; }
       else { m.u += du / dist * stepLen; m.v += dvv / dist * stepLen; m.step += stepLen * 0.25; }
     }
-    Z.push({ z: m.v + 0.5, f: () => { const [x, y] = P(m.u, m.v); if (pose === 'rave') danceMan(x, y, sm, m, m.name, 5); else stickMan(x, y, sm, pose === 'walk' ? m.step : 0, pose, m.name); text(m.name, x, y + 9 * s, 7.5 * s, 0.65);
-      if (m.name === 'FISH') { text(jobLine('links'), x, y - 34 * sm, 8.5 * s, 0.8); if (pose === 'check') text('OUTSIDE →', x - 4, y - 46 * sm, 8 * s, 0.5, 'right'); } } });
+    const through = m.name === 'FISH' && pose === 'check' && m.pause > 0 ? Math.abs(Math.cos(Math.PI * (1 - m.pause / 3))) : 1;   // into the wormhole and back out
+    Z.push({ z: m.v + 0.5, f: () => { const [x, y] = P(m.u, m.v); fx.save(); if (through < 1) { const c = P(PW - 12 * sm, floor.cv, 16 * sm); fx.translate(c[0], c[1]); fx.rotate((1 - through) * 6); fx.scale(through, through); fx.translate(-c[0], -c[1]); } if (pose === 'rave') danceMan(x, y, sm, m, m.name, 5); else stickMan(x, y, sm, pose === 'walk' ? m.step : 0, pose, m.name); text(m.name, x, y + 9 * s, 7.5 * s, 0.65);
+      if (m.name === 'FISH') { text(jobLine('links'), x, y - 34 * sm, 8.5 * s, 0.8); if (pose === 'check') text('Through the wormhole →', x - 4, y - 46 * sm, 8 * s, 0.5, 'right'); } fx.restore(); } });
   });
 
   raveTick(sm);
@@ -745,6 +769,79 @@ function jobLine(job) {
   return '';
 }
 
+
+// ─── The front door, the wormhole and the cat ───
+function frontDoor(sm, s) {
+  const v0 = floor.Dr + floor.Dc * 0.25, v1 = floor.Dr + floor.Dc * 0.75, h = 22 * sm;
+  fx.save(); fx.globalAlpha = 0.9;
+  block(-3, v0 - 2, 3, 2, h); block(-3, v1, 3, 2, h); block(-3, v0 - 2, 3, v1 - v0 + 4, 3 * sm, h);   // frame and lintel
+  const a = 0.45, L = (v1 - v0) * 0.95, ex = Math.sin(a) * L, ev = v0 + Math.cos(a) * L;               // the door, swung open
+  poly([P(0, v0, 1), P(ex, ev, 1), P(ex, ev, h - 1), P(0, v0, h - 1)], '#000');
+  const k = P(ex * 0.85, v0 + (ev - v0) * 0.85, h * 0.45); fx.beginPath(); fx.arc(k[0], k[1], 1.4 * sm, 0, 7); fx.stroke();   // handle
+  fx.globalAlpha = 0.5; poly([P(2, v0 + 3, 0), P(14 * sm, v0 + 3, 0), P(14 * sm, v1 - 3, 0), P(2, v1 - 3, 0)]);                  // doormat
+  fx.restore();
+  const t = P(0, v0, h + 6 * sm); text('FRONT DOOR', t[0] + 2, t[1], 7 * s, 0.55, 'left');
+}
+function wormhole(c, sm, s, t) {
+  const R = 14 * sm;
+  fx.save(); fx.lineWidth = 1;
+  for (let k = 0; k < 7; k++) {                                   // rings falling inwards, forever
+    const f = ((k / 7) + t * 0.35) % 1, r = R * (1 - f);
+    fx.globalAlpha = 0.15 + 0.6 * f; fx.beginPath(); fx.ellipse(c[0], c[1], r * 0.62, r, 0, 0, 7); fx.stroke();
+  }
+  fx.globalAlpha = 0.6;
+  for (let arm = 0; arm < 3; arm++) {                              // and three arms of a spiral, turning
+    fx.beginPath();
+    for (let i = 0; i <= 24; i++) { const q = i / 24, an = t * 2.2 + arm * 2.094 + q * 5, r = R * (1 - q); const x = c[0] + Math.cos(an) * r * 0.62, y = c[1] + Math.sin(an) * r; i ? fx.lineTo(x, y) : fx.moveTo(x, y); }
+    fx.stroke();
+  }
+  fx.restore();
+  text('WORMHOLE', c[0], c[1] - R - 5 * sm, 7 * s, 0.5);
+}
+let cat = null, nextCat = 25 + Math.random() * 30;
+window.JN_cat = () => { nextCat = 0; const fr = res.FRANKIE; return { cat, fr: fr && { room: fr.room && fr.room.path, u: Math.round(fr.u) }, control: floor.control && floor.control.path, raving: raving() }; };                       // call the cat in from the console
+const TIGER = ['Yeah, freaking out, freaking out.', 'Yay, freaking out!', 'Where’s my tiger baby?', 'There’s my tiger baby!'];
+function catTick(dt, sm) {
+  const room = floor.control, fr = res.FRANKIE;
+  if (!cat) {
+    if (floor.t < nextCat || !room || !fr || fr.room !== room || raving()) return;
+    cat = { u: room.door.u, v: room.door.v, phase: 'in', step: 0, dir: 1, said: 0 };
+  }
+  const goal = cat.phase === 'out' ? { u: room.door.u, v: room.door.v } : { u: fr.u + 11 * sm, v: fr.v + 1 };
+  if (cat.phase === 'sit') {
+    cat.sit -= dt;
+    if (floor.t > cat.said) { cat.said = floor.t + 3.2; bubbles.push({ who: 'FRANKIE', text: pick(TIGER), t0: floor.t, life: 2.8 }); }
+    if (cat.sit <= 0 || fr.room !== room || raving()) cat.phase = 'out';
+    return;
+  }
+  const du = goal.u - cat.u, dv = goal.v - cat.v, d = Math.hypot(du, dv), sp = 30 * sm * dt;
+  if (d <= sp) {
+    if (cat.phase === 'in') { cat.phase = 'sit'; cat.sit = 7 + Math.random() * 4; cat.said = 0; }
+    else { cat = null; nextCat = floor.t + 45 + Math.random() * 50; }
+    return;
+  }
+  cat.u += du / d * sp; cat.v += dv / d * sp; cat.step += sp * 0.5; cat.dir = du >= 0 ? 1 : -1;
+}
+function drawCat(c, s) {
+  const [x, y] = P(c.u, c.v), f = c.dir, sit = c.phase === 'sit', w = Math.sin(c.step) * 1.6 * s;
+  fx.save(); fx.globalAlpha = 0.95; fx.beginPath();
+  if (sit) {
+    fx.ellipse(x, y - 4 * s, 3.2 * s, 4 * s, 0, 0, 7);                                  // sitting up
+    fx.moveTo(x + 2.4 * s, y - 9 * s); fx.arc(x, y - 9 * s, 2.4 * s, 0, 7);
+    fx.moveTo(x - 3 * s, y); fx.quadraticCurveTo(x - 8 * s, y + 1 * s, x - 7 * s, y - 4 * s + Math.sin(floor.t * 3) * s);   // tail flicking
+    fx.moveTo(x - 1.8 * s, y - 10.6 * s); fx.lineTo(x - 1.4 * s, y - 12.8 * s); fx.lineTo(x - 0.2 * s, y - 11.2 * s);
+    fx.moveTo(x + 1.8 * s, y - 10.6 * s); fx.lineTo(x + 1.4 * s, y - 12.8 * s); fx.lineTo(x + 0.2 * s, y - 11.2 * s);
+  } else {
+    fx.ellipse(x, y - 4 * s, 5 * s, 2.4 * s, 0, 0, 7);                                  // walking
+    fx.moveTo(x + f * 8.2 * s, y - 7 * s); fx.arc(x + f * 6 * s, y - 7 * s, 2.2 * s, 0, 7);
+    fx.moveTo(x + f * 5 * s, y - 8.6 * s); fx.lineTo(x + f * 5.2 * s, y - 10.6 * s); fx.lineTo(x + f * 6.4 * s, y - 9.2 * s);
+    fx.moveTo(x + f * 7 * s, y - 8.8 * s); fx.lineTo(x + f * 7.6 * s, y - 10.6 * s); fx.lineTo(x + f * 8.2 * s, y - 8.6 * s);
+    fx.moveTo(x - f * 5 * s, y - 5 * s); fx.quadraticCurveTo(x - f * 9 * s, y - 6 * s, x - f * 9 * s, y - 11 * s);
+    for (const [ox, ph] of [[-3, 1], [-1.5, -1], [2, 1], [3.5, -1]]) { fx.moveTo(x + f * ox * s, y - 2.5 * s); fx.lineTo(x + f * ox * s + ph * w, y); }
+  }
+  fx.stroke(); fx.restore();
+}
+
 // ─── Moods and banter: every agent has a mood that changes every half-minute or so ───
 const MOODS = ['stressed', 'happy', 'silly', 'drunk', 'sleepy', 'grumpy', 'fine', 'fine'];
 const mood = {}, seenAt = {};
@@ -754,7 +851,7 @@ function moodOf(name) {
     let pick = MOODS[Math.floor(Math.random() * MOODS.length)];
     const st = floor.shift && floor.shift.analyst && floor.shift.analyst.status;
     if (st === 'RED' && Math.random() < 0.5) pick = 'stressed';             // a bad shift stresses everyone out
-    if (name === 'DISCO BISCUIT' && pick === 'sleepy') pick = 'drunk';       // the DJ never sleeps
+    if (name === 'NORMAL' && pick === 'sleepy') pick = 'drunk';       // the DJ never sleeps
     mood[name] = { kind: pick, until: floor.t + 20 + Math.random() * 30, ph: Math.random() * 6 };
   }
   return mood[name];
@@ -782,12 +879,14 @@ function stickMan(x, y, s, phase, pose, name) {
       fx.beginPath(); fx.arc(cx - 4 * s, cy, 3.5 * s, Math.PI, 0); fx.arc(cx + 3 * s, cy, 4.5 * s, Math.PI, 0); fx.lineTo(cx - 7.5 * s, cy); fx.stroke();
       if (Math.floor(t * 2) % 3 === 0) { fx.beginPath(); fx.moveTo(cx, cy + 2 * s); fx.lineTo(cx - 2 * s, cy + 6 * s); fx.lineTo(cx + 1 * s, cy + 6 * s); fx.lineTo(cx - 1 * s, cy + 10 * s); fx.stroke(); }
     }
-    drawMan(x, y, s, phase, pose);
+    if (name === 'OATIE MAN') { headK = 1.7; drawMan(x, y, s * 0.58, phase, pose); headK = 1; }   // a very intelligent baby
+    else drawMan(x, y, s, phase, pose);
     fx.restore();
     return;
   }
   drawMan(x, y, s, phase, pose);
 }
+let headK = 1;                                              // head size: a baby's is bigger for its body
 function drawMan(x, y, s, phase, pose) {
   // y = feet. s = scale.
   if (pose === 'lie') {                       // flat out on the sofa, one leg waving
@@ -802,7 +901,8 @@ function drawMan(x, y, s, phase, pose) {
   const seat = pose === 'type' || pose === 'bench' ? 4.5 * s : 0;            // sitting down: everything lower
   const hip = y - 12 * s + seat, sh = y - 22 * s + seat, head = y - 27 * s + seat;
   fx.beginPath();
-  fx.arc(x, head, 3.6 * s, 0, Math.PI * 2);
+  fx.arc(x, head - (headK - 1) * 3 * s, 3.6 * s * headK, 0, Math.PI * 2);
+  if (headK > 1) { fx.moveTo(x + 4.5 * s * headK, head + 1.2 * s); fx.arc(x + 3.6 * s * headK, head + 1.2 * s, 0.9 * s * headK, 0, Math.PI * 2); }   // a dummy
   fx.moveTo(x, head + 3.6 * s); fx.lineTo(x, hip);
   if (pose === 'walk') {
     const a = Math.sin(phase) * 0.6;
@@ -834,6 +934,16 @@ function drawMan(x, y, s, phase, pose) {
     fx.moveTo(x, hip); fx.lineTo(x - 5 * s, y); fx.moveTo(x, hip); fx.lineTo(x + 5 * s, y);
     fx.moveTo(x, sh); fx.lineTo(x - 7 * s, sh - 6 * s - b * 3 * s);
     fx.moveTo(x, sh); fx.lineTo(x + 7 * s, sh + (b > 0 ? -8 : 4) * s);
+  } else if (pose === 'stroke') {           // bending to stroke the cat
+    const k = Math.sin(phase * 2.5) * 1.5 * s;
+    fx.moveTo(x, hip); fx.lineTo(x - 2 * s, y); fx.moveTo(x, hip); fx.lineTo(x + 3 * s, y);
+    fx.moveTo(x, sh); fx.lineTo(x + 6 * s, sh + 5 * s); fx.lineTo(x + 10 * s + k, hip + 2 * s);
+    fx.moveTo(x, sh); fx.lineTo(x - 4 * s, sh + 7 * s);
+  } else if (pose === 'drum') {             // drumming on the toilet lid, both sticks going
+    const b = Math.sin(phase * 6), c = Math.sin(phase * 6 + Math.PI);
+    fx.moveTo(x, hip); fx.lineTo(x - 4 * s, y); fx.moveTo(x, hip); fx.lineTo(x + 4 * s, y);
+    fx.moveTo(x, sh); fx.lineTo(x + 5 * s, sh + 3 * s); fx.lineTo(x + 8 * s, hip - 1 * s - b * 3 * s);
+    fx.moveTo(x, sh); fx.lineTo(x + 3 * s, sh + 4 * s); fx.lineTo(x + 7 * s, hip - 1 * s - c * 3 * s);
   } else if (pose === 'jump') {               // star jump
     const b = Math.abs(Math.sin(phase));
     fx.moveTo(x, hip); fx.lineTo(x - (3 + b * 4) * s, y); fx.moveTo(x, hip); fx.lineTo(x + (3 + b * 4) * s, y);
@@ -873,6 +983,7 @@ function drawMan(x, y, s, phase, pose) {
 }
 
 function text(str, x, y, size, alpha, align) {
+  str = String(str).replace(/~\w+$/, '');                    // NORMAL~STATS shows as NORMAL
   fx.globalAlpha = alpha; fx.fillStyle = '#fff';
   fx.font = `300 ${size}px "IBM Plex Mono", monospace`; fx.textAlign = align || 'center';
   fx.fillText(str, x, y); fx.globalAlpha = 1;
@@ -906,12 +1017,12 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 // some lines know what's really going on
 function newsLine(name) {
   const L = floor.shift || {}, J = L.jobs || {};
-  if (name === 'GOD' && J.intel && J.intel.ok) return `Threat level: ${J.intel.level}. Nobody panic. Except Codpiece.`;
+  if (name === 'GCHQ' && J.intel && J.intel.ok) return `Threat level: ${J.intel.level}. Nobody panic. Except Codpiece.`;
   if (name === 'CODPIECE' && J.gatekeeper && J.gatekeeper.cert && J.gatekeeper.cert.days != null) return `${J.gatekeeper.cert.days} days on the certificate. I’m not counting. I’m counting.`;
-  if (name === 'DISCO BISCUIT' && L.dj && L.dj.track) return `Next up: ${L.dj.track.title}. Banger. Probably.`;
-  if (name === 'NORMAL' && L.analyst) return L.analyst.status === 'GREEN' ? 'Status GREEN. Suspicious.' : `Status ${L.analyst.status}. Someone owes me a biscuit.`;
-  if (name === 'GOATMAN' && J.clerk) return J.clerk.changed ? 'The guidance CHANGED. I need a lie down.' : 'Guidance unchanged. Thrilling.';
-  if (name === 'KIPPER' && J.scout) return `${J.scout.count} tracks. I counted twice.`;
+  if (name === 'NORMAL' && L.dj && L.dj.track) return `Next up: ${L.dj.track.title}. Banger. Probably.`;
+  if (name === 'FRANKIE' && L.analyst) return L.analyst.status === 'GREEN' ? 'Status GREEN. Suspicious.' : `Status ${L.analyst.status}. Someone owes me a biscuit.`;
+  if (name === 'BORING' && J.clerk) return J.clerk.changed ? 'The guidance CHANGED. I need a lie down.' : 'Guidance unchanged. Thrilling.';
+  if (name === 'JACK MAN' && J.scout) return `${J.scout.count} tracks. I counted twice.`;
   const slow = (L.patrol || []).filter(p => p.ms > 1500)[0];
   if ((name === 'MONKEY MONKEY' || name === 'FISH FISH') && slow) return `${slow.path} took ${slow.ms} ms. Who did this?`;
   return null;
@@ -927,7 +1038,7 @@ function banter(s) {
     const others = names.filter(n => n !== a).sort((p, q) => Math.hypot(seenAt[p].x - seenAt[a].x, seenAt[p].y - seenAt[a].y) - Math.hypot(seenAt[q].x - seenAt[a].x, seenAt[q].y - seenAt[a].y));
     const b = others[0], near = Math.hypot(seenAt[b].x - seenAt[a].x, seenAt[b].y - seenAt[a].y) < 260 * s;
     const news = Math.random() < 0.35 ? newsLine(a) : null;
-    const said = news || (near && Math.random() < 0.45 ? pick(AT).replace(/\{B\}/g, b.split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ')) : pick(LINES[ma] || LINES.fine));
+    const said = news || (near && Math.random() < 0.45 ? pick(AT).replace(/\{B\}/g, b.replace(/~\w+$/, '').split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ')) : pick(LINES[ma] || LINES.fine));
     bubbles.push({ who: a, text: said, t0: floor.t, life: 3.2 });
     if (near && Math.random() < 0.6) bubbles.push({ who: b, text: pick(REPLIES[moodOf(b).kind] || REPLIES.fine), t0: floor.t + 1.4, life: 2.6 });
   }

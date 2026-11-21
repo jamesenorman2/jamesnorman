@@ -20,7 +20,7 @@ window.JN = {
     try { const r = await fetch('/api/research', { cache: 'no-store' }); return (await r.json()).ran === true; }
     catch (e) { return false; }
   },
-  // Privacy-friendly visit counting for Agent Pigeon: the page path, the referring site's domain and phone or
+  // Privacy-friendly visit counting for Agent Snoopy: the page path, the referring site's domain and phone or
   // desktop. No cookies, no IP addresses, nothing that identifies a person.
   view(path) {
     try {

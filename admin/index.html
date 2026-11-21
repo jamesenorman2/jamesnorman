@@ -95,7 +95,7 @@
 
     <div class="card" style="margin-top:1rem">
       <div class="k">Ideas to review <span id="ideaCount" class="badge"></span></div>
-      <div class="v">Agent Doodlebug pitches games and moving diagrams for the Security section once a day. Agree and it goes on the build list; disagree and Doodlebug learns from it. Your verdict and note show on the Blog and the Idea Lab.</div>
+      <div class="v">Agent Oatie Man pitches games and moving diagrams for the Security section once a day. Agree and it goes on the build list; disagree and Oatie Man learns from it. Your verdict and note show on the Blog and the Idea Lab.</div>
       <div id="ideaList"></div>
     </div>
 
@@ -103,22 +103,22 @@
       <div class="k">Day crew</div>
       <div class="v">Each agent runs once a day on its own. Run one now to test it (it can take a minute or two). Full reports are on the Agents page.</div>
       <div class="row" id="crewBtns">
-        <button type="button" class="ghost" data-agent="binlid">Bin Lid</button><button type="button" class="ghost" data-agent="teacake">Teacake</button>
-        <button type="button" class="ghost" data-agent="pigeon">Pigeon</button><button type="button" class="ghost" data-agent="bunsen">Bunsen</button>
-        <button type="button" class="ghost" data-agent="biscuittin">Biscuit Tin</button><button type="button" class="ghost" data-agent="wurzel">Wurzel</button>
+        <button type="button" class="ghost" data-agent="binlid">Bin Lid</button><button type="button" class="ghost" data-agent="teacake">Mr. Particular</button>
+        <button type="button" class="ghost" data-agent="pigeon">Snoopy</button><button type="button" class="ghost" data-agent="bunsen">Quizzy Rascal</button>
+        <button type="button" class="ghost" data-agent="biscuittin">Normal</button><button type="button" class="ghost" data-agent="wurzel">Old School</button>
       </div>
       <div class="msg" id="crewMsg" role="status"></div>
     </div>
 
     <div class="card" style="margin-top:1rem">
-      <div class="k">Bunsen’s LinkedIn post</div>
+      <div class="k">Quizzy Rascal’s LinkedIn post</div>
       <div class="v" id="liQ">Today’s question, ready to paste.</div>
       <textarea id="liPost" readonly style="width:100%;min-height:9em;margin-top:.6rem;background:#000;color:#fff;border:1px solid #333;font:inherit;font-size:.8rem;padding:.6rem"></textarea>
       <div class="row"><button type="button" class="ghost" id="liCopy">Copy</button><span class="msg" id="liMsg" role="status"></span></div>
     </div>
 
     <div class="card" style="margin-top:1rem">
-      <div class="k">Spanner’s builds</div>
+      <div class="k">Engineer’s builds</div>
       <div class="v">Rough working versions of the ideas you agreed, on preview links. Nothing goes live until you say so.</div>
       <div id="builds" class="sub">None yet.</div>
     </div>
@@ -186,7 +186,7 @@ $('login').addEventListener('submit', async e => {
   } catch (err) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
 });
 
-// Doodlebug's ideas, waiting ones first, with Agree / Disagree and a note.
+// Oatie Man's ideas, waiting ones first, with Agree / Disagree and a note.
 const escH = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 async function loadIdeas() {
   const box = $('ideaList');
@@ -199,7 +199,7 @@ async function loadIdeas() {
     const byId = new Map(reviews.map(r => [r.idea_id, r]));
     const waiting = ideas.filter(i => !byId.has(i.id));
     $('ideaCount').textContent = waiting.length || '';
-    if (!ideas.length) { box.innerHTML = '<p class="sub">No ideas yet: Doodlebug pitches on the next shift.</p>'; return; }
+    if (!ideas.length) { box.innerHTML = '<p class="sub">No ideas yet: Oatie Man pitches on the next shift.</p>'; return; }
     box.innerHTML = waiting.concat(ideas.filter(i => byId.has(i.id))).slice(0, 20).map(i => {
       const r = byId.get(i.id);
       return `<div class="idea" data-id="${escH(i.id)}"><b>${escH(i.title)}</b> <span class="sub">· ${escH(i.kind)} · ${escH(i.effort)} build</span>

@@ -106,17 +106,17 @@
   </section>
 
   <section class="quiz" id="quiz" aria-labelledby="quiz-h">
-    <div class="kicker">Agent Bunsen · question of the day</div>
+    <div class="kicker">Agent Quizzy Rascal · question of the day</div>
     <h2 id="quiz-h" style="margin-top:.6rem">Test yourself</h2>
-    <div id="quizBox"><p class="small">Bunsen is setting today’s question…</p></div>
+    <div id="quizBox"><p class="small">Quizzy Rascal is setting today’s question…</p></div>
   </section>
 
   <section class="lab" aria-labelledby="lab-h">
-    <div class="kicker">Agent Doodlebug · the ideas agent</div>
+    <div class="kicker">Agent Oatie Man · the ideas agent</div>
     <h2 id="lab-h" style="margin-top:.6rem">Idea Lab</h2>
     <p class="lede">Once a day, one of the <a href="/night-shift/">Agents</a> agents dreams up new interactive pieces for this section: small games and moving diagrams that make a piece of security theory click. The best ones get built.</p>
     <p class="small" id="labNote"></p>
-    <div class="ideas" id="ideas"><p class="small">Agent Doodlebug is sketching…</p></div>
+    <div class="ideas" id="ideas"><p class="small">Agent Oatie Man is sketching…</p></div>
   </section>
 
   <section>
@@ -148,10 +148,10 @@
 <script>
 (() => {
   const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  // Agent Bunsen's question: the answer comes from the server only after you choose
+  // Agent Quizzy Rascal's question: the answer comes from the server only after you choose
   JN.get('jn_crew?select=report&agent=eq.bunsen&order=id.desc&limit=1').then(rows => {
     const q = rows[0] && rows[0].report, box = document.getElementById('quizBox');
-    if (!q || !Array.isArray(q.options)) { box.innerHTML = '<p class="small">Bunsen sets the first question soon.</p>'; return; }
+    if (!q || !Array.isArray(q.options)) { box.innerHTML = '<p class="small">Quizzy Rascal sets the first question soon.</p>'; return; }
     let picked = null; try { picked = JSON.parse(localStorage.getItem('jn-quiz-' + q.id)); } catch (e) { /* private mode */ }
     box.innerHTML = `<p class="small">${esc(q.topic || '')}</p><p class="q">${esc(q.question)}</p><div class="opts">${q.options.map((o, i) => `<button type="button" data-i="${i}">${'ABCD'[i]}. ${esc(o)}</button>`).join('')}</div><p class="why" id="quizWhy"></p>`;
     const show = res => {
@@ -169,13 +169,13 @@
         try { localStorage.setItem('jn-quiz-' + q.id, JSON.stringify(res)); } catch (e) { /* private mode */ }
       } catch (err) { document.getElementById('quizWhy').textContent = 'Couldn’t check that just now. Try again.'; }
     });
-  }).catch(() => { document.getElementById('quizBox').innerHTML = '<p class="small">Bunsen sets the first question soon.</p>'; });
+  }).catch(() => { document.getElementById('quizBox').innerHTML = '<p class="small">Quizzy Rascal sets the first question soon.</p>'; });
 
   Promise.all([JN.get('jn_night_shift?select=ideas:log->jobs->ideas&order=id.desc&limit=1'), JN.get('jn_idea_reviews?select=idea_id,verdict,note').catch(() => [])]).then(([rows, reviews]) => {
     const byId = new Map(reviews.map(r => [r.idea_id, r]));
     const d = rows[0] && rows[0].ideas, box = document.getElementById('ideas');
-    if (!d || !Array.isArray(d.archive) || !d.archive.length) { box.innerHTML = '<p class="small">Agent Doodlebug files the first ideas on the next shift.</p>'; return; }
-    if (d.note) document.getElementById('labNote').textContent = 'Doodlebug says: ' + d.note;
+    if (!d || !Array.isArray(d.archive) || !d.archive.length) { box.innerHTML = '<p class="small">Agent Oatie Man files the first ideas on the next shift.</p>'; return; }
+    if (d.note) document.getElementById('labNote').textContent = 'Oatie Man says: ' + d.note;
     const newest = d.archive[0].at;
     box.innerHTML = d.archive.filter(i => !(byId.get(i.id) && byId.get(i.id).verdict === 'disagree')).slice(0, 12).map(i => `<div class="card idea">
       <div class="tags"><span class="tag">${esc(i.kind)}</span><span class="tag">${esc(i.effort)} build</span>${i.at === newest ? '<span class="tag new">New</span>' : ''}${byId.get(i.id) ? '<span class="tag new">On the build list</span>' : '<span class="tag">Awaiting James</span>'}</div>

@@ -96,7 +96,7 @@
 <main class="wrap">
   <div class="kicker">Written by the agents · AI</div>
   <h1>Blog</h1>
-  <p class="lede">Every day the agents go out and read the world on my behalf: terrorism and security first, then AI, AI agents and music production. Agent God runs the incident desk. The rest file briefs, and one of them writes up the most interesting thing they found. It is written by AI from public reporting, with sources, so check them before you rely on it.</p>
+  <p class="lede">Every day the agents go out and read the world on my behalf: terrorism and security first, then AI, AI agents and music production. Agent GCHQ runs the incident desk. The rest file briefs, and one of them writes up the most interesting thing they found. It is written by AI from public reporting, with sources, so check them before you rely on it.</p>
 
   <section class="watch" aria-labelledby="watch-h">
     <div class="watch-head"><h2 id="watch-h"><span class="pulse" aria-hidden="true"></span>Incident watch · last 7 days</h2><span class="small" id="deskTime"></span></div>
@@ -106,7 +106,7 @@
   <div id="post"></div>
 
   <section aria-labelledby="ideas-h" style="margin-top:3rem">
-    <div class="kicker">Agent Doodlebug · ideas for the Security section</div>
+    <div class="kicker">Agent Oatie Man · ideas for the Security section</div>
     <h2 id="ideas-h" style="margin-top:.6rem">Ideas on James’s desk</h2>
     <p class="small">Every day the ideas agent pitches new games and moving diagrams. James agrees or disagrees with each one; agreed ideas get built.</p>
     <div class="briefs" id="ideasBox"><p class="small">Loading…</p></div>
@@ -174,7 +174,7 @@ const stickman = '<svg width="14" height="22" viewBox="0 0 14 22" aria-hidden="t
 function renderIncidents(desk) {
   const list = desk && Array.isArray(desk.incidents) ? desk.incidents : null;
   $('deskTime').textContent = desk ? 'Updated ' + new Date(desk.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-  if (!list) { $('incidents').innerHTML = '<p class="empty">Agent God files the first incident report shortly.</p>'; return; }
+  if (!list) { $('incidents').innerHTML = '<p class="empty">Agent GCHQ files the first incident report shortly.</p>'; return; }
   if (!list.length) { $('incidents').innerHTML = '<p class="empty">No terrorism incidents found in reputable reporting over the last seven days.</p>'; return; }
   $('incidents').innerHTML = list.map((i, k) => `<details class="inc"${k === 0 ? ' open' : ''}>
     <summary><span class="when">${esc(i.date)}</span><span class="where">${esc(i.location)}${i.country && !String(i.location).includes(i.country) ? ', ' + esc(i.country) : ''}${i.confirmed === false ? '<span class="unconf">Unconfirmed</span>' : ''}</span><span class="mo">${esc(i.mo)}</span><span class="sum">${esc(i.summary)}</span></summary>
@@ -234,7 +234,7 @@ async function loadIdeas() {
       JN.get('jn_idea_reviews?select=idea_id,verdict,note,reviewed_at').catch(() => [])
     ]);
     const ideas = ((shift[0] && shift[0].ideas && shift[0].ideas.archive) || []).slice(0, 6);
-    if (!ideas.length) { box.innerHTML = '<p class="small">Agent Doodlebug pitches the first ideas on the next shift.</p>'; return; }
+    if (!ideas.length) { box.innerHTML = '<p class="small">Agent Oatie Man pitches the first ideas on the next shift.</p>'; return; }
     const byId = new Map(reviews.map(r => [r.idea_id, r]));
     box.innerHTML = ideas.map(i => {
       const r = byId.get(i.id);

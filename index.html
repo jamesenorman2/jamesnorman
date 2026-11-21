@@ -107,6 +107,12 @@
   .chairman svg{position:absolute;left:0;bottom:0;width:96px;height:96px;overflow:visible}
   .chairman .bub{position:absolute;bottom:100px;left:50%;translate:-50% 0;font-size:.72rem;letter-spacing:.04em;color:#fff;background:#000;border:1px solid #fff;border-radius:6px;padding:.32rem .6rem;white-space:nowrap;opacity:0;transition:opacity .25s}
   .chairman .bub.on{opacity:1}
+  .chairman.loo{width:96px}
+  .stickbtn{position:fixed;left:1rem;bottom:.9rem;z-index:6;background:none;border:0;padding:.3rem;cursor:pointer;opacity:.4;transition:opacity .2s,transform .2s}
+  .stickbtn svg{width:14px;height:24px;display:block}
+  .stickbtn:hover,.stickbtn:focus-visible{opacity:1;transform:translateY(-2px)}
+  body.tv .stickbtn,body.shell-on .stickbtn{display:none}
+  @media(max-width:700px){.stickbtn{left:.5rem;bottom:calc(.5rem + env(safe-area-inset-bottom,0px))}}
   .chairman .fx{filter:drop-shadow(0 0 2px #a55bff) drop-shadow(0 0 5px #8f4bff)}
   body.shell-on .chairman{bottom:4.8rem}
   body.tv .chairman{display:none!important}
@@ -269,7 +275,9 @@
   </div>
 </div>
 <iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page"></iframe>
-<div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/></svg></div>
+<button class="stickbtn" id="stickBtn" type="button" title="Bring on a stick man" aria-label="Bring on a stick man"><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-8-6M13 15l8-6"/></svg></button>
+<div class="chairman loo" id="loo" aria-hidden="true"><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M40 92h18M44 92l2-14h8l2 14M34 70h30q0 10-10 10H44q-10 0-10-10zM34 70h30M60 70V50h8v20M58 50h12"/></svg></div>
+<div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/><text class="tx" fill="#fff" stroke="none" font-size="8" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text></svg></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
@@ -372,7 +380,7 @@ async function chosenTrack() {
   } catch (e) { /* no override */ }
   // Every track James has on SoundCloud, plus the agents' recent picks; choose at random, avoiding the
   // last few this browser has played, and credit the agent who picked it (or a random member of the crew).
-  const CREW = ['Agent Disco Biscuit', 'Agent Monkey Monkey', 'Fish Fish', 'Agent Masterpiece', 'Agent Kipper', 'Agent Normal', 'Agent Codpiece', 'Agent Fish', 'Agent God', 'Agent Goatman'];
+  const CREW = ['Agent Normal', 'Agent Monkey Monkey', 'Fish Fish', 'Agent Masterpiece', 'Agent Jack Man', 'Agent Frankie', 'Agent Codpiece', 'Agent Fish', 'Agent GCHQ', 'Agent Boring'];
   const [catalogue, rows] = await Promise.all([
     fetch('/api/tracks').then(r => r.json()).then(d => d.tracks || []).catch(() => []),
     fetch(SETTINGS_URL.replace(/jn_site_settings.*$/, 'jn_night_shift?select=dj:log->dj,battle:log->battle&order=id.desc&limit=24'),
@@ -381,7 +389,7 @@ async function chosenTrack() {
   const pool = new Map();
   for (const t of catalogue) if (SC_URL_RE.test(t.url)) pool.set(t.url, { ...t, by: CREW[Math.floor(Math.random() * CREW.length)] });
   for (const row of Array.isArray(rows) ? rows : []) {
-    if (row.dj && row.dj.track) pool.set(row.dj.track.url, { ...row.dj.track, by: 'Agent Disco Biscuit' });
+    if (row.dj && row.dj.track) pool.set(row.dj.track.url, { ...row.dj.track, by: 'Agent Normal' });
     for (const k of ['a', 'b']) { const p = row.battle && row.battle[k]; if (p && p.track) pool.set(p.track.url, { ...p.track, by: { VANTAGE: 'Agent Monkey Monkey', LOWLIGHT: 'Fish Fish' }[p.agent] || p.agent.replace(/\b\w/g, c => c.toUpperCase()).replace(/\B\w+/g, w => w.toLowerCase()) }); }
   }
   return { url: DEFAULT_SOUNDCLOUD, fixed: false, pool: [...pool.values()].filter(p => SC_URL_RE.test(p.url)), crew: CREW };
@@ -2218,9 +2226,9 @@ const PEEK = {
   seek: ['Don’t fast-forward my track!', 'Skipping the build-up? Criminal.', 'You’ve missed the best bit.', 'No skipping the breakdown!'],
   scut: ['Time for a scut monkey.'],
   break: ['This breakdown though!', 'Goosebumps. Actual goosebumps.', 'Hands in the air for this bit!', 'I’m not crying, you’re crying.', 'Wait for it… wait for it…', 'This is my favourite bit!', 'Somebody hold my tea.', 'Here it comes!', 'I love this tune so much.'],
-  idle: ['Continue.', 'Carry on.', 'Nice choice.', 'Is this one of Disco Biscuit’s picks?', 'I’m on my break. Don’t tell Normal.', 'Turn it up!', 'Just checking you’re still here.', 'Great tune!', 'As you were.']
+  idle: ['Continue.', 'Carry on.', 'Nice choice.', 'Is this one of Normal’s picks?', 'I’m on my break. Don’t tell Normal.', 'Turn it up!', 'Just checking you’re still here.', 'Great tune!', 'As you were.']
 };
-const PEEK_NAMES = ['DISCO BISCUIT', 'MONKEY MONKEY', 'FISH FISH', 'MASTERPIECE', 'LLOYD', 'KIPPER', 'NORMAL', 'CODPIECE', 'FISH', 'GOD', 'GOATMAN', 'WURZEL', 'BISCUIT TIN', 'GRUMBLE', 'PIGEON', 'TEACAKE', 'BUNSEN', 'CRUMPET', 'SPANNER', 'DOODLEBUG', 'BIN LID'];
+const PEEK_NAMES = ['NORMAL', 'MONKEY MONKEY', 'FISH FISH', 'MASTERPIECE', 'LLOYD', 'JACK MAN', 'FRANKIE', 'CODPIECE', 'FISH', 'GCHQ', 'BORING', 'OLD SCHOOL', 'NORMAL', 'BLOG-HEAD', 'SNOOPY', 'MR. PARTICULAR', 'QUIZZY RASCAL', 'HANDBOOK', 'ENGINEER', 'OATIE MAN', 'BIN LID'];
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 let lastPeek = -1e9, peekTimer = 0;
 function peek(kind) {
@@ -2251,7 +2259,7 @@ function chairDance() {
   const el = $('chairman'); if (!el || chairBusy) return;
   chairBusy = true; lastChair = performance.now();
   const ch = el.querySelector('.ch'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), bub = el.querySelector('.bub');
-  el.querySelector('.pt').setAttribute('d', ''); el.querySelector('.fx').setAttribute('d', '');
+  el.querySelector('.pt').setAttribute('d', ''); el.querySelector('.fx').setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   const from = Math.random() < 0.5 ? -1 : 1;                                  // walks in from the left or the right
   el.style.left = (18 + Math.random() * 55) + 'vw'; el.classList.add('on');
   const G = 92, SEAT = 14, CX = 48, T0 = performance.now(), END = 10.5;
@@ -2295,12 +2303,12 @@ function chairDance() {
 }
 // UV: an agent pops up, gets the UV paint out, paints their face and goes "Woohoo!"
 let lastPaint = -1e9;
-function uvPaint() {
+function uvPaint(force) {
   const el = $('chairman');
-  if (!el || chairBusy || calm || !document.body.classList.contains('intro-done') || performance.now() - lastPaint < 120000) return;
+  if (!el || chairBusy || calm || (!force && (!document.body.classList.contains('intro-done') || performance.now() - lastPaint < 120000))) return;
   chairBusy = true; lastPaint = performance.now();
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub');
-  ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', '');
+  ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   el.style.left = (18 + Math.random() * 55) + 'vw'; el.classList.add('on');
   const G = 92, CX = 48, T0 = performance.now(), END = 8.5;
   const pose = (hx, hy, legA, legB, armL, armR) => {
@@ -2337,6 +2345,121 @@ function uvPaint() {
   requestAnimationFrame(tick);
 }
 window.JN_lights = sc => { if (sc) { score = sc; lloydKey = ''; lloydState = null; } return { scene, state: lloydState && lloydState.intensity, note: lloydState && lloydState.note }; };   // try a lighting plan from the console
+// Dancing away, then "Oh no, I need a poo!": a dash for the loo, straight past it, and "Oops, too late."
+let lastPoo = -1e9;
+function pooRun(force) {
+  const el = $('chairman'), loo = $('loo');
+  if (!el || !loo || chairBusy || calm || (!force && !document.body.classList.contains('intro-done'))) return;
+  chairBusy = true; lastPoo = performance.now();
+  const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub');
+  ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', ''); el.querySelector('.tx').textContent = '';
+  const vw = innerWidth / 100, start = 8 + Math.random() * 20, looAt = Math.min(start + 30, 70);
+  el.style.left = start + 'vw'; loo.style.left = looAt + 'vw'; el.classList.add('on'); loo.classList.add('on');
+  const G = 92, CX = 48, T0 = performance.now(), END = 10.5;
+  const pose = (hx, hy, legA, legB, armL, armR) => {
+    hd.setAttribute('cx', hx); hd.setAttribute('cy', hy - 21);
+    const sh = hy - 12, leg = a => `M${hx} ${hy}L${hx + Math.sin(a) * 15} ${hy + Math.cos(a) * 15}`, arm = a => `M${hx} ${sh}L${hx + Math.sin(a) * 12} ${sh - Math.cos(a) * 12}`;
+    bd.setAttribute('d', `M${hx} ${hy - 16.5}V${hy}` + leg(legA) + leg(legB) + arm(armL) + arm(armR));
+  };
+  const say = (txt, on) => { if (on) { if (bub.textContent !== txt) bub.textContent = txt; bub.classList.add('on'); } else bub.classList.remove('on'); };
+  const tick = () => {
+    const t = (performance.now() - T0) / 1000, beat = music.beat || 0.47, hy0 = G - 15;
+    if (t > END) { el.classList.remove('on'); loo.classList.remove('on'); say('', false); setTimeout(() => { chairBusy = false; }, 500); return; }
+    if (t < 3) {                                                                   // dancing, not a care in the world
+      const ph = t / beat * Math.PI;
+      pose(CX, hy0 - Math.abs(Math.sin(ph)) * 4, 0.25, -0.25, -1 + Math.sin(ph) * 0.4, 1 + Math.sin(ph) * 0.4);
+    } else if (t < 4.6) {                                                          // the moment it hits
+      const j = Math.sin(t * 40) * 1.2;
+      pose(CX + j, hy0, 0.08, -0.08, -2.6, 2.6); say('Oh no, I need a poo!', true);
+    } else if (t < 6.4) {                                                          // the dash, and straight past the loo
+      const k = (t - 4.6) / 1.8, step = Math.sin(t * 22);
+      el.style.left = (start + (looAt + 7 - start) * k) + 'vw'; say('', false);
+      pose(CX, hy0 - Math.abs(step) * 2, step * 0.8, -step * 0.8, step * 1.2 + 0.6, -step * 1.2 + 0.6);
+    } else if (t < 6.9) {                                                          // skid
+      pose(CX + 2, hy0, 0.5, 0.2, 1.4, 1.1);
+    } else {                                                                       // turns to the screen
+      pose(CX, hy0, 0.18, -0.18, -2.1 + Math.sin(t * 3) * 0.1, 2.1 - Math.sin(t * 3) * 0.1);
+      say('Oops, too late.', t < END - 0.8);
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+setInterval(() => { if (musicOn() && performance.now() - lastPoo > 420000 && performance.now() - lastPeek > 30000 && Math.random() < 0.12) pooRun(); }, 30000);   // very occasionally
+// Frankie's pick: a stick man with a cooking pot on his head, banging it with a spoon on every beat.
+function potDrum(force) {
+  const el = $('chairman');
+  if (!el || chairBusy || calm || (!force && !document.body.classList.contains('intro-done'))) return;
+  chairBusy = true;
+  const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub'), tx = el.querySelector('.tx');
+  ch.setAttribute('d', ''); fx.setAttribute('d', '');
+  el.style.left = (15 + Math.random() * 55) + 'vw'; el.classList.add('on');
+  const G = 92, CX = 48, T0 = performance.now(), END = 9;
+  const tick = () => {
+    const t = (performance.now() - T0) / 1000, beat = music.beat || 0.47, hy = G - 15 - Math.abs(Math.sin(t / beat * Math.PI)) * 2;
+    if (t > END) { el.classList.remove('on'); bub.classList.remove('on'); setTimeout(() => { pt.setAttribute('d', ''); tx.textContent = ''; chairBusy = false; }, 500); return; }
+    const ph = (t / beat) % 1, hitNow = ph < 0.18;                                   // the spoon lands on the beat
+    hd.setAttribute('cx', CX); hd.setAttribute('cy', hy - 21);
+    const sh = hy - 12, ang = hitNow ? 0.15 : 0.15 - Math.sin(ph * Math.PI) * 1.1;   // arm comes down onto the pot
+    const ex = CX + 7, ey = sh - 4, hx2 = ex + Math.sin(ang) * 8, hy2 = ey - Math.cos(ang) * 8;
+    const sx = hx2 + Math.sin(ang - 0.9) * 9, sy = hy2 - Math.cos(ang - 0.9) * 9;
+    bd.setAttribute('d', `M${CX} ${hy - 16.5}V${hy}M${CX} ${hy}L${CX - 5} ${hy + 15}M${CX} ${hy}L${CX + 5} ${hy + 15}M${CX} ${sh}L${CX - 9} ${sh + 6}M${CX} ${sh}L${ex} ${ey}L${hx2} ${hy2}`);
+    const top = hy - 25.5;                                                          // the pot, sitting on his head
+    pt.setAttribute('d', `M${CX - 7} ${top}h14l-1.5 -7h-11zM${CX - 8.5} ${top - 7}h17M${CX - 7} ${top - 3}h-3M${CX + 7} ${top - 3}h3M${hx2} ${hy2}L${sx} ${sy}M${sx + 1.6} ${sy}a1.6 2.4 0 1 0 -3.2 0a1.6 2.4 0 1 0 3.2 0`);
+    tx.setAttribute('x', CX + 16); tx.setAttribute('y', top - 10); tx.textContent = hitNow ? 'BONG' : '';
+    if (t > 1.5 && t < 4.5) { if (bub.textContent !== 'Yeah, freaking out, freaking out!') bub.textContent = 'Yeah, freaking out, freaking out!'; bub.classList.add('on'); } else bub.classList.remove('on');
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+let lastPot = -1e9;
+setInterval(() => { if (musicOn() && !chairBusy && performance.now() - lastPot > 480000 && performance.now() - lastPeek > 30000 && Math.random() < 0.12) { lastPot = performance.now(); (Math.random() < 0.5 ? potDrum : catStroke)(); } }, 30000);   // now and then
+// Frankie and his tiger baby: a cat strolls in, he gives it a stroke, and says so.
+function catPath(x, y, f, sit, step) {
+  const w = Math.sin(step) * 1.6;
+  if (sit) return `M${x + 3.2} ${y - 4}a3.2 4 0 1 0 -6.4 0a3.2 4 0 1 0 6.4 0M${x + 2.4} ${y - 9}a2.4 2.4 0 1 0 -4.8 0a2.4 2.4 0 1 0 4.8 0` +
+    `M${x - 1.8} ${y - 10.6}l0.4 -2.2l1.2 1.6M${x + 1.8} ${y - 10.6}l-0.4 -2.2l-1.2 1.6M${x - 3} ${y}q-5 1 -4 -4`;
+  return `M${x + 5} ${y - 4}a5 2.4 0 1 0 -10 0a5 2.4 0 1 0 10 0M${x + f * 8.2} ${y - 7}a2.2 2.2 0 1 0 -4.4 0a2.2 2.2 0 1 0 4.4 0` +
+    `M${x + f * 5} ${y - 8.6}l${f * 0.2} -2l${f * 1.2} 1.4M${x + f * 7} ${y - 8.8}l${f * 0.6} -1.8l${f * 0.6} 2.2M${x - f * 5} ${y - 5}q${-f * 4} -1 ${-f * 4} -6` +
+    [[-3, 1], [-1.5, -1], [2, 1], [3.5, -1]].map(([ox, ph]) => `M${x + f * ox} ${y - 2.5}L${x + f * ox + ph * w} ${y}`).join('');
+}
+function catStroke(force) {
+  const el = $('chairman');
+  if (!el || chairBusy || calm || (!force && !document.body.classList.contains('intro-done'))) return;
+  chairBusy = true;
+  const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub'), tx = el.querySelector('.tx');
+  pt.setAttribute('d', ''); fx.setAttribute('d', ''); tx.textContent = '';
+  el.style.left = (12 + Math.random() * 50) + 'vw'; el.classList.add('on');
+  const G = 92, CX = 40, T0 = performance.now(), END = 10.5, SIT = CX + 15;
+  const say = txt => { if (txt) { if (bub.textContent !== txt) bub.textContent = txt; bub.classList.add('on'); } else bub.classList.remove('on'); };
+  const tick = () => {
+    const t = (performance.now() - T0) / 1000, hy = G - 15;
+    if (t > END) { el.classList.remove('on'); say(''); setTimeout(() => { ch.setAttribute('d', ''); chairBusy = false; }, 500); return; }
+    hd.setAttribute('cx', CX); hd.setAttribute('cy', hy - 21);
+    const sh = hy - 12;
+    let cx, sit = false, f = -1, step = t * 14;
+    if (t < 1.6) cx = 190;                                                           // no cat yet
+    else if (t < 4) cx = 190 - (190 - SIT) * ((t - 1.6) / 2.4);                      // in it comes
+    else if (t < 8.4) { cx = SIT; sit = true; }                                     // a good long stroke
+    else { cx = SIT + (t - 8.4) * 70; f = 1; }                                       // and off again
+    ch.setAttribute('d', cx < 150 ? catPath(cx, G, f, sit, step) : '');
+    const stroking = sit, k = Math.sin(t * 5) * 1.5;
+    const arm = stroking ? `M${CX} ${sh}L${CX + 6} ${sh + 5}L${CX + 12 + k} ${hy - 1}` : `M${CX} ${sh}L${CX + 6} ${sh + 7}`;
+    bd.setAttribute('d', `M${CX} ${hy - 16.5}V${hy}M${CX} ${hy}L${CX - 2} ${hy + 15}M${CX} ${hy}L${CX + 3} ${hy + 15}${arm}M${CX} ${sh}L${CX - 5} ${sh + 7}`);
+    say(t < 2.2 ? 'Where’s my tiger baby?' : t > 4.2 && t < 6.2 ? 'There’s my tiger baby!' : t > 6.4 && t < 8.6 ? 'Yeah, freaking out, freaking out.' : '');
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+window.JN_cat = () => { chairBusy = false; catStroke(true); };
+window.JN_pot = () => { chairBusy = false; potDrum(true); };
+// the little stick man in the corner: click him and one of the others comes on
+$('stickBtn').addEventListener('click', () => {
+  if (chairBusy) return;
+  const acts = [() => chairDance(), () => { lastPaint = -1e9; uvPaint(true); }, () => pooRun(true), () => potDrum(true), () => catStroke(true), () => { lastPeek = -1e9; peek(pickOne(['idle', 'break'])); }];
+  pickOne(acts)();
+});
+window.JN_poo = () => { chairBusy = false; lastPoo = -1e9; pooRun(true); };   // try it from the console
 window.JN_paint = () => { chairBusy = false; lastPaint = -1e9; uvPaint(); };   // try it from the console
 window.JN_chair = () => { chairBusy = false; chairDance(); };   // try it from the console
 window.JN_peek = k => { lastPeek = -1e9; peek(k || 'idle'); };      // try it from the console
