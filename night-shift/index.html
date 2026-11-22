@@ -21,7 +21,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">
 <style>
-  .floor{margin:2.5rem 0 0}
+  .floor{margin:2.5rem 0 0;position:relative}
+  .fsbtn{position:absolute;right:.6rem;top:.6rem;z-index:3;padding:.5rem .8rem;font-size:.62rem;letter-spacing:.2em;background:rgba(0,0,0,.6)}
+  .floor.full{position:fixed;inset:0;z-index:200;margin:0;background:#000}
+  .floor.full canvas{height:100%!important}
+  .floor.full .fsbtn{top:max(.6rem,env(safe-area-inset-top,0px));right:max(.6rem,env(safe-area-inset-right,0px))}
+  .fshint{display:none;position:absolute;left:0;right:0;bottom:1rem;text-align:center;font-size:.7rem;letter-spacing:.15em;color:var(--dim);pointer-events:none}
+  @media(orientation:portrait){.floor.full .fshint{display:block}}
+  body.floor-lock{overflow:hidden}
   .floor canvas{display:block;width:100%;height:clamp(420px,52vw,40rem)}
   .findings{list-style:none;margin-top:.4rem}
   .findings li{margin:.7rem 0;font-size:.8rem}
@@ -83,6 +90,8 @@
 
   <section class="floor" aria-label="The crew at work: stick men walking the site, checking each page">
     <canvas id="floor"></canvas>
+    <button type="button" class="ghost fsbtn" id="fsBtn" aria-pressed="false" title="See the whole house full screen (Esc to leave)">Full screen</button>
+    <div class="fshint">Turn your phone sideways for a bigger view</div>
   </section>
 
   <section aria-labelledby="day-h">
@@ -209,7 +218,8 @@ const CREW = [
   }],
   ['AGENT NORMAL', 'DJ. Picks a track for the hour to suit the time of day, and sets up the DJ battle.', L => {
     const d = L.dj; return [d && d.track ? '♪ ' + d.track.title : '–'];
-  }]
+  }],
+  ['AGENT WIFEO', 'Morale. Drops into the ballroom now and then looking beautiful, dances with Frankie, Jack Man and Old School, tells them how loved they are, and strokes the cats.', () => ['Visiting soon, probably']]
 ];
 function renderCrew(L) {
   const box = document.getElementById('crew');
@@ -316,7 +326,7 @@ function layout() {
   const lob = floor.rooms.find(r => r.path === '/'), mus = floor.rooms.find(r => r.path === '/music/');
   if (lob && mus && lob.upper === mus.upper && Math.abs(lob.u + lob.w - mus.u) < 1) {
     const u = Math.min(lob.u, mus.u), w = lob.w + mus.w;
-    Object.assign(mus, { u, w, door: { u: u + w / 2, v: mus.door.v }, centre: { u: u + w / 2, v: mus.centre.v }, ok: lob.ok !== false && mus.ok !== false, ms: Math.max(lob.ms || 0, mus.ms || 0) || mus.ms });
+    Object.assign(mus, { merged: true, u, w, door: { u: u + w / 2, v: mus.door.v }, centre: { u: u + w / 2, v: mus.centre.v }, ok: lob.ok !== false && mus.ok !== false, ms: Math.max(lob.ms || 0, mus.ms || 0) || mus.ms });
     floor.rooms.splice(floor.rooms.indexOf(lob), 1);
   }
   SM = Math.max(0.55, Math.min(2.1, Math.min(Dr, PW / top) / 100));
@@ -360,13 +370,18 @@ const ell = (c, rx) => { fx.beginPath(); fx.ellipse(c[0], c[1], rx, rx * ISO.sq,
 // ─── what is in each office: [fu, fv, fw, fd, height, kind, z0] with fv measured from the door
 //     wall, and stations [fu, fv, pose] the agents work at ───
 const KITS = {
-  '/night-shift/': { title: 'CONTROL ROOM',
-    items: [[0.2, 0.86, 0.6, 0.1, 30, 'screens'], [0.46, 0.88, 0.08, 0.05, 6, 'beacon', 30], [0.1, 0.42, 0.32, 0.16, 9, 'desk'], [0.2, 0.5, 0.12, 0.04, 8, 'monitor', 9], [0.58, 0.42, 0.32, 0.16, 9, 'faders'], [0.84, 0.1, 0.12, 0.1, 12, 'kettle'], [0.03, 0.86, 0.13, 0.06, 24, 'rota']],
+  // A proper CCTV control room: a wall of camera feeds, three operator desks with three screens and a joystick each, a laptop each, the DVR rack and the kettle.
+  '/night-shift/': { title: 'CCTV CONTROL ROOM',
+    items: [[0.12, 0.88, 0.76, 0.08, 34, 'videowall'], [0.47, 0.9, 0.06, 0.04, 6, 'beacon', 34], [0.1, 0.4, 0.23, 0.17, 9, 'cctvdesk'], [0.38, 0.4, 0.23, 0.17, 9, 'cctvdesk'], [0.66, 0.4, 0.23, 0.17, 9, 'cctvdesk'],
+      [0.14, 0.45, 0.07, 0.06, 2, 'laptop', 9], [0.42, 0.45, 0.07, 0.06, 2, 'laptop', 9], [0.7, 0.45, 0.07, 0.06, 2, 'laptop', 9],
+      [0.0, 0.62, 0.07, 0.18, 30, 'rack'], [0.88, 0.06, 0.1, 0.1, 12, 'kettle'], [0.02, 0.1, 0.12, 0.05, 24, 'rota']],
     stations: [[0.07, 0.5, 'type', ['Typing up the shift handover', 'Writing the shift log', 'Reading last night’s report', 'Where’s my tiger baby?', 'Yeah, freaking out, freaking out.']],
-      [0.55, 0.5, 'type', ['Cueing the visuals for the next track', 'Riding the faders', 'Programming a laser for the drop']],
-      [0.5, 0.74, 'point', ['Watching every page on the monitor wall', 'Is that page slow? Zooming in', 'All screens green. Suspicious.']],
-      [0.86, 0.22, 'check', ['Making tea. Eleven sugars.', 'Kettle’s on. The shift can wait.']],
-      [0.1, 0.74, 'think', ['Updating the shift rota', 'Who’s on lates? Not me.']]] },
+      [0.35, 0.5, 'type', ['Cueing the visuals for the next track', 'Working the PTZ joystick', 'Programming a laser for the drop']],
+      [0.63, 0.5, 'type', ['Reviewing last night’s footage', 'Camera 7 is just a plant. Again.']],
+      [0.5, 0.76, 'point', ['Watching every camera on the wall', 'Is that a pigeon or a threat?', 'All screens green. Suspicious.']],
+      [0.88, 0.24, 'check', ['Making tea. Eleven sugars.', 'Kettle’s on. The shift can wait.']],
+      [0.2, 0.76, 'point', ['Zooming in on camera 3', 'Enhance. ENHANCE.']],
+      [0.8, 0.76, 'think', ['Logging an incident', 'Who left the door open on camera 4?']]] },
   // THE BALLROOM: the lobby and the music room knocked into one. Speakers and the DJ booth to the right, the wavy-lines screen, a trippy frame and the
   // record wall along the back, podiums round the dance floor under the mirror ball, boxes of records, a sofa and plants.
   // stations: [fu, fv, pose, lines, standing height, depth nudge]; station 0 is the DJ's, 1 is the guest DJ's (kept for guests)
@@ -377,7 +392,7 @@ const KITS = {
       [0.16, 0.58, 0.07, 0.1, 8, 'podium'], [0.54, 0.58, 0.07, 0.1, 8, 'podium'], [0.22, 0.2, 0.07, 0.1, 8, 'podium'], [0.6, 0.22, 0.07, 0.1, 8, 'podium'],
       [0.4, 0.4, 0.04, 0.06, 4, 'discoball', 64],
       [0.1, 0.79, 0.07, 0.07, 9, 'crate'], [0.19, 0.79, 0.07, 0.07, 9, 'crate'], [0.28, 0.79, 0.07, 0.07, 9, 'crate'], [0.02, 0.28, 0.07, 0.12, 9, 'crate'], [0.02, 0.14, 0.07, 0.1, 9, 'crate'],
-      [0.03, 0.46, 0.12, 0.08, 8, 'sofa'], [0.0, 0.04, 0.03, 0.06, 10, 'plant'], [0.47, 0.03, 0.03, 0.06, 10, 'plant'], [0.94, 0.03, 0.03, 0.06, 10, 'plant'],
+      [0.03, 0.46, 0.12, 0.08, 8, 'sofa'], [0.17, 0.36, 0.07, 0.08, 5, 'table'], [0.175, 0.38, 0.05, 0.05, 2, 'laptop', 5], [0.0, 0.04, 0.03, 0.06, 10, 'plant'], [0.47, 0.03, 0.03, 0.06, 10, 'plant'], [0.94, 0.03, 0.03, 0.06, 10, 'plant'],
       [0.32, 0.02, 0.3, 0.09, 1, 'welcome']],
     stations: [[0.865, 0.52, 'fist', ['Dropping the next tune', 'Hands in the air in the booth', 'Beatmatching. Mostly.', 'One more tune. Just one.']],
       [0.945, 0.52, 'fist', ['On the decks!', 'Back to back with the boss']],
@@ -394,7 +409,8 @@ const KITS = {
       [0.1, 0.3, 'check', ['Sorting the new arrivals box', 'Dusting a sleeve. Gently.']],
       [0.09, 0.5, 'lie', ['Five minutes on the sofa', 'Best seat in the house', 'Resting my dancing legs']],
       [0.7, 0.78, 'point', ['Frankie calls it the green screen. It’s not green.', 'The frame’s doing something trippy again', 'Don’t stare at it. Okay, stare at it.']],
-      [0.47, 0.1, 'check', ['Welcome to the ballroom! Everyone’s welcome', 'You’re looking lovely tonight', 'Grab a dance, grab a seat, make yourself at home']]] },
+      [0.47, 0.1, 'check', ['Welcome to the ballroom! Everyone’s welcome', 'You’re looking lovely tonight', 'Grab a dance, grab a seat, make yourself at home']],
+      [0.14, 0.4, 'type', ['Counting the plays. Statistically abnormal.', 'Another thousand plays. Is that normal? No. That’s why I’m Abnormal.']]] },
   // the LOOS: moved out of the lobby when the lobby came down (the About room is the quiet one at the end)
   '/about/': { title: 'LOOS',
     items: [[0.08, 0.06, 0.3, 0.42, 15, 'cubicle'], [0.5, 0.06, 0.3, 0.42, 15, 'cubicle'], [0.3, 0.78, 0.4, 0.08, 10, 'basin'], [0.88, 0.7, 0.07, 0.1, 10, 'plant']],
@@ -402,44 +418,53 @@ const KITS = {
       [0.65, 0.22, 'check', ['Back in five minutes', 'Do not disturb', 'The queue is just me']],
       [0.5, 0.66, 'check', ['Washing my hands. Thoroughly.', 'Checking my hair in the mirror', 'Singing in the echo']]] },
   '/security/': { title: 'SECURITY OPS',
-    items: [[0.05, 0.9, 0.36, 0.06, 26, 'threat'], [0.55, 0.9, 0.32, 0.06, 26, 'quiz'], [0.34, 0.42, 0.28, 0.15, 9, 'desk'], [0.42, 0.48, 0.12, 0.04, 8, 'monitor', 9], [0.93, 0.86, 0.05, 0.05, 6, 'camera', 30], [0.72, 0.22, 0.22, 0.08, 34, 'arch']],
+    items: [[0.05, 0.9, 0.36, 0.06, 26, 'threat'], [0.55, 0.9, 0.32, 0.06, 26, 'quiz'], [0.34, 0.42, 0.28, 0.15, 9, 'desk'], [0.42, 0.48, 0.12, 0.04, 8, 'monitor', 9], [0.93, 0.86, 0.05, 0.05, 6, 'camera', 30], [0.72, 0.22, 0.22, 0.08, 34, 'arch'], [0.5, 0.46, 0.07, 0.06, 2, 'laptop', 9]],
     stations: [[0.24, 0.76, 'point', ['Updating the threat level board', 'Checking the threat level with MI5']],
       [0.71, 0.76, 'think', ['Writing today’s quiz question', 'Hmm. Is that answer too easy?']],
       [0.31, 0.495, 'type', ['Watching the camera feeds', 'Reviewing the CCTV']],
       [0.83, 0.26, 'walk', ['Walking through the scanner. BEEP.', 'Forgot my keys again. BEEP.']]] },
-  '/security/layers/': { title: 'LAYERS LAB',
-    items: [[0.06, 0.36, 0.14, 0.08, 24, 'easel'], [0.3, 0.9, 0.38, 0.06, 28, 'layers'], [0.62, 0.52, 0.32, 0.18, 9, 'bench'], [0.3, 0.12, 0.36, 0.06, 10, 'bollards'], [0.82, 0.2, 0.12, 0.08, 7, 'toolbox']],
-    stations: [[0.14, 0.24, 'think', ['Sketching a new idea for the site', 'Doodling a game about layers', 'Goo goo. I have invented a game.', 'Ga ga. Detect, delay, respond.', 'Nap later. Game now.']],
-      [0.49, 0.76, 'point', ['Explaining detect, delay, respond', 'This layer is the important one']],
-      [0.59, 0.61, 'type', ['Building the idea James agreed', 'Soldering something. Probably fine.']],
-      [0.48, 0.26, 'kick', ['Testing the bollards. Ow.', 'Crash-testing a bollard with my foot']]] },
-  '/security/cpted/': { title: 'CPTED STUDIO',
-    items: [[0.26, 0.4, 0.44, 0.26, 9, 'model'], [0.78, 0.9, 0.16, 0.06, 26, 'list'], [0.06, 0.8, 0.06, 0.06, 40, 'lamp'], [0.55, 0.06, 0.3, 0.08, 7, 'parkbench'], [0.06, 0.12, 0.08, 0.08, 8, 'plant']],
-    stations: [[0.22, 0.28, 'point', ['Checking sightlines on the model', 'Moving a tree for natural surveillance']],
-      [0.74, 0.52, 'check', ['Measuring the lighting levels', 'Too dark here. Writing it up.']],
-      [0.86, 0.78, 'think', ['Ticking off the audit checklist']],
-      [0.68, 0.095, 'bench', ['Sitting on the bench: is this defensible space?']]] },
+  // THE CHILL-OUT ROOM: tiger-skin and zebra couches, a little bar along the back, and a laptop on the coffee table for anyone who can't switch off
+  '/security/layers/': { title: 'CHILL-OUT ROOM',
+    items: [[0.6, 0.9, 0.34, 0.05, 24, 'bottles'], [0.58, 0.74, 0.38, 0.1, 13, 'barcounter'],
+      [0.62, 0.6, 0.05, 0.05, 8, 'stool'], [0.74, 0.6, 0.05, 0.05, 8, 'stool'], [0.86, 0.6, 0.05, 0.05, 8, 'stool'],
+      [0.03, 0.5, 0.3, 0.12, 8, 'tigercouch'], [0.06, 0.18, 0.3, 0.12, 8, 'zebracouch'], [0.42, 0.14, 0.12, 0.1, 6, 'tigercouch'], [0.66, 0.24, 0.1, 0.1, 6, 'zebracouch'],
+      [0.4, 0.43, 0.13, 0.1, 5, 'table'], [0.43, 0.46, 0.06, 0.05, 2, 'laptop', 5], [0.94, 0.34, 0.04, 0.04, 32, 'lamp'], [0.0, 0.88, 0.05, 0.06, 10, 'plant']],
+    stations: [[0.19, 0.56, 'lie', ['Chilling on the tiger couch', 'Tiger couch. Roar.', 'Five minutes. Maybe ten.', 'Goo goo. Comfy.']],
+      [0.21, 0.24, 'lie', ['The zebra couch is the comfiest', 'Stripes are very relaxing', 'Ga ga. Nap time.']],
+      [0.82, 0.66, 'check', ['Mixing a Negroni at the bar', 'Shaking something pink', 'Spin for a drink? Spin for a drink.', 'Cocktail o’clock. It’s always cocktail o’clock.']],
+      [0.37, 0.47, 'type', ['Writing up the next game idea from the couch', 'Just checking my email. I’m on a break.']],
+      [0.71, 0.3, 'bench', ['Perched on the zebra pouffe', 'Best seat for people-watching']]] },
+  // THE PLANNING ROOM: where all the other planning gets done. A model on the big table, a Gantt chart, a whiteboard and a lot of laptops.
+  '/security/cpted/': { title: 'PLANNING ROOM',
+    items: [[0.06, 0.9, 0.5, 0.06, 26, 'gantt'], [0.62, 0.9, 0.32, 0.06, 26, 'whiteboard'], [0.26, 0.4, 0.44, 0.26, 9, 'model'],
+      [0.12, 0.46, 0.07, 0.06, 2, 'laptop', 9], [0.76, 0.46, 0.07, 0.06, 2, 'laptop', 9], [0.4, 0.6, 0.07, 0.05, 2, 'laptop', 9],
+      [0.76, 0.14, 0.2, 0.06, 24, 'notice'], [0.06, 0.12, 0.08, 0.08, 8, 'plant'], [0.88, 0.7, 0.1, 0.1, 14, 'coffee']],
+    stations: [[0.21, 0.5, 'type', ['Updating the project plan', 'Moving a milestone. Again.']],
+      [0.5, 0.74, 'point', ['Pointing at the Gantt chart', 'That deadline is a bit optimistic']],
+      [0.8, 0.76, 'point', ['Sticky notes: the real project plan', 'Drawing a very confident arrow']],
+      [0.7, 0.5, 'think', ['Planning the planning', 'Is this a meeting that could have been an email?']],
+      [0.9, 0.6, 'check', ['Coffee number three', 'Refilling the coffee before the next planning session']]] },
   '/security/martyns-law/': { title: 'MARTYN’S LAW LIBRARY',
-    items: [[0.04, 0.84, 0.42, 0.12, 32, 'shelf'], [0.5, 0.42, 0.3, 0.16, 9, 'papers'], [0.84, 0.16, 0.09, 0.09, 10, 'bin'], [0.84, 0.74, 0.12, 0.14, 22, 'cabinet'], [0.2, 0.2, 0.1, 0.08, 16, 'lectern']],
+    items: [[0.04, 0.84, 0.42, 0.12, 32, 'shelf'], [0.5, 0.42, 0.3, 0.16, 9, 'papers'], [0.84, 0.16, 0.09, 0.09, 10, 'bin'], [0.84, 0.74, 0.12, 0.14, 22, 'cabinet'], [0.2, 0.2, 0.1, 0.08, 16, 'lectern'], [0.62, 0.46, 0.07, 0.07, 2, 'laptop', 9]],
     stations: [[0.25, 0.72, 'think', ['Reading the Martyn’s Law guidance', 'Has GOV.UK changed it? Checking.']],
       [0.47, 0.5, 'type', ['Filing today’s guidance check', 'Paperwork. So much paperwork.']],
       [0.78, 0.12, 'kick', ['Emptying the bin', 'Kicking the bin. Therapeutic.']],
       [0.82, 0.62, 'check', ['Searching the filing cabinet']],
       [0.25, 0.3, 'point', ['Reading the Act out loud. Nobody listening.']]] },
   '/admin/': { title: 'SERVER ROOM',
-    items: [[0.04, 0.78, 0.16, 0.16, 36, 'rack'], [0.22, 0.78, 0.16, 0.16, 36, 'rack'], [0.4, 0.42, 0.3, 0.16, 9, 'desk'], [0.48, 0.5, 0.12, 0.04, 8, 'monitor', 9], [0.8, 0.74, 0.15, 0.16, 16, 'safe'], [0.84, 0.14, 0.1, 0.08, 18, 'fan']],
+    items: [[0.04, 0.78, 0.16, 0.16, 36, 'rack'], [0.22, 0.78, 0.16, 0.16, 36, 'rack'], [0.4, 0.42, 0.3, 0.16, 9, 'desk'], [0.48, 0.5, 0.12, 0.04, 8, 'monitor', 9], [0.8, 0.74, 0.15, 0.16, 16, 'safe'], [0.84, 0.14, 0.1, 0.08, 18, 'fan'], [0.58, 0.46, 0.07, 0.06, 2, 'laptop', 9]],
     stations: [[0.2, 0.62, 'kick', ['Turning the server off and on again', 'Kicking the server. It’s a fix.']],
       [0.37, 0.5, 'type', ['Running the site tests', 'Checking every page in a browser']],
       [0.87, 0.6, 'think', ['Listening to the safe dial', 'Cracking the safe. For science.']],
       [0.82, 0.3, 'lean', ['Standing in front of the fan', 'Cooling the servers. And me.']]] },
   '/blog/': { title: 'NEWSROOM',
-    items: [[0.3, 0.42, 0.32, 0.16, 9, 'typewriter'], [0.74, 0.58, 0.17, 0.15, 13, 'printer'], [0.05, 0.9, 0.3, 0.06, 24, 'notice'], [0.86, 0.12, 0.1, 0.1, 16, 'coffee']],
+    items: [[0.3, 0.42, 0.32, 0.16, 9, 'typewriter'], [0.74, 0.58, 0.17, 0.15, 13, 'printer'], [0.05, 0.9, 0.3, 0.06, 24, 'notice'], [0.86, 0.12, 0.1, 0.1, 16, 'coffee'], [0.52, 0.47, 0.07, 0.06, 2, 'laptop', 9]],
     stations: [[0.27, 0.5, 'type', ['Editing today’s blog post', 'Red pen on the draft. Lots of red pen.']],
       [0.82, 0.44, 'check', ['Printing the draft', 'The printer’s jammed. Of course it has.']],
       [0.2, 0.78, 'point', ['Pinning up the new post', 'Checking the facts on the board']],
       [0.84, 0.22, 'check', ['Coffee number six', 'Refilling the coffee']]] }
 };
-const KIT_PLAIN = { title: '', items: [[0.2, 0.42, 0.32, 0.16, 9, 'desk'], [0.3, 0.5, 0.12, 0.04, 8, 'monitor', 9], [0.75, 0.7, 0.1, 0.1, 8, 'plant']],
+const KIT_PLAIN = { title: '', items: [[0.2, 0.42, 0.32, 0.16, 9, 'desk'], [0.3, 0.5, 0.12, 0.04, 8, 'monitor', 9], [0.42, 0.46, 0.07, 0.06, 2, 'laptop', 9], [0.75, 0.7, 0.1, 0.1, 8, 'plant']],
   stations: [[0.17, 0.5, 'type', ['Checking this page']], [0.7, 0.55, 'check', ['Watering the plant']]] };
 
 // plan position of a point given as fractions of a room, fv measured from the door wall
@@ -591,13 +616,72 @@ function drawItem(r, it, busy) {
   else if (kind === 'notice') for (let k = 0; k < 4; k++) fx.strokeRect(X + 3 + (k % 2) * (W - 6) / 2 + 1, Y + 3 + Math.floor(k / 2) * (B.h - 6) / 2 + 1, (W - 6) / 2 - 3, (B.h - 6) / 2 - 3);
   else if (kind === 'kettle' && busy) for (let k = 0; k < 2; k++) { const dd = (t * 0.8 + k * 0.5) % 1, c = B.top(0.5, 0.5, 4 * s + dd * 14 * s); fx.globalAlpha = 0.6 * (1 - dd); seg(c, [c[0] + 2 * s, c[1] - 4 * s]); }
   else if (kind === 'plant') { const c = B.top(0.5, 0.5); fx.beginPath(); fx.moveTo(c[0], c[1]); fx.quadraticCurveTo(c[0] - 10 * s, c[1] - 14 * s, c[0] - 3 * s, c[1] - 20 * s); fx.moveTo(c[0], c[1]); fx.quadraticCurveTo(c[0] + 8 * s, c[1] - 12 * s, c[0] + 4 * s, c[1] - 22 * s); fx.stroke(); }
+  else if (kind === 'videowall') {                 // a wall of CCTV feeds: corridors with walkers, static, doors, sweeping cameras; a red box when something moves
+    const cols = W > 150 ? 4 : 3, rows = 3, cw = (W - 6) / cols, ch = (B.h - 8) / rows;
+    for (let q = 0; q < cols * rows; q++) {
+      const cx0 = X + 3 + (q % cols) * cw, cy0 = Y + 4 + Math.floor(q / cols) * ch, k2 = q % 5;
+      fx.strokeRect(cx0 + 1, cy0 + 1, cw - 2, ch - 2);
+      fx.save(); fx.beginPath(); fx.rect(cx0 + 1, cy0 + 1, cw - 2, ch - 2); fx.clip(); fx.globalAlpha = 0.8;
+      if (k2 === 0) { seg([cx0 + 1, cy0 + ch * 0.62], [cx0 + cw, cy0 + ch * 0.62]); const wx = cx0 + 3 + ((t * 7 + q * 13) % (cw - 6)); fx.beginPath(); fx.arc(wx, cy0 + ch * 0.42, Math.max(1, ch * 0.09), 0, 7); fx.moveTo(wx, cy0 + ch * 0.5); fx.lineTo(wx, cy0 + ch * 0.62); fx.stroke(); }
+      else if (k2 === 1) { for (let k = 0; k < 6; k++) { const hh = Math.sin(q * 91.7 + Math.floor(t * 10) * 13.1 + k * 7.7) * 0.5 + 0.5, x1 = cx0 + 2 + hh * (cw - 8); seg([x1, cy0 + 2 + k * ch / 6], [x1 + cw * 0.3, cy0 + 2 + k * ch / 6]); } }
+      else if (k2 === 2) { fx.strokeRect(cx0 + cw * 0.3, cy0 + ch * 0.2, cw * 0.4, ch * 0.7); const sw = (Math.sin(t * 0.8 + q) * 0.5 + 0.5) * cw * 0.3; seg([cx0 + cw * 0.3, cy0 + ch * 0.2], [cx0 + cw * 0.3 + sw, cy0 + ch * 0.28]); }
+      else if (k2 === 3) { const sx = cx0 + ((t * 9 + q * 7) % cw); seg([sx, cy0], [sx, cy0 + ch]); fx.strokeRect(cx0 + cw * 0.55, cy0 + ch * 0.45, cw * 0.18, ch * 0.3); }
+      else { seg([cx0, cy0 + ch * 0.3], [cx0 + cw * 0.3, cy0 + ch * 0.45]); seg([cx0 + cw, cy0 + ch * 0.3], [cx0 + cw * 0.7, cy0 + ch * 0.45]); fx.strokeRect(cx0 + cw * 0.3, cy0 + ch * 0.45, cw * 0.4, ch * 0.4); }
+      fx.restore();
+      if (cw > 24) text('CAM ' + String(q + 1).padStart(2, '0'), cx0 + 3, cy0 + ch - 2.5, Math.max(3.8, cw * 0.12), 0.55, 'left');
+      if (Math.sin(t * 0.37 + q * 4.1) > 0.985) { fx.save(); fx.strokeStyle = '#ff3b3b'; fx.lineWidth = 1.6; fx.globalAlpha = 0.9; fx.strokeRect(cx0 + 1, cy0 + 1, cw - 2, ch - 2); fx.restore(); }
+    }
+    if (Math.floor(t * 1.4) % 2 === 0) { fx.save(); fx.fillStyle = '#ff3b3b'; fx.beginPath(); fx.arc(X + W - 5, Y + 3, 1.8, 0, 7); fx.fill(); fx.restore(); text('REC', X + W - 9, Y + 5, 4, 0.7, 'right'); }
+  }
+  else if (kind === 'cctvdesk') {                  // an operator's desk: three screens, a keyboard and a PTZ joystick
+    for (let k = 0; k < 3; k++) { const c = B.top(0.2 + k * 0.3, 0.22); fx.strokeRect(c[0] - 4.5 * s, c[1] - 8 * s, 9 * s, 6.5 * s);
+      for (let m = 0; m < 2; m++) seg([c[0] - 3 * s, c[1] - 6 * s + m * 2.4 * s], [c[0] - 3 * s + 6 * s * (0.35 + 0.65 * Math.abs(Math.sin(t * (busy ? 4 : 1) + k + m))), c[1] - 6 * s + m * 2.4 * s]); }
+    const kb = B.top(0.4, 0.78); seg([kb[0] - 7 * s, kb[1]], [kb[0] + 7 * s, kb[1]]);
+    const j = B.top(0.82, 0.74), jx = busy ? Math.sin(t * 5) * 2 : 0; seg(j, [j[0] + jx, j[1] - 4 * s]); fx.beginPath(); fx.arc(j[0] + jx, j[1] - 4.8 * s, 1.2 * s, 0, 7); fx.stroke();
+  }
+  else if (kind === 'laptop') {                    // a laptop with its screen glowing, lines scrolling when someone is working at it
+    const c = B.top(0.5, 0.5), lw = Math.max(8 * s, W * 1.1);
+    fx.fillStyle = '#000'; fx.beginPath(); fx.rect(c[0] - lw / 2, c[1] - 9 * s, lw, 8 * s); fx.fill(); fx.stroke();
+    for (let k = 0; k < 3; k++) seg([c[0] - lw / 2 + 1.5 * s, c[1] - 7.5 * s + k * 2.2 * s], [c[0] - lw / 2 + 1.5 * s + (lw - 3 * s) * (0.3 + 0.6 * Math.abs(Math.sin(t * (busy ? 5 : 0.8) + k * 2.1))), c[1] - 7.5 * s + k * 2.2 * s]);
+  }
+  else if (kind === 'tigercouch' || kind === 'zebracouch') {   // a couch in tiger skin (slanting stripes) or zebra (bold bands)
+    const C = block(a.u, a.v + (r.upper ? 0 : d * 0.7), w, d * 0.3, h * 2, 0), tiger = kind === 'tigercouch';
+    [[X, Y, W, B.h], [C.x, C.y, C.w, C.h]].forEach(([x0, y0, w0, h0]) => {
+      fx.save(); fx.beginPath(); fx.rect(x0, y0, w0, h0); fx.clip(); fx.fillStyle = '#fff'; fx.globalAlpha = 0.6;
+      if (tiger) { const n = Math.max(4, Math.floor(w0 / 6)), bw = w0 / n; for (let k = -1; k < n; k++) { const sx = x0 + k * bw; fx.beginPath(); fx.moveTo(sx, y0); fx.lineTo(sx + bw * 0.55, y0); fx.lineTo(sx + bw * 0.25 + h0 * 0.5, y0 + h0); fx.closePath(); fx.fill(); } }
+      else { const n = Math.max(4, Math.floor(w0 / 5)), bw = w0 / n; for (let k = 0; k < n; k += 2) fx.fillRect(x0 + k * bw, y0, bw, h0); }
+      fx.restore();
+    });
+  }
+  else if (kind === 'barcounter') {                // the little bar: glasses along the top, a shaker that shakes when someone is mixing, a neon BAR
+    for (let k = 0; k < 4; k++) { const c = B.top(0.14 + k * 0.22, 0.5); seg(c, [c[0], c[1] - 3.5 * s]); fx.strokeRect(c[0] - 1.6 * s, c[1] - 5 * s, 3.2 * s, 1.6 * s); }
+    const c = B.top(0.82, 0.5), sh = busy ? Math.sin(t * 14) * 1.6 : 0; fx.strokeRect(c[0] - 1.8 * s + sh, c[1] - 7 * s, 3.6 * s, 6 * s);
+    text('BAR', X + W / 2, Y + B.h * 0.7, Math.min(B.h * 0.55, 8 * s), 0.45 + 0.3 * Math.sin(t * 3));
+  }
+  else if (kind === 'bottles') {                   // shelves of bottles behind the bar
+    for (let sh = 0; sh < 2; sh++) { const yy = Y + B.h * (sh + 1) / 2 - 1; seg([X + 2, yy], [X + W - 2, yy]);
+      for (let k = 0; k < 10; k++) { const bx = X + 4 + k * (W - 8) / 10, bh = (4 + (k * 7 % 4)) * s * 0.9; fx.strokeRect(bx - 1.1 * s, yy - bh, 2.2 * s, bh); seg([bx, yy - bh], [bx, yy - bh - 1.8 * s]); } }
+  }
+  else if (kind === 'stool') { const c = B.top(0.5, 0.5); ell(c, Math.max(2.6 * s, Math.min(w, d) * 0.6)); }
+  else if (kind === 'whiteboard') {                // a whiteboard of boxes and arrows, and a marker going when someone is planning
+    fx.strokeRect(X + 2, Y + 2, W - 4, B.h - 4);
+    fx.strokeRect(X + W * 0.1, Y + B.h * 0.2, W * 0.22, B.h * 0.25); fx.strokeRect(X + W * 0.6, Y + B.h * 0.2, W * 0.26, B.h * 0.25); fx.strokeRect(X + W * 0.35, Y + B.h * 0.6, W * 0.3, B.h * 0.25);
+    seg([X + W * 0.32, Y + B.h * 0.32], [X + W * 0.6, Y + B.h * 0.32]); seg([X + W * 0.73, Y + B.h * 0.45], [X + W * 0.55, Y + B.h * 0.6]); seg([X + W * 0.21, Y + B.h * 0.45], [X + W * 0.4, Y + B.h * 0.6]);
+    if (busy) { const f = (t * 0.6) % 1; seg([X + W * 0.1, Y + B.h * 0.88], [X + W * (0.1 + 0.7 * f), Y + B.h * 0.88]); }
+  }
+  else if (kind === 'gantt') {                     // a Gantt chart: staggered bars filling in, and a line for today
+    const rows = 5, rh = (B.h - 8) / rows;
+    for (let k = 0; k < rows; k++) { const y0 = Y + 4 + k * rh, x0 = X + 4 + k * W * 0.08, len = W * 0.35 * (0.6 + 0.4 * Math.sin(k * 1.7)), prog = busy ? 0.5 + 0.4 * Math.abs(Math.sin(t * 0.5 + k)) : 0.7;
+      fx.strokeRect(x0, y0, len, rh * 0.6); fx.save(); fx.fillStyle = '#fff'; fx.globalAlpha = 0.5; fx.fillRect(x0, y0, len * prog, rh * 0.6); fx.restore(); }
+    const tx = X + W * (0.55 + 0.02 * Math.sin(t)); seg([tx, Y + 2], [tx, Y + B.h - 2]);
+  }
   fx.restore();
 }
 
 // who works where: [name, offices to try, what they report, favourite station or -1]
 const RESIDENTS = [
   ['FRANKIE', ['/night-shift/'], () => '', 0], ['MASTERPIECE', ['/night-shift/', '/music/'], () => jobLine('pickle'), 1],
-  ['NORMAL', ['/music/'], () => '', 0], ['LLOYD', ['/music/'], () => jobLine('pickle'), 6], ['OLD SCHOOL', ['/music/'], () => dayLine('wurzel'), 9],
+  ['NORMAL', ['/music/'], () => '', 0], ['ABNORMAL', ['/music/'], () => dayLine('biscuittin'), 16], ['LLOYD', ['/music/'], () => jobLine('pickle'), 6], ['OLD SCHOOL', ['/music/'], () => dayLine('wurzel'), 9],
   ['GCHQ', ['/security/'], () => jobLine('intel'), 0], ['QUIZZY RASCAL', ['/security/', '/security/layers/'], () => dayLine('bunsen'), 1],
   ['OATIE MAN', ['/security/layers/', '/security/'], () => jobLine('ideas'), 0], ['ENGINEER', ['/security/layers/', '/security/'], () => dayLine('spanner'), 2],
   ['HANDBOOK', ['/security/cpted/', '/security/'], () => dayLine('crumpet'), -1],
@@ -681,9 +765,14 @@ const DJ_LINES = ['Good evening, ladies, gentlemen and agents of every threat le
   'Who needs sleep when you have bass?', 'Somebody hold my headphones. No, wait. I need them.', 'We’ve got records, we’ve got lasers, we’ve got snacks. Possibly snacks.'];
 const GUEST_LINES = { 'OLD SCHOOL': ['Straight out the crates, this one', 'Vinyl only. Digital is for children', 'Nineteen ninety-three. Look it up', 'Back to back with the boss', 'You’ve not heard this. Nobody’s heard this.'],
   LLOYD: ['Lights, camera, lasers!', 'I’ll take the lasers, you take the beat', 'Cueing the red lasers…', 'Anyone seen my light plan?', 'Trust the lights, trust the lights'] };
-const BOUNCER_LINES = ['If your name’s not Dan, you’re not coming in.', 'Name? …Not Dan. Next.', 'Guest list says Dan. Only Dan.', 'Dress code: Dan.', 'Sorry, we’re full. Of Dans. We have none.',
-  'ID please. Hmm. Not a Dan.', 'Nobody in tonight. Business is booming.', 'If your name’s not Dan, you’re not coming out.', 'Rope stays up, mate.', 'There’s no queue. There’s never a queue.'];
-const BOUNCER_REPLIES = ['He’s right, you know.', 'Rules are rules.', 'Still no Dan.', 'Dan’s late again.', 'Nobody’s getting past me.', 'Mmm. Suspicious.'];
+const BOUNCER_LINES = ['If your name’s not Dan, you’re not coming in, sweetheart!', 'Darling, you look FABULOUS. But no.', 'Not a Dan? Oh, hun. Rope stays up.', 'Mwah! Gorgeous! Still no.',
+  'Ooh, I love your outfit. Sadly: not Dan.', 'Slay! …But not in here.', 'The list says Dan, babe. Only Dan.', 'Yas queen! The rope’s staying up though.', 'Werk! Next!',
+  'If your name’s not Dan, you’re not coming out. Or in. Honestly, I’m confused.', 'Nobody in tonight, lovey. Business is booming.', 'Ooh, hello gorgeous. Are you a Dan? No? Tragic.'];
+const BOUNCER_REPLIES = ['Mwah mwah!', 'Gorgeous!', 'Ugh, iconic.', 'Slay, babes!', 'Hunty, you’re glowing!', 'She’s right, you know!', 'Rules are rules, angel.', 'Still no Dan, darling.'];
+const BOUNCER_PRAISE = [n => `Gorgeous, ${n}!`, n => `Love the look, ${n}!`, n => `${n}, you’re an icon!`, n => `Mwah, ${n}!`, n => `Work it, ${n}!`, n => `That walk, ${n}! Serving!`];
+const WIFEO_LINES = ['I love you all SO much!', 'You’re all beautiful. Every one of you!', 'Come here, you gorgeous lot!', 'Look at you all dancing! I could cry.', 'Group hug! …after this song.', 'I’m so proud of you all', 'You’re my favourite people in the whole building'];
+const WIFEO_TO = { FRANKIE: 'Frankie, you’re a genius and I love you', 'JACK MAN': 'Jack Man, you’re a star. A STAR.', 'OLD SCHOOL': 'Old School, you’re a legend. I love you, you old thing.' };
+const MEMBER_REPLIES = ['Aww, we love you too!', 'Stop it, you’ll make me blush', 'Wifeo, you’re the best', 'This is the best day of my life', 'I love you too!!'];
 const niceName = n => n.split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ');            // "OLD SCHOOL" -> "Old School"
 const laser = { from: 0, until: -1, mode: 0, next: 35 + Math.random() * 40 };
 const guest = { name: null, until: -1, next: 55 + Math.random() * 45, said: 0 };
@@ -694,10 +783,12 @@ function startLasers(secs) {
   bubbles.push({ who: 'NORMAL', text: pickOne(['LASERS!', 'Eyes up: lasers!', 'Mind your eyes: it’s the laser bit!', 'Somebody call Lloyd: lasers!']), t0: floor.t, life: 2.6 });
 }
 window.JN_lasers = () => startLasers(14);                    // try it from the console
-window.JN_house = () => ({ guest: guest.name, lasers: floor.t < laser.until, where: Object.fromEntries(Object.entries(res).map(([k, v]) => [k, v.duty === 'away' ? 'on the main page' : v.room ? v.room.path + ' station ' + v.st : 'door'])) });   // what is going on in the house, from the console
+window.JN_visit = () => { wifeo.next = 0; };                // call Wifeo in, from the console
+window.JN_argon = () => { argon.next = 0; };                // and let Argon in
+window.JN_house = () => ({ wifeo: wifeo.phase, argon: argon.phase, prints: prints.length, guest: guest.name, lasers: floor.t < laser.until, where: Object.fromEntries(Object.entries(res).map(([k, v]) => [k, v.duty === 'away' ? 'on the main page' : v.room ? v.room.path + ' station ' + v.st : 'door'])) });   // what is going on in the house, from the console
 window.JN_guest = n => { guest.name = n || 'LLOYD'; guest.until = floor.t + 70; guest.said = floor.t + 3; };
-function partyTick() {
-  const t = floor.t;
+function partyTick(dt, sm) {
+  const t = floor.t; argonTick(dt, sm); wifeoTick(dt, sm);
   if (t > djNext) { djNext = t + (raving() ? 4.5 : 7.5) + Math.random() * 4; bubbles.push({ who: 'NORMAL', text: pickOne(DJ_LINES), t0: t, life: 3.4 }); }      // the DJ's patter
   if (guest.name && t > guest.until) { bubbles.push({ who: 'NORMAL', text: 'Give it up for ' + niceName(guest.name) + '!', t0: t, life: 3 }); guest.name = null; }
   if (!guest.name && t > guest.next) {                                                                                                                                     // a guest DJ every few minutes
@@ -711,7 +802,95 @@ function partyTick() {
     bqNext = t + 6 + Math.random() * 4; const first = ['CODPIECE', 'MR. PARTICULAR'][bqWho++ % 2], other = first === 'CODPIECE' ? 'MR. PARTICULAR' : 'CODPIECE';
     bubbles.push({ who: first, text: Math.random() < 0.45 ? BOUNCER_LINES[0] : pickOne(BOUNCER_LINES), t0: t, life: 3.4 });
     if (Math.random() < 0.6) bubbles.push({ who: other, text: pickOne(BOUNCER_REPLIES), t0: t + 1.9, life: 2.4 });
+    const walkers = Object.keys(seenAt).filter(n => t - seenAt[n].at < 0.5 && !['CODPIECE', 'MR. PARTICULAR', 'WIFEO'].includes(n));     // and a compliment for whoever walks past
+    if (walkers.length && Math.random() < 0.5) bubbles.push({ who: other, text: pickOne(BOUNCER_PRAISE)(niceName(pickOne(walkers))), t0: t + 3.8, life: 2.8 });
   }
+}
+// Argon the cat runs in through the front door, past the bouncers, round the ballroom and out again, leaving muddy paw prints that fade after a minute.
+const prints = [];
+const argon = { phase: 'idle', next: 16 + Math.random() * 14, u: 0, v: 0, q: [], step: 0, dir: 1, walked: 0, side: 1 };
+function argonTick(dt, sm) {
+  const A = argon, t = floor.t, ball = floor.rooms.find(r => r.path === '/music/');
+  for (let i = prints.length - 1; i >= 0; i--) if (t - prints[i].t0 > 60) prints.splice(i, 1);
+  if (A.phase === 'idle') {
+    if (t < A.next || !ball) return;
+    A.phase = 'run'; A.u = -6; A.v = floor.cv + (Math.random() - 0.5) * floor.Dc * 0.3; A.walked = 0;
+    const p = (fu, fv) => at(ball, fu, fv);
+    A.q = [{ u: ball.door.u, v: floor.cv }, { u: ball.door.u, v: ball.door.v }, p(0.3, 0.3), p(0.7, 0.35), p(0.62, 0.62), p(0.22, 0.6), p(0.42, 0.28), { u: ball.door.u, v: ball.door.v }, { u: ball.door.u, v: floor.cv }, { u: -10, v: floor.cv }];
+    bubbles.push({ who: 'CODPIECE', text: 'Oi! …Oh, it’s Argon. Go on then, sweetheart.', t0: t, life: 3.2 });
+    bubbles.push({ who: 'MR. PARTICULAR', text: 'Muddy paws! MUDDY PAWS!', t0: t + 1.6, life: 2.6 });
+    return;
+  }
+  const g = A.q[0]; if (!g) { A.phase = 'idle'; A.next = t + 100 + Math.random() * 120; return; }
+  const du = g.u - A.u, dv = g.v - A.v, d = Math.hypot(du, dv), sp = 115 * sm * dt;
+  if (d <= sp) { A.u = g.u; A.v = g.v; A.q.shift(); return; }
+  A.u += du / d * sp; A.v += dv / d * sp; A.dir = du >= 0 ? 1 : -1; A.step += sp * 0.6;
+  A.walked += sp; if (A.walked > 9 * sm) { A.walked = 0; A.side = -A.side; prints.push({ u: A.u, v: A.v + A.side * 1.7 * sm, t0: t, ang: Math.atan2(dv, du) }); if (prints.length > 500) prints.shift(); }
+}
+function drawPrints(sm) {                          // brown paw prints on the floor: a pad and four toes, fading
+  fx.save(); fx.fillStyle = '#9b6b3a';
+  prints.forEach(p => {
+    fx.globalAlpha = 0.95 * Math.max(0, 1 - (floor.t - p.t0) / 60);
+    const pad = P(p.u, p.v, 0); fx.beginPath(); fx.ellipse(pad[0], pad[1], 2.3 * sm, 1.6 * sm * ISO.sq * 1.6, 0, 0, 7); fx.fill();
+    for (let k = 0; k < 4; k++) { const an = p.ang + (k - 1.5) * 0.6, q = P(p.u + Math.cos(an) * 3.8 * sm, p.v + Math.sin(an) * 3.8 * sm, 0); fx.beginPath(); fx.arc(q[0], q[1], 1.15 * sm, 0, 7); fx.fill(); }
+  });
+  fx.restore();
+}
+// Wifeo drops in now and then, looking beautiful, dances about, gathers Frankie, Jack Man and Old School, tells them how loved they are, and strokes the cats.
+const wifeo = { phase: 'idle', next: 55 + Math.random() * 30, u: 0, v: 0, step: 0, q: [], t0: 0, members: ['FRANKIE', 'JACK MAN', 'OLD SCHOOL'], spots: {}, said: 0, cats: [], cu: 0, cv: 0 };
+function wifeoTick(dt, sm) {
+  const V = wifeo, t = floor.t, ball = floor.rooms.find(r => r.path === '/music/');
+  if (V.phase === 'idle') {
+    if (t < V.next || !ball || raving()) return;
+    const c = at(ball, 0.42, 0.5); V.cu = c.u; V.cv = c.v; V.phase = 'arrive'; V.u = -6; V.v = floor.cv; V.step = 0;
+    V.q = [{ u: ball.door.u, v: floor.cv }, { u: ball.door.u, v: ball.door.v }, { u: V.cu, v: V.cv + 12 * sm }];
+    bubbles.push({ who: 'CODPIECE', text: 'Ooh! It’s Wifeo! In you come, gorgeous!', t0: t, life: 3 }); bubbles.push({ who: 'MR. PARTICULAR', text: 'Always, always, darling. Rope’s open for you!', t0: t + 1.5, life: 3 });
+    bubbles.push({ who: 'WIFEO', text: 'Hello, my beauties!', t0: t + 3, life: 2.6 });
+    return;
+  }
+  if (V.phase === 'arrive' || V.phase === 'leave') {
+    const g = V.q[0];
+    if (!g) {
+      if (V.phase === 'arrive') {
+        V.phase = 'dance'; V.t0 = t; V.said = t + 2; V.members.forEach((n, i) => { const an = i * 2.094 + 0.6; V.spots[n] = { u: V.cu + Math.cos(an) * 24 * sm, v: V.cv + Math.sin(an) * 17 * sm }; });
+        V.cats = [{ name: 'ARGON', appear: 14, leave: 33, phase: 'wait', say: 'Who’s a handsome boy? You are!' }, { name: 'TIGER BABY', appear: 35, leave: 54, phase: 'wait', say: 'Hello, Tiger Baby, you gorgeous thing' }];
+      } else { V.phase = 'idle'; V.next = t + 230 + Math.random() * 130; }
+      return;
+    }
+    const du = g.u - V.u, dv = g.v - V.v, d = Math.hypot(du, dv), sp = 58 * sm * dt;
+    if (d <= sp) { V.u = g.u; V.v = g.v; V.q.shift(); } else { V.u += du / d * sp; V.v += dv / d * sp; V.step += sp * 0.3; }
+    return;
+  }
+  // dancing: she twirls about the middle of the floor, and the others are brought to her
+  const k = t - V.t0;
+  V.u = V.cu + Math.cos(k * 0.6) * 9 * sm; V.v = V.cv + Math.sin(k * 0.6) * 5 * sm;
+  if (t > V.said) {
+    V.said = t + 4.5 + Math.random() * 2; const m = V.members[Math.floor(Math.random() * 3)];
+    bubbles.push({ who: 'WIFEO', text: Math.random() < 0.5 ? WIFEO_TO[m] : pickOne(WIFEO_LINES), t0: t, life: 3.6 });
+    bubbles.push({ who: m, text: pickOne(MEMBER_REPLIES), t0: t + 1.8, life: 2.6 });
+  }
+  V.cats.forEach(c => {                          // the cats come in one at a time to be stroked
+    const goal = { u: V.u + 12 * sm, v: V.v + 1 };
+    if (c.phase === 'wait' && k > c.appear && ball) { c.phase = 'in'; c.u = ball.door.u; c.v = ball.door.v; c.dir = 1; c.step = 0; }
+    if (c.phase === 'in') { const du = goal.u - c.u, dv = goal.v - c.v, d = Math.hypot(du, dv), sp = 40 * sm * dt; if (d <= sp) { c.phase = 'sit'; bubbles.push({ who: 'WIFEO', text: c.say, t0: t, life: 3.4 }); } else { c.u += du / d * sp; c.v += dv / d * sp; c.step += sp * 0.5; c.dir = du >= 0 ? 1 : -1; } }
+    else if (c.phase === 'sit') { c.u = goal.u; c.v = goal.v; if (k > c.leave) { c.phase = 'out'; } }
+    else if (c.phase === 'out' && ball) { const du = ball.door.u - c.u, dv = ball.door.v - c.v, d = Math.hypot(du, dv), sp = 50 * sm * dt; if (d <= sp) c.phase = 'gone'; else { c.u += du / d * sp; c.v += dv / d * sp; c.step += sp * 0.5; c.dir = du >= 0 ? 1 : -1; } }
+  });
+  if (k > 58 && V.cats.every(c => c.phase === 'gone' || c.phase === 'wait')) {
+    bubbles.push({ who: 'WIFEO', text: 'Right, I’m off. Love you all. MWAH!', t0: t, life: 3 });
+    const ball2 = ball; V.phase = 'leave'; V.q = [{ u: ball2.door.u, v: ball2.door.v }, { u: ball2.door.u, v: floor.cv }, { u: -10, v: floor.cv }];
+  }
+}
+// the visitors' route: the three Wifeo is dancing with go to her and dance, then go back to what they were doing
+function visitRoute(a, name, homeFn, sm, dt) {
+  const V = wifeo, on = V.phase === 'dance' && V.members.includes(name) && V.spots[name];
+  if (on && !a.visiting) { a.visiting = true; a.raving = false; a.style = pickOne(DANCES); const sp = V.spots[name]; a.q = routeTo(a.u, a.v, roomAt(sp.u, sp.v), sp); }
+  else if (!on && a.visiting) { a.visiting = false; const h = homeFn && homeFn(); a.q = h ? routeTo(a.u, a.v, roomAt(h.u, h.v), h) : null; }
+  if (!a.q || !a.q.length) { a.moving = false; return a.visiting; }
+  const p = a.q[0], du = p.u - a.u, dv = p.v - a.v, d = Math.hypot(du, dv), sp = 80 * sm * dt;
+  if (d <= sp) { a.u = p.u; a.v = p.v; a.q.shift(); } else { a.u += du / d * sp; a.v += dv / d * sp; }
+  a.step = (a.step || 0) + sp * 0.3; a.moving = true;
+  return true;
 }
 // lasers in the corners, beams from the mirror ball, and a wash of colour: only in the ballroom, and only now and then
 function drawBallroom(r, sm, s) {
@@ -805,6 +984,8 @@ function drawFloor(dt) {
   fx.globalAlpha = 0.45; for (let u = 14 * sm; u < PW - 20 * sm; u += 46 * sm) { const a = P(u, -3, wallHi * 0.3), b = P(u + 26 * sm, -3, wallHi * 0.85); fx.strokeRect(a[0], b[1], b[0] - a[0], a[1] - b[1]); }
   fx.globalAlpha = 1;
 
+  drawPrints(SM);
+
   // everything with depth goes in one list and is drawn far to near, so near things hide far ones
   const Z = [];
   const roomFor = paths => { for (const p of paths) { const r = floor.rooms.find(q => q.path === p); if (r) return r; } return floor.rooms[floor.rooms.length - 1]; };
@@ -815,9 +996,11 @@ function drawFloor(dt) {
     r.seen = Math.max(0, r.seen - dt * 0.25);
     const kit = KITS[r.path] || KIT_PLAIN, who = inRoom.get(r) || [], st = kit.stations;
     // walls: a low cut-away wall all round, with a doorway onto the corridor; drawn in short pieces so depth sorts properly
-    const gap = Math.min(30 * sm, r.w * 0.3), dv = r.door.v, near = r.v + r.d;
+    const gap = doorGap(r, sm), dv = r.door.v, near = r.v + r.d;
     const wallU = (v, u0, u1) => Z.push({ z: v, f: () => { fx.globalAlpha = 0.4 + r.seen * 0.6; block(u0, v - 2, u1 - u0, 2, wallLo); fx.globalAlpha = 1; } });
-    [[r.v, r.upper], [near, !r.upper]].forEach(([v, hasDoor]) => { if (v === 0) return; if (hasDoor) { wallU(v, r.u, r.door.u - gap / 2); wallU(v, r.door.u + gap / 2, r.u + r.w); } else wallU(v, r.u, r.u + r.w); });
+    Z.push({ z: dv + 0.15, f: () => drawDoor(r, sm) });                                                    // the door itself, with its frame
+    // the doorway is in the wall that faces the corridor
+    [[r.v, !r.upper], [near, r.upper]].forEach(([v, hasDoor]) => { if (v === 0) return; if (hasDoor) { wallU(v, r.u, r.door.u - gap / 2); wallU(v, r.door.u + gap / 2, r.u + r.w); } else wallU(v, r.u, r.u + r.w); });
     if (r.u > 0) for (let v = r.v; v < near - 0.5; v += 14 * sm) { const v1 = Math.min(near, v + 14 * sm); Z.push({ z: v1, f: () => { fx.globalAlpha = 0.4 + r.seen * 0.6; block(r.u - 1, v, 2, v1 - v, wallLo); fx.globalAlpha = 1; } }); }
     // the office name painted on the floor, and the patrol's result when it's just been checked
     const lab = P(r.u + 6, r.upper ? r.v + 16 * sm : near - 4 * sm, 0);
@@ -841,6 +1024,7 @@ function drawFloor(dt) {
       if (isGuest && rsv.length && !a.raving) { a.st = rsv[0]; a.dwell = Math.max(a.dwell, 2); }
       let moving, pose;
       if (dutyRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'check'; }
+      else if (visitRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'rave'; }
       else if (raveRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'rave'; }
       else {
         const tgt = at(r, st[a.st][0], st[a.st][1]), du = tgt.u - a.u, dvv = tgt.v - a.v, dist = Math.hypot(du, dvv), sp = 34 * sm * dt;
@@ -878,6 +1062,15 @@ function drawFloor(dt) {
 
   { const ball = floor.rooms.find(r => r.path === '/music/'); if (ball) Z.push({ z: ball.v + ball.d + 3, f: () => drawBallroom(ball, sm, s) }); }
 
+  if (argon.phase === 'run') Z.push({ z: argon.v + 0.4, f: () => { drawCat({ u: argon.u, v: argon.v, dir: argon.dir, phase: 'walk', step: argon.step }, sm); const [x, y] = P(argon.u, argon.v); text('ARGON', x, y + 8 * s, 7 * s, 0.6); } });
+  if (wifeo.phase !== 'idle') {
+    const V = wifeo, dancing = V.phase === 'dance', stroking = dancing && V.cats.some(c => c.phase === 'sit');
+    Z.push({ z: V.v + 0.5, f: () => { const [x, y] = P(V.u, V.v);
+      stickMan(x, y, sm, dancing ? floor.t * 2 : V.step, dancing ? (stroking ? 'stroke' : 'dance') : 'walk', 'WIFEO'); text('WIFEO', x, y + 9 * s, 7.5 * s, 0.75);
+      if (dancing) for (let k = 0; k < 3; k++) { const ph = (floor.t * 0.4 + k / 3) % 1; text('♥', x + Math.sin(ph * 5 + k * 2) * 12 * s, y - 36 * s - ph * 26 * s, (7 + k) * s, 1 - ph); } } });
+    V.cats.forEach(c => { if (c.phase === 'in' || c.phase === 'sit' || c.phase === 'out') Z.push({ z: c.v + 0.4, f: () => { drawCat({ u: c.u, v: c.v, dir: c.dir || 1, phase: c.phase === 'sit' ? 'sit' : 'walk', step: c.step || 0 }, sm); const [x, y] = P(c.u, c.v); text(c.name, x, y + 8 * s, 6.5 * s, 0.6); } }); });
+  }
+
   // the handover being typed in the control room, on its back wall
   const c = floor.control;
   if (c) Z.push({ z: 1e6, f: () => {
@@ -895,7 +1088,7 @@ function drawFloor(dt) {
     const home = { u: 16 * sm, v: floor.Dr + floor.Dc * fv }, a = res[name] || (res[name] = { u: home.u, v: home.v, step: 0 });
     const onDuty = dutyRoute(a, name, () => home, sm, dt);
     Z.push({ z: a.v + 0.5, f: () => throughWorm(a, sm, () => { const [x, y] = P(a.u, a.v);
-      stickMan(x, y, sm, onDuty ? a.step : t, onDuty ? (a.moving ? 'walk' : 'check') : 'fold', name);
+      stickMan(x, y, sm, onDuty ? a.step : t, onDuty ? (a.moving ? 'walk' : 'check') : 'camp', name);
       text(name, x, y + 9 * s, 7.5 * s, 0.65); if (!onDuty) text(lineFn(), x + 18 * sm, y - 34 * sm, 8 * s, 0.7, 'left'); }) });
   });
 
@@ -924,7 +1117,7 @@ function drawFloor(dt) {
       if (m.name === 'FISH') { text(jobLine('links'), x, y - 34 * sm, 8.5 * s, 0.8); if (pose === 'check') text('Through the wormhole →', x - 4, y - 46 * sm, 8 * s, 0.5, 'right'); } fx.restore(); } });
   });
 
-  raveTick(sm); partyTick();
+  raveTick(sm); partyTick(dt, sm);
   Z.sort((p, q) => p.z - q.z).forEach(d => d.f());
   banter(s);
 }
@@ -948,6 +1141,19 @@ function jobLine(job) {
   return '';
 }
 
+
+// ─── Doors: a frame up to the lintel on the corridor wall of every room, and the door standing open into the room ───
+const doorGap = (r, sm) => r.merged ? Math.min(52 * sm, r.w * 0.2) : Math.min(30 * sm, r.w * 0.3);
+function drawDoor(r, sm) {
+  const gap = doorGap(r, sm), du = r.door.u, dv = r.door.v, h = 22 * sm, dir = r.upper ? -1 : 1, a = 0.75, L = gap * (r.merged ? 0.5 : 0.92) * 0.98;
+  fx.save(); fx.globalAlpha = 0.95;
+  block(du - gap / 2 - 2.2, dv - 2.6, 2.4, 3.2, h); block(du + gap / 2 - 0.2, dv - 2.6, 2.4, 3.2, h); block(du - gap / 2 - 2.2, dv - 2.6, gap + 4.4, 3.2, 3 * sm, h - 3 * sm);   // posts and lintel
+  const leaf = (hu, sign) => { const eu = hu + sign * Math.sin(a) * L, ev = dv + dir * Math.cos(a) * L;
+    poly([P(hu, dv, 1), P(eu, ev, 1), P(eu, ev, h - 4 * sm), P(hu, dv, h - 4 * sm)], '#000');
+    const k = P(hu + (eu - hu) * 0.82, dv + (ev - dv) * 0.82, (h - 4 * sm) * 0.45); fx.beginPath(); fx.arc(k[0], k[1], 1.1 * sm, 0, 7); fx.stroke(); };   // the leaf, and its handle
+  leaf(du - gap / 2, 1); if (r.merged) leaf(du + gap / 2, -1);                                                                               // the ballroom has double doors
+  fx.restore();
+}
 
 // ─── The front door, the wormhole and the cat ───
 function frontDoor(sm, s) {
@@ -996,6 +1202,7 @@ window.JN_cat = () => { nextCat = 0; const fr = res.FRANKIE; return { cat, fr: f
 const TIGER = ['Yeah, freaking out, freaking out.', 'Yay, freaking out!', 'Where’s my tiger baby?', 'There’s my tiger baby!'];
 function catTick(dt, sm) {
   const room = floor.control, fr = res.FRANKIE;
+  if (wifeo.phase !== 'idle' || argon.phase !== 'idle') return;
   if (!cat) {
     if (floor.t < nextCat || !room || !fr || fr.room !== room || raving()) return;
     cat = { u: room.door.u, v: room.door.v, phase: 'in', step: 0, dir: 1, said: 0 };
@@ -1045,6 +1252,7 @@ function moodOf(name) {
     const st = floor.shift && floor.shift.analyst && floor.shift.analyst.status;
     if (st === 'RED' && Math.random() < 0.5) pick = 'stressed';             // a bad shift stresses everyone out
     if (name === 'NORMAL' && pick === 'sleepy') pick = 'drunk';       // the DJ never sleeps
+    if (name === 'WIFEO' || name === 'CODPIECE' || name === 'MR. PARTICULAR') pick = 'happy';   // Wifeo and the bouncers are always having a lovely time
     mood[name] = { kind: pick, until: floor.t + 20 + Math.random() * 30, ph: Math.random() * 6 };
   }
   return mood[name];
@@ -1078,8 +1286,21 @@ function stickMan(x, y, s, phase, pose, name) {
     if (name === 'NORMAL') {                         // the DJ's headphones
       fx.beginPath(); fx.arc(x, hy, 4.9 * s, Math.PI * 1.08, Math.PI * 1.92); fx.stroke();
       fx.fillStyle = '#fff'; fx.fillRect(x - 5.8 * s, hy - 1.6 * s, 1.8 * s, 3.4 * s); fx.fillRect(x + 4 * s, hy - 1.6 * s, 1.8 * s, 3.4 * s);
-    } else if (name === 'CODPIECE' || name === 'MR. PARTICULAR') {   // a bouncer's sunglasses
+    } else if (name === 'CODPIECE' || name === 'MR. PARTICULAR') {   // a bouncer: sunglasses, a feather boa, a bow tie and a bit of sparkle
       fx.save(); fx.lineWidth = 2.4 * s; fx.beginPath(); fx.moveTo(x - 3.4 * s, hy - 0.4 * s); fx.lineTo(x + 3.4 * s, hy - 0.4 * s); fx.stroke(); fx.restore();
+      const sh = y - 22 * s; fx.beginPath();
+      for (let i = 0; i <= 12; i++) { const px = x - 6.5 * s + i * 13 * s / 12, py = sh - 0.4 * s + Math.sin(i * 1.7 + floor.t * 3) * 1.2 * s; i ? fx.lineTo(px, py) : fx.moveTo(px, py); }
+      for (let i = 0; i < 6; i++) { const px = x - 6 * s + i * 2.4 * s; fx.moveTo(px, sh); fx.lineTo(px - 0.8 * s, sh + 2.4 * s + Math.sin(floor.t * 4 + i) * 0.5 * s); }   // feathers
+      fx.moveTo(x, y - 23.6 * s); fx.lineTo(x - 2.8 * s, y - 25 * s); fx.lineTo(x - 2.8 * s, y - 22.2 * s); fx.closePath(); fx.moveTo(x, y - 23.6 * s); fx.lineTo(x + 2.8 * s, y - 25 * s); fx.lineTo(x + 2.8 * s, y - 22.2 * s); fx.closePath(); fx.stroke();   // bow tie
+      const tw = floor.t * 2 + x; fx.globalAlpha = 0.4 + 0.5 * Math.abs(Math.sin(tw)); const sx = x + 9 * s, sy = hy - 2 * s + Math.sin(tw * 0.7) * 3 * s;
+      fx.beginPath(); fx.moveTo(sx - 2.4 * s, sy); fx.lineTo(sx + 2.4 * s, sy); fx.moveTo(sx, sy - 2.4 * s); fx.lineTo(sx, sy + 2.4 * s); fx.stroke(); fx.globalAlpha = 1;
+    } else if (name === 'WIFEO') {                    // long hair, a dress, and sparkles all round: she looks beautiful
+      fx.beginPath(); [-1, 1].forEach(sd => { fx.moveTo(x + sd * 3.2 * s, hy - 1 * s); fx.quadraticCurveTo(x + sd * 7 * s, hy + 4 * s, x + sd * 5 * s, hy + 12 * s); });
+      fx.moveTo(x, y - 22 * s); fx.lineTo(x - 6.8 * s, y - 4 * s); fx.lineTo(x + 6.8 * s, y - 4 * s); fx.closePath(); fx.stroke();
+      const tw = floor.t * 2;
+      for (let k = 0; k < 4; k++) { const an = tw * 0.5 + k * 1.57, sx = x + Math.cos(an) * 13 * s, sy = y - 16 * s + Math.sin(an) * 17 * s; fx.globalAlpha = 0.35 + 0.6 * Math.abs(Math.sin(tw * 1.5 + k * 2));
+        fx.beginPath(); fx.moveTo(sx - 2.6 * s, sy); fx.lineTo(sx + 2.6 * s, sy); fx.moveTo(sx, sy - 2.6 * s); fx.lineTo(sx, sy + 2.6 * s); fx.stroke(); }
+      fx.globalAlpha = 1;
     }
     fx.restore();
     return;
@@ -1173,6 +1394,11 @@ function drawMan(x, y, s, phase, pose) {
     const k = Math.max(0, Math.sin(phase * 2.5));
     fx.moveTo(x, hip); fx.lineTo(x - 3 * s, y); fx.moveTo(x, hip); fx.lineTo(x + 6 * s + k * 5 * s, y - 2 * s - k * 8 * s);
     fx.moveTo(x, sh); fx.lineTo(x - 8 * s, sh - 3 * s); fx.moveTo(x, sh); fx.lineTo(x + 6 * s, sh + 5 * s);
+  } else if (pose === 'camp') {                // a camp bouncer: one hand on the hip, the other waving daintily, hips swaying
+    const b = Math.sin(phase * 1.5);
+    fx.moveTo(x, hip); fx.lineTo(x - 3 * s, y); fx.moveTo(x, hip); fx.lineTo(x + 5 * s + b * s, y);
+    fx.moveTo(x, sh); fx.lineTo(x + 7 * s, sh + 5 * s); fx.lineTo(x + 3 * s, hip);
+    fx.moveTo(x, sh); fx.lineTo(x - 5 * s, sh - 4 * s); fx.lineTo(x - 6 * s + Math.sin(phase * 4) * 2 * s, sh - 11 * s);
   } else if (pose === 'fold') {                // a bouncer: feet apart, arms folded across the chest
     fx.moveTo(x, hip); fx.lineTo(x - 5 * s, y); fx.moveTo(x, hip); fx.lineTo(x + 5 * s, y);
     fx.moveTo(x, sh); fx.lineTo(x + 6 * s, sh + 4 * s); fx.lineTo(x - 5 * s, sh + 5 * s);
@@ -1276,6 +1502,20 @@ function floorLoop(now) {
 
 function setFloorShift(log) { floor.shift = log; layout(); makeMen(); }
 addEventListener('resize', () => { layout(); makeMen(); });
+// Full screen: the whole house fills the screen, on a computer or a phone. Where the browser can't do real full screen (iPhone), it covers the page instead.
+{
+  const box = document.querySelector('.floor'), btn = document.getElementById('fsBtn');
+  const redraw = () => { layout(); makeMen(); };
+  const set = on => {
+    box.classList.toggle('full', on); document.body.classList.toggle('floor-lock', on); btn.textContent = on ? 'Close' : 'Full screen'; btn.setAttribute('aria-pressed', String(on));
+    if (on) { try { if (box.requestFullscreen) box.requestFullscreen().catch(() => {}); } catch (e) { /* the page cover is enough */ } try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* not allowed here */ } }
+    else { try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) { /* fine */ } try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) { /* fine */ } }
+    setTimeout(redraw, 60); setTimeout(redraw, 400);
+  };
+  btn.addEventListener('click', () => set(!box.classList.contains('full')));
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && box.classList.contains('full')) set(false); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && box.classList.contains('full')) set(false); });
+}
 layout(); makeMen(); requestAnimationFrame(floorLoop);
 
 load();
