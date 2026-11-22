@@ -1,9 +1,8 @@
 -- Editable stick men (what they say, switching them off, extra ones): stored in jn_site_settings under key 'stickmen'.
 -- Anyone can read it (the homepage needs to); only the admin password can change it.
-drop policy if exists "jn public read now_playing" on public.jn_site_settings;
-drop policy if exists "jn public read site settings" on public.jn_site_settings;
-create policy "jn public read site settings" on public.jn_site_settings
-  for select to anon, authenticated using (key in ('now_playing', 'stickmen'));
+-- (applied as an additive change: the existing now_playing read policy is left as it is)
+create policy "jn public read stickmen" on public.jn_site_settings
+  for select to anon, authenticated using (key = 'stickmen');
 
 create or replace function public.jn_set_stickmen(p_password text, p_value jsonb)
 returns jsonb language plpgsql security definer set search_path = '' as $$
