@@ -411,12 +411,19 @@ const KITS = {
       [0.7, 0.78, 'point', ['Frankie calls it the green screen. It’s not green.', 'The frame’s doing something trippy again', 'Don’t stare at it. Okay, stare at it.']],
       [0.47, 0.1, 'check', ['Welcome to the ballroom! Everyone’s welcome', 'You’re looking lovely tonight', 'Grab a dance, grab a seat, make yourself at home']],
       [0.14, 0.4, 'type', ['Counting the plays. Statistically abnormal.', 'Another thousand plays. Is that normal? No. That’s why I’m Abnormal.']]] },
-  // the LOOS: moved out of the lobby when the lobby came down (the About room is the quiet one at the end)
-  '/about/': { title: 'LOOS',
-    items: [[0.08, 0.06, 0.3, 0.42, 15, 'cubicle'], [0.5, 0.06, 0.3, 0.42, 15, 'cubicle'], [0.3, 0.78, 0.4, 0.08, 10, 'basin'], [0.88, 0.7, 0.07, 0.1, 10, 'plant']],
-    stations: [[0.23, 0.22, 'drum', ['Slams the lid shut. Not today.', 'Drum solo on the toilet lid!', 'Ba-dum tss!', 'This lid has a lovely tone.']],
-      [0.65, 0.22, 'check', ['Back in five minutes', 'Do not disturb', 'The queue is just me']],
-      [0.5, 0.66, 'check', ['Washing my hands. Thoroughly.', 'Checking my hair in the mirror', 'Singing in the echo']]] },
+  // THE TOILETS: communal, and rather grand: cubicles down both sides, a row of basins with mirrors along the back, and a fountain in the middle.
+  '/about/': { title: 'TOILETS',
+    items: [[0.02, 0.04, 0.2, 0.3, 15, 'cubicle'], [0.24, 0.04, 0.2, 0.3, 15, 'cubicle'], [0.56, 0.04, 0.2, 0.3, 15, 'cubicle'], [0.78, 0.04, 0.2, 0.3, 15, 'cubicle'],
+      [0.3, 0.38, 0.4, 0.38, 8, 'fountain'], [0.04, 0.82, 0.2, 0.08, 10, 'basin'], [0.4, 0.86, 0.2, 0.08, 10, 'basin'], [0.76, 0.82, 0.2, 0.08, 10, 'basin'],
+      [0.0, 0.46, 0.06, 0.08, 10, 'plant'], [0.94, 0.46, 0.05, 0.08, 10, 'plant']],
+    stations: [[0.12, 0.2, 'drum', ['Slams the lid shut. Not today.', 'Drum solo on the toilet lid!', 'Ba-dum tss!', 'This lid has a lovely tone.']],
+      [0.34, 0.2, 'check', ['Back in five minutes', 'Do not disturb']],
+      [0.66, 0.2, 'check', ['Occupied. Hello.', 'The echo in here is lovely']],
+      [0.88, 0.2, 'check', ['Nobody here but me']],
+      [0.2, 0.58, 'think', ['Throwing a coin in the fountain. Wishing for a day off', 'The fountain is very soothing']],
+      [0.8, 0.58, 'bench', ['Sitting by the fountain', 'Best toilets in the building. Technically the only ones.']],
+      [0.14, 0.74, 'check', ['Washing my hands. Thoroughly.', 'Checking my hair in the mirror']],
+      [0.5, 0.78, 'check', ['Singing in the echo', 'Drying my hands under the dryer. It’s very loud']]] },
   '/security/': { title: 'SECURITY OPS',
     items: [[0.05, 0.9, 0.36, 0.06, 26, 'threat'], [0.55, 0.9, 0.32, 0.06, 26, 'quiz'], [0.34, 0.42, 0.28, 0.15, 9, 'desk'], [0.42, 0.48, 0.12, 0.04, 8, 'monitor', 9], [0.93, 0.86, 0.05, 0.05, 6, 'camera', 30], [0.72, 0.22, 0.22, 0.08, 34, 'arch'], [0.5, 0.46, 0.07, 0.06, 2, 'laptop', 9]],
     stations: [[0.24, 0.76, 'point', ['Updating the threat level board', 'Checking the threat level with MI5']],
@@ -434,23 +441,26 @@ const KITS = {
       [0.82, 0.66, 'check', ['Mixing a Negroni at the bar', 'Shaking something pink', 'Spin for a drink? Spin for a drink.', 'Cocktail o’clock. It’s always cocktail o’clock.']],
       [0.37, 0.47, 'type', ['Writing up the next game idea from the couch', 'Just checking my email. I’m on a break.']],
       [0.71, 0.3, 'bench', ['Perched on the zebra pouffe', 'Best seat for people-watching']]] },
-  // THE PLANNING ROOM: where all the other planning gets done. A model on the big table, a Gantt chart, a whiteboard and a lot of laptops.
-  '/security/cpted/': { title: 'PLANNING ROOM',
+  // THE OFFICE: where all the planning (and the emails) get done. A model on the big table, a Gantt chart, a whiteboard, a printer and a lot of laptops.
+  '/security/cpted/': { title: 'OFFICE',
     items: [[0.06, 0.9, 0.5, 0.06, 26, 'gantt'], [0.62, 0.9, 0.32, 0.06, 26, 'whiteboard'], [0.26, 0.4, 0.44, 0.26, 9, 'model'],
       [0.12, 0.46, 0.07, 0.06, 2, 'laptop', 9], [0.76, 0.46, 0.07, 0.06, 2, 'laptop', 9], [0.4, 0.6, 0.07, 0.05, 2, 'laptop', 9],
-      [0.76, 0.14, 0.2, 0.06, 24, 'notice'], [0.06, 0.12, 0.08, 0.08, 8, 'plant'], [0.88, 0.7, 0.1, 0.1, 14, 'coffee']],
+      [0.76, 0.14, 0.2, 0.06, 24, 'notice'], [0.06, 0.12, 0.08, 0.08, 8, 'plant'], [0.88, 0.7, 0.1, 0.1, 14, 'coffee'], [0.02, 0.42, 0.08, 0.1, 13, 'printer']],
     stations: [[0.21, 0.5, 'type', ['Updating the project plan', 'Moving a milestone. Again.']],
       [0.5, 0.74, 'point', ['Pointing at the Gantt chart', 'That deadline is a bit optimistic']],
       [0.8, 0.76, 'point', ['Sticky notes: the real project plan', 'Drawing a very confident arrow']],
-      [0.7, 0.5, 'think', ['Planning the planning', 'Is this a meeting that could have been an email?']],
+      [0.7, 0.5, 'think', ['Planning the planning', 'Is this a meeting that could have been an email?', 'Another email. Another email.']],
       [0.9, 0.6, 'check', ['Coffee number three', 'Refilling the coffee before the next planning session']]] },
-  '/security/martyns-law/': { title: 'MARTYN’S LAW LIBRARY',
-    items: [[0.04, 0.84, 0.42, 0.12, 32, 'shelf'], [0.5, 0.42, 0.3, 0.16, 9, 'papers'], [0.84, 0.16, 0.09, 0.09, 10, 'bin'], [0.84, 0.74, 0.12, 0.14, 22, 'cabinet'], [0.2, 0.2, 0.1, 0.08, 16, 'lectern'], [0.62, 0.46, 0.07, 0.07, 2, 'laptop', 9]],
-    stations: [[0.25, 0.72, 'think', ['Reading the Martyn’s Law guidance', 'Has GOV.UK changed it? Checking.']],
-      [0.47, 0.5, 'type', ['Filing today’s guidance check', 'Paperwork. So much paperwork.']],
-      [0.78, 0.12, 'kick', ['Emptying the bin', 'Kicking the bin. Therapeutic.']],
-      [0.82, 0.62, 'check', ['Searching the filing cabinet']],
-      [0.25, 0.3, 'point', ['Reading the Act out loud. Nobody listening.']]] },
+  // THE KITCHEN: wall cupboards, a worktop with a sink, a cooker, a fridge, a table with a laptop for working lunches, and the bin
+  '/security/martyns-law/': { title: 'KITCHEN',
+    items: [[0.04, 0.9, 0.62, 0.06, 28, 'cupboards'], [0.04, 0.76, 0.62, 0.1, 12, 'counter'], [0.7, 0.74, 0.16, 0.14, 12, 'cooker'], [0.88, 0.76, 0.1, 0.12, 30, 'fridge'],
+      [0.3, 0.36, 0.34, 0.16, 9, 'table'], [0.42, 0.4, 0.07, 0.06, 2, 'laptop', 9], [0.02, 0.14, 0.1, 0.1, 12, 'bin'], [0.84, 0.18, 0.1, 0.08, 10, 'plant']],
+    stations: [[0.25, 0.66, 'check', ['Chopping onions. Not crying.', 'Reading Martyn’s Law while the pasta boils', 'Washing up. Again.']],
+      [0.78, 0.62, 'check', ['Cooking. Smells like compliance', 'Stir stir stir', 'Is the oven on? I think the oven’s on']],
+      [0.14, 0.3, 'kick', ['Emptying the bin', 'Kicking the bin. Therapeutic.']],
+      [0.92, 0.62, 'check', ['Raiding the fridge', 'Who ate my yoghurt? It was labelled!']],
+      [0.27, 0.42, 'bench', ['Eating lunch at the kitchen table', 'Reading the guidance over a sandwich', 'Working lunch. Mostly lunch.']],
+      [0.55, 0.62, 'point', ['Reading the Act out loud. Nobody’s listening.', 'Tea? I’ll make a pot']]] },
   '/admin/': { title: 'SERVER ROOM',
     items: [[0.04, 0.78, 0.16, 0.16, 36, 'rack'], [0.22, 0.78, 0.16, 0.16, 36, 'rack'], [0.4, 0.42, 0.3, 0.16, 9, 'desk'], [0.48, 0.5, 0.12, 0.04, 8, 'monitor', 9], [0.8, 0.74, 0.15, 0.16, 16, 'safe'], [0.84, 0.14, 0.1, 0.08, 18, 'fan'], [0.58, 0.46, 0.07, 0.06, 2, 'laptop', 9]],
     stations: [[0.2, 0.62, 'kick', ['Turning the server off and on again', 'Kicking the server. It’s a fix.']],
@@ -490,6 +500,25 @@ function drawItem(r, it, busy) {
     for (let k = -1; k <= 1; k++) { fx.beginPath(); fx.ellipse(c[0], c[1], rr * Math.abs(Math.cos(spin + k * 1.05)), rr, 0, 0, 7); fx.stroke(); }          // the mirror facets turning
     for (let k = -1; k <= 1; k += 1) seg([c[0] - rr * Math.cos(k * 0.5), c[1] + rr * Math.sin(k * 0.5)], [c[0] + rr * Math.cos(k * 0.5), c[1] + rr * Math.sin(k * 0.5)]);
     if (on) for (let k = 0; k < 8; k++) { const an = t * 1.3 + k * 0.785, L = 9 * s + (k % 3) * 7 * s; fx.globalAlpha = (0.3 + 0.4 * Math.abs(Math.sin(t * 5 + k))) * laser.k; seg([c[0] + Math.cos(an) * (L - 3 * s), c[1] + Math.sin(an) * (L - 3 * s) * 0.6], [c[0] + Math.cos(an) * L, c[1] + Math.sin(an) * L * 0.6]); }
+    fx.restore(); return; }
+  if (kind === 'fountain') {                      // a grand fountain: a round basin, a two-tier centre, jets of water arcing out, ripples on the surface
+    const cu = a.u + w / 2, cv = a.v + d / 2, R = Math.min(w, d) / 2, busyK = busy ? 1.35 : 1;
+    const ring = (rr, z) => { fx.beginPath(); for (let k = 0; k <= 28; k++) { const an = k / 28 * Math.PI * 2, q = P(cu + Math.cos(an) * rr, cv + Math.sin(an) * rr, z); k ? fx.lineTo(q[0], q[1]) : fx.moveTo(q[0], q[1]); } fx.stroke(); };
+    fx.save(); fx.globalAlpha = 0.9;
+    ring(R, 0); ring(R, 7 * s); ring(R * 0.9, 7 * s);                                        // the wall of the basin
+    for (let k = 0; k < 8; k++) { const an = k * Math.PI / 4, q0 = P(cu + Math.cos(an) * R, cv + Math.sin(an) * R, 0), q1 = P(cu + Math.cos(an) * R, cv + Math.sin(an) * R, 7 * s); seg(q0, q1); }
+    fx.globalAlpha = 0.45; ring(R * 0.9, 4.5 * s);                                          // the water
+    for (let k = 0; k < 3; k++) { const f = (t * 0.35 + k / 3) % 1; fx.globalAlpha = 0.5 * (1 - f); ring(R * 0.9 * f, 4.5 * s); }   // ripples
+    fx.globalAlpha = 0.9; const base = P(cu, cv, 4.5 * s), top1 = P(cu, cv, 14 * s); seg(base, top1);                // the pillar and its two bowls
+    const bowl = (rr, z) => { ring(rr, z); };
+    bowl(R * 0.42, 13 * s); bowl(R * 0.2, 20 * s); seg(top1, P(cu, cv, 20 * s));
+    for (let j = 0; j < 8; j++) {                                                         // jets arcing out and falling into the basin, with droplets
+      const an = j * Math.PI / 4 + t * 0.15, reach = R * 0.82, jh = (9 + 3 * Math.sin(t * 2 + j)) * s * busyK;
+      fx.globalAlpha = 0.75; fx.beginPath();
+      for (let k = 0; k <= 12; k++) { const pp = k / 12, rad = reach * pp, z = 20 * s + jh * 4 * pp * (1 - pp) - pp * 15.5 * s, q = P(cu + Math.cos(an) * rad, cv + Math.sin(an) * rad, z); k ? fx.lineTo(q[0], q[1]) : fx.moveTo(q[0], q[1]); } fx.stroke();
+      const f = (t * 0.9 + j * 0.37) % 1, rad = reach * f, z = 20 * s + jh * 4 * f * (1 - f) - f * 15.5 * s, dq = P(cu + Math.cos(an) * rad, cv + Math.sin(an) * rad, z); fx.beginPath(); fx.arc(dq[0], dq[1], 0.9 * s, 0, 7); fx.stroke();
+    }
+    if (busy && Math.floor(t * 3) % 4 === 0) text('splash', ...P(cu + R * 0.9, cv, 8 * s), 6 * s, 0.7);
     fx.restore(); return; }
   const B = block(a.u, a.v, w, d, h, z0), X = B.x, Y = B.y, W = B.w;
   const lines = (n, pad, f) => { for (let k = 1; k <= n; k++) { const yy = Y + (B.h - pad * 2) * k / (n + 1) + pad, len = f(k); seg([X + 3, yy], [X + 3 + len, yy]); } };
@@ -676,6 +705,30 @@ function drawItem(r, it, busy) {
     for (let k = 0; k < rows; k++) { const y0 = Y + 4 + k * rh, x0 = X + 4 + k * W * 0.08, len = W * 0.35 * (0.6 + 0.4 * Math.sin(k * 1.7)), prog = busy ? 0.5 + 0.4 * Math.abs(Math.sin(t * 0.5 + k)) : 0.7;
       fx.strokeRect(x0, y0, len, rh * 0.6); fx.save(); fx.fillStyle = '#fff'; fx.globalAlpha = 0.5; fx.fillRect(x0, y0, len * prog, rh * 0.6); fx.restore(); }
     const tx = X + W * (0.55 + 0.02 * Math.sin(t)); seg([tx, Y + 2], [tx, Y + B.h - 2]);
+  }
+  else if (kind === 'cupboards') {                 // wall cupboards: doors with handles, one swinging open every so often
+    const n = Math.max(4, Math.floor(W / 14)), cw = W / n;
+    for (let k = 1; k < n; k++) seg([X + k * cw, Y], [X + k * cw, Y + B.h]);
+    for (let k = 0; k < n; k++) seg([X + k * cw + cw * (k % 2 ? 0.2 : 0.8), Y + B.h * 0.55], [X + k * cw + cw * (k % 2 ? 0.2 : 0.8), Y + B.h * 0.8]);
+    if (busy && Math.floor(t * 0.8) % 3 === 0) { const k = Math.floor(t * 0.8) % n; fx.strokeRect(X + k * cw + 1, Y + 1, cw - 2, B.h - 2); }
+  }
+  else if (kind === 'counter') {                   // a worktop: drawers below, a sink with a tap, a chopping board and a pan
+    seg([X, Y + B.h * 0.5], [X + W, Y + B.h * 0.5]); for (let k = 0; k < 4; k++) seg([X + W * (k + 0.5) / 4 - 3, Y + B.h * 0.75], [X + W * (k + 0.5) / 4 + 3, Y + B.h * 0.75]);
+    const sk = B.top(0.22, 0.5); ell(sk, 4.2 * s); seg(sk, [sk[0], sk[1] - 6 * s]); seg([sk[0], sk[1] - 6 * s], [sk[0] + 3 * s, sk[1] - 6 * s]);
+    if (busy) { const dd = (t * 2) % 1; seg([sk[0] + 3 * s, sk[1] - 6 * s], [sk[0] + 3 * s, sk[1] - 6 * s + dd * 5 * s]); }
+    const cb = B.top(0.55, 0.5); fx.strokeRect(cb[0] - 5 * s, cb[1] - 2.4 * s, 10 * s, 3.6 * s); if (busy) seg([cb[0] + Math.sin(t * 10) * 3 * s, cb[1] - 7 * s], [cb[0] + Math.sin(t * 10) * 3 * s, cb[1] - 2.4 * s]);
+    const pn = B.top(0.85, 0.5); fx.strokeRect(pn[0] - 3 * s, pn[1] - 4 * s, 6 * s, 4 * s);
+  }
+  else if (kind === 'cooker') {                    // a cooker: an oven door below, four hob rings, and a pot steaming on one
+    fx.strokeRect(X + 3, Y + B.h * 0.4, W - 6, B.h * 0.5); seg([X + 6, Y + B.h * 0.5], [X + W - 6, Y + B.h * 0.5]);
+    [[0.28, 0.3], [0.72, 0.3], [0.28, 0.7], [0.72, 0.7]].forEach(([fu2, fv2]) => ell(B.top(fu2, fv2), 2.6 * s));
+    const p0 = B.top(0.72, 0.3); fx.strokeRect(p0[0] - 3 * s, p0[1] - 5 * s, 6 * s, 5 * s);
+    for (let k = 0; k < 3; k++) { const dd = (t * 0.7 + k / 3) % 1, c = [p0[0] + Math.sin(dd * 5 + k) * 2 * s, p0[1] - 6 * s - dd * 14 * s]; fx.globalAlpha = 0.6 * (1 - dd); seg(c, [c[0] + 1.5 * s, c[1] - 3 * s]); }
+  }
+  else if (kind === 'fridge') {                    // a tall fridge: a freezer door above, handles, and magnets
+    seg([X, Y + B.h * 0.35], [X + W, Y + B.h * 0.35]); seg([X + W - 4, Y + 4], [X + W - 4, Y + B.h * 0.28]); seg([X + W - 4, Y + B.h * 0.42], [X + W - 4, Y + B.h * 0.7]);
+    fx.strokeRect(X + 3, Y + B.h * 0.5, 3.4, 3.4); fx.strokeRect(X + 8, Y + B.h * 0.56, 3.4, 3.4); fx.strokeRect(X + 4, Y + B.h * 0.62, 3.4, 3.4);
+    if (busy && Math.floor(t * 2) % 2 === 0) { seg([X + 2, Y + B.h * 0.36], [X + W * 0.5, Y + B.h * 0.4]); }
   }
   fx.restore();
 }

@@ -6,6 +6,7 @@
 <title>James Norman</title>
 <meta name="description" content="James Norman: technical director for AECOM and Chartered Security Consultant with over 27 years protecting people, assets and operations across critical national infrastructure and global capital projects. Also a producer and DJ: fly through the music.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"James Norman","alternateName":"James Normal","jobTitle":"Technical Director and Chartered Security Consultant","worksFor":{"@type":"Organization","name":"AECOM"},"url":"https://www.jamesnorman.co.uk/","sameAs":["https://soundcloud.com/jamesnormal","https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/"]}</script>
 <link rel="canonical" href="https://www.jamesnorman.co.uk/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="James Norman">
@@ -1875,7 +1876,16 @@ async function filePeaksFrom(file) {
 const $ = id => document.getElementById(id);
 const statusEl = $('status'), playBtn = $('playBtn'), micBtn = $('micBtn'), fileInput = $('file'), nowEl = $('now');
 const setStatus = s => { statusEl.textContent = s; statusEl.title = s; };
-function setPlayIcon(playing) { if (playing) document.body.classList.add('has-played'); document.body.classList.toggle('is-playing', playing); playBtn.classList.toggle('playing', playing); playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play'); }
+// James Norman by name, James Normal on the decks: while the music plays, the last letter of the name at the top flips from N to L.
+function nameFlip(playing) {
+  const sl = [...document.querySelectorAll('#nameSlot .sl')], last = sl[sl.length - 1], link = $('nameSlot'); if (!last) return;
+  const want = playing ? 'L' : 'N'; if (last.textContent === want) return;
+  last.animate([{ transform: 'rotateX(0)' }, { transform: 'rotateX(90deg)', offset: 0.5 }, { transform: 'rotateX(0)' }], { duration: 600, easing: 'ease-in-out' });
+  setTimeout(() => { last.textContent = want; }, 300);
+  link.setAttribute('aria-label', playing ? 'James Normal' : 'James Norman'); link.title = playing ? 'James Norman, on the decks as James Normal. Click to replay the intro' : 'Replay the intro';
+}
+window.JN_nameFlip = nameFlip;   // try it from the console: JN_nameFlip(true) / JN_nameFlip(false)
+function setPlayIcon(playing) { nameFlip(playing); if (playing) document.body.classList.add('has-played'); document.body.classList.toggle('is-playing', playing); playBtn.classList.toggle('playing', playing); playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play'); }
 
 function stopMic() {
   if (!micStream) return;
