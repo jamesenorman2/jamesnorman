@@ -118,6 +118,13 @@
   @media(max-width:700px){.stickbtn{left:.5rem;bottom:calc(.5rem + env(safe-area-inset-bottom,0px))}}
   .chairman .fx{filter:drop-shadow(0 0 2px #a55bff) drop-shadow(0 0 5px #8f4bff)}
   body.shell-on .chairman{bottom:4.8rem}
+  /* Argon the cat, chasing a mouse along the bottom of the screen */
+  .argon{position:fixed;left:0;right:0;bottom:calc(4.2rem + 4rem + .5rem);height:64px;z-index:6;pointer-events:none;opacity:0;transition:opacity .3s}
+  .argon.on{opacity:1}
+  .argon:not(.on){visibility:hidden}
+  .argon svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+  body.shell-on .argon{bottom:4.8rem}
+  body.tv .argon{display:none!important}
   body.tv .chairman{display:none!important}
   @media(max-width:700px){.chairman{bottom:calc(9.5rem + 48px + .5rem)}}
   @media(max-width:700px){.peek{bottom:calc(9.5rem + 48px + .5rem)}}
@@ -275,6 +282,7 @@
 <button class="stickbtn" id="stickBtn" type="button" title="Bring on a stick man" aria-label="Bring on a stick man"><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="sh" cx="13" cy="6" r="4.5"/><path class="sb" d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-8-6M13 15l8-6"/></svg></button>
 <div class="chairman loo" id="loo" aria-hidden="true"><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><g transform="translate(51 92) scale(.5) translate(-51 -92)"><path vector-effect="non-scaling-stroke" d="M40 92h18M44 92l2-14h8l2 14M34 70h30q0 10-10 10H44q-10 0-10-10zM34 70h30M60 70V50h8v20M58 50h12"/></g><path class="br" stroke="#8b5a2b" stroke-width="3" fill="none"/></svg></div>
 <div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><div class="nm"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><path class="pn"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/><text class="tx" fill="#fff" stroke="none" font-size="8" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text></svg></div>
+<div class="argon" id="argon" aria-hidden="true"><svg viewBox="0 0 400 64" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path class="ac"/><path class="am"/><text class="at" fill="#fff" stroke="none" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text><text class="al" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".55"></text></svg></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
@@ -2343,7 +2351,7 @@ function pooRun(force) {
   ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   const vw = innerWidth / 100, start = 8 + Math.random() * 20, looAt = Math.min(start + 30, 70);
   el.style.left = start + 'vw'; loo.style.left = looAt + 'vw'; el.classList.add('on'); loo.classList.add('on');
-  const G = 92, CX = 48, T0 = performance.now(), END = 16.6, S = { panic: SM.say('poo', 'panic'), late: SM.say('poo', 'late'), crime: SM.say('poo', 'crime') };
+  const G = 92, CX = 48, T0 = performance.now(), END = 16.6, PLUG = 1.7, S = { panic: SM.say('poo', 'panic'), late: SM.say('poo', 'late'), crime: SM.say('poo', 'crime') };
   const brEl = loo.querySelector('.br'), bits = [], endL = looAt + 7;                           // little brown bits: they fall from his bottom and stay on the floor
   brEl.setAttribute('d', ''); let nextBit = 7.3, lastT = 0;
   const pose = (hx, hy, legA, legB, armL, armR) => {
@@ -2353,14 +2361,23 @@ function pooRun(force) {
   };
   const say = (txt, on) => { if (on) { if (bub.textContent !== txt) bub.textContent = txt; bub.classList.add('on'); } else bub.classList.remove('on'); };
   const tick = () => {
-    const t = (performance.now() - T0) / 1000, beat = music.beat || 0.47, hy0 = G - 15;
-    if (t > END) { el.classList.remove('on'); loo.classList.remove('on'); say('', false); setTimeout(() => { brEl.setAttribute('d', ''); chairBusy = false; }, 500); return; }
-    const dt = Math.min(0.05, t - lastT); lastT = t;
-    if (t < 3) {                                                                   // dancing, not a care in the world
+    const rawT = (performance.now() - T0) / 1000, beat = music.beat || 0.47, hy0 = G - 15;
+    // the scene before the panic is cut out of the clock, so everything after it keeps its old timing
+    const plugging = rawT >= 3 && rawT < 3 + PLUG, t = rawT >= 3 + PLUG ? rawT - PLUG : rawT;
+    if (rawT > END + PLUG) { el.classList.remove('on'); loo.classList.remove('on'); say('', false); setTimeout(() => { brEl.setAttribute('d', ''); pt.setAttribute('d', ''); chairBusy = false; }, 500); return; }
+    const dt = Math.min(0.05, rawT - lastT); lastT = rawT;
+    if (plugging) {                                                                // he stops dancing, glances about and reaches round the back to put a little cork in
+      const k = (rawT - 3) / PLUG, wig = Math.sin(rawT * 30) * 0.7, sh = hy0 - 12, hand = [CX - 7 + wig, hy0 + 2];
+      hd.setAttribute('cx', CX + wig * 0.3); hd.setAttribute('cy', hy0 - 21);
+      bd.setAttribute('d', `M${CX} ${hy0 - 16.5}V${hy0}M${CX} ${hy0}L${CX - 3} ${hy0 + 15}M${CX} ${hy0}L${CX + 3} ${hy0 + 15}M${CX} ${sh}L${CX + 8} ${sh + 6}M${CX} ${sh}L${CX - 6} ${sh + 5}L${hand[0]} ${hand[1]}`);
+      pt.setAttribute('d', k > 0.3 ? `M${hand[0] - 2.4} ${hand[1] + 1.6}h4.8v3.2h-4.8z` : '');
+      const tx = el.querySelector('.tx'); tx.setAttribute('x', CX + 14); tx.setAttribute('y', hy0 - 28); tx.textContent = k < 0.35 ? 'hm…' : k < 0.8 ? 'shh…' : 'pop!';
+    } else if (t < 3) {                                                            // dancing, not a care in the world
       const ph = t / beat * Math.PI;
       pose(CX, hy0 - Math.abs(Math.sin(ph)) * 4, 0.25, -0.25, -1 + Math.sin(ph) * 0.4, 1 + Math.sin(ph) * 0.4);
     } else if (t < 4.6) {                                                          // the moment it hits
       const j = Math.sin(t * 40) * 1.2;
+      pt.setAttribute('d', ''); el.querySelector('.tx').textContent = '';
       pose(CX + j, hy0, 0.08, -0.08, -2.6, 2.6); say(S.panic, true);
     } else if (t < 6.4) {                                                          // the dash, and straight past the loo
       const k = (t - 4.6) / 1.8, step = Math.sin(t * 22);
@@ -2481,6 +2498,51 @@ function catStroke(force) {
   };
   requestAnimationFrame(tick);
 }
+// Argon the cat: now and then he chases a mouse across the bottom of the screen, catches it, and the two of them dance.
+function mousePath(x, y, f, step, up) {
+  const w = Math.sin(step) * 1.1;
+  if (up) return `M${x + 2.2} ${y - 6.5}a2.2 3.6 0 1 0 -4.4 0a2.2 3.6 0 1 0 4.4 0M${x + 1.7} ${y - 12}a1.7 1.7 0 1 0 -3.4 0a1.7 1.7 0 1 0 3.4 0` +
+    `M${x - 1.3} ${y - 13.8}a0.9 0.9 0 1 0 -1.8 0a0.9 0.9 0 1 0 1.8 0M${x + 3.1} ${y - 13.8}a0.9 0.9 0 1 0 -1.8 0a0.9 0.9 0 1 0 1.8 0` +
+    `M${x - 2} ${y - 7}l${-3.5} ${-3 - w}M${x + 2} ${y - 7}l${3.5} ${-3 + w}M${x - 1} ${y - 3}l${-1} 3M${x + 1} ${y - 3}l${1} 3M${x - 2.2} ${y - 4}q${-6} ${1} ${-6} ${-5}`;   // standing up, arms waving, tail curling
+  return `M${x + 3.6} ${y - 3}a3.6 2.2 0 1 0 -7.2 0a3.6 2.2 0 1 0 7.2 0M${x + f * 6.3} ${y - 3.4}a1.7 1.7 0 1 0 -3.4 0a1.7 1.7 0 1 0 3.4 0M${x + f * 4.4} ${y - 5.6}a0.9 0.9 0 1 0 -1.8 0a0.9 0.9 0 1 0 1.8 0` +
+    `M${x - f * 3.6} ${y - 3}q${-f * 5} ${-1} ${-f * 6} ${-5}M${x - f * 1.5} ${y - 1}l${w * f} ${1}M${x + f * 2} ${y - 1}l${-w * f} ${1}`;
+}
+let lastArgon = -1e9;
+function argonChase(force) {
+  const el = $('argon');
+  if (!el || chairBusy || calm || (!force && !document.body.classList.contains('intro-done'))) return;
+  chairBusy = true; lastArgon = performance.now();
+  const svg = el.querySelector('svg'), ac = el.querySelector('.ac'), am = el.querySelector('.am'), at = el.querySelector('.at'), al = el.querySelector('.al');
+  const W = innerWidth, G = 56, T0 = performance.now(), dir = Math.random() < 0.5 ? -1 : 1, startX = dir < 0 ? W + 40 : -40;
+  const catchX = W * (0.3 + Math.random() * 0.4), V = 170, T1 = Math.abs(startX - catchX) / V, TP = T1 + 0.9, TD = TP + 9, END = TD + 3.2;
+  svg.setAttribute('viewBox', `0 0 ${W} 64`); el.classList.add('on');
+  const tick = () => {
+    const t = (performance.now() - T0) / 1000, beat = Math.max(0.3, Math.min(1, music.beat || 0.47));
+    if (t > END) { el.classList.remove('on'); ac.setAttribute('d', ''); am.setAttribute('d', ''); at.textContent = ''; al.textContent = ''; chairBusy = false; return; }
+    let cx, my, mx, f = dir, sit = false, up = false, say = '', hop = 0, sway = 0;
+    if (t < T1) {                                                               // the chase: the mouse zig-zags ahead, the cat gains on it
+      mx = startX + dir * V * t; hop = Math.abs(Math.sin(t * 16)) * 4; cx = mx - dir * (120 - 105 * (t / T1)); say = '';
+    } else if (t < TP) {                                                        // the pounce
+      const k = (t - T1) / 0.9; mx = catchX; hop = 0; cx = mx - dir * 15 * (1 - k); my = 0;
+      ac.setAttribute('d', catPath(cx, G - Math.sin(Math.PI * k) * 16, f, false, t * 14)); am.setAttribute('d', mousePath(mx, G, -f, t * 20, false));
+      at.setAttribute('x', mx); at.setAttribute('y', G - 26); at.textContent = k > 0.5 ? 'squeak!' : ''; al.setAttribute('x', cx); al.setAttribute('y', 63); al.textContent = 'ARGON';
+      requestAnimationFrame(tick); return;
+    } else if (t < TD) {                                                        // caught, and then they dance: the cat sits up swaying, the mouse on its hind legs
+      const ph = (t - TP) / beat * Math.PI; sway = Math.sin(ph / 2) * 4; sit = true; up = true; cx = catchX - dir * 14 + sway; mx = catchX + dir * 8 - sway * 0.8; hop = Math.abs(Math.sin(ph)) * 3;
+      say = t < TP + 2.6 ? 'Gotcha. …Fancy a dance?' : '♪';
+    } else {                                                                     // and off they trot together
+      const k = t - TD; mx = catchX + dir * 8 + dir * 60 * k; cx = catchX - dir * 14 + dir * 60 * k; sit = false; up = false; hop = Math.abs(Math.sin(t * 16)) * 2;
+    }
+    ac.setAttribute('d', catPath(cx, G, sit ? -dir : f, sit, t * 14) + (sit && up ? `M${cx - 3} ${G - 7}l${-3} ${-4 - Math.sin(t * 8) * 2}M${cx + 3} ${G - 7}l${3} ${-4 + Math.sin(t * 8) * 2}` : ''));   // paws in the air
+    am.setAttribute('d', mousePath(mx, G - hop, up ? 0 : -f, t * 20, up));
+    at.setAttribute('x', (cx + mx) / 2); at.setAttribute('y', G - 30); at.textContent = say;
+    al.setAttribute('x', cx); al.setAttribute('y', 63); al.textContent = 'ARGON';
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+setInterval(() => { if (!chairBusy && performance.now() - lastArgon > 300000 && performance.now() - lastPeek > 20000 && Math.random() < 0.1) argonChase(); }, 30000);   // every so often
+window.JN_argon = () => { chairBusy = false; argonChase(true); };
 window.JN_cat = () => { chairBusy = false; catStroke(true); };
 window.JN_pot = () => { chairBusy = false; potDrum(true); };
 // ─── The little stick man in the corner: every so often he does something daft ───
@@ -2604,6 +2666,7 @@ function clickEntries() {
   if (SM.on('pot')) e.push(['pot', () => potDrum(true)]);
   if (SM.on('cat')) e.push(['cat', () => catStroke(true)]);
   if (SM.on('peek')) e.push(['peek', () => { lastPeek = -1e9; peek(pickOne(['idle', 'break']), 'plain'); }]);
+  e.push(['argon', () => argonChase(true)]);
   SM.customs().forEach(m => e.push(['c:' + m.id, () => { lastPeek = -1e9; peek('idle', m); }]));
   return e;
 }
