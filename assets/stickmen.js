@@ -37,8 +37,11 @@
         { key: 'late', when: 'After he has missed the loo', lines: ['Oops, too late.'] },
         { key: 'crime', when: 'Running away at the end', lines: ['Perfect crime.'] }
       ] },
-    { id: 'pot', agent: 'FRANKIE', name: 'Pot Drummer (Frankie’s pick)', does: 'Has a cooking pot on his head and bangs it with a spoon on every beat of the music, with a BONG each time.',
-      slots: [{ key: 'say', when: 'Partway through the drumming', lines: ['Yeah, freaking out, freaking out!'] }] },
+    { id: 'pot', agent: 'FRANKIE', name: 'Pan Drummer (Frankie’s pick)', does: 'Has a saucepan on his head and bangs it with a spoon on the beat of the music, with a BONG each time. After four bangs he takes it off, throws it up in the air and shouts the line below. It lands on the floor with a CLANG.',
+      slots: [
+        { key: 'say', when: 'While he is banging it', lines: ['Yeah, freaking out, freaking out!'] },
+        { key: 'throw', when: 'When he throws it in the air', lines: ['Sounds great!'] }
+      ] },
     { id: 'cat', agent: 'FRANKIE', name: 'Cat Stroker (Frankie and his tiger baby)', does: 'Looks around for his cat, it strolls in, he gives it a long stroke, and it wanders off again.',
       slots: [
         { key: 'look', when: 'Looking for the cat', lines: ['Where’s my tiger baby?'] },
