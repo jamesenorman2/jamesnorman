@@ -120,6 +120,7 @@
     <ul class="ing" id="dIng"></ul>
     <h3>Make it</h3>
     <ol class="steps" id="dSteps"></ol>
+    <p class="small" id="dFrom" style="margin-top:1.6rem" hidden></p>
     <div id="dStoryBox"><h3>The story</h3><div class="meta" id="dOrigin" style="margin-bottom:.8rem"></div><p class="story" id="dStory"></p></div>
     <div id="dNotesBox" class="notes"><h3>Notes</h3><div id="dNotes"></div></div>
     <div class="actions"><button type="button" id="dAnother">Another one</button><button type="button" class="ghost" id="dCopy">Copy link</button></div>
@@ -153,7 +154,7 @@ const $ = id => document.getElementById(id);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const LEN = { short: 'Short', long: 'Long', hot: 'Hot', shot: 'Shots' };
 const METH = { shaken: 'Shaken', stirred: 'Stirred', built: 'Built', blended: 'Blended', muddled: 'Muddled', layered: 'Layered' };
-let drinks = [], fLen = null, fMeth = null, fAF = false, makes = 1, units = 'ml', current = null, lastFocus = null;
+let live = false, drinks = [], fLen = null, fMeth = null, fAF = false, makes = 1, units = 'ml', current = null, lastFocus = null;
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
 /* ─── glasses: a few line drawings, chosen by the glass named in the recipe ─── */
@@ -179,16 +180,23 @@ function glassSvg(svg, g) { svg.innerHTML = ''; const p = document.createElement
 
 /* ─── amounts: scaled for however many drinks, in ml or oz ─── */
 const UNITS_OK = new Set(['ml', 'cl', 'oz', 'part', 'parts', 'dash', 'dashes', 'tsp', 'teaspoon', 'tbsp', 'tablespoon', 'g', 'kg', 'bottle', 'jar', 'pts']);
-const fmt = n => n >= 10 ? String(Math.round(n)) : String(Math.round(n * 10) / 10).replace(/\.0$/, '');
+const FRAC = [[0.25, '¼'], [0.33, '⅓'], [0.5, '½'], [0.67, '⅔'], [0.75, '¾']];
+const fmt = n => {
+  if (n >= 10) return String(Math.round(n));
+  const whole = Math.floor(n + 0.02), rest = n - whole, f = FRAC.find(([v]) => Math.abs(rest - v) < 0.04);
+  if (f) return (whole ? whole : '') + f[1];
+  return String(Math.round(n * 10) / 10).replace(/\.0$/, '');
+};
+const toNum = q => { const m = /^(\d+)\/(\d+)$/.exec(q); return m ? Number(m[1]) / Number(m[2]) : /^[\d.]+$/.test(q) ? Number(q) : NaN; };
 function amount(i) {
   if (!i.qty) return '';
-  const scale = q => { const n = parseFloat(q); return isNaN(n) ? q : n * makes; };
+  const scale = q => { const n = toNum(q); return isNaN(n) ? q : n * makes; };
   let qty = i.qty, unit = i.unit || '';
-  if (/^[\d.]+$/.test(qty)) {
+  if (/^[\d.]+$/.test(qty) || /^\d+\/\d+$/.test(qty)) {
     let n = scale(qty);
     if (unit === 'ml' && units === 'oz') { n = n / 29.5735; return (Math.round(n * 4) / 4 || 0.25).toString().replace(/^0\./, '0.') + ' oz'; }
     qty = fmt(n);
-  } else if (/^[\d.]+-[\d.]+$/.test(qty)) { const [a, b] = qty.split('-'); qty = fmt(scale(a)) + '-' + fmt(scale(b)); }
+  } else if (/^[\d./]+-[\d./]+$/.test(qty)) { const [a, b] = qty.split('-'); qty = fmt(scale(a)) + '-' + fmt(scale(b)); }
   if (!unit) return qty;
   const plural = (unit === 'part' && qty !== '1') ? 'parts' : unit;
   return UNITS_OK.has(unit.toLowerCase()) ? qty + ' ' + plural : qty + ' (' + unit + ')';
@@ -220,7 +228,7 @@ function render() {
     b.addEventListener('click', () => { fAF = !fAF; render(); }); $('fMeth').append(b);
   }
   const list = visible(), box = $('list'); box.innerHTML = '';
-  $('count').textContent = list.length + (list.length === 1 ? ' drink' : ' drinks');
+  $('count').textContent = list.length + (list.length === 1 ? ' drink' : ' drinks') + (live ? ' · live from the recipe library' : '');
   $('empty').hidden = list.length > 0; $('spinBtn').disabled = !list.length;
   list.forEach(d => {
     const b = el('button', 'drink'); b.type = 'button';
@@ -255,6 +263,11 @@ function openDrink(id, push) {
   const place = [d.place, d.year].filter(Boolean).join(' · ');
   $('dStoryBox').hidden = !(d.history || place); $('dOrigin').textContent = place; $('dOrigin').hidden = !place; $('dStory').textContent = d.history || '';
   const nb = $('dNotes'); nb.innerHTML = ''; d.notes.forEach(n => nb.append(el('p', null, n))); $('dNotesBox').hidden = !d.notes.length;
+  const from = $('dFrom'); from.innerHTML = ''; from.hidden = true;
+  if (d.author || d.sourceUrl) {
+    from.hidden = false; from.append('Recipe' + (d.author ? ' by ' + d.author : ''));
+    if (d.sourceUrl && /^https:\/\/[^\s"<>]+$/.test(d.sourceUrl)) { const a = el('a', null, new URL(d.sourceUrl).hostname.replace(/^www\./, '')); a.href = d.sourceUrl; a.target = '_blank'; a.rel = 'noopener'; from.append(' · ', a); }
+  }
   $('dMsg').textContent = '';
   paint(); $('sClose').focus({ preventScroll: true });
 }
@@ -288,12 +301,13 @@ function drawWheel() {
   cx.strokeStyle = '#fff'; cx.lineWidth = 1.2; cx.lineJoin = 'round';
   cx.beginPath(); cx.arc(0, 0, R, 0, 7); cx.stroke();
   cx.beginPath(); cx.arc(0, 0, R * 0.14, 0, 7); cx.stroke();
-  const font = Math.max(9, Math.min(14, R * 2.4 / n * 0.62 + 4));
+  const labels = n <= 36, font = Math.max(9, Math.min(14, R * 2.4 / n * 0.62 + 4));
   cx.font = `300 ${font}px "IBM Plex Mono", monospace`; cx.textBaseline = 'middle';
   for (let i = 0; i < n; i++) {
     const a = wheel.rot + i * step;
     if (i === wheel.win) { cx.fillStyle = '#fff'; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, R, a, a + step); cx.closePath(); cx.fill(); }
     cx.beginPath(); cx.moveTo(Math.cos(a) * R * 0.14, Math.sin(a) * R * 0.14); cx.lineTo(Math.cos(a) * R, Math.sin(a) * R); cx.stroke();
+    if (!labels) continue;
     cx.save(); cx.rotate(a + step / 2); cx.fillStyle = i === wheel.win ? '#000' : '#fff'; cx.textAlign = 'right';
     let t = wheel.list[i].title; const max = R - R * 0.2 - 14;
     while (cx.measureText(t).width > max && t.length > 4) t = t.slice(0, -2);
@@ -308,7 +322,7 @@ function openSpin() {
   wheel = { list, rot: Math.random() * Math.PI * 2, spinning: false, win: -1 };
   lastFocus = document.activeElement; $('sheet').hidden = true;
   $('spin').hidden = false; document.body.classList.add('noscroll');
-  $('pick').innerHTML = ''; $('spMake').hidden = true; $('spGo').textContent = 'Spin';
+  $('pick').innerHTML = ''; $('pick').dataset.i = ''; $('spMake').hidden = true; $('spGo').textContent = 'Spin';
   $('spNote').textContent = (fLen || fMeth || fAF || $('q').value) ? 'Spinning through the ' + list.length + ' drinks that match your filters.' : 'Spinning through all ' + list.length + ' drinks.';
   drawWheel(); $('spGo').focus({ preventScroll: true });
 }
@@ -323,6 +337,7 @@ function spinIt() {
   const frame = now => {
     const k = Math.min(1, (now - T0) / DUR), e = 1 - Math.pow(1 - k, 4);
     wheel.rot = start + delta * e; drawWheel();
+    if (n > 36) { const idx = Math.floor((((-wheel.rot) % turn + turn) % turn) / step) % n; const p = $('pick'); if (p.dataset.i !== String(idx)) { p.dataset.i = idx; p.innerHTML = ''; p.append(el('div', 'lead', 'Spinning…'), el('div', 'name', wheel.list[idx].title)); } }
     if (k < 1) { requestAnimationFrame(frame); return; }
     wheel.spinning = false; wheel.win = pick; drawWheel(); $('spGo').disabled = false; $('spGo').textContent = 'Spin again';
     const d = wheel.list[pick]; const p = $('pick'); p.innerHTML = ''; p.append(el('div', 'lead', 'You’re having'), el('div', 'name', d.title));
@@ -341,10 +356,13 @@ addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!$('spin'
 addEventListener('hashchange', () => { const id = location.hash.slice(1); if (id && drinks.some(d => d.id === id)) openDrink(id, false); else if (!id && !$('sheet').hidden) closeDrink(); });
 
 /* ─── go ─── */
-fetch('/bar/cocktails.json').then(r => r.json()).then(j => {
-  drinks = j.drinks || []; render();
-  const id = location.hash.slice(1); if (id) openDrink(id, false);
-}).catch(() => { $('count').textContent = 'The bar couldn’t open just now. Try again in a moment.'; });
+const openHash = () => { const id = location.hash.slice(1); if (id && drinks.some(d => d.id === id) && (!current || current.id !== id)) openDrink(id, false); };
+fetch('/bar/cocktails.json').then(r => r.json()).then(j => { drinks = j.drinks || []; render(); openHash(); })
+  .catch(() => { $('count').textContent = 'The bar couldn’t open just now. Try again in a moment.'; })
+  .then(() => fetch('/api/bar').then(r => r.json()).then(j => {                 // then upgrade to everything in the recipe library, if it can be reached
+    if (!j || !j.ok || !Array.isArray(j.drinks) || !j.drinks.length) return;
+    drinks = j.drinks; live = true; render(); openHash();
+  }).catch(() => { /* the built-in selection is fine */ }));
 })();
 </script>
 </body>

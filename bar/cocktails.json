@@ -10,6 +10,8 @@
    "place": "Paris, then New York",
    "year": "1920s to 1930s",
    "history": "Fernand Petiot claimed to have first mixed vodka with tinned tomato juice at Harry's New York Bar in Paris around 1921, then refined it with spice and lemon at the St. Regis in New York in the 1930s. The hotel thought the name too coarse and sold it as a Red Snapper for years.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -67,6 +69,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house cocktail from Elephant Rock's own menu, described there as \"bright, fragrant, zesty\" — lemon-infused gin lengthened with a black tea syrup, in the mould of a gin fizz. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -105,6 +109,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house cocktail from Elephant Rock's own menu, described there as \"velvety, creamy, sweet\" — raspberry-infused vodka and Amarula with strawberry and a candy floss syrup, finished with cream. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -153,6 +159,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house cocktail from Elephant Rock's own menu, described there as \"nutty, dense, sweet\" — cold brew and cacao playing off the toffee-nut warmth of Amarula and Frangelico, with cacao bitters to round it off. The menu prints the ingredients but not the exact measures, so the proportions below are a standard bartender's estimate rather than the bar's own recipe card.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -201,6 +209,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house cocktail from Elephant Rock's own menu, described there as \"sweet, tart, dry\" — a French 75 built on Copeland Rhuberry gin with a dash of Cointreau added, topped with prosecco. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -247,6 +257,8 @@
    "place": "London, England",
    "year": "1983",
    "history": "Dick Bradsell made it at the Soho Brasserie for a model who asked for something that would, in her words, wake her up and then mess her up. He called it a Vodka Espresso first, then the Pharmaceutical Stimulant; the martini name came later and stuck.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -288,6 +300,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house cocktail from Elephant Rock's own menu, described there as \"nutty, rich, sweet\" — an Old Fashioned built on Buffalo Trace bourbon with crème de cacao and hazelnut standing in for the usual sugar, plus cacao bitters. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -331,6 +345,8 @@
    "place": "Mexico and the US border — disputed",
    "year": "late 1930s to 1948",
    "history": "At least three people have claimed it: Carlos \"Danny\" Herrera at Rancho La Gloria near Tijuana around 1938, Dallas socialite Margarita Sames in Acapulco in 1948, and a Juárez bartender called Danny Negrete. The dullest explanation is probably the true one — margarita is Spanish for daisy, and a Daisy is simply a spirit, citrus and orange liqueur, which is exactly what this is. The first printed recipe ran in Esquire in December 1953.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -376,6 +392,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house mocktail from Elephant Rock's own menu — raspberry, blackberry and blueberry muddled with lime and sugar, lengthened with soda water, in the same smash format as a whiskey smash. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -412,60 +430,6 @@
    ]
   },
   {
-   "id": "mulled-cider",
-   "title": "Mulled Cider",
-   "glass": null,
-   "length": "hot",
-   "method": null,
-   "alcoholFree": false,
-   "place": "England",
-   "year": "medieval",
-   "history": "The cider-country cousin of mulled wine, from the orchards of the West Country. It shares its ancestry with wassail, the spiced-cider ritual of drinking to the health of the apple trees in midwinter.",
-   "servings": 1,
-   "ingredients": [
-    {
-     "name": "dry cider",
-     "qty": "3.5",
-     "unit": "pts"
-    },
-    {
-     "name": "apple juice"
-    },
-    {
-     "name": "apples",
-     "qty": "2",
-     "unit": "studded with cloves"
-    },
-    {
-     "name": "cinnamon sticks",
-     "qty": "4-6"
-    },
-    {
-     "name": "allspice berries",
-     "qty": "5-6"
-    },
-    {
-     "name": "orange zest",
-     "qty": "1",
-     "unit": "orange"
-    },
-    {
-     "name": "dark rum"
-    },
-    {
-     "name": "apple",
-     "note": "slices"
-    }
-   ],
-   "steps": [
-    "Combine the dry cider or fresh apple juice, apples, cinnamon sticks, allspice berries, orange zest, and dark rum (optional) in a large saucepan and simmer gently for 30 minutes - do not boil.",
-    "Transfer to a heatproof bowl and ladle into glass mugs. Garnish with apple to serve."
-   ],
-   "notes": [
-    "Clove-studded apples, spices, citrus and dark rum make this mulled cider recipe impossible to resist on a cold day; a great Christmas party drink."
-   ]
-  },
-  {
    "id": "my-cherry-amore",
    "title": "My Cherry Amore",
    "glass": "Coupe glass",
@@ -475,6 +439,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house cocktail from Elephant Rock's own menu, described there as \"bold, warming, smooth\" — a Manhattan built on cherry-infused Buffalo Trace bourbon and Carpano Antica Formula sweet vermouth, with bitters. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -513,6 +479,8 @@
    "place": "Florence, Italy",
    "year": "1919",
    "history": "Count Camillo Negroni is said to have asked barman Fosco Scarselli at Caffè Casoni to stiffen his Americano with gin in place of the soda. Family records suggest the Count had spent years in America as a gambler and rodeo rider before returning to Florence, which is the sort of detail that makes the story worth believing.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -554,6 +522,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house cocktail from Elephant Rock's own menu — one of the bar's own bartender recommendations, described there as \"floral, niche\". Built like an Aviation with a double measure of gin and an egg white for body, it leans further into the crème de violette than most, letting the perfume lead. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -601,6 +571,8 @@
    "place": "Louisville, Kentucky, USA",
    "year": "1880s (the formula itself, 1806)",
    "history": "A cocktail was defined in print in 1806 as spirits, sugar, water and bitters — nothing more. By the 1880s bartenders were mixing fancier things, so drinkers who wanted the original started asking for it the old-fashioned way, and the name stuck to the drink. The Pendennis Club in Louisville claims to have made it famous.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -646,6 +618,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house spritz from Elephant Rock's own menu, described there as \"fruity, light, crisp\" — Poire Williams pear brandy and St Germain elderflower liqueur lengthened with prosecco, in the same built-over-ice, topped-last format as an Aperol Spritz. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -681,6 +655,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house mocktail from Elephant Rock's own menu — apple juice, pear purée, lime juice and passionfruit shaken together, no spirit at all. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -723,6 +699,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house cocktail from Elephant Rock's own menu, described there as \"rich, bold, creamy\" — an espresso martini built on vanilla vodka and Kahlúa, deepened with a Guinness and demerara sugar reduction in place of a plain sugar syrup. The name nods to the stout. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -767,6 +745,8 @@
    "place": null,
    "year": null,
    "history": null,
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -825,6 +805,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house cocktail from Elephant Rock's own menu, described there as \"sweet, citrus, balanced\" and named for Ballycastle's Auld Lammas Fair — Ireland's oldest traditional fair, held every August since the 17th century, famous above all for yellowman, the hard golden honeycomb toffee sold from its stalls (as the old ballad goes: \"Did you treat your Mary Ann / to some Dulse and Yellow Man / at the Ould Lammas Fair in Ballycastle-O\"). The drink's nod to it is YellaMan, an actual honeycomb vodka liqueur made by Niche Drinks in nearby Derry/Londonderry, lengthened here with Cointreau, marmalade, lime and lemonade. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate — and since YellaMan is a liqueur rather than a plain vodka, it's already sweetened, so this needs less added sugar than a typical vodka sour.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -871,6 +853,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house cocktail from Elephant Rock's own menu, described there as \"nostalgic, sweet\" — bon-bon-infused vodka lengthened with blood orange tonic, built long over ice. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -909,6 +893,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house mocktail from Elephant Rock's own menu — the bar's alcohol-free take on a Bramble, built on Tanqueray 0.0% alcohol-free gin with grenadine and lime in place of the usual gin and crème de mûre. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -949,6 +935,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house mocktail from Elephant Rock's own menu — the bar's alcohol-free take on a Pornstar Martini, built on passionfruit purée, lime and sugar syrup lengthened with pineapple juice instead of vanilla vodka and Passoã. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {
@@ -991,6 +979,8 @@
    "place": "Elephant Rock",
    "year": null,
    "history": "A house mocktail from Elephant Rock's own menu — the bar's alcohol-free take on a frozen strawberry daiquiri, built on strawberries, lime, sugar syrup and grenadine with no rum. The menu lists the ingredients but not the measures, so the proportions below are a standard bartender's estimate.",
+   "author": null,
+   "sourceUrl": null,
    "servings": 1,
    "ingredients": [
     {

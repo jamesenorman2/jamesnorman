@@ -22,6 +22,9 @@
       "maxDuration": 300,
       "includeFiles": "ABOUT.md"
     },
+    "api/bar.js": {
+      "maxDuration": 60
+    },
     "api/backup.js": {
       "maxDuration": 60
     },
