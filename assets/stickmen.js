@@ -41,8 +41,7 @@
     { id: 'cat', agent: 'FRANKIE', name: 'Cat Stroker (Frankie and his tiger baby)', does: 'Looks around for his cat, it strolls in, he gives it a long stroke, and it wanders off again.',
       slots: [
         { key: 'look', when: 'Looking for the cat', lines: ['Where’s my tiger baby?'] },
-        { key: 'found', when: 'The cat arrives', lines: ['There’s my tiger baby!'] },
-        { key: 'stroke', when: 'While he strokes it', lines: ['Yeah, freaking out, freaking out.'] }
+        { key: 'found', when: 'The cat arrives', lines: ['There’s my tiger baby!'] }
       ] },
     { id: 'corner', name: 'The little stick man in the corner', does: 'The small white stick man at the bottom left of the screen. Click him and one of the others above (or one of your own below) comes on at random. He doesn’t say anything himself.', slots: [] }
   ];

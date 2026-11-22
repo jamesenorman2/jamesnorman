@@ -280,7 +280,7 @@
 </div>
 <iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page"></iframe>
 <button class="stickbtn" id="stickBtn" type="button" title="Bring on a stick man" aria-label="Bring on a stick man"><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="sh" cx="13" cy="6" r="4.5"/><path class="sb" d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-8-6M13 15l8-6"/></svg></button>
-<div class="chairman loo" id="loo" aria-hidden="true"><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M40 92h18M44 92l2-14h8l2 14M34 70h30q0 10-10 10H44q-10 0-10-10zM34 70h30M60 70V50h8v20M58 50h12"/></svg></div>
+<div class="chairman loo" id="loo" aria-hidden="true"><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><g transform="translate(51 92) scale(.5) translate(-51 -92)"><path vector-effect="non-scaling-stroke" d="M40 92h18M44 92l2-14h8l2 14M34 70h30q0 10-10 10H44q-10 0-10-10zM34 70h30M60 70V50h8v20M58 50h12"/></g></svg></div>
 <div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><div class="nm"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/><text class="tx" fill="#fff" stroke="none" font-size="8" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text></svg></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
@@ -2225,14 +2225,15 @@ if (TV) {
 /* ─── Now and then an agent pops up to have a word, especially when you skip their track ─── */
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 let lastPeek = -1e9, peekTimer = 0;
-function peek(kind) {
+function peek(kind, forced) {
   const now = performance.now(), el = $('peek');
   if (now - lastPeek < 20000 || !document.body.classList.contains('intro-done')) return;
   lastPeek = now;
   // the agent due on the main page right now (the agents page shows them going through the wormhole): one of their own
   // men if they have one, otherwise a plain pop-up with their name on it
-  const due = SM.duty().agent, cu = SM.customsHere(), plain = SM.on('peek') && (SM.agentOf('peek') === '*' || SM.agentOf('peek') === due);
-  const custom = cu.length && (!plain || Math.random() < 0.5) ? pickOne(cu) : null;
+  const due = SM.duty().agent, cu = SM.customsHere();
+  let plain = SM.on('peek') && (SM.agentOf('peek') === '*' || SM.agentOf('peek') === due), custom = cu.length && (!plain || Math.random() < 0.5) ? pickOne(cu) : null;
+  if (forced) { custom = forced === 'plain' ? null : forced; plain = forced === 'plain'; }        // a click picks exactly who comes on
   if (!custom && !plain) { lastPeek = -1e9; return; }
   el.querySelector('.bub').textContent = custom ? pickOne(custom.lines) : (SM.say('peek', kind) || '…');
   el.querySelector('.nm').textContent = 'AGENT ' + (custom ? custom.agent : SM.who('peek'));
@@ -2429,7 +2430,7 @@ function catStroke(force) {
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub'), tx = el.querySelector('.tx');
   pt.setAttribute('d', ''); fx.setAttribute('d', ''); tx.textContent = '';
   el.style.left = (12 + Math.random() * 50) + 'vw'; el.classList.add('on');
-  const G = 92, CX = 40, T0 = performance.now(), END = 10.5, SIT = CX + 15, S = { look: SM.say('cat', 'look'), found: SM.say('cat', 'found'), stroke: SM.say('cat', 'stroke') };
+  const G = 92, CX = 40, T0 = performance.now(), END = 10.5, SIT = CX + 15, S = { look: SM.say('cat', 'look'), found: SM.say('cat', 'found') };
   const say = txt => { if (txt) { if (bub.textContent !== txt) bub.textContent = txt; bub.classList.add('on'); } else bub.classList.remove('on'); };
   const tick = () => {
     const t = (performance.now() - T0) / 1000, hy = G - 15;
@@ -2445,7 +2446,7 @@ function catStroke(force) {
     const stroking = sit, k = Math.sin(t * 5) * 1.5;
     const arm = stroking ? `M${CX} ${sh}L${CX + 6} ${sh + 5}L${CX + 12 + k} ${hy - 1}` : `M${CX} ${sh}L${CX + 6} ${sh + 7}`;
     bd.setAttribute('d', `M${CX} ${hy - 16.5}V${hy}M${CX} ${hy}L${CX - 2} ${hy + 15}M${CX} ${hy}L${CX + 3} ${hy + 15}${arm}M${CX} ${sh}L${CX - 5} ${sh + 7}`);
-    say(t < 2.2 ? S.look : t > 4.2 && t < 6.2 ? S.found : t > 6.4 && t < 8.6 ? S.stroke : '');
+    say(t < 2.2 ? S.look : t > 4.2 && t < 6.2 ? S.found : '');
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
@@ -2562,17 +2563,29 @@ const cornerAct = (() => {
 })();
 window.JN_corner = cornerAct;   // try it from the console: JN_corner('cartwheel'), or JN_corner.list for them all
 // the little stick man in the corner: click him and one of the others comes on
+// Each click brings on a different one: everyone takes a turn in a shuffled order before anyone repeats, so the toilet comes round too.
+let clickBag = [], lastClick = '';
+function clickEntries() {
+  const e = [];
+  if (SM.on('chair')) e.push(['chair', () => chairDance(true)]);
+  if (SM.on('uv')) e.push(['uv', () => { lastPaint = -1e9; uvPaint(true); }]);
+  if (SM.on('poo')) e.push(['poo', () => pooRun(true)]);
+  if (SM.on('pot')) e.push(['pot', () => potDrum(true)]);
+  if (SM.on('cat')) e.push(['cat', () => catStroke(true)]);
+  if (SM.on('peek')) e.push(['peek', () => { lastPeek = -1e9; peek(pickOne(['idle', 'break']), 'plain'); }]);
+  SM.customs().forEach(m => e.push(['c:' + m.id, () => { lastPeek = -1e9; peek('idle', m); }]));
+  return e;
+}
 $('stickBtn').addEventListener('click', () => {
   if (chairBusy) return;
-  const acts = [];                                                    // only the men whose agent is due on the main page
-  if (SM.here('chair')) acts.push(() => chairDance());
-  if (SM.here('uv')) acts.push(() => { lastPaint = -1e9; uvPaint(true); });
-  if (SM.here('poo')) acts.push(() => pooRun(true));
-  if (SM.here('pot')) acts.push(() => potDrum(true));
-  if (SM.here('cat')) acts.push(() => catStroke(true));
-  acts.push(() => { lastPeek = -1e9; peek(pickOne(['idle', 'break'])); });
-  SM.customsHere().forEach(() => acts.push(() => { lastPeek = -1e9; peek('idle'); }));
-  if (acts.length) pickOne(acts)();
+  const all = clickEntries(); if (!all.length) return;
+  clickBag = clickBag.filter(k => all.some(e => e[0] === k));                       // drop any that have been switched off since
+  if (!clickBag.length) {                                                         // a fresh shuffled round, not starting with the one just shown
+    clickBag = all.map(e => e[0]).sort(() => Math.random() - 0.5);
+    if (clickBag.length > 1 && clickBag[0] === lastClick) clickBag.push(clickBag.shift());
+  }
+  lastClick = clickBag.shift();
+  all.find(e => e[0] === lastClick)[1]();
 });
 window.JN_poo = () => { chairBusy = false; lastPoo = -1e9; pooRun(true); };   // try it from the console
 window.JN_paint = () => { chairBusy = false; lastPaint = -1e9; uvPaint(); };   // try it from the console
