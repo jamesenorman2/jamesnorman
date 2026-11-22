@@ -15,7 +15,7 @@
 (() => {
   // every agent on the agents page, in the order they are listed
   const AGENTS = ['NORMAL', 'LLOYD', 'MASTERPIECE', 'OLD SCHOOL', 'FRANKIE', 'GCHQ', 'QUIZZY RASCAL', 'OATIE MAN', 'ENGINEER', 'HANDBOOK', 'BORING', 'BIN LID',
-    'MR. PARTICULAR', 'JACK MAN', 'SNOOPY', 'BLOG-HEAD', 'MONKEY MONKEY', 'FISH FISH', 'FISH', 'CODPIECE'];
+    'MR. PARTICULAR', 'JACK MAN', 'SNOOPY', 'BLOG-HEAD', 'MONKEY MONKEY', 'FISH FISH', 'FISH', 'CODPIECE', 'ABNORMAL', 'WIFEO'];
   const SLOT = 180000, LEAD = 22000, RETURN = 24000;   // a turn lasts 3 minutes; they set off 22s before, and have 24s to get back to their desk after
   const DEFAULTS = [
     { id: 'peek', agent: '*', name: 'The Agents who pop up', does: 'Now and then an agent pops up in the bottom of the screen with a speech bubble, mostly when you skip, rewind or fast-forward a track, or on a big breakdown. He stays for about three and a half seconds.',

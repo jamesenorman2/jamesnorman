@@ -116,7 +116,7 @@
     <p class="small" id="battleEmpty" hidden>The crew is setting up the first battle. Check back in a minute.</p>
   </section>
   <section aria-labelledby="stats-h">
-    <div class="kicker">Agent Normal · SoundCloud stats</div>
+    <div class="kicker">Agent Abnormal · SoundCloud stats</div>
     <h2 id="stats-h" style="margin-top:.6rem">The numbers</h2>
     <p class="small" id="statsSum">Counting…</p>
     <div class="stats" id="stats"></div>
@@ -353,7 +353,7 @@ loadBattle();
 JN.kickShift().then(ran => { if (ran) loadBattle(); });
 })();
 
-// Agent Normal and Agent Old School
+// Agent Abnormal and Agent Old School
 (async () => {
   const escM = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const okUrl = u => /^https:\/\/[^\s"<>]+$/.test(u || '');
@@ -364,7 +364,7 @@ JN.kickShift().then(ran => { if (ran) loadBattle(); });
     document.getElementById('statsSum').textContent = bt.summary || '';
     const max = Math.max(1, ...bt.tracks.map(t => t.plays || 0));
     document.getElementById('stats').innerHTML = bt.tracks.slice().sort((a, b) => (b.plays || 0) - (a.plays || 0)).map(t => `<div class="row"><div>${okUrl(t.url) ? `<a href="${escM(t.url)}" target="_blank" rel="noopener">${escM(t.title)}</a>` : escM(t.title)}<div class="bar" style="width:${Math.round(100 * (t.plays || 0) / max)}%"></div></div><span>${t.plays == null ? '?' : escM(t.plays.toLocaleString('en-GB'))} plays · ${t.likes == null ? '?' : escM(t.likes)} likes</span><span class="up">${t.new_plays ? '+' + escM(t.new_plays) : ''}</span></div>`).join('');
-  } else document.getElementById('statsSum').textContent = 'Normal files the first count soon.';
+  } else document.getElementById('statsSum').textContent = 'Abnormal files the first count soon.';
   if (wz && Array.isArray(wz.picks)) {
     document.getElementById('digSound').textContent = wz.sound || '';
     document.getElementById('digs').innerHTML = wz.picks.map(p => `<div class="card"><div class="kicker">${escM(p.label)} · ${escM(p.released)}</div><h3>${okUrl(p.url) ? `<a href="${escM(p.url)}" target="_blank" rel="noopener">${escM(p.artist)} – ${escM(p.title)}</a>` : escM(p.artist + ' – ' + p.title)}</h3><p>${escM(p.why)}</p><p class="small">Mix it into: ${escM(p.mix_with)}</p></div>`).join('');

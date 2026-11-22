@@ -231,7 +231,7 @@ const DAY = [
   ['teacake', 'AGENT MR. PARTICULAR', 'Hostile reconnaissance on this site: exposed files, the database’s public key, the proxy, headers, strobe safety.'],
   ['pigeon', 'AGENT SNOOPY', 'Visitor analyst. Reads the week’s privacy-friendly visit counts and suggests improvements.'],
   ['bunsen', 'AGENT QUIZZY RASCAL', 'Question setter. One security question a day on the Security page, and a LinkedIn post for James.'],
-  ['biscuittin', 'AGENT NORMAL', 'SoundCloud stats: plays, likes and reposts, and what’s climbing.'],
+  ['biscuittin', 'AGENT ABNORMAL', 'SoundCloud stats: plays, likes and reposts, and what’s climbing. (Not to be confused with Agent Normal, the DJ.)'],
   ['wurzel', 'AGENT OLD SCHOOL', 'Crate digger. Each week, new records that fit James’s sound, with which set they’d go in.'],
   ['crumpet', 'AGENT HANDBOOK', 'Handbook quality: contradictions, broken citations, out-of-date standards and thin pages, ranked to fix next.'],
   ['spanner', 'AGENT ENGINEER', 'Builder. Turns ideas James agreed into build plans and rough working versions on a preview link.']
@@ -670,7 +670,7 @@ function raveRoute(a, name, homeFn, sm, dt) {
   return true;
 }
 /* ─── The ballroom party: the DJ's patter, guest DJs, the doormen, and the laser show ───
-   Agent Normal is the DJ, always, and has a character: a hype-man who can't stop treating the dancefloor like a site that needs securing.
+   Agent Normal is the DJ (just "Normal": never "DJ Normal"), always, and has a character: a hype-man who can't stop treating the dancefloor like a site that needs securing.
    Now and then Old School or Lloyd come and play on the second deck. Lasers (and the only colour in the house) happen now and then. */
 const DJ_LINES = ['Good evening, ladies, gentlemen and agents of every threat level!', 'This next one’s for whoever left the lights on. Dave.', 'Hands up if you’ve got your lanyard on!',
   'That was a banger. Please evacuate your dancing via the nearest exit.', 'Normal by name. Absolutely not by nature.', 'I’m not saying this tune is good. I’m saying it is CLEARED for use.',
@@ -869,7 +869,7 @@ function drawFloor(dt) {
         const [x, y] = P(a.u, a.v, up);
         if (pose === 'rave') danceMan(x, y, sm, a, w.name, i);
         else stickMan(x, y, sm, moving ? a.step : t * 2 + i, pose, w.name);
-        text(w.name === 'NORMAL' ? 'DJ NORMAL' : w.name, x, y + 9 * s, 7.5 * s, 0.65);
+        text(w.name, x, y + 9 * s, 7.5 * s, 0.65);
         const msg = w.line();
         if (msg && !moving && !raving() && pose !== 'rave' && r.w / Math.max(1, who.length) > 60) text(msg, Math.max(P(r.u, a.v)[0] + 46, Math.min(P(r.u + r.w, a.v)[0] - 46, x)), y - 36 * sm - (i % 2) * 10 * s, 8 * s, 0.8);
       }) });

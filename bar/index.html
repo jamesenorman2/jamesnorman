@@ -61,7 +61,8 @@
   .msg{font-size:.72rem;color:var(--ok);min-height:1.2em;margin-top:.8rem}
 
   .wheelwrap{display:flex;flex-direction:column;align-items:center;gap:1.4rem}
-  #wheel{width:min(88vw,440px);height:min(88vw,440px);display:block}
+  #wheel{width:min(88vw,440px);height:min(88vw,440px);display:block;touch-action:none;cursor:grab}
+  #wheel:active{cursor:grabbing}
   .pick{text-align:center;min-height:6.5rem}
   .pick .lead{font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
   .pick .name{font-family:'Syne',sans-serif;font-weight:500;font-size:clamp(1.6rem,6vw,2.4rem);line-height:1.1;margin-top:.4rem}
@@ -176,6 +177,7 @@
       <div class="pick" id="pick" aria-live="polite"></div>
       <div class="actions" style="margin:0;justify-content:center"><button type="button" id="spGo">Spin</button><button type="button" class="ghost" id="spMake" hidden>Make it</button></div>
       <p class="small" id="spNote" style="text-align:center"></p>
+      <p class="small" style="text-align:center;color:var(--dim)">Flick the wheel to spin it again</p>
     </div>
   </div>
 </div>
@@ -402,7 +404,7 @@ $('dCopy').addEventListener('click', async () => {
 
 /* ─── the wheel: spins through whatever the filters leave, and lands on one ─── */
 const cv = $('wheel'), cx = cv.getContext('2d');
-let wheel = { list: [], rot: 0, spinning: false, win: -1 };
+let wheel = { list: [], rot: 0, spinning: false, win: -1, vel: 0, drag: false };
 function drawWheel() {
   const dpr = Math.min(devicePixelRatio || 1, 2), size = cv.getBoundingClientRect().width || 440;
   cv.width = size * dpr; cv.height = size * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -429,38 +431,82 @@ function drawWheel() {
 }
 function openSpin() {
   const list = visible(); if (!list.length) return;
-  wheel = { list, rot: Math.random() * Math.PI * 2, spinning: false, win: -1 };
+  wheel = { list, rot: Math.random() * Math.PI * 2, spinning: false, win: -1, vel: 0, drag: false };
   lastFocus = document.activeElement; $('sheet').hidden = true;
   $('spin').hidden = false; document.body.classList.add('noscroll');
   $('pick').innerHTML = ''; $('pick').dataset.i = ''; $('spMake').hidden = true; $('spGo').textContent = 'Spin';
   $('spNote').textContent = (fLen || fMeth || fAF || $('q').value) ? 'Spinning through the ' + list.length + ' drinks that match your filters.' : 'Spinning through all ' + list.length + ' drinks.';
   drawWheel(); $('spGo').focus({ preventScroll: true });
+  setTimeout(() => { if (!$('spin').hidden && !wheel.spinning) spinIt(); }, 350);        // it spins as soon as it opens
 }
-function spinIt() {
+// The wheel has real momentum: it starts spinning when it opens, and you can flick it (or tap it, or press Spin) to spin it again.
+// It slows down by itself and lands on whichever slice is under the pointer.
+const TURN = Math.PI * 2;
+const sliceAt = () => Math.floor((((-wheel.rot) % TURN) + TURN) % TURN / (TURN / wheel.list.length)) % wheel.list.length;
+function showWinner(idx) {
+  wheel.spinning = false; wheel.win = idx; drawWheel(); $('spGo').disabled = false; $('spGo').textContent = 'Spin again';
+  const d = wheel.list[idx], p = $('pick'); p.innerHTML = ''; p.append(el('div', 'lead', 'You’re having'), el('div', 'name', d.title));
+  $('spMake').hidden = false; $('spMake').onclick = () => { $('spin').hidden = true; openDrink(d.id, true); };
+}
+function spinIt(speed) {
   if (wheel.spinning) return;
-  wheel.spinning = true; wheel.win = -1; $('spGo').disabled = true; $('spMake').hidden = true; $('pick').innerHTML = '';
-  const n = wheel.list.length, step = Math.PI * 2 / n, pick = Math.floor(Math.random() * n);
-  const want = -(pick + 0.5) * step;                                       // that slice's middle under the pointer on the right
-  const turn = Math.PI * 2, start = wheel.rot;
-  let delta = ((want - start) % turn + turn) % turn + (reduceMotion ? 0 : (5 + Math.floor(Math.random() * 3)) * turn);
-  const T0 = performance.now(), DUR = reduceMotion ? 1 : 4800;
+  const token = wheel.token = (wheel.token || 0) + 1;
+  wheel.spinning = true; wheel.win = -1; $('spGo').disabled = true; $('spMake').hidden = true; $('pick').innerHTML = ''; $('pick').dataset.i = '';
+  const n = wheel.list.length, step = TURN / n;
+  if (reduceMotion) { const idx = Math.floor(Math.random() * n); wheel.rot = -(idx + 0.5) * step; showWinner(idx); return; }
+  wheel.vel = speed || (14 + Math.random() * 8) * (Math.random() < 0.85 ? 1 : -1);
+  let last = performance.now(), settleFrom = null, settleTo = 0, settleT0 = 0;
   const frame = now => {
-    const k = Math.min(1, (now - T0) / DUR), e = 1 - Math.pow(1 - k, 4);
-    wheel.rot = start + delta * e; drawWheel();
-    if (n > 36) { const idx = Math.floor((((-wheel.rot) % turn + turn) % turn) / step) % n; const p = $('pick'); if (p.dataset.i !== String(idx)) { p.dataset.i = idx; p.innerHTML = ''; p.append(el('div', 'lead', 'Spinning…'), el('div', 'name', wheel.list[idx].title)); } }
-    if (k < 1) { requestAnimationFrame(frame); return; }
-    wheel.spinning = false; wheel.win = pick; drawWheel(); $('spGo').disabled = false; $('spGo').textContent = 'Spin again';
-    const d = wheel.list[pick]; const p = $('pick'); p.innerHTML = ''; p.append(el('div', 'lead', 'You’re having'), el('div', 'name', d.title));
-    $('spMake').hidden = false; $('spMake').onclick = () => { $('spin').hidden = true; openDrink(d.id, true); };
+    if (wheel.token !== token || $('spin').hidden) { if (wheel.token === token) wheel.spinning = false; return; }   // closed, or a newer spin has taken over
+    if (wheel.drag) { wheel.spinning = false; return; }                                 // grabbed: the hand takes over
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (settleFrom === null) {
+      wheel.rot += wheel.vel * dt; wheel.vel *= Math.exp(-0.75 * dt);
+      if (Math.abs(wheel.vel) < 0.35) {                                                   // nearly stopped: ease into the middle of the slice it is on
+        const idx = sliceAt(); settleFrom = wheel.rot; settleT0 = now;
+        let want = -(idx + 0.5) * step; want += Math.round((wheel.rot - want) / TURN) * TURN; settleTo = want;
+      }
+    } else {
+      const k = Math.min(1, (now - settleT0) / 450), e = 1 - Math.pow(1 - k, 3);
+      wheel.rot = settleFrom + (settleTo - settleFrom) * e;
+      if (k >= 1) { drawWheel(); showWinner(sliceAt()); return; }
+    }
+    drawWheel();
+    if (n > 36) { const idx = sliceAt(), p = $('pick'); if (p.dataset.i !== String(idx)) { p.dataset.i = idx; p.innerHTML = ''; p.append(el('div', 'lead', 'Spinning…'), el('div', 'name', wheel.list[idx].title)); } }   // too many slices to print: the names flick past instead
+    requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
 }
+// grab the wheel and fling it
+(() => {
+  let id = null, lastA = 0, lastT = 0, v = 0, moved = 0;
+  const angle = e => { const r = cv.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)); };
+  cv.addEventListener('pointerdown', e => {
+    if ($('spin').hidden || reduceMotion) return;
+    id = e.pointerId; cv.setPointerCapture(id); wheel.drag = true; wheel.vel = 0; lastA = angle(e); lastT = performance.now(); v = 0; moved = 0;
+    if (wheel.spinning) wheel.spinning = false;
+    wheel.win = -1; $('spMake').hidden = true; $('spGo').disabled = false; $('pick').innerHTML = ''; drawWheel();
+  });
+  cv.addEventListener('pointermove', e => {
+    if (e.pointerId !== id || !wheel.drag) return;
+    const a = angle(e), now = performance.now(); let d = a - lastA; if (d > Math.PI) d -= TURN; if (d < -Math.PI) d += TURN;
+    wheel.rot += d; moved += Math.abs(d); const dt = Math.max(0.008, (now - lastT) / 1000); v = v * 0.6 + (d / dt) * 0.4; lastA = a; lastT = now; drawWheel();
+  });
+  const up = e => {
+    if (e.pointerId !== id || !wheel.drag) return;
+    wheel.drag = false; id = null;
+    if (moved < 0.12) spinIt();                                                        // a tap: spin it
+    else if (Math.abs(v) > 1.5 && performance.now() - lastT < 120) spinIt(Math.max(-26, Math.min(26, v)));   // a flick: carry on at that speed
+    else { wheel.spinning = false; showWinner(sliceAt()); }                              // let go slowly: it lands where it is
+  };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+})();
 function closeSpin() {
-  if (wheel.spinning) return;
+  wheel.spinning = false; wheel.drag = false;
   $('spin').hidden = true; document.body.classList.remove('noscroll');
   if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
 }
-$('spinBtn').addEventListener('click', openSpin); $('spGo').addEventListener('click', spinIt); $('spClose').addEventListener('click', closeSpin);
+$('spinBtn').addEventListener('click', openSpin); $('spGo').addEventListener('click', () => spinIt()); $('spClose').addEventListener('click', closeSpin);
 addEventListener('resize', () => { if (!$('spin').hidden && !wheel.spinning) drawWheel(); });
 addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!$('spin').hidden) closeSpin(); else if (!$('sheet').hidden) closeDrink(); });
 addEventListener('hashchange', () => { const id = location.hash.slice(1); if (id && drinks.some(d => d.id === id)) openDrink(id, false); else if (!id && !$('sheet').hidden) closeDrink(); });
