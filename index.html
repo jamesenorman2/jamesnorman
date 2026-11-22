@@ -109,11 +109,11 @@
   .chairman .bub.on{opacity:1}
   .chairman.loo{width:96px}
   .chairman .nm{position:absolute;left:50%;bottom:-13px;translate:-50% 0;font-size:.55rem;letter-spacing:.18em;color:#9a9a9a;white-space:nowrap}
-  .stickbtn{position:fixed;left:1rem;bottom:.9rem;z-index:6;background:none;border:0;padding:.3rem;cursor:pointer;transition:transform .2s}
+  .stickbtn{position:fixed;left:1rem;bottom:.9rem;z-index:6;background:none;border:0;padding:.3rem;cursor:pointer;opacity:.4;transition:opacity .2s,transform .2s}
   .stickbtn svg{width:14px;height:24px;display:block}
-  .stickbtn:hover,.stickbtn:focus-visible{transform:translateY(-2px)}
+  .stickbtn:hover,.stickbtn:focus-visible{opacity:1;transform:translateY(-2px)}
   body.tv .stickbtn,body.shell-on .stickbtn{display:none}
-  /* the little man in the corner is a skeleton posed every frame by script (see cornerAct). He is plain white and stays the same small size whatever he is doing */
+  /* the little man in the corner is a skeleton posed every frame by script (see cornerAct). He stays slightly greyed out and the same small size whatever he is doing */
   .stickbtn svg{overflow:visible}
   @media(max-width:700px){.stickbtn{left:.5rem;bottom:calc(.5rem + env(safe-area-inset-bottom,0px))}}
   .chairman .fx{filter:drop-shadow(0 0 2px #a55bff) drop-shadow(0 0 5px #8f4bff)}
@@ -2150,6 +2150,7 @@ function shellSync() {
 shellFrame.addEventListener('load', shellSync);
 function openShell(path, push) {
   shellOn = true; document.body.classList.add('shell-on');
+  try { sessionStorage.setItem('jn-shell', '1'); } catch (e) { /* private mode */ }   // so a reload of a page on show comes back here, not to a bare page
   if (push !== false) window.history.pushState({ shell: 1 }, '', path);
   try { shellFrame.contentWindow.location.replace(path); } catch (e) { shellFrame.src = path; }
 }
@@ -2166,6 +2167,8 @@ window.JN_NOW = () => ({ playing: !!musicOn(), sound: nowSound, by: pickedBy, du
 // and a way for that page to play one of the tracks in the site player
 window.JN_PLAY = (url, title, by) => {
   if (!sc || !scReady || !SC_URL_RE.test(url || '')) return false;
+  const same = u => String(u || '').split('?')[0];
+  if (nowSound && same(nowSound.permalink_url) === same(url)) { if (!scPlaying) { try { sc.play(); } catch (e) {} } return true; }     // the same track: just carry on
   const it = { url, key: url, title: title || '', by: by || null };
   queue.push(it); qi = queue.length - 1; playItem(it); return true;
 };
@@ -2179,8 +2182,7 @@ document.addEventListener('click', e => {
   if (a.target && a.target !== '_self') return;
   let url; try { url = new URL(a.href, location.href); } catch (err) { return; }
   if (url.origin !== location.origin || url.pathname === '/' || /^\/admin/.test(url.pathname)) return;
-  if (!musicOn() && !shellOn) return;                      // nothing playing: ordinary navigation
-  e.preventDefault();
+  e.preventDefault();                                      // always over the one player, playing or not, so the player (and the music) is never lost between pages
   openShell(url.pathname + url.search + url.hash);
 }, true);
 addEventListener('popstate', () => {

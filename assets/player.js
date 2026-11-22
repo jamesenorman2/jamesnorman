@@ -20,7 +20,15 @@
     }, true);
     return;
   }
-  if (location.pathname === '/') return;                 // the homepage has the player itself
+  if (location.pathname === '/' || window.JN_SHELL) return;   // the homepage has the player itself (JN_SHELL is its marker: its address changes to /music/ and so on while a page is open over it)
+  // A reload (or Back/Forward) of a page that was open over the player lands here on its own: put it back over the player,
+  // instead of showing the stray play button. Only within a session that has used the player, never for a first visit.
+  try {
+    const nav = performance.getEntriesByType('navigation')[0];
+    if (sessionStorage.getItem('jn-shell') && nav && (nav.type === 'reload' || nav.type === 'back_forward')) {
+      location.replace('/?then=' + encodeURIComponent(location.pathname + location.search + location.hash)); return;
+    }
+  } catch (e) { /* no storage: fall through to the button */ }
 
   const css = document.createElement('style');
   css.textContent = `.jn-play{position:fixed;left:1rem;bottom:1rem;z-index:50;width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.55);

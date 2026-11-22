@@ -95,6 +95,7 @@
 
   <section class="player" aria-label="SoundCloud player">
     <div id="playerBox"></div>
+    <p class="small" id="linkNote" style="margin-top:.8rem" hidden>Pick any track here and it plays in the site player at the bottom of the screen, so the music carries on as you move around the site.</p>
     <p class="small" style="margin-top:.8rem"><a id="scLink" target="_blank" rel="noopener">Open on SoundCloud &nearr;</a></p>
   </section>
 
@@ -161,15 +162,28 @@ function mountPlayer(url, autoPlay) {
   widget = SC.Widget(iframe);
   const E = SC.Widget.Events;
   widget.bind(E.READY, () => readSound());
-  widget.bind(E.PLAY, () => { playing = true; readSound(); });
+  widget.bind(E.PLAY, () => { if (inSite()) handOff(); else { playing = true; readSound(); } });   // over the site player: hand the pick to it
   widget.bind(E.PAUSE, () => { playing = false; });
   widget.bind(E.FINISH, () => { playing = false; });
   widget.bind(E.PLAY_PROGRESS, e => { pos = e.currentPosition; posAt = performance.now(); });
 }
 
-function readSound() {
+// Over the site player (this page opened inside the homepage), a track picked in this SoundCloud box plays in the site player, so the two are one:
+// the bottom bar changes, the artwork follows, and this box is paused so two tracks never play at once. If the site player can't take it yet, this box plays it itself.
+let local = false;
+function inSite() { try { return window.parent !== window && !!window.parent.JN_NOW; } catch (e) { return false; } }
+function handOff() {
   widget.getCurrentSound(s => {
-    if (!s || s.id === soundId) return;
+    if (!s) return;
+    let ok = false;
+    try { ok = !!window.parent.JN_PLAY((s.permalink_url || '').split('?')[0], s.title, null); } catch (e) { ok = false; }
+    if (ok) { local = false; widget.pause(); }
+    else { local = true; playing = true; readSound(true); }
+  });
+}
+function readSound(force) {
+  widget.getCurrentSound(s => {
+    if (!s || (inSite() && !local && !force) || s.id === soundId) return;
     soundId = s.id;
     duration = s.duration || s.full_duration || 0;
     showArt(s);
@@ -318,23 +332,22 @@ async function loadBattle() {
 }
 
 /* ─── Start ─────────────────────────────────────────────── */
-// Opened over the site player (music already playing on the front page)? Then this page shows what
-// that player is playing, and its own player stays out of the way so two tracks never play at once.
+// Opened over the site player (the homepage)? Then this page shows what that player is playing, and anything picked
+// in this page's SoundCloud box is handed to it, so two tracks never play at once.
 function siteNow() { try { return window.parent !== window && window.parent.JN_NOW ? window.parent.JN_NOW() : null; } catch (e) { return null; } }
 let linked = false;
 function follow() {
   const n = siteNow();
-  if (!n || !n.sound) return;
-  if (!linked) {
-    linked = true;
-    $('playerBox').innerHTML = '<p class="small">Playing now in the site player at the bottom of the screen. Use its buttons to pause or skip, or press play on a track in the battle below to put it on.</p>';
-  }
+  if (!n || local) return;
+  $('linkNote').hidden = false;
+  if (!n.sound) return;
+  linked = true;
   playing = n.playing; pos = n.pos; posAt = performance.now(); duration = n.duration || duration;
   if (n.sound.id !== soundId) { soundId = n.sound.id; showArt(n.sound); loadWave(n.sound.waveform_url); $('scLink').href = (n.sound.permalink_url || JN.soundcloud).split('?')[0]; }
   $('artWho').textContent = (n.playing ? 'Playing now' : 'Paused') + (n.by ? ' · picked by ' + n.by : '');
 }
 if (siteNow()) { follow(); setInterval(follow, 1000); }
-if (!linked) mountPlayer(JN.soundcloud, false);   // your whole profile, so visitors can browse
+mountPlayer(JN.soundcloud, false);   // your whole profile, so visitors can browse and pick (over the site player, a pick goes to it)
 loadBattle();
 JN.kickShift().then(ran => { if (ran) loadBattle(); });
 })();
