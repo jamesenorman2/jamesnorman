@@ -113,6 +113,19 @@
   .stickbtn svg{width:14px;height:24px;display:block}
   .stickbtn:hover,.stickbtn:focus-visible{opacity:1;transform:translateY(-2px)}
   body.tv .stickbtn,body.shell-on .stickbtn{display:none}
+  /* every so often the little man has a dance: arms up and waving, legs kicking, a bounce, all on the beat */
+  .stickbtn svg *{transform-box:view-box}
+  .stickbtn.dance{opacity:.95}
+  .stickbtn.dance svg{animation:stBounce var(--stbeat,.5s) ease-in-out infinite}
+  .stickbtn.dance .sal{transform-origin:13px 15px;animation:stArmL var(--stbeat,.5s) ease-in-out infinite alternate}
+  .stickbtn.dance .sar{transform-origin:13px 15px;animation:stArmR var(--stbeat,.5s) ease-in-out infinite alternate}
+  .stickbtn.dance .sll{transform-origin:13px 27px;animation:stLegL var(--stbeat,.5s) ease-in-out infinite alternate}
+  .stickbtn.dance .slr{transform-origin:13px 27px;animation:stLegR var(--stbeat,.5s) ease-in-out infinite alternate}
+  @keyframes stBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes stArmL{from{transform:rotate(-8deg)}to{transform:rotate(34deg)}}
+  @keyframes stArmR{from{transform:rotate(8deg)}to{transform:rotate(-34deg)}}
+  @keyframes stLegL{from{transform:rotate(14deg)}to{transform:rotate(-18deg)}}
+  @keyframes stLegR{from{transform:rotate(18deg)}to{transform:rotate(-14deg)}}
   @media(max-width:700px){.stickbtn{left:.5rem;bottom:calc(.5rem + env(safe-area-inset-bottom,0px))}}
   .chairman .fx{filter:drop-shadow(0 0 2px #a55bff) drop-shadow(0 0 5px #8f4bff)}
   body.shell-on .chairman{bottom:4.8rem}
@@ -276,7 +289,7 @@
   </div>
 </div>
 <iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page"></iframe>
-<button class="stickbtn" id="stickBtn" type="button" title="Bring on a stick man" aria-label="Bring on a stick man"><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-8-6M13 15l8-6"/></svg></button>
+<button class="stickbtn" id="stickBtn" type="button" title="Bring on a stick man" aria-label="Bring on a stick man"><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle class="sh" cx="13" cy="6" r="4.5"/><path class="sb" d="M13 10.5V27"/><path class="sal" d="M13 15l-8-6"/><path class="sar" d="M13 15l8-6"/><path class="sll" d="M13 27l-6 15"/><path class="slr" d="M13 27l6 15"/></svg></button>
 <div class="chairman loo" id="loo" aria-hidden="true"><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M40 92h18M44 92l2-14h8l2 14M34 70h30q0 10-10 10H44q-10 0-10-10zM34 70h30M60 70V50h8v20M58 50h12"/></svg></div>
 <div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><div class="nm"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/><text class="tx" fill="#fff" stroke="none" font-size="8" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text></svg></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
@@ -2452,6 +2465,18 @@ function catStroke(force) {
 }
 window.JN_cat = () => { chairBusy = false; catStroke(true); };
 window.JN_pot = () => { chairBusy = false; potDrum(true); };
+// the little stick man in the corner has a dance now and then (more often while music is playing), on the beat
+let cornerDancing = false;
+function cornerDance() {
+  const b = $('stickBtn');
+  if (cornerDancing || calm || !document.body.classList.contains('intro-done')) return;
+  cornerDancing = true;
+  b.style.setProperty('--stbeat', Math.max(0.3, Math.min(1, music.beat || 0.47)).toFixed(2) + 's');
+  b.classList.add('dance');
+  setTimeout(() => { b.classList.remove('dance'); cornerDancing = false; }, 4000 + Math.random() * 4000);
+}
+setInterval(() => { if (Math.random() < (musicOn() ? 0.3 : 0.08)) cornerDance(); }, 20000);
+window.JN_corner = cornerDance;   // try it from the console
 // the little stick man in the corner: click him and one of the others comes on
 $('stickBtn').addEventListener('click', () => {
   if (chairBusy) return;
