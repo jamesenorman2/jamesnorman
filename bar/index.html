@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bar — James Norman</title>
+<meta name="description" content="The bar: drinks with the stories behind them. Pick one, scale it for a party, or spin the wheel and let it decide.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://www.jamesnorman.co.uk/bar/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="James Norman">
+<meta property="og:title" content="Bar — James Norman">
+<meta property="og:description" content="Drinks with the stories behind them. Pick one, scale it for a party, or spin the wheel.">
+<meta property="og:url" content="https://www.jamesnorman.co.uk/bar/">
+<meta property="og:image" content="https://www.jamesnorman.co.uk/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .tools{display:flex;gap:.8rem;flex-wrap:wrap;align-items:stretch;margin:2rem 0 1rem}
+  .tools .search{flex:1 1 16rem;min-width:0}
+  .chips{display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0}
+  .chips .lab{font-size:.65rem;letter-spacing:.25em;text-transform:uppercase;color:var(--dim);align-self:center;margin-right:.4rem;min-width:5.2rem}
+  .chip{background:transparent;color:var(--fg);border:1px solid var(--line);font:inherit;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;padding:.45rem .8rem;cursor:pointer;transition:border-color .2s}
+  .chip:hover{border-color:var(--fg)}
+  .chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .count{font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin:1.4rem 0 1rem}
+  .drinks{display:grid;gap:.8rem;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+  .drink{display:flex;gap:1rem;align-items:flex-start;text-align:left;background:transparent;color:var(--fg);border:1px solid var(--line);padding:1.1rem;cursor:pointer;
+    font:inherit;letter-spacing:normal;text-transform:none;transition:border-color .25s,transform .25s}
+  .drink:hover,.drink:focus-visible{border-color:var(--fg);transform:translateY(-2px)}
+  .drink svg{flex:0 0 auto;width:34px;height:42px;stroke:var(--fg);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+  .drink .t{font-family:'Syne',sans-serif;font-weight:500;font-size:1.02rem;line-height:1.25}
+  .drink .m{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-top:.35rem}
+  .drink .i{font-size:.74rem;color:var(--mid);margin-top:.5rem;line-height:1.5}
+  .empty{border:1px solid var(--line);padding:2rem;color:var(--mid);font-size:.85rem}
+
+  /* full-screen sheets: a drink, and the wheel */
+  .sheet{position:fixed;inset:0;z-index:60;background:#000;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .sheet .in{max-width:44rem;margin:0 auto;padding:1.4rem 16px 5rem}
+  @media(min-width:700px){.sheet .in{padding:2rem 32px 6rem}}
+  .sheet .top{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.6rem}
+  .sheet .top .where{font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+  .sheet h2.dt{font-size:clamp(1.8rem,6vw,2.8rem);letter-spacing:-.01em;line-height:1.05;margin:.2rem 0 .8rem}
+  .sheet .meta{display:flex;gap:.5rem 1.4rem;flex-wrap:wrap;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--mid)}
+  .sheet .hero{display:flex;gap:1.4rem;align-items:center}
+  .sheet .hero svg{width:64px;height:80px;stroke:var(--fg);fill:none;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+  .sheet h3{font-family:'Syne',sans-serif;font-weight:500;font-size:.8rem;letter-spacing:.25em;text-transform:uppercase;margin:2.4rem 0 .9rem}
+  .row2{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+  .seg{display:flex;gap:.4rem;align-items:center;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+  .ing{list-style:none;border-top:1px solid var(--line)}
+  .ing li{display:flex;justify-content:space-between;gap:1rem;padding:.65rem 0;border-bottom:1px solid var(--line);font-size:.88rem}
+  .ing .q{color:var(--mid);white-space:nowrap}
+  .steps{list-style:none;counter-reset:s}
+  .steps li{counter-increment:s;display:flex;gap:1rem;margin:0 0 1.1rem;font-size:.9rem;line-height:1.7}
+  .steps li::before{content:counter(s);flex:0 0 1.6rem;height:1.6rem;border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--mid);margin-top:.1rem}
+  .story,.notes p{font-size:.88rem;line-height:1.75;color:#cfcfcf;margin:.5rem 0}
+  .sheet .actions{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:2.4rem}
+  .msg{font-size:.72rem;color:var(--ok);min-height:1.2em;margin-top:.8rem}
+
+  .wheelwrap{display:flex;flex-direction:column;align-items:center;gap:1.4rem}
+  #wheel{width:min(88vw,440px);height:min(88vw,440px);display:block}
+  .pick{text-align:center;min-height:6.5rem}
+  .pick .lead{font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+  .pick .name{font-family:'Syne',sans-serif;font-weight:500;font-size:clamp(1.6rem,6vw,2.4rem);line-height:1.1;margin-top:.4rem}
+  .noscroll{overflow:hidden}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <nav class="nav" aria-label="Site">
+    <a class="home" href="/">James Norman</a>
+    <ul>
+      <li><a href="/music/">Music</a></li>
+      <li><a href="/night-shift/">Agents</a></li>
+      <li><a href="/blog/">Blog</a></li>
+      <li><a href="/bar/" aria-current="page">Bar</a></li>
+      <li class="has-sub"><a href="/security/">Security</a><ul class="sub" aria-label="Security tools"><li><a href="/security/layers/">Layers</a></li><li><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
+      <li><a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">LinkedIn</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="kicker">The Bar</div>
+  <h1>Bar</h1>
+  <p class="lede">Drinks with the stories behind them. Pick one and make it, scale it up for a party, or spin the wheel and let it decide.</p>
+
+  <div class="tools">
+    <input class="search" id="q" type="search" placeholder="Search drinks or ingredients" aria-label="Search drinks or ingredients" autocomplete="off">
+    <button type="button" id="spinBtn">Spin for a drink</button>
+  </div>
+  <div class="chips" id="fLen" role="group" aria-label="Size of drink"></div>
+  <div class="chips" id="fMeth" role="group" aria-label="How it is made"></div>
+
+  <div class="count" id="count" aria-live="polite"></div>
+  <div class="drinks" id="list"></div>
+  <p class="empty" id="empty" hidden>Nothing matches. Clear a filter or two.</p>
+</main>
+
+<footer class="wrap site">
+  <span>&copy; 2026 James Norman</span>
+  <span>Please drink responsibly</span>
+</footer>
+
+<!-- a drink -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="dTitle" hidden>
+  <div class="in">
+    <div class="top"><span class="where">The Bar</span><button type="button" class="ghost" id="sClose">Close</button></div>
+    <div class="hero"><svg id="dIcon" viewBox="0 0 32 40" aria-hidden="true"></svg><div><h2 class="dt" id="dTitle"></h2><div class="meta" id="dMeta"></div></div></div>
+    <div class="row2" style="margin-top:2.2rem">
+      <div class="seg" id="dMakes" role="group" aria-label="How many drinks">Makes</div>
+      <div class="seg" id="dUnits" role="group" aria-label="Units"></div>
+    </div>
+    <h3>You need</h3>
+    <ul class="ing" id="dIng"></ul>
+    <h3>Make it</h3>
+    <ol class="steps" id="dSteps"></ol>
+    <div id="dStoryBox"><h3>The story</h3><div class="meta" id="dOrigin" style="margin-bottom:.8rem"></div><p class="story" id="dStory"></p></div>
+    <div id="dNotesBox" class="notes"><h3>Notes</h3><div id="dNotes"></div></div>
+    <div class="actions"><button type="button" id="dAnother">Another one</button><button type="button" class="ghost" id="dCopy">Copy link</button></div>
+    <div class="msg" id="dMsg" role="status"></div>
+  </div>
+</div>
+
+<!-- the wheel -->
+<div class="sheet" id="spin" role="dialog" aria-modal="true" aria-labelledby="spTitle" hidden>
+  <div class="in">
+    <div class="top"><span class="where" id="spTitle">Spin for a drink</span><button type="button" class="ghost" id="spClose">Close</button></div>
+    <div class="wheelwrap">
+      <canvas id="wheel" width="440" height="440" role="img" aria-label="A wheel of drinks"></canvas>
+      <div class="pick" id="pick" aria-live="polite"></div>
+      <div class="actions" style="margin:0;justify-content:center"><button type="button" id="spGo">Spin</button><button type="button" class="ghost" id="spMake" hidden>Make it</button></div>
+      <p class="small" id="spNote" style="text-align:center"></p>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/config.js"></script>
+<script src="/assets/konami.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const LEN = { short: 'Short', long: 'Long', hot: 'Hot', shot: 'Shots' };
+const METH = { shaken: 'Shaken', stirred: 'Stirred', built: 'Built', blended: 'Blended', muddled: 'Muddled', layered: 'Layered' };
+let drinks = [], fLen = null, fMeth = null, fAF = false, makes = 1, units = 'ml', current = null, lastFocus = null;
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+/* ─── glasses: a few line drawings, chosen by the glass named in the recipe ─── */
+const GLASS = {
+  coupe: 'M6 8h20c0 7-4 11-10 11S6 15 6 8zM16 19v14M10 34h12',
+  martini: 'M4 6h24L16 20zM16 20v13M10 34h12',
+  margarita: 'M2 7h28c-1 5-5.500 8-14 8S3 12 2 7zM16 15v18M10 34h12',
+  rocks: 'M8 10h16l-1.500 22h-13zM9 18h14',
+  highball: 'M10 4h12l-1.500 30h-9zM10.800 14h10.400',
+  flute: 'M12 4h8l-1 16c-.2 3-1.200 4-3 4s-2.800-1-3-4zM16 24v10M11 35h10',
+  wine: 'M9 5h14c0 8-3 13-7 13S9 13 9 5zM16 18v15M10 34h12',
+  mug: 'M7 8h15v22a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2zM22 12h3a3 3 0 0 1 0 8h-3',
+  shot: 'M10 12h12l-1.500 20h-9z'
+};
+function glassKey(g) {
+  const t = String(g || '').toLowerCase();
+  if (/shot/.test(t)) return 'shot'; if (/margarita/.test(t)) return 'margarita'; if (/martini/.test(t)) return 'martini';
+  if (/flute|champagne/.test(t)) return 'flute'; if (/wine/.test(t)) return 'wine'; if (/mug/.test(t)) return 'mug';
+  if (/highball|collins/.test(t)) return 'highball'; if (/rocks|tumbler|old[- ]fashioned/.test(t)) return 'rocks';
+  return 'coupe';
+}
+function glassSvg(svg, g) { svg.innerHTML = ''; const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', GLASS[glassKey(g)]); svg.append(p); }
+
+/* ─── amounts: scaled for however many drinks, in ml or oz ─── */
+const UNITS_OK = new Set(['ml', 'cl', 'oz', 'part', 'parts', 'dash', 'dashes', 'tsp', 'teaspoon', 'tbsp', 'tablespoon', 'g', 'kg', 'bottle', 'jar', 'pts']);
+const fmt = n => n >= 10 ? String(Math.round(n)) : String(Math.round(n * 10) / 10).replace(/\.0$/, '');
+function amount(i) {
+  if (!i.qty) return '';
+  const scale = q => { const n = parseFloat(q); return isNaN(n) ? q : n * makes; };
+  let qty = i.qty, unit = i.unit || '';
+  if (/^[\d.]+$/.test(qty)) {
+    let n = scale(qty);
+    if (unit === 'ml' && units === 'oz') { n = n / 29.5735; return (Math.round(n * 4) / 4 || 0.25).toString().replace(/^0\./, '0.') + ' oz'; }
+    qty = fmt(n);
+  } else if (/^[\d.]+-[\d.]+$/.test(qty)) { const [a, b] = qty.split('-'); qty = fmt(scale(a)) + '-' + fmt(scale(b)); }
+  if (!unit) return qty;
+  const plural = (unit === 'part' && qty !== '1') ? 'parts' : unit;
+  return UNITS_OK.has(unit.toLowerCase()) ? qty + ' ' + plural : qty + ' (' + unit + ')';
+}
+
+/* ─── the list ─── */
+function visible() {
+  const q = $('q').value.trim().toLowerCase();
+  const word = q ? new RegExp('(^|[^a-z0-9])' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) : null;   // matches the start of a word, so "gin" finds gin but not "Virgin"
+  return drinks.filter(d => (!fLen || d.length === fLen) && (!fMeth || d.method === fMeth) && (!fAF || d.alcoholFree) &&
+    (!word || word.test(d.title.toLowerCase()) || d.ingredients.some(i => word.test(i.name.toLowerCase()))));
+}
+function chips(box, items, get, set, label) {
+  box.innerHTML = '';
+  if (label) box.append(el('span', 'lab', label));
+  items.forEach(([key, text]) => {
+    const b = el('button', 'chip', text); b.type = 'button'; b.setAttribute('aria-pressed', String(get() === key));
+    b.addEventListener('click', () => { set(get() === key ? null : key); render(); });
+    box.append(b);
+  });
+}
+function render() {
+  const lens = [...new Set(drinks.map(d => d.length).filter(Boolean))].map(k => [k, LEN[k] || k]);
+  const meths = [...new Set(drinks.map(d => d.method).filter(Boolean))].map(k => [k, METH[k] || k]);
+  chips($('fLen'), lens, () => fLen, v => { fLen = v; }, 'Size');
+  chips($('fMeth'), meths, () => fMeth, v => { fMeth = v; }, 'Method');
+  if (drinks.some(d => d.alcoholFree)) {
+    const b = el('button', 'chip', 'Alcohol-free'); b.type = 'button'; b.setAttribute('aria-pressed', String(fAF));
+    b.addEventListener('click', () => { fAF = !fAF; render(); }); $('fMeth').append(b);
+  }
+  const list = visible(), box = $('list'); box.innerHTML = '';
+  $('count').textContent = list.length + (list.length === 1 ? ' drink' : ' drinks');
+  $('empty').hidden = list.length > 0; $('spinBtn').disabled = !list.length;
+  list.forEach(d => {
+    const b = el('button', 'drink'); b.type = 'button';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 32 40'); svg.setAttribute('aria-hidden', 'true'); glassSvg(svg, d.glass);
+    const body = el('div'); body.append(el('div', 't', d.title), el('div', 'm', [d.glass, METH[d.method], d.year].filter(Boolean).join(' · ')),
+      el('div', 'i', d.ingredients.filter(i => i.qty || /gin|vodka|rum|whisk|bourbon|tequila|brandy|liqueur|vermouth|campari|juice|cider|prosecco/i.test(i.name)).slice(0, 4).map(i => i.name).join(', ')));
+    b.append(svg, body); b.addEventListener('click', () => openDrink(d.id, true)); box.append(b);
+  });
+}
+$('q').addEventListener('input', render);
+
+/* ─── a drink ─── */
+function openDrink(id, push) {
+  const d = drinks.find(x => x.id === id); if (!d) return;
+  current = d; makes = 1;
+  if ($('sheet').hidden) lastFocus = document.activeElement;
+  $('spin').hidden = true;
+  $('sheet').hidden = false; document.body.classList.add('noscroll'); $('sheet').scrollTop = 0;
+  if (push !== false) { try { history.replaceState(null, '', '#' + id); } catch (e) { /* fine */ } }
+  document.title = d.title + ' — Bar — James Norman';
+  glassSvg($('dIcon'), d.glass);
+  $('dTitle').textContent = d.title;
+  const meta = $('dMeta'); meta.innerHTML = '';
+  [d.glass, METH[d.method], d.alcoholFree ? 'Alcohol-free' : null].filter(Boolean).forEach(t => meta.append(el('span', null, t)));
+  const mk = $('dMakes'); mk.innerHTML = 'Makes ';
+  [1, 2, 4, 8].forEach(n => { const b = el('button', 'chip', String(n)); b.type = 'button'; b.setAttribute('aria-pressed', String(n === makes)); b.addEventListener('click', () => { makes = n; paint(); }); mk.append(b); });
+  const un = $('dUnits'); un.innerHTML = '';
+  const hasMl = d.ingredients.some(i => i.unit === 'ml');
+  un.hidden = !hasMl;
+  ['ml', 'oz'].forEach(u => { const b = el('button', 'chip', u); b.type = 'button'; b.setAttribute('aria-pressed', String(u === units)); b.addEventListener('click', () => { units = u; paint(); }); un.append(b); });
+  const ol = $('dSteps'); ol.innerHTML = ''; d.steps.forEach(s => ol.append(el('li', null, s)));
+  const place = [d.place, d.year].filter(Boolean).join(' · ');
+  $('dStoryBox').hidden = !(d.history || place); $('dOrigin').textContent = place; $('dOrigin').hidden = !place; $('dStory').textContent = d.history || '';
+  const nb = $('dNotes'); nb.innerHTML = ''; d.notes.forEach(n => nb.append(el('p', null, n))); $('dNotesBox').hidden = !d.notes.length;
+  $('dMsg').textContent = '';
+  paint(); $('sClose').focus({ preventScroll: true });
+}
+function paint() {
+  const d = current; if (!d) return;
+  $('dMakes').querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', String(Number(b.textContent) === makes)));
+  $('dUnits').querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', String(b.textContent === units)));
+  const ul = $('dIng'); ul.innerHTML = '';
+  d.ingredients.forEach(i => { const li = el('li'); li.append(el('span', null, i.name + (i.note ? ' (' + i.note + ')' : '')), el('span', 'q', amount(i))); ul.append(li); });
+}
+function closeDrink() {
+  $('sheet').hidden = true; document.body.classList.remove('noscroll'); current = null; document.title = 'Bar — James Norman';
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* fine */ }
+  if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+}
+$('sClose').addEventListener('click', closeDrink);
+$('dAnother').addEventListener('click', () => { const l = visible().filter(x => !current || x.id !== current.id); const pool = l.length ? l : drinks; openDrink(pool[Math.floor(Math.random() * pool.length)].id, true); });
+$('dCopy').addEventListener('click', async () => {
+  const url = location.origin + '/bar/#' + (current ? current.id : '');
+  try { await navigator.clipboard.writeText(url); $('dMsg').textContent = 'Link copied'; } catch (e) { $('dMsg').textContent = url; }
+});
+
+/* ─── the wheel: spins through whatever the filters leave, and lands on one ─── */
+const cv = $('wheel'), cx = cv.getContext('2d');
+let wheel = { list: [], rot: 0, spinning: false, win: -1 };
+function drawWheel() {
+  const dpr = Math.min(devicePixelRatio || 1, 2), size = cv.getBoundingClientRect().width || 440;
+  cv.width = size * dpr; cv.height = size * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const R = size / 2 - 12, n = wheel.list.length, step = Math.PI * 2 / n;
+  cx.clearRect(0, 0, size, size); cx.translate(size / 2, size / 2);
+  cx.strokeStyle = '#fff'; cx.lineWidth = 1.2; cx.lineJoin = 'round';
+  cx.beginPath(); cx.arc(0, 0, R, 0, 7); cx.stroke();
+  cx.beginPath(); cx.arc(0, 0, R * 0.14, 0, 7); cx.stroke();
+  const font = Math.max(9, Math.min(14, R * 2.4 / n * 0.62 + 4));
+  cx.font = `300 ${font}px "IBM Plex Mono", monospace`; cx.textBaseline = 'middle';
+  for (let i = 0; i < n; i++) {
+    const a = wheel.rot + i * step;
+    if (i === wheel.win) { cx.fillStyle = '#fff'; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, R, a, a + step); cx.closePath(); cx.fill(); }
+    cx.beginPath(); cx.moveTo(Math.cos(a) * R * 0.14, Math.sin(a) * R * 0.14); cx.lineTo(Math.cos(a) * R, Math.sin(a) * R); cx.stroke();
+    cx.save(); cx.rotate(a + step / 2); cx.fillStyle = i === wheel.win ? '#000' : '#fff'; cx.textAlign = 'right';
+    let t = wheel.list[i].title; const max = R - R * 0.2 - 14;
+    while (cx.measureText(t).width > max && t.length > 4) t = t.slice(0, -2);
+    if (t !== wheel.list[i].title) t = t.trimEnd() + '…';
+    cx.fillText(t, R - 12, 0); cx.restore();
+  }
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx.fillStyle = '#fff'; cx.beginPath(); cx.moveTo(size - 2, size / 2); cx.lineTo(size - 20, size / 2 - 9); cx.lineTo(size - 20, size / 2 + 9); cx.closePath(); cx.fill();   // the pointer, on the right
+}
+function openSpin() {
+  const list = visible(); if (!list.length) return;
+  wheel = { list, rot: Math.random() * Math.PI * 2, spinning: false, win: -1 };
+  lastFocus = document.activeElement; $('sheet').hidden = true;
+  $('spin').hidden = false; document.body.classList.add('noscroll');
+  $('pick').innerHTML = ''; $('spMake').hidden = true; $('spGo').textContent = 'Spin';
+  $('spNote').textContent = (fLen || fMeth || fAF || $('q').value) ? 'Spinning through the ' + list.length + ' drinks that match your filters.' : 'Spinning through all ' + list.length + ' drinks.';
+  drawWheel(); $('spGo').focus({ preventScroll: true });
+}
+function spinIt() {
+  if (wheel.spinning) return;
+  wheel.spinning = true; wheel.win = -1; $('spGo').disabled = true; $('spMake').hidden = true; $('pick').innerHTML = '';
+  const n = wheel.list.length, step = Math.PI * 2 / n, pick = Math.floor(Math.random() * n);
+  const want = -(pick + 0.5) * step;                                       // that slice's middle under the pointer on the right
+  const turn = Math.PI * 2, start = wheel.rot;
+  let delta = ((want - start) % turn + turn) % turn + (reduceMotion ? 0 : (5 + Math.floor(Math.random() * 3)) * turn);
+  const T0 = performance.now(), DUR = reduceMotion ? 1 : 4800;
+  const frame = now => {
+    const k = Math.min(1, (now - T0) / DUR), e = 1 - Math.pow(1 - k, 4);
+    wheel.rot = start + delta * e; drawWheel();
+    if (k < 1) { requestAnimationFrame(frame); return; }
+    wheel.spinning = false; wheel.win = pick; drawWheel(); $('spGo').disabled = false; $('spGo').textContent = 'Spin again';
+    const d = wheel.list[pick]; const p = $('pick'); p.innerHTML = ''; p.append(el('div', 'lead', 'You’re having'), el('div', 'name', d.title));
+    $('spMake').hidden = false; $('spMake').onclick = () => { $('spin').hidden = true; openDrink(d.id, true); };
+  };
+  requestAnimationFrame(frame);
+}
+function closeSpin() {
+  if (wheel.spinning) return;
+  $('spin').hidden = true; document.body.classList.remove('noscroll');
+  if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+}
+$('spinBtn').addEventListener('click', openSpin); $('spGo').addEventListener('click', spinIt); $('spClose').addEventListener('click', closeSpin);
+addEventListener('resize', () => { if (!$('spin').hidden && !wheel.spinning) drawWheel(); });
+addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!$('spin').hidden) closeSpin(); else if (!$('sheet').hidden) closeDrink(); });
+addEventListener('hashchange', () => { const id = location.hash.slice(1); if (id && drinks.some(d => d.id === id)) openDrink(id, false); else if (!id && !$('sheet').hidden) closeDrink(); });
+
+/* ─── go ─── */
+fetch('/bar/cocktails.json').then(r => r.json()).then(j => {
+  drinks = j.drinks || []; render();
+  const id = location.hash.slice(1); if (id) openDrink(id, false);
+}).catch(() => { $('count').textContent = 'The bar couldn’t open just now. Try again in a moment.'; });
+})();
+</script>
+</body>
+</html>

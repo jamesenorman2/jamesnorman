@@ -138,13 +138,6 @@
   @media(max-width:700px){body.shell-on #scrub{left:4.4rem;right:7.4rem;width:calc(100% - 11.8rem)}body.shell-on footer.bottom .right{left:4.4rem}}
 
   input[type=file]{display:none}
-  .po{position:fixed;inset:0;z-index:10000;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
-  .po.active{display:flex}
-  .pc{position:absolute;top:1.5rem;right:2rem;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:#aaa;background:none;border:none;cursor:pointer;padding:.5rem;font-family:inherit}
-  .pc:hover{color:#fff}
-  .ps{font-size:.7rem;letter-spacing:.15em;color:#ffcc00;margin-bottom:1rem}
-  .ph{font-size:.7rem;letter-spacing:.1em;color:#999;margin-top:1rem}
-  #pacCanvas{position:static;width:auto;height:auto;max-width:100%}
   .pp{width:3.6rem;height:3.6rem;padding:0;color:#fff;opacity:.85;transition:opacity .3s,transform .3s}
   /* Full screen and Egg: tucked away, faint until you look for them */
   .hush{position:fixed;right:3rem;bottom:calc(4.2rem + 4rem + .9rem + 3.6rem + .5rem);z-index:4;display:flex;gap:1.4rem;justify-content:flex-end;pointer-events:auto}
@@ -232,6 +225,7 @@
     <a href="/music/" style="animation-delay:2.40s,9.40s">Music</a>
     <a href="/night-shift/" style="animation-delay:2.58s,9.52s">Agents</a>
     <a href="/blog/" style="animation-delay:2.76s,9.64s">Blog</a>
+    <a href="/bar/" style="animation-delay:2.85s,9.70s">Bar</a>
     <a href="/security/" style="animation-delay:2.94s,9.76s">Security</a>
     <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener" style="animation-delay:3.12s,9.88s">LinkedIn</a>
   </nav>
@@ -243,6 +237,7 @@
       <a href="/music/">Music</a>
       <a href="/night-shift/">Agents</a>
       <a href="/blog/">Blog</a>
+      <a href="/bar/">Bar</a>
       <span class="has-sub"><a href="/security/">Security</a>
         <span class="sub" aria-label="Security tools">
           <a href="/security/layers/">Layers</a>
@@ -254,7 +249,7 @@
     </nav>
   </header>
   <footer class="bottom">
-    <div class="hush"><button id="fullBtn" type="button" title="Full screen: just the visuals (Esc to leave)">Full screen</button><button id="eggBtn" type="button" title="A little game" onclick="openPac()">Egg</button></div>
+    <div class="hush"><button id="fullBtn" type="button" title="Full screen: just the visuals (Esc to leave)">Full screen</button></div>
     <div class="controls" hidden>
       <button id="loadBtn" title="Play an audio file from your device instead (L)">Load file</button>
       <button id="micBtn" title="Use your microphone (M)" aria-pressed="false">Mic</button>
@@ -284,12 +279,6 @@
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
 <input type="file" id="file" accept="audio/*">
-<div class="po" id="pacOverlay">
-  <button class="pc" onclick="closePac()">ESC — Close</button>
-  <div class="ps" id="pacScore">Score: 0</div>
-  <canvas id="pacCanvas"></canvas>
-  <div class="ph">Arrow keys or swipe to move</div>
-</div>
 
 <script src="/assets/stickmen.js"></script>
 <script>
@@ -2101,7 +2090,6 @@ addEventListener('blur', () => keys.clear());
 addEventListener('keydown', e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
-  if (document.getElementById('pacOverlay').classList.contains('active')) return;
   if (['arrowleft','arrowright','arrowup','arrowdown','w','a','s','d'].includes(k)) { e.preventDefault(); keys.add(k); return; }
   if (k === '+' || k === '=') { touched(); view.dist = Math.max(0.6, view.dist / 1.2); return; }
   if (k === '-' || k === '_') { touched(); view.dist = Math.min(30, view.dist * 1.2); return; }
@@ -2637,15 +2625,6 @@ window.JN_peek = k => { lastPeek = -1e9; peek(k || 'idle'); };      // try it fr
 requestAnimationFrame(frame);
 startSoundCloud();
 })();
-</script>
-<script>
-/* ═══════════════════════════════════════
-   PAC-MAN
-   ═══════════════════════════════════════ */
-const ov=document.getElementById('pacOverlay');const pcc=document.getElementById('pacCanvas');const ppx=pcc.getContext('2d');const se=document.getElementById('pacScore');let pg=null;let iD=-1,ts=null;document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')iD=0;if(e.key==='ArrowDown')iD=1;if(e.key==='ArrowLeft')iD=2;if(e.key==='ArrowUp')iD=3});pcc.addEventListener('touchstart',e=>{ts={x:e.touches[0].clientX,y:e.touches[0].clientY}});pcc.addEventListener('touchend',e=>{if(!ts)return;let dx=e.changedTouches[0].clientX-ts.x,dy=e.changedTouches[0].clientY-ts.y;iD=Math.abs(dx)>Math.abs(dy)?(dx>0?0:2):(dy>0?1:3);ts=null});
-function openPac(){ov.classList.add('active');startPac()}function closePac(){ov.classList.remove('active');if(pg)cancelAnimationFrame(pg);pg=null}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ov.classList.contains('active'))closePac()});
-function startPac(){const T=20,C=21,R=21;pcc.width=C*T;pcc.height=R*T;const M=[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],[0,3,0,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,0,3,0],[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],[0,1,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,1,0],[0,1,1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,1,0],[0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0],[2,2,2,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,2,2,2],[0,0,0,0,1,0,1,0,0,4,4,4,0,0,1,0,1,0,0,0,0],[1,1,1,1,1,1,1,0,4,4,4,4,4,0,1,1,1,1,1,1,1],[0,0,0,0,1,0,1,0,4,4,4,4,4,0,1,0,1,0,0,0,0],[2,2,2,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,2,2,2],[0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],[0,1,0,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,0,1,0],[0,3,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,3,0],[0,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,0],[0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],[0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0],[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];let dt=[],pw=[];for(let r=0;r<R;r++)for(let c=0;c<C;c++){if(M[r][c]===1)dt.push({x:c,y:r});if(M[r][c]===3)pw.push({x:c,y:r})}let sc=0,p={x:10,y:15,d:0,mo:0,md:1},gh=[{x:9,y:9,d:0,c:'#ff0000',s:false,sx:1,sy:1,m:'s'},{x:10,y:9,d:1,c:'#00ffff',s:false,sx:19,sy:1,m:'s'},{x:11,y:9,d:2,c:'#ffb8ff',s:false,sx:1,sy:19,m:'s'},{x:10,y:10,d:3,c:'#ffb852',s:false,sx:19,sy:19,m:'s'}],pt=0,go=false,gw=false;const ds=[{x:1,y:0},{x:0,y:1},{x:-1,y:0},{x:0,y:-1}];function cm(x,y){if(y<0||y>=R)return false;return M[y][(x%C+C)%C]!==0}iD=-1;let tk=0;function mg(g){let ps=[];for(let d=0;d<4;d++){if(d===(g.d+2)%4)continue;let nx=g.x+ds[d].x,ny=g.y+ds[d].y;nx=(nx%C+C)%C;if(ny>=0&&ny<R&&M[ny][nx]!==0)ps.push({d,x:nx,y:ny})}if(!ps.length){let nd=(g.d+2)%4;g.d=nd;g.x=(g.x+ds[nd].x%C+C)%C;g.y+=ds[nd].y;return}let tx=g.s?Math.random()*C|0:(g.m==='c'?p.x:g.sx),ty=g.s?Math.random()*R|0:(g.m==='c'?p.y:g.sy);let b=ps[0],bd=1e9;for(let pp of ps){let dd=(pp.x-tx)**2+(pp.y-ty)**2;if(dd<bd){bd=dd;b=pp}}g.d=b.d;g.x=b.x;g.y=b.y}function upd(){tk++;gh.forEach(g=>{if(!g.s)g.m=(tk/200|0)%2?'c':'s'});if(pt>0){pt--;if(!pt)gh.forEach(g=>g.s=false)}if(tk%7===0){if(iD>=0){let nx=p.x+ds[iD].x,ny=p.y+ds[iD].y;nx=(nx%C+C)%C;if(cm(nx,ny))p.d=iD;iD=-1}let nx=p.x+ds[p.d].x,ny=p.y+ds[p.d].y;nx=(nx%C+C)%C;if(cm(nx,ny)){p.x=nx;p.y=ny}}dt=dt.filter(d=>{if(d.x===p.x&&d.y===p.y){sc+=10;return false}return true});pw=pw.filter(d=>{if(d.x===p.x&&d.y===p.y){sc+=50;pt=300;gh.forEach(g=>g.s=true);return false}return true});if(!dt.length&&!pw.length)gw=true;if(tk%9===0)gh.forEach(mg);gh.forEach(g=>{if(g.x===p.x&&g.y===p.y){if(g.s){sc+=200;g.x=10;g.y=9;g.s=false}else go=true}});p.mo+=p.md*.08;if(p.mo>.4)p.md=-1;if(p.mo<.02)p.md=1}function drw(){ppx.fillStyle='#000';ppx.fillRect(0,0,pcc.width,pcc.height);for(let r=0;r<R;r++)for(let c=0;c<C;c++){if(M[r][c]===0){ppx.fillStyle='#080810';ppx.fillRect(c*T,r*T,T,T);ppx.strokeStyle='#151535';ppx.lineWidth=1;[[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy])=>{let nr=r+dy,nc=c+dx;if(nr<0||nr>=R||nc<0||nc>=C)return;if(M[nr][nc]!==0){if(dx!==0){ppx.beginPath();ppx.moveTo(c*T+(dx===1?T:0),r*T);ppx.lineTo(c*T+(dx===1?T:0),r*T+T);ppx.stroke()}else{ppx.beginPath();ppx.moveTo(c*T,r*T+(dy===1?T:0));ppx.lineTo(c*T+T,r*T+(dy===1?T:0));ppx.stroke()}}})}}dt.forEach(d=>{ppx.fillStyle='#ffcc00';ppx.beginPath();ppx.arc(d.x*T+T/2,d.y*T+T/2,2,0,Math.PI*2);ppx.fill()});if(Math.sin(tk*.1)>.2)pw.forEach(d=>{ppx.fillStyle='#ffcc00';ppx.beginPath();ppx.arc(d.x*T+T/2,d.y*T+T/2,5,0,Math.PI*2);ppx.fill()});let px2=p.x*T+T/2,py2=p.y*T+T/2,a=[0,Math.PI/2,Math.PI,Math.PI*1.5][p.d];ppx.fillStyle='#ffcc00';ppx.beginPath();ppx.arc(px2,py2,T/2-.5,a+p.mo,a+Math.PI*2-p.mo);ppx.lineTo(px2,py2);ppx.fill();gh.forEach(g=>{let gx=g.x*T+T/2,gy=g.y*T+T/2;ppx.fillStyle=g.s?'#2222ff':g.c;ppx.beginPath();ppx.arc(gx,gy-2,T/2-1,Math.PI,0);ppx.lineTo(gx+T/2-1,gy+T/2-2);for(let i=0;i<3;i++){ppx.lineTo(gx+T/2-1-(i+.5)*(T-2)/3,gy+T/2-6);ppx.lineTo(gx+T/2-1-(i+1)*(T-2)/3,gy+T/2-2)}ppx.fill();if(!g.s){[[-3,-3],[3,-3]].forEach(([ox,oy])=>{ppx.fillStyle='#fff';ppx.beginPath();ppx.arc(gx+ox,gy+oy,3,0,Math.PI*2);ppx.fill();ppx.fillStyle='#00f';ppx.beginPath();ppx.arc(gx+ox+ds[g.d].x,gy+oy+ds[g.d].y,1.5,0,Math.PI*2);ppx.fill()})}else{ppx.fillStyle='#fff';[[-3,-3],[3,-3]].forEach(([ox,oy])=>{ppx.beginPath();ppx.arc(gx+ox,gy+oy,2,0,Math.PI*2);ppx.fill()})}});if(go){ppx.fillStyle='rgba(0,0,0,.8)';ppx.fillRect(0,0,pcc.width,pcc.height);ppx.fillStyle='#cc0000';ppx.font='500 22px "Syne"';ppx.textAlign='center';ppx.fillText('Game Over',pcc.width/2,pcc.height/2);ppx.fillStyle='#333';ppx.font='300 10px "IBM Plex Mono"';ppx.fillText('Click to restart',pcc.width/2,pcc.height/2+22)}if(gw){ppx.fillStyle='rgba(0,0,0,.8)';ppx.fillRect(0,0,pcc.width,pcc.height);ppx.fillStyle='#c90';ppx.font='500 22px "Syne"';ppx.textAlign='center';ppx.fillText('You Win',pcc.width/2,pcc.height/2)}se.textContent='Score: '+sc}function gl2(){if(!ov.classList.contains('active'))return;if(!go&&!gw)upd();drw();pg=requestAnimationFrame(gl2)}pcc.onclick=()=>{if(go||gw)startPac()};gl2()}
 </script>
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>

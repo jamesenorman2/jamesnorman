@@ -69,6 +69,7 @@
       <li><a href="/music/">Music</a></li>
       <li><a href="/night-shift/" aria-current="page">Agents</a></li>
       <li><a href="/blog/">Blog</a></li>
+      <li><a href="/bar/">Bar</a></li>
       <li class="has-sub"><a href="/security/">Security</a><ul class="sub" aria-label="Security tools"><li><a href="/security/layers/">Layers</a></li><li><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
       <li><a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">LinkedIn</a></li>
     </ul>
@@ -283,7 +284,7 @@ const floor = { rooms: [], shift: null, t: 0, men: [] };
 const fcv = document.getElementById('floor'), fx = fcv.getContext('2d');
 let FW = 0, FH = 0;
 const NAMES = { '/': 'Home', '/music/': 'Music', '/security/': 'Security', '/security/layers/': 'Layers',
-  '/security/cpted/': 'CPTED', '/security/martyns-law/': 'Martyn’s Law', '/night-shift/': 'Control room', '/admin/': 'Admin', '/blog/': 'Blog' };
+  '/security/cpted/': 'CPTED', '/security/martyns-law/': 'Martyn’s Law', '/night-shift/': 'Control room', '/admin/': 'Admin', '/blog/': 'Blog', '/bar/': 'Bar' };
 const label = p => NAMES[p] || p.replace(/^\/|\/$/g, '').split('/').pop().replace(/-/g, ' ') || 'Home';
 
 /* ─── The building: a ground floor seen from above at a slight angle ───
