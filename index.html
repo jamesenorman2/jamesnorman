@@ -278,7 +278,7 @@
 </div>
 <iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page"></iframe>
 <button class="stickbtn" id="stickBtn" type="button" title="Bring on a stick man" aria-label="Bring on a stick man"><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="sh" cx="13" cy="6" r="4.5"/><path class="sb" d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-8-6M13 15l8-6"/></svg></button>
-<div class="chairman loo" id="loo" aria-hidden="true"><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><g transform="translate(51 92) scale(.5) translate(-51 -92)"><path vector-effect="non-scaling-stroke" d="M40 92h18M44 92l2-14h8l2 14M34 70h30q0 10-10 10H44q-10 0-10-10zM34 70h30M60 70V50h8v20M58 50h12"/></g></svg></div>
+<div class="chairman loo" id="loo" aria-hidden="true"><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><g transform="translate(51 92) scale(.5) translate(-51 -92)"><path vector-effect="non-scaling-stroke" d="M40 92h18M44 92l2-14h8l2 14M34 70h30q0 10-10 10H44q-10 0-10-10zM34 70h30M60 70V50h8v20M58 50h12"/></g><path class="br" stroke="#8b5a2b" stroke-width="3" fill="none"/></svg></div>
 <div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><div class="nm"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/><text class="tx" fill="#fff" stroke="none" font-size="8" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text></svg></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
@@ -2353,7 +2353,9 @@ function pooRun(force) {
   ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   const vw = innerWidth / 100, start = 8 + Math.random() * 20, looAt = Math.min(start + 30, 70);
   el.style.left = start + 'vw'; loo.style.left = looAt + 'vw'; el.classList.add('on'); loo.classList.add('on');
-  const G = 92, CX = 48, T0 = performance.now(), END = 10.5, S = { panic: SM.say('poo', 'panic'), late: SM.say('poo', 'late') };
+  const G = 92, CX = 48, T0 = performance.now(), END = 16.6, S = { panic: SM.say('poo', 'panic'), late: SM.say('poo', 'late'), crime: SM.say('poo', 'crime') };
+  const brEl = loo.querySelector('.br'), bits = [], endL = looAt + 7;                           // little brown bits: they fall from his bottom and stay on the floor
+  brEl.setAttribute('d', ''); let nextBit = 7.3, lastT = 0;
   const pose = (hx, hy, legA, legB, armL, armR) => {
     hd.setAttribute('cx', hx); hd.setAttribute('cy', hy - 21);
     const sh = hy - 12, leg = a => `M${hx} ${hy}L${hx + Math.sin(a) * 15} ${hy + Math.cos(a) * 15}`, arm = a => `M${hx} ${sh}L${hx + Math.sin(a) * 12} ${sh - Math.cos(a) * 12}`;
@@ -2362,7 +2364,8 @@ function pooRun(force) {
   const say = (txt, on) => { if (on) { if (bub.textContent !== txt) bub.textContent = txt; bub.classList.add('on'); } else bub.classList.remove('on'); };
   const tick = () => {
     const t = (performance.now() - T0) / 1000, beat = music.beat || 0.47, hy0 = G - 15;
-    if (t > END) { el.classList.remove('on'); loo.classList.remove('on'); say('', false); setTimeout(() => { chairBusy = false; }, 500); return; }
+    if (t > END) { el.classList.remove('on'); loo.classList.remove('on'); say('', false); setTimeout(() => { brEl.setAttribute('d', ''); chairBusy = false; }, 500); return; }
+    const dt = Math.min(0.05, t - lastT); lastT = t;
     if (t < 3) {                                                                   // dancing, not a care in the world
       const ph = t / beat * Math.PI;
       pose(CX, hy0 - Math.abs(Math.sin(ph)) * 4, 0.25, -0.25, -1 + Math.sin(ph) * 0.4, 1 + Math.sin(ph) * 0.4);
@@ -2375,10 +2378,20 @@ function pooRun(force) {
       pose(CX, hy0 - Math.abs(step) * 2, step * 0.8, -step * 0.8, step * 1.2 + 0.6, -step * 1.2 + 0.6);
     } else if (t < 6.9) {                                                          // skid
       pose(CX + 2, hy0, 0.5, 0.2, 1.4, 1.1);
-    } else {                                                                       // turns to the screen
+    } else if (t < 9.6) {                                                          // turns to the screen: "Oops, too late." and the evidence drops
       pose(CX, hy0, 0.18, -0.18, -2.1 + Math.sin(t * 3) * 0.1, 2.1 - Math.sin(t * 3) * 0.1);
-      say(S.late, t < END - 0.8);
-    }
+      say(S.late, t < 9.0);
+      if (t >= nextBit && bits.length < 18) { nextBit = t + 0.12 + Math.random() * 0.08; bits.push({ x: 7 * vw + CX + (Math.random() - 0.5) * 4, y: hy0 + 1, vx: (Math.random() - 0.5) * 44, vy: 6 + Math.random() * 10, rest: false, floor: G - 0.8 + Math.random() * 1.4 }); }
+    } else if (t < 12.6) {                                                         // and then he just dances
+      const ph = (t - 9.6) / beat * Math.PI;
+      pose(CX, hy0 - Math.abs(Math.sin(ph)) * 4, 0.25, -0.25, -1 + Math.sin(ph) * 0.4, 1 + Math.sin(ph) * 0.4); say('', false);
+    } else if (t < 15.6) {                                                         // runs off shouting "Perfect crime."
+      const k = (t - 12.6) / 3, step = Math.sin(t * 22);
+      el.style.left = (endL + (118 - endL) * k * k) + 'vw';
+      pose(CX, hy0 - Math.abs(step) * 2, step * 0.8, -step * 0.8, step * 1.2 + 0.6, -step * 1.2 + 0.6); say(S.crime, t < 15);
+    } else say('', false);
+    bits.forEach(b => { if (!b.rest) { b.vy += 230 * dt; b.y += b.vy * dt; b.x += b.vx * dt; if (b.y >= b.floor) { b.y = b.floor; b.rest = true; } } });
+    if (bits.length) brEl.setAttribute('d', bits.map(b => `M${b.x.toFixed(1)} ${b.y.toFixed(1)}h.01`).join(''));
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
@@ -2554,8 +2567,9 @@ const cornerAct = (() => {
     return true;
   }
   draw(IDLE);
-  const loop = first => setTimeout(() => { play(); loop(); }, first || (musicOn() ? 5000 : 7000) + Math.random() * 6000);   // something daft every 5 to 13 seconds
-  loop(4000);
+  // something daft once a minute (the first one a little after the page settles); if he can't right now (the intro, Calm mode), he tries again shortly
+  const loop = wait => setTimeout(() => { loop(play() ? 60000 : 5000); }, wait);
+  loop(15000);
   play.list = Object.keys(acts);
   return play;
 })();

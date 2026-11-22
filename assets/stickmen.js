@@ -31,10 +31,11 @@
       slots: [{ key: 'say', when: 'Once he is dancing on the chair', lines: ['I just don’t care!', 'I JUST DON’T CARE!', 'I just don’t caaaare!'] }] },
     { id: 'uv', agent: 'OLD SCHOOL', name: 'UV Painter', does: 'Pops up, pulls a pot of UV paint out of his pocket, paints glowing stripes on his face one at a time, then jumps about with his arms up.',
       slots: [{ key: 'say', when: 'Once the paint is on', lines: ['Woohoo!', 'WOOHOO!', 'Woooohooo!'] }] },
-    { id: 'poo', agent: 'BIN LID', name: 'Loo Dasher', does: 'Dances without a care in the world, then it hits him. He sprints for the toilet, runs straight past it, skids, and turns to the screen.',
+    { id: 'poo', agent: 'BIN LID', name: 'Loo Dasher', does: 'Dances without a care in the world, then it hits him. He sprints for the toilet, runs straight past it, skids, and turns to the screen. Little brown bits drop out of his bottom onto the floor, he dances over the evidence, then runs off shouting about the perfect crime.',
       slots: [
         { key: 'panic', when: 'The moment it hits him', lines: ['Oh no, I need a poo!'] },
-        { key: 'late', when: 'After he has missed the loo', lines: ['Oops, too late.'] }
+        { key: 'late', when: 'After he has missed the loo', lines: ['Oops, too late.'] },
+        { key: 'crime', when: 'Running away at the end', lines: ['Perfect crime.'] }
       ] },
     { id: 'pot', agent: 'FRANKIE', name: 'Pot Drummer (Frankie’s pick)', does: 'Has a cooking pot on his head and bangs it with a spoon on every beat of the music, with a BONG each time.',
       slots: [{ key: 'say', when: 'Partway through the drumming', lines: ['Yeah, freaking out, freaking out!'] }] },
