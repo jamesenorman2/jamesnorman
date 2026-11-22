@@ -140,7 +140,7 @@
   body.shell-on .ui header.top,body.shell-on .intro{display:none!important}
   body.shell-on footer.bottom{pointer-events:none}
   body.shell-on footer.bottom .right,body.shell-on footer.bottom .right *{pointer-events:auto}
-  body.shell-on .bigplay,body.shell-on footer.bottom .controls,body.shell-on footer.bottom #status,body.shell-on footer.bottom #cue{display:none!important}
+  body.shell-on .bigplay,body.shell-on footer.bottom .controls,body.shell-on footer.bottom #status{display:none!important}
   body.shell-on .transport{bottom:.6rem;left:1rem;z-index:21}
   body.shell-on .skip{bottom:.6rem;right:1rem;z-index:21}
   body.shell-on #scrub{bottom:.45rem;left:5.6rem;right:9rem;width:calc(100% - 14.6rem);height:2.6rem;z-index:21}
@@ -276,7 +276,6 @@
     <div class="right">
       <a class="now" id="now" target="_blank" rel="noopener"></a>
       <div class="status" id="status">Loading</div>
-      <div class="status" id="cue" aria-live="off"></div>
     </div>
   </footer>
   <button class="bigplay" id="bigPlay" type="button" aria-label="Play"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring" cx="60" cy="60" r="56"/><circle class="disc" cx="60" cy="60" r="44"/><polygon class="tri" points="50,40 82,60 50,80"/></svg></button>
@@ -533,7 +532,6 @@ async function loadScore(url) {
       { headers: { apikey: SETTINGS_KEY } })).json();
     if (rows[0] && rows[0].score && Array.isArray(rows[0].score.cues)) { score = rows[0].score; if (score.by === 'Agent Pickle') score.by = 'Agent Masterpiece'; }   // older cue sheets carry the old name
   } catch (e) { score = null; }
-  $('cue').textContent = score ? `Choreography by ${score.by || 'Agent Masterpiece'} · ${score.mood || ''}` : '';
 }
 let lastScoreT = -1;
 function followScore() {
@@ -553,7 +551,6 @@ function followScore() {
           shape.curlTo = c.curl; shape.twistTo = c.twist;
           if (c.shot === 'close') { setMode('orbit'); view.dist = 1.8; } else if (view.mode !== c.shot) setMode(c.shot);
         }
-        $('cue').textContent = `${score.by || 'Agent Masterpiece'}: “${c.note}”`;
       }
     }
     return;
@@ -1134,7 +1131,7 @@ function lloydLights() {
   const k = st ? Math.floor((t - st.at) / P) : -1, key = st ? st.at + ':' + k : 'none';
   if (key === lloydKey) return;
   lloydKey = key;
-  if (st !== lloydState) { lloydState = st; lloydI = 0; if (st && st.note) $('cue').textContent = `Agent Lloyd: “${st.note}”`; }
+  if (st !== lloydState) { lloydState = st; lloydI = 0; }
   if (!st || st.intensity === 'off' || (st.intensity === 'low' && k % 2)) { scene = 'rest'; return; }
   const cols = st.colours && st.colours.length ? st.colours : ['red'];
   playScene(st.scenes[lloydI++ % st.scenes.length], cols[Math.floor(Math.random() * cols.length)]);
@@ -1189,7 +1186,6 @@ function fireMoment(m) {
   else if (m.type === 'fog') { if (clockT - lastFog > 40) startFog(); }
   else if (m.type === 'smoke') { if (clockT - lastSmoke > 60) startSmoke(); }
   else if (m.type === 'flip') { if (!reduceMotion && clockT - lastRoll > 45) { view.spinV = (Math.random() < 0.5 ? -1 : 1) * TAU / 1.2; lastRoll = clockT; } }   // cue-sheet rolls too, at most one every 45 s
-  if (m.note) $('cue').textContent = `${m.by || (score && (score.lights || score.by)) || 'Agent Lloyd'}: “${m.note}”`;
 }
 window.JN_moment = fireMoment;
 window.JN_sparks = () => spawnSparks(1);       // try the sparks from the console
