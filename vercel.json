@@ -22,6 +22,9 @@
       "maxDuration": 300,
       "includeFiles": "ABOUT.md"
     },
+    "api/backup.js": {
+      "maxDuration": 60
+    },
     "api/crew.js": {
       "maxDuration": 300,
       "includeFiles": "ABOUT.md"

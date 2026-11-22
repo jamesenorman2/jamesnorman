@@ -59,6 +59,13 @@
   .duty b{font-weight:500}
   .man .mini{padding:.4rem .7rem;font-size:.6rem}
   .hint{color:var(--dim);font-size:.7rem;margin-top:.3rem;line-height:1.5}
+  .snap{border-top:1px solid #222;padding:.8rem 0;font-size:.8rem;line-height:1.6}
+  .snap .when{font-weight:500}
+  .snap .note{color:#aaa}
+  .snap .links{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.2rem;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase}
+  .snap .links a{color:var(--fg)} .snap .links .dim{color:var(--dim)}
+  .setup{border:1px solid var(--line);padding:.9rem 1rem;margin-top:1rem;font-size:.75rem;line-height:1.7;color:#ccc}
+  .setup b{font-weight:500;color:#fff}
   .back{display:inline-block;margin-top:3rem;color:var(--dim);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;text-decoration:none}
   .back:hover{color:var(--fg)}
 </style>
@@ -122,6 +129,20 @@
         <button type="button" class="ghost" data-agent="biscuittin">Normal</button><button type="button" class="ghost" data-agent="wurzel">Old School</button>
       </div>
       <div class="msg" id="crewMsg" role="status"></div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="k">Back up the whole site</div>
+      <div class="v">Takes a dated snapshot of every page, script and file on the live site, plus a copy of the database content (blog, agents’ reports, settings). Each snapshot gets its own preview website, so you can go back and look round the site exactly as it was that day. Nothing on the live site changes.</div>
+      <label for="bkNote" style="margin-top:.9rem">Note (optional)</label>
+      <input id="bkNote" maxlength="120" placeholder="e.g. Before the new agents page">
+      <div class="row">
+        <button type="button" id="bkBtn">Back up now</button>
+        <button type="button" class="ghost" id="bkRefresh">Refresh the list</button>
+      </div>
+      <div class="msg" id="bkMsg" role="status"></div>
+      <div id="bkSetup" class="setup" hidden></div>
+      <div id="bkList"></div>
     </div>
 
     <div class="card" style="margin-top:1rem">
@@ -211,6 +232,7 @@ $('login').addEventListener('submit', async e => {
     loadIdeas();
     loadCrewBits();
     loadStick();
+    loadBackups();
     $('url').focus();
   } catch (err) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
 });
@@ -248,6 +270,49 @@ $('ideaList').addEventListener('click', async e => {
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
     loadIdeas();
   } catch (err) { say(msg, 'Couldn’t reach the server.', 'err'); }
+});
+
+// Whole-site snapshots: each is a dated git branch (the site's files as they were) with its own preview website.
+const SETUP_HELP = `<b>One-off setup:</b> the backup needs permission to save a copy on GitHub.<br>
+1. On GitHub, go to Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.<br>
+2. Give it access to <b>only the jamesnorman repository</b>, with <b>Contents: Read and write</b> and <b>Deployments: Read-only</b>.<br>
+3. In Vercel, open the site’s project → Settings → Environment Variables and add one called <b>GITHUB_TOKEN</b> with that token (all environments), then redeploy.<br>
+Then come back and press Back up now.`;
+const fmtWhen = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+async function backupCall(body) {
+  const r = await fetch('/api/backup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password, ...body }) });
+  return r.json();
+}
+function showSetup(res) { const b = $('bkSetup'); b.hidden = !res.setup; if (res.setup) b.innerHTML = (res.error ? escH(res.error) + '<br><br>' : '') + SETUP_HELP; }
+async function loadBackups() {
+  const box = $('bkList');
+  try {
+    const res = await backupCall({ action: 'list' });
+    showSetup(res);
+    if (!res.ok) { box.innerHTML = res.setup ? '' : `<p class="msg err">${escH(res.error || 'Couldn’t load the snapshots.')}</p>`; return; }
+    if (!res.snapshots.length) { box.innerHTML = '<p class="sub" style="margin-top:1rem">No snapshots yet.</p>'; return; }
+    box.innerHTML = '<div style="margin-top:1.2rem"></div>' + res.snapshots.map(s => `<div class="snap">
+      <div><span class="when">${escH(fmtWhen(s.at) || s.stamp)}</span>${s.note ? ` <span class="note">· ${escH(s.note)}</span>` : ''}</div>
+      <div class="links">${/^https:\/\/[^\s"<>]+$/.test(s.preview || '') ? `<a href="${escH(s.preview)}" target="_blank" rel="noopener">View the site as it was &nearr;</a>` : `<span class="dim">${s.state === 'failed' ? 'Preview failed to build' : 'Preview is building… refresh in a minute'}</span>`}
+        <a href="${escH(s.changes)}" target="_blank" rel="noopener">Changes since</a><a href="${escH(s.github)}" target="_blank" rel="noopener">Files on GitHub</a></div></div>`).join('');
+  } catch (e) { box.innerHTML = '<p class="msg err">Couldn’t reach the server.</p>'; }
+}
+$('bkRefresh').addEventListener('click', loadBackups);
+$('bkBtn').addEventListener('click', async () => {
+  const msg = $('bkMsg'), btn = $('bkBtn');
+  say(msg, 'Backing up… this takes a few seconds.'); btn.disabled = true;
+  try {
+    const res = await backupCall({ action: 'create', note: $('bkNote').value });
+    showSetup(res);
+    if (!res.ok) { say(msg, res.setup ? '' : (res.error || 'The backup didn’t work.'), 'err'); }
+    else {
+      const sn = res.snapshot;
+      say(msg, `Done: snapshot ${sn.stamp} saved.${sn.skipped && sn.skipped.length ? ' Couldn’t copy these database tables: ' + sn.skipped.join(', ') + '.' : ''} Its preview website takes a minute or so to build.`, 'ok');
+      $('bkNote').value = '';
+    }
+    loadBackups();
+  } catch (e) { say(msg, 'Couldn’t reach the server, or it took too long. Refresh the list to check.', 'err'); }
+  btn.disabled = false;
 });
 
 // Stick men: the built-in ones (editable words, on/off) plus any you add. Saved under one key in the site settings.
