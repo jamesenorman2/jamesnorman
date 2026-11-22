@@ -484,6 +484,13 @@ function drawItem(r, it, busy) {
     const c = P(a.u + w / 2, a.v + d / 2, 0);
     fx.save(); fx.globalAlpha = 0.5; poly([P(a.u, a.v, 0), P(a.u + w, a.v, 0), P(a.u + w, a.v + d, 0), P(a.u, a.v + d, 0)]); fx.restore();
     text('♥  EVERYONE’S WELCOME  ♥', c[0], c[1] + 2 * s, 6.5 * s, 0.6); return; }
+  if (kind === 'discoball') {                     // just the mirror ball, floating there; it sparkles and turns while the music plays
+    const c = P(a.u + w / 2, a.v + d / 2, z0), rr = 5.5 * s, on = laser.k > 0.02, spin = on ? t * 1.4 : 0.6;
+    fx.save(); fx.globalAlpha = 0.9; fx.beginPath(); fx.arc(c[0], c[1], rr, 0, 7); fx.stroke();
+    for (let k = -1; k <= 1; k++) { fx.beginPath(); fx.ellipse(c[0], c[1], rr * Math.abs(Math.cos(spin + k * 1.05)), rr, 0, 0, 7); fx.stroke(); }          // the mirror facets turning
+    for (let k = -1; k <= 1; k += 1) seg([c[0] - rr * Math.cos(k * 0.5), c[1] + rr * Math.sin(k * 0.5)], [c[0] + rr * Math.cos(k * 0.5), c[1] + rr * Math.sin(k * 0.5)]);
+    if (on) for (let k = 0; k < 8; k++) { const an = t * 1.3 + k * 0.785, L = 9 * s + (k % 3) * 7 * s; fx.globalAlpha = (0.3 + 0.4 * Math.abs(Math.sin(t * 5 + k))) * laser.k; seg([c[0] + Math.cos(an) * (L - 3 * s), c[1] + Math.sin(an) * (L - 3 * s) * 0.6], [c[0] + Math.cos(an) * L, c[1] + Math.sin(an) * L * 0.6]); }
+    fx.restore(); return; }
   const B = block(a.u, a.v, w, d, h, z0), X = B.x, Y = B.y, W = B.w;
   const lines = (n, pad, f) => { for (let k = 1; k <= n; k++) { const yy = Y + (B.h - pad * 2) * k / (n + 1) + pad, len = f(k); seg([X + 3, yy], [X + 3 + len, yy]); } };
   fx.save(); fx.globalAlpha = 0.85;
@@ -553,11 +560,6 @@ function drawItem(r, it, busy) {
     fx.restore(); return; }
   if (kind === 'podium') {                        // a dance podium with a light-up edge
     fx.globalAlpha = 0.4 + 0.5 * Math.abs(Math.sin(t * 4.2 + fu * 7)); seg([X + 2, Y + B.h - 2], [X + W - 2, Y + B.h - 2]);
-    fx.restore(); return; }
-  if (kind === 'discoball') {                     // hanging from the ceiling, throwing sparkles
-    const c = P(a.u + w / 2, a.v + d / 2, z0), rr = 5 * s; seg([c[0], c[1] - rr - 26 * s], [c[0], c[1] - rr]);
-    fx.beginPath(); fx.arc(c[0], c[1], rr, 0, 7); fx.stroke(); seg([c[0] - rr, c[1]], [c[0] + rr, c[1]]); seg([c[0], c[1] - rr], [c[0], c[1] + rr]);
-    for (let k = 0; k < 6; k++) { const an = t * 1.3 + k * 1.05, L = 10 * s + (k % 3) * 8 * s; fx.globalAlpha = 0.35 + 0.35 * Math.abs(Math.sin(t * 5 + k)); seg([c[0] + Math.cos(an) * (L - 3 * s), c[1] + Math.sin(an) * (L - 3 * s) * 0.6], [c[0] + Math.cos(an) * L, c[1] + Math.sin(an) * L * 0.6]); }
     fx.restore(); return; }
   if (kind === 'beacon') {                        // a light on top of the monitor wall: red and turning when the shift isn't green
     const st = floor.shift && floor.shift.analyst && floor.shift.analyst.status, alarm = st && st !== 'GREEN', c = P(a.u + w / 2, a.v, z0 + 4 * s);
@@ -710,7 +712,6 @@ function startRave(secs, why) {
   rave.until = floor.t + secs; rave.spots = {}; rave.chat = floor.t + 0.8;
   bubbles.length = 0;
   bubbles.push({ who: 'NORMAL', text: why, t0: floor.t, life: 3.4 });
-  if (Math.random() < 0.6) startLasers(Math.min(secs, 14));            // not every time: lasers are a treat
 }
 function raveTick() {
   const b = beatNow(), title = b.playing ? b.title : (floor.shift && floor.shift.dj && floor.shift.dj.track && floor.shift.dj.track.title) || '';
@@ -774,18 +775,15 @@ const WIFEO_LINES = ['I love you all SO much!', 'You’re all beautiful. Every o
 const WIFEO_TO = { FRANKIE: 'Frankie, you’re a genius and I love you', 'JACK MAN': 'Jack Man, you’re a star. A STAR.', 'OLD SCHOOL': 'Old School, you’re a legend. I love you, you old thing.' };
 const MEMBER_REPLIES = ['Aww, we love you too!', 'Stop it, you’ll make me blush', 'Wifeo, you’re the best', 'This is the best day of my life', 'I love you too!!'];
 const niceName = n => n.split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ');            // "OLD SCHOOL" -> "Old School"
-const laser = { from: 0, until: -1, mode: 0, next: 35 + Math.random() * 40 };
+const laser = { k: 0, force: -1, mode: 0, start: 0 };                                // k: how far the light show is up (0 off, 1 full)
+const lightsOn = () => floor.t < laser.force || beatNow().playing === true;          // the lasers and the mirror ball run while the music does
 const guest = { name: null, until: -1, next: 55 + Math.random() * 45, said: 0 };
 let djNext = 6, bqNext = 5, bqWho = 0;
-function startLasers(secs) {
-  if (floor.t < laser.until) return;
-  laser.from = floor.t; laser.until = floor.t + secs; laser.mode = Math.floor(Math.random() * 3);
-  bubbles.push({ who: 'NORMAL', text: pickOne(['LASERS!', 'Eyes up: lasers!', 'Mind your eyes: it’s the laser bit!', 'Somebody call Lloyd: lasers!']), t0: floor.t, life: 2.6 });
-}
+function startLasers(secs) { laser.force = floor.t + secs; }                  // switch the lights on by hand (for testing)
 window.JN_lasers = () => startLasers(14);                    // try it from the console
 window.JN_visit = () => { wifeo.next = 0; };                // call Wifeo in, from the console
 window.JN_argon = () => { argon.next = 0; };                // and let Argon in
-window.JN_house = () => ({ wifeo: wifeo.phase, argon: argon.phase, prints: prints.length, guest: guest.name, lasers: floor.t < laser.until, where: Object.fromEntries(Object.entries(res).map(([k, v]) => [k, v.duty === 'away' ? 'on the main page' : v.room ? v.room.path + ' station ' + v.st : 'door'])) });   // what is going on in the house, from the console
+window.JN_house = () => ({ wifeo: wifeo.phase, argon: argon.phase, prints: prints.length, guest: guest.name, lasers: laser.k > 0.01, music: beatNow().playing === true, where: Object.fromEntries(Object.entries(res).map(([k, v]) => [k, v.duty === 'away' ? 'on the main page' : v.room ? v.room.path + ' station ' + v.st : 'door'])) });   // what is going on in the house, from the console
 window.JN_guest = n => { guest.name = n || 'LLOYD'; guest.until = floor.t + 70; guest.said = floor.t + 3; };
 function partyTick(dt, sm) {
   const t = floor.t; argonTick(dt, sm); wifeoTick(dt, sm);
@@ -794,10 +792,11 @@ function partyTick(dt, sm) {
   if (!guest.name && t > guest.next) {                                                                                                                                     // a guest DJ every few minutes
     guest.name = pickOne(['OLD SCHOOL', 'LLOYD']); guest.until = t + 70 + Math.random() * 30; guest.next = guest.until + 150 + Math.random() * 150; guest.said = t + 5;
     bubbles.push({ who: 'NORMAL', text: 'Please welcome ' + niceName(guest.name) + ' to the decks!', t0: t, life: 3.2 });
-    if (guest.name === 'LLOYD') startLasers(Math.min(14, guest.until - t));
   }
   if (guest.name && t > guest.said) { guest.said = t + 6 + Math.random() * 4; bubbles.push({ who: guest.name, text: pickOne(GUEST_LINES[guest.name]), t0: t + 0.3, life: 3 }); }
-  if (t > laser.next && t >= laser.until) { laser.next = t + 130 + Math.random() * 130; startLasers(10 + Math.random() * 4); }                                          // the odd laser show on its own
+  const want = lightsOn(), k0 = laser.k;                                                                                                                                  // the lights come up with the music and fade when it stops
+  laser.k = Math.max(0, Math.min(1, laser.k + (want ? dt / 0.9 : -dt / 0.9)));
+  if (want && k0 === 0 && laser.k > 0) { laser.start = t; laser.mode = Math.floor(Math.random() * 3); bubbles.push({ who: 'NORMAL', text: pickOne(['And… LASERS!', 'Music on, lasers on!', 'Eyes up: here come the lasers!', 'Lloyd, hit the lights!']), t0: t, life: 2.8 }); }
   if (t > bqNext) {                                                                                                                                                         // the doormen
     bqNext = t + 6 + Math.random() * 4; const first = ['CODPIECE', 'MR. PARTICULAR'][bqWho++ % 2], other = first === 'CODPIECE' ? 'MR. PARTICULAR' : 'CODPIECE';
     bubbles.push({ who: first, text: Math.random() < 0.45 ? BOUNCER_LINES[0] : pickOne(BOUNCER_LINES), t0: t, life: 3.4 });
@@ -892,15 +891,14 @@ function visitRoute(a, name, homeFn, sm, dt) {
   a.step = (a.step || 0) + sp * 0.3; a.moving = true;
   return true;
 }
-// lasers in the corners, beams from the mirror ball, and a wash of colour: only in the ballroom, and only now and then
+// lasers in the corners, beams from the mirror ball, and a wash of colour: only in the ballroom, and only while the music is playing
 function drawBallroom(r, sm, s) {
-  const on = floor.t < laser.until, zc = 40 * sm;
+  const k = laser.k, on = k > 0.01, zc = 40 * sm;
   const corners = [[r.u + 4, r.v + 3], [r.u + r.w - 4, r.v + 3], [r.u + 4, r.v + r.d - 4], [r.u + r.w - 4, r.v + r.d - 4]];
   fx.save(); fx.lineCap = 'round';
   corners.forEach(c => { const q = P(c[0], c[1], zc); fx.globalAlpha = 0.7; fx.strokeRect(q[0] - 2.5 * sm, q[1] - 2 * sm, 5 * sm, 3.5 * sm); });                              // the four laser heads
   if (on) {
-    const k = Math.max(0, Math.min(1, (floor.t - laser.from) / 0.7, (laser.until - floor.t) / 1.0));
-    const COL = ['#ff2a2a', '#37ff7a', '#36c9ff', '#ff48e0', '#ffe23b'], mode = (laser.mode + Math.floor((floor.t - laser.from) / 4)) % 3;       // 0 red, 1 green and blue, 2 everything
+    const COL = ['#ff2a2a', '#37ff7a', '#36c9ff', '#ff48e0', '#ffe23b'], mode = (laser.mode + Math.floor((floor.t - laser.start) / 4)) % 3;       // 0 red, 1 green and blue, 2 everything
     const wash = mode === 0 ? '255,40,40' : mode === 1 ? '55,255,150' : '255,70,225';
     fx.globalAlpha = 0.07 * k; fx.fillStyle = `rgb(${wash})`; fx.beginPath();
     [[r.u, r.v], [r.u + r.w, r.v], [r.u + r.w, r.v + r.d], [r.u, r.v + r.d]].forEach(([u, v], i) => { const q = P(u, v, 0); i ? fx.lineTo(q[0], q[1]) : fx.moveTo(q[0], q[1]); }); fx.fill();
@@ -1082,7 +1080,7 @@ function drawFloor(dt) {
     text(str + (Math.floor(t * 2) % 2 ? '▌' : ''), x, y, 8.5 * s, 0.75, 'left');
   } });
 
-  // the front door is a nightclub entrance: Codpiece and Mr. Particular are the bouncers, behind the red rope. Nobody ever comes in.
+  // the front door is a nightclub entrance: Codpiece and Mr. Particular are the bouncers. Nobody ever comes in.
   Z.push({ z: floor.Dr + floor.Dc * 0.85, f: () => frontDoor(sm, s) });
   [['CODPIECE', 0.12, () => jobLine('gatekeeper')], ['MR. PARTICULAR', 0.88, () => dayLine('teacake')]].forEach(([name, fv, lineFn]) => {
     const home = { u: 16 * sm, v: floor.Dr + floor.Dc * fv }, a = res[name] || (res[name] = { u: home.u, v: home.v, step: 0 });
@@ -1163,13 +1161,6 @@ function frontDoor(sm, s) {
   const a = 0.45, L = (v1 - v0) * 0.95, ex = Math.sin(a) * L, ev = v0 + Math.cos(a) * L;               // the door, swung open
   poly([P(0, v0, 1), P(ex, ev, 1), P(ex, ev, h - 1), P(0, v0, h - 1)], '#000');
   const k = P(ex * 0.85, v0 + (ev - v0) * 0.85, h * 0.45); fx.beginPath(); fx.arc(k[0], k[1], 1.4 * sm, 0, 7); fx.stroke();   // handle
-  // the red carpet, and the velvet rope across it: two posts with brass-ball tops and a swag of red rope
-  const pu = 10 * sm, RED = '#ff3b3b';
-  fx.strokeStyle = RED; fx.globalAlpha = 0.8; poly([P(1, v0 + 3, 0), P(pu, v0 + 3, 0), P(pu, v1 - 3, 0), P(1, v1 - 3, 0)]);
-  fx.beginPath(); [3.5, 6.5].forEach(o => { const q = P(o * sm * 0.6, v0 + 3, 0), r2 = P(o * sm * 0.6, v1 - 3, 0); fx.moveTo(q[0], q[1]); fx.lineTo(r2[0], r2[1]); }); fx.stroke();   // carpet stripes
-  fx.strokeStyle = '#fff'; fx.globalAlpha = 0.9;
-  const tops = [v0 + 3, v1 - 3].map(v => { const b = P(pu, v, 0), top = P(pu, v, 9 * sm); seg(b, top); fx.beginPath(); fx.ellipse(b[0], b[1], 2.4 * sm, 1.2 * sm, 0, 0, 7); fx.stroke(); fx.beginPath(); fx.arc(top[0], top[1] - 1.2 * sm, 1.5 * sm, 0, 7); fx.stroke(); return top; });
-  fx.strokeStyle = RED; fx.lineWidth = 2; fx.globalAlpha = 1; fx.beginPath(); fx.moveTo(tops[0][0], tops[0][1]); fx.quadraticCurveTo((tops[0][0] + tops[1][0]) / 2, (tops[0][1] + tops[1][1]) / 2 + 9 * sm, tops[1][0], tops[1][1]); fx.stroke();   // the rope
   fx.restore();
   // the sign over the door: a neon that flickers now and then
   const c = P(0, (v0 + v1) / 2, h + 18 * sm), flick = Math.sin(t * 17) > 0.97 || Math.sin(t * 5.3) > 0.992 ? 0.25 : 0.9;

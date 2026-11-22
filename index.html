@@ -36,6 +36,7 @@
   body{background:var(--bg);overflow:hidden;-webkit-font-smoothing:antialiased;
     font-family:'IBM Plex Mono',monospace;color:var(--mid)}
   canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  body.zoomed canvas{touch-action:auto}                 /* pinched in on a phone: the visualiser must not trap the pinch, so you can always pinch back out */
   .ui{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:space-between;
     pointer-events:none;transition:opacity .8s}
   .ui *{pointer-events:auto}
@@ -278,7 +279,7 @@
     <button id="nextBtn" class="pp sk" title="Next track (N)" aria-label="Next track" disabled><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12,12 31,24 12,36"/><rect x="33" y="12" width="4" height="24"/></svg></button>
   </div>
 </div>
-<iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page"></iframe>
+<iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page" allow="fullscreen" allowfullscreen></iframe>
 <button class="stickbtn" id="stickBtn" type="button" title="Bring on a stick man" aria-label="Bring on a stick man"><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="sh" cx="13" cy="6" r="4.5"/><path class="sb" d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-8-6M13 15l8-6"/></svg></button>
 <div class="chairman loo" id="loo" aria-hidden="true"><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><g transform="translate(51 92) scale(.5) translate(-51 -92)"><path vector-effect="non-scaling-stroke" d="M40 92h18M44 92l2-14h8l2 14M34 70h30q0 10-10 10H44q-10 0-10-10zM34 70h30M60 70V50h8v20M58 50h12"/></g><path class="br" stroke="#8b5a2b" stroke-width="3" fill="none"/></svg></div>
 <div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><div class="nm"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><path class="pn"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/><text class="tx" fill="#fff" stroke="none" font-size="8" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text></svg></div>
@@ -2133,6 +2134,17 @@ for (let r = 0; r < TOTAL; r++) {
    The address bar and the title follow the page on show, and the back button works as usual. */
 const shellFrame = $('shellFrame');
 let shellOn = false;
+// If the visitor has pinched in (on the Agents page, say), going between a page and the player must not leave them stuck zoomed in:
+// the visualiser stops trapping the pinch while zoomed, and the zoom is put back to normal when a page is opened or closed.
+if (window.visualViewport) { const upd = () => document.body.classList.toggle('zoomed', visualViewport.scale > 1.02); visualViewport.addEventListener('resize', upd); upd(); }
+function resetZoom() {
+  try {
+    const m = document.querySelector('meta[name=viewport]');
+    if (!m || !window.visualViewport || visualViewport.scale <= 1.02) return;
+    m.setAttribute('content', 'width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1');
+    setTimeout(() => m.setAttribute('content', 'width=device-width, initial-scale=1.0'), 150);
+  } catch (e) { /* not available */ }
+}
 const homeTitle = document.title;
 function shellSync() {
   try {
@@ -2145,6 +2157,7 @@ function shellSync() {
 }
 shellFrame.addEventListener('load', shellSync);
 function openShell(path, push) {
+  resetZoom();
   shellOn = true; document.body.classList.add('shell-on');
   try { sessionStorage.setItem('jn-shell', '1'); } catch (e) { /* private mode */ }   // so a reload of a page on show comes back here, not to a bare page
   if (push !== false) window.history.pushState({ shell: 1 }, '', path);
@@ -2152,6 +2165,7 @@ function openShell(path, push) {
 }
 function closeShell(push) {
   if (!shellOn) return;
+  resetZoom();
   shellOn = false; document.body.classList.remove('shell-on');
   shellFrame.src = 'about:blank'; document.title = homeTitle;
   if (push) window.history.pushState(null, '', '/');
