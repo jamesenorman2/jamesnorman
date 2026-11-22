@@ -4,7 +4,7 @@
      rate() -> number           new lines per second (before the visitor's speed setting)
      onNear(meta)               called each frame with the tag of the line just ahead of the ship
      onAhead(meta)              the same for a line further ahead (for autopilots); cam.userAt says when the visitor last steered
-     rows, points, rowWidth, amp, horizon (0-1 down the screen, default 0.34)
+     rows, points, rowWidth, amp, horizon (0-1 down the screen, default 0.34), interactive (false: no steering, keys or wheel)
    }) */
 export function createFlight(canvas, opts = {}) {
   const ROWS = opts.rows || 72, POINTS = opts.points || 160;
@@ -29,12 +29,14 @@ export function createFlight(canvas, opts = {}) {
   addEventListener('resize', resize);
   resize();
 
-  // steering
+  // steering (skipped with { interactive: false }, for a banner that must not take over the keys or the scroll wheel)
+  const interactive = opts.interactive !== false;
   function steer(x, y) {
     const r = canvas.getBoundingClientRect();
     cam.tx = (((x - r.left) / r.width) - 0.5) * 2 * CAM_X;
     cam.ty = CAM_LO + (1 - (y - r.top) / r.height) * (CAM_HI - CAM_LO);
   }
+  if (interactive) {
   canvas.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) { steer(e.clientX, e.clientY); cam.userAt = performance.now(); } });
   canvas.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') { steer(e.clientX, e.clientY); cam.userAt = performance.now(); } });
   canvas.addEventListener('wheel', e => {
@@ -51,6 +53,7 @@ export function createFlight(canvas, opts = {}) {
   });
   addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
   addEventListener('blur', () => keys.clear());
+  }
 
   function push() {
     head = (head + 1) % ROWS;

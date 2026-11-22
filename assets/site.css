@@ -69,3 +69,11 @@ footer.site a:hover{color:var(--fg)}
 
 /* bigger tap targets for the nav on phones */
 @media(max-width:640px){.nav ul a,.nav .home,footer.site a{display:inline-block;padding:.6rem 0}}
+
+/* the quiet ridge-line banner behind a page's heading (see /assets/hero.js) */
+.hero-wrap{position:relative;z-index:0;padding-bottom:4.5rem}
+.hero-wrap .ridge{position:absolute;left:50%;top:0;transform:translateX(-50%);width:100vw;height:100%;z-index:-1;pointer-events:none;opacity:.45;
+  -webkit-mask-image:linear-gradient(to bottom,transparent,#000 35%,#000 70%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 35%,#000 70%,transparent)}
+/* tools that live under Security, shown a little further in under the About menu */
+.nav li.has-sub .sub .deep a{padding-left:1rem;color:var(--dim)}
+.nav li.has-sub .sub .deep a:hover{color:var(--fg)}

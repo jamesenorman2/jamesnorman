@@ -75,18 +75,20 @@
     <ul>
       <li><a href="/music/">Music</a></li>
       <li><a href="/night-shift/">Agents</a></li>
-      <li><a href="/blog/">Blog</a></li>
       <li><a href="/bar/" aria-current="page">Bar</a></li>
-      <li class="has-sub"><a href="/security/">Security</a><ul class="sub" aria-label="Security tools"><li><a href="/security/layers/">Layers</a></li><li><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
+      <li class="has-sub"><a href="/about/">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/blog/">Blog</a></li><li><a href="/security/">Security</a></li><li class="deep"><a href="/security/layers/">Layers</a></li><li class="deep"><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li class="deep"><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
       <li><a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">LinkedIn</a></li>
     </ul>
   </nav>
 </header>
 
 <main class="wrap">
-  <div class="kicker">The Bar</div>
-  <h1>Bar</h1>
-  <p class="lede">Drinks with the stories behind them. Pick one and make it, scale it up for a party, or spin the wheel and let it decide.</p>
+  <div class="hero-wrap">
+    <canvas class="ridge" id="ridge" aria-hidden="true"></canvas>
+    <div class="kicker">The Bar</div>
+    <h1>Bar</h1>
+    <p class="lede">Drinks with the stories behind them. Pick one and make it, scale it up for a party, or spin the wheel and let it decide.</p>
+  </div>
 
   <div class="tools">
     <input class="search" id="q" type="search" placeholder="Search drinks or ingredients" aria-label="Search drinks or ingredients" autocomplete="off">
@@ -140,6 +142,10 @@
 
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
+<script type="module">
+import { heroRidges } from '/assets/hero.js';
+heroRidges(document.getElementById('ridge'), { seed: 7 });
+</script>
 <script>
 (() => {
 'use strict';

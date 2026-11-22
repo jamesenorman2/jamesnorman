@@ -26,7 +26,7 @@ const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
 const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
 const SITE = (process.env.SITE_URL || 'https://www.jamesnorman.co.uk').replace(/\/$/, '');
 const PAGES = ['/', '/music/', '/security/', '/security/layers/', '/security/cpted/',
-  '/security/martyns-law/', '/night-shift/', '/blog/', '/bar/', '/admin/', '/assets/site.css', '/assets/flight.js'];
+  '/security/martyns-law/', '/night-shift/', '/blog/', '/bar/', '/about/', '/admin/', '/assets/site.css', '/assets/flight.js'];
 const AGENTS = { a: 'AGENT MONKEY MONKEY', b: 'FISH FISH' };
 const SOUNDCLOUD = (process.env.SOUNDCLOUD_URL || 'https://soundcloud.com/jamesnormal').replace(/\/$/, '');
 const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;

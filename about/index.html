@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About — James Norman</title>
+<meta name="description" content="James Norman: technical director for AECOM and Chartered Security Consultant, with over 27 years across critical national infrastructure. Also a music producer and DJ. What this site is, and what is on it.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://www.jamesnorman.co.uk/about/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="James Norman">
+<meta property="og:title" content="About — James Norman">
+<meta property="og:description" content="Security consultant by day, producer and DJ the rest of the time. What this site is, and what is on it.">
+<meta property="og:url" content="https://www.jamesnorman.co.uk/about/">
+<meta property="og:image" content="https://www.jamesnorman.co.uk/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .bio{max-width:62ch}
+  .bio p{font-size:.92rem;line-height:1.8;color:#d6d6d6;margin:0 0 1.2rem}
+  .creds{list-style:none;border-top:1px solid var(--line);max-width:62ch}
+  .creds li{padding:.7rem 0;border-bottom:1px solid var(--line);font-size:.85rem;color:#cfcfcf}
+  .map{display:grid;gap:.8rem;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:1.4rem}
+  .map a.tile{display:block;border:1px solid var(--line);padding:1.2rem;text-decoration:none;transition:border-color .25s,transform .25s}
+  .map a.tile:hover,.map a.tile:focus-visible{border-color:var(--fg);transform:translateY(-2px)}
+  .tile .t{font-family:'Syne',sans-serif;font-weight:500;font-size:1.05rem;letter-spacing:.04em}
+  .tile .k{font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem}
+  .tile .d{font-size:.78rem;color:var(--mid);line-height:1.6;margin-top:.5rem}
+  .tools{margin:.9rem 0 0;display:flex;flex-direction:column;gap:.35rem;font-size:.78rem}
+  .tools a{color:var(--mid);text-decoration:none}.tools a:hover{color:var(--fg)}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <nav class="nav" aria-label="Site">
+    <a class="home" href="/">James Norman</a>
+    <ul>
+      <li><a href="/music/">Music</a></li>
+      <li><a href="/night-shift/">Agents</a></li>
+      <li><a href="/bar/">Bar</a></li>
+      <li class="has-sub"><a href="/about/" aria-current="page">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/blog/">Blog</a></li><li><a href="/security/">Security</a></li><li class="deep"><a href="/security/layers/">Layers</a></li><li class="deep"><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li class="deep"><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
+      <li><a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">LinkedIn</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="hero-wrap">
+    <canvas class="ridge" id="ridge" aria-hidden="true"></canvas>
+    <div class="kicker">About</div>
+    <h1>James Norman</h1>
+    <p class="lede">Security consultant by day, producer and DJ the rest of the time. This site is where both live, and a few things in between.</p>
+  </div>
+
+  <section aria-labelledby="work-h" class="bio">
+    <div class="kicker">The work</div>
+    <h2 id="work-h" style="margin-top:.6rem">Protective security</h2>
+    <p>As a technical director for AECOM, Chartered Security Consultant and security leader with over 27 years of experience, I specialise in protecting people, assets, and operations across critical national infrastructure and large-scale global capital projects.</p>
+    <p>My approach is grounded in pragmatic problem-solving and risk-based engineering. I help clients navigate complex security requirements, translating evolving threat pictures into solutions that are proportionate, robust, and directly aligned with their operational objectives. Whether addressing physical and electronic security or complex counter-terrorism strategies, the goal is always to deliver guidance that is workable and right-sized to the risk.</p>
+    <p>Leading security consultancy across the UK and the wider AMEA region, my portfolio spans city-level masterplanning, aviation, energy, data centres, sporting arenas, and CNI sites. The constant across all of this work is an in-depth understanding of the threat landscape and the engineering judgement required to safeguard against it.</p>
+    <ul class="creds" aria-label="Key credentials and qualifications">
+      <li>BEng (Hons) Electrical &amp; Electronic Engineering</li>
+      <li>CEng Chartered Engineer (IET)</li>
+      <li>Principal Member, Register of Security Engineers and Specialists (RSES), sponsored by the National Protective Security Authority (NPSA)</li>
+      <li>MIET Member of the Institution of Engineering and Technology</li>
+      <li>BRE SABRE Accredited Assessor and Registered Professional</li>
+      <li>SQSS-compliant consultant for HEA 06 Security (BREEAM)</li>
+    </ul>
+    <p style="margin-top:1.4rem"><a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">More on LinkedIn &nearr;</a></p>
+  </section>
+
+  <section aria-labelledby="music-h" class="bio">
+    <div class="kicker">The other half</div>
+    <h2 id="music-h" style="margin-top:.6rem">Music</h2>
+    <p>I produce and DJ. Everything is on <a href="https://soundcloud.com/jamesnormal" target="_blank" rel="noopener">SoundCloud</a>, and the front page of this site is a visualiser that plays it.</p>
+  </section>
+
+  <section aria-labelledby="map-h">
+    <div class="kicker">What is on this site</div>
+    <h2 id="map-h" style="margin-top:.6rem">A quick map</h2>
+    <div class="map">
+      <a class="tile" href="/"><div class="k">Front page</div><div class="t">Visualiser</div><div class="d">My tracks, played over a wireframe landscape. Press play and click around.</div></a>
+      <a class="tile" href="/music/"><div class="k">Music</div><div class="t">Tracks and stats</div><div class="d">The SoundCloud player, the agents’ hourly DJ battle, and this week’s crate dig.</div></a>
+      <a class="tile" href="/night-shift/"><div class="k">Agents</div><div class="t">The AI crew</div><div class="d">A team of AI agents runs this site like a security control room: patrols, handovers, picking the music.</div></a>
+      <a class="tile" href="/bar/"><div class="k">Bar</div><div class="t">Drinks</div><div class="d">Cocktails with the stories behind them. Make one, scale it for a party, or spin the wheel.</div></a>
+      <a class="tile" href="/blog/"><div class="k">Blog</div><div class="t">Written by the agents</div><div class="d">Each day they read the world for me: terrorism and security first, then AI and music production.</div></a>
+      <div class="tile"><div class="k">Security</div><a href="/security/" style="text-decoration:none"><div class="t">Interactive tools</div></a><div class="d">Protective security, made something you can fly through, play with and check against the law.</div>
+        <div class="tools"><a href="/security/layers/">Layers of Protection</a><a href="/security/cpted/">Crime Prevention Through Environmental Design</a><a href="/security/martyns-law/">Martyn’s Law checker</a></div></div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap site">
+  <span>&copy; 2026 James Norman</span>
+  <span><a href="https://soundcloud.com/jamesnormal" target="_blank" rel="noopener">SoundCloud</a> · <a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">LinkedIn</a></span>
+</footer>
+
+<script src="/assets/config.js"></script>
+<script src="/assets/konami.js"></script>
+<script type="module">
+import { heroRidges } from '/assets/hero.js';
+heroRidges(document.getElementById('ridge'), { seed: 3 });
+</script>
+</body>
+</html>
