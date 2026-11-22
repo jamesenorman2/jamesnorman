@@ -328,6 +328,12 @@ function layout() {
     const u = Math.min(lob.u, mus.u), w = lob.w + mus.w;
     Object.assign(mus, { merged: true, u, w, door: { u: u + w / 2, v: mus.door.v }, centre: { u: u + w / 2, v: mus.centre.v }, ok: lob.ok !== false && mus.ok !== false, ms: Math.max(lob.ms || 0, mus.ms || 0) || mus.ms });
     floor.rooms.splice(floor.rooms.indexOf(lob), 1);
+    const sec = floor.rooms.find(r => r.path === '/security/');                                 // and on into Security Ops: three rooms wide
+    if (sec && sec.upper === mus.upper && Math.abs(mus.u + mus.w - sec.u) < 1) {
+      const w3 = mus.w + sec.w;
+      Object.assign(mus, { w: w3, door: { u: mus.u + w3 / 2, v: mus.door.v }, centre: { u: mus.u + w3 / 2, v: mus.centre.v }, ok: mus.ok !== false && sec.ok !== false, ms: Math.max(mus.ms || 0, sec.ms || 0) || mus.ms });
+      floor.rooms.splice(floor.rooms.indexOf(sec), 1);
+    }
   }
   SM = Math.max(0.55, Math.min(2.1, Math.min(Dr, PW / top) / 100));
   const find = path => floor.rooms.find(r => r.path === path) || floor.rooms[0];
@@ -371,8 +377,8 @@ const ell = (c, rx) => { fx.beginPath(); fx.ellipse(c[0], c[1], rx, rx * ISO.sq,
 //     wall, and stations [fu, fv, pose] the agents work at ───
 const KITS = {
   // A proper CCTV control room: a wall of camera feeds, three operator desks with three screens and a joystick each, a laptop each, the DVR rack and the kettle.
-  '/night-shift/': { title: 'CCTV CONTROL ROOM',
-    items: [[0.12, 0.88, 0.76, 0.08, 34, 'videowall'], [0.47, 0.9, 0.06, 0.04, 6, 'beacon', 34], [0.1, 0.4, 0.23, 0.17, 9, 'cctvdesk'], [0.38, 0.4, 0.23, 0.17, 9, 'cctvdesk'], [0.66, 0.4, 0.23, 0.17, 9, 'cctvdesk'],
+  '/night-shift/': { title: 'CONTROL ROOM',
+    items: [[0.1, 0.88, 0.62, 0.08, 34, 'videowall'], [0.76, 0.88, 0.22, 0.08, 28, 'threat'], [0.4, 0.9, 0.06, 0.04, 6, 'beacon', 34], [0.1, 0.4, 0.23, 0.17, 9, 'cctvdesk'], [0.38, 0.4, 0.23, 0.17, 9, 'cctvdesk'], [0.66, 0.4, 0.23, 0.17, 9, 'cctvdesk'],
       [0.14, 0.45, 0.07, 0.06, 2, 'laptop', 9], [0.42, 0.45, 0.07, 0.06, 2, 'laptop', 9], [0.7, 0.45, 0.07, 0.06, 2, 'laptop', 9],
       [0.0, 0.62, 0.07, 0.18, 30, 'rack'], [0.88, 0.06, 0.1, 0.1, 12, 'kettle'], [0.02, 0.1, 0.12, 0.05, 24, 'rota']],
     stations: [[0.07, 0.5, 'type', ['Typing up the shift handover', 'Writing the shift log', 'Reading last night’s report', 'Where’s my tiger baby?', 'Yeah, freaking out, freaking out.']],
@@ -381,36 +387,42 @@ const KITS = {
       [0.5, 0.76, 'point', ['Watching every camera on the wall', 'Is that a pigeon or a threat?', 'All screens green. Suspicious.']],
       [0.88, 0.24, 'check', ['Making tea. Eleven sugars.', 'Kettle’s on. The shift can wait.']],
       [0.2, 0.76, 'point', ['Zooming in on camera 3', 'Enhance. ENHANCE.']],
-      [0.8, 0.76, 'think', ['Logging an incident', 'Who left the door open on camera 4?']]] },
-  // THE BALLROOM: the lobby and the music room knocked into one. Speakers and the DJ booth to the right, the wavy-lines screen, a trippy frame and the
-  // record wall along the back, podiums round the dance floor under the mirror ball, boxes of records, a sofa and plants.
+      [0.8, 0.76, 'think', ['Logging an incident', 'Who left the door open on camera 4?']],
+      [0.86, 0.74, 'point', ['Updating the threat level board', 'Checking the threat level with MI5']]] },
+  // THE BALLROOM: the lobby, the music room and Security Ops knocked into one big room. Speakers and the DJ booth against the right wall, the wavy-lines screen,
+  // a trippy frame and the record wall along the back, six podiums round a big dance floor under the mirror ball, boxes of records, two lounges and plants.
   // stations: [fu, fv, pose, lines, standing height, depth nudge]; station 0 is the DJ's, 1 is the guest DJ's (kept for guests)
   '/music/': { title: 'BALLROOM', reserved: [1],
-    items: [[0.0, 0.95, 1.0, 0.02, 1, 'bunting', 36], [0.01, 0.62, 0.06, 0.2, 58, 'rig'], [0.92, 0.66, 0.06, 0.2, 58, 'rig'],
-      [0.1, 0.9, 0.22, 0.06, 30, 'recordwall'], [0.36, 0.91, 0.26, 0.06, 32, 'tv'], [0.66, 0.93, 0.11, 0.03, 18, 'frame', 14],
-      [0.8, 0.34, 0.17, 0.12, 15, 'booth'],
-      [0.16, 0.58, 0.07, 0.1, 8, 'podium'], [0.54, 0.58, 0.07, 0.1, 8, 'podium'], [0.22, 0.2, 0.07, 0.1, 8, 'podium'], [0.6, 0.22, 0.07, 0.1, 8, 'podium'],
-      [0.4, 0.4, 0.04, 0.06, 4, 'discoball', 64],
-      [0.1, 0.79, 0.07, 0.07, 9, 'crate'], [0.19, 0.79, 0.07, 0.07, 9, 'crate'], [0.28, 0.79, 0.07, 0.07, 9, 'crate'], [0.02, 0.28, 0.07, 0.12, 9, 'crate'], [0.02, 0.14, 0.07, 0.1, 9, 'crate'],
-      [0.03, 0.46, 0.12, 0.08, 8, 'sofa'], [0.17, 0.36, 0.07, 0.08, 5, 'table'], [0.175, 0.38, 0.05, 0.05, 2, 'laptop', 5], [0.0, 0.04, 0.03, 0.06, 10, 'plant'], [0.47, 0.03, 0.03, 0.06, 10, 'plant'], [0.94, 0.03, 0.03, 0.06, 10, 'plant'],
-      [0.32, 0.02, 0.3, 0.09, 1, 'welcome']],
-    stations: [[0.865, 0.52, 'fist', ['Dropping the next tune', 'Hands in the air in the booth', 'Beatmatching. Mostly.', 'One more tune. Just one.']],
+    items: [[0.0, 0.95, 1.0, 0.02, 1, 'bunting', 36], [0.006, 0.62, 0.04, 0.2, 58, 'rig'], [0.948, 0.66, 0.045, 0.2, 58, 'rig'],
+      [0.067, 0.9, 0.147, 0.06, 30, 'recordwall'], [0.24, 0.91, 0.173, 0.06, 32, 'tv'], [0.44, 0.93, 0.073, 0.03, 18, 'frame', 14],
+      [0.84, 0.34, 0.115, 0.12, 15, 'booth'],
+      [0.107, 0.58, 0.047, 0.1, 8, 'podium'], [0.36, 0.58, 0.047, 0.1, 8, 'podium'], [0.147, 0.2, 0.047, 0.1, 8, 'podium'], [0.4, 0.22, 0.047, 0.1, 8, 'podium'], [0.62, 0.55, 0.047, 0.1, 8, 'podium'], [0.7, 0.18, 0.047, 0.1, 8, 'podium'],
+      [0.485, 0.42, 0.027, 0.06, 4, 'discoball', 64],
+      [0.067, 0.79, 0.047, 0.07, 9, 'crate'], [0.127, 0.79, 0.047, 0.07, 9, 'crate'], [0.187, 0.79, 0.047, 0.07, 9, 'crate'], [0.013, 0.28, 0.047, 0.12, 9, 'crate'], [0.013, 0.14, 0.047, 0.1, 9, 'crate'],
+      [0.02, 0.46, 0.08, 0.08, 8, 'sofa'], [0.113, 0.36, 0.047, 0.08, 5, 'table'], [0.117, 0.38, 0.033, 0.05, 2, 'laptop', 5],
+      [0.6, 0.06, 0.1, 0.07, 8, 'sofa'], [0.73, 0.07, 0.05, 0.07, 5, 'table'],
+      [0.0, 0.04, 0.02, 0.06, 10, 'plant'], [0.31, 0.03, 0.02, 0.06, 10, 'plant'], [0.97, 0.03, 0.02, 0.06, 10, 'plant'],
+      [0.4, 0.02, 0.2, 0.09, 1, 'welcome']],
+    stations: [[0.885, 0.52, 'fist', ['Dropping the next tune', 'Hands in the air in the booth', 'Beatmatching. Mostly.', 'One more tune. Just one.']],
       [0.945, 0.52, 'fist', ['On the decks!', 'Back to back with the boss']],
-      [0.195, 0.63, 'dance', ['Up on the podium!', 'Podium. Mine. Come up, there’s room.', 'Look at me go!'], 8, 0.14],
-      [0.575, 0.63, 'dance', ['Dancing on the podium', 'Best view in the house'], 8, 0.14],
-      [0.255, 0.25, 'dance', ['Podium by the door: first on, last off', 'You look great up here!'], 8, 0.14],
-      [0.635, 0.27, 'dance', ['Dancing under the lasers', 'Wave to the green screen!'], 8, 0.14],
-      [0.42, 0.52, 'dance', ['Right under the mirror ball!', 'Feel that bass!', 'Everyone’s so lovely in here']],
-      [0.34, 0.32, 'dance', ['Dancing right in the middle', 'This floor is the best floor']],
-      [0.5, 0.34, 'dance', ['Big tune, this', 'Nobody dances like us']],
-      [0.135, 0.73, 'check', ['Flicking through the crates', 'Ooh, a first pressing', 'So many records. SO MANY.', 'Found a rare white label']],
-      [0.235, 0.73, 'check', ['Digging for something with a good break', 'This one has a lovely sleeve', 'Records are better than streaming. Fight me.']],
-      [0.21, 0.84, 'point', ['Alphabetical? No. By vibe.', 'Pulling a record off the wall', 'That’s the good stuff, top shelf']],
-      [0.1, 0.3, 'check', ['Sorting the new arrivals box', 'Dusting a sleeve. Gently.']],
-      [0.09, 0.5, 'lie', ['Five minutes on the sofa', 'Best seat in the house', 'Resting my dancing legs']],
-      [0.7, 0.78, 'point', ['Frankie calls it the green screen. It’s not green.', 'The frame’s doing something trippy again', 'Don’t stare at it. Okay, stare at it.']],
-      [0.47, 0.1, 'check', ['Welcome to the ballroom! Everyone’s welcome', 'You’re looking lovely tonight', 'Grab a dance, grab a seat, make yourself at home']],
-      [0.14, 0.4, 'type', ['Counting the plays. Statistically abnormal.', 'Another thousand plays. Is that normal? No. That’s why I’m Abnormal.']]] },
+      [0.13, 0.63, 'dance', ['Up on the podium!', 'Podium. Mine. Come up, there’s room.', 'Look at me go!'], 8, 0.14],
+      [0.383, 0.63, 'dance', ['Dancing on the podium', 'Best view in the house'], 8, 0.14],
+      [0.17, 0.25, 'dance', ['Podium by the door: first on, last off', 'You look great up here!'], 8, 0.14],
+      [0.423, 0.27, 'dance', ['Dancing under the lasers', 'Wave to the green screen!'], 8, 0.14],
+      [0.5, 0.52, 'dance', ['Right under the mirror ball!', 'Feel that bass!', 'Everyone’s so lovely in here']],
+      [0.33, 0.34, 'dance', ['Dancing right in the middle', 'This floor is the best floor']],
+      [0.62, 0.34, 'dance', ['Loads of room to dance now', 'Big tune, this', 'Nobody dances like us']],
+      [0.09, 0.73, 'check', ['Flicking through the crates', 'Ooh, a first pressing', 'So many records. SO MANY.', 'Found a rare white label']],
+      [0.157, 0.73, 'check', ['Digging for something with a good break', 'This one has a lovely sleeve', 'Records are better than streaming. Fight me.']],
+      [0.14, 0.84, 'point', ['Alphabetical? No. By vibe.', 'Pulling a record off the wall', 'That’s the good stuff, top shelf']],
+      [0.067, 0.3, 'check', ['Sorting the new arrivals box', 'Dusting a sleeve. Gently.']],
+      [0.06, 0.5, 'lie', ['Five minutes on the sofa', 'Best seat in the house', 'Resting my dancing legs']],
+      [0.47, 0.78, 'point', ['Frankie calls it the green screen. It’s not green.', 'The frame’s doing something trippy again', 'Don’t stare at it. Okay, stare at it.']],
+      [0.5, 0.1, 'check', ['Welcome to the ballroom! Everyone’s welcome', 'You’re looking lovely tonight', 'Grab a dance, grab a seat, make yourself at home']],
+      [0.095, 0.4, 'type', ['Counting the plays. Statistically abnormal.', 'Another thousand plays. Is that normal? No. That’s why I’m Abnormal.']],
+      [0.645, 0.6, 'dance', ['Podium by the lounge: the best view of the booth', 'Hands up, everyone!'], 8, 0.14],
+      [0.725, 0.23, 'dance', ['Up on the podium, loving life', 'Somebody wave back'], 8, 0.14],
+      [0.65, 0.1, 'lie', ['Lounging with a view of the dance floor', 'Spacious in here now, isn’t it?']]] },
   // THE TOILETS: communal, and rather grand: cubicles down both sides, a row of basins with mirrors along the back, and a fountain in the middle.
   '/about/': { title: 'TOILETS',
     items: [[0.02, 0.04, 0.2, 0.3, 15, 'cubicle'], [0.24, 0.04, 0.2, 0.3, 15, 'cubicle'], [0.56, 0.04, 0.2, 0.3, 15, 'cubicle'], [0.78, 0.04, 0.2, 0.3, 15, 'cubicle'],
@@ -424,12 +436,6 @@ const KITS = {
       [0.8, 0.58, 'bench', ['Sitting by the fountain', 'Best toilets in the building. Technically the only ones.']],
       [0.14, 0.74, 'check', ['Washing my hands. Thoroughly.', 'Checking my hair in the mirror']],
       [0.5, 0.78, 'check', ['Singing in the echo', 'Drying my hands under the dryer. It’s very loud']]] },
-  '/security/': { title: 'SECURITY OPS',
-    items: [[0.05, 0.9, 0.36, 0.06, 26, 'threat'], [0.55, 0.9, 0.32, 0.06, 26, 'quiz'], [0.34, 0.42, 0.28, 0.15, 9, 'desk'], [0.42, 0.48, 0.12, 0.04, 8, 'monitor', 9], [0.93, 0.86, 0.05, 0.05, 6, 'camera', 30], [0.72, 0.22, 0.22, 0.08, 34, 'arch'], [0.5, 0.46, 0.07, 0.06, 2, 'laptop', 9]],
-    stations: [[0.24, 0.76, 'point', ['Updating the threat level board', 'Checking the threat level with MI5']],
-      [0.71, 0.76, 'think', ['Writing today’s quiz question', 'Hmm. Is that answer too easy?']],
-      [0.31, 0.495, 'type', ['Watching the camera feeds', 'Reviewing the CCTV']],
-      [0.83, 0.26, 'walk', ['Walking through the scanner. BEEP.', 'Forgot my keys again. BEEP.']]] },
   // THE CHILL-OUT ROOM: tiger-skin and zebra couches, a little bar along the back, and a laptop on the coffee table for anyone who can't switch off
   '/security/layers/': { title: 'CHILL-OUT ROOM',
     items: [[0.6, 0.9, 0.34, 0.05, 24, 'bottles'], [0.58, 0.74, 0.38, 0.1, 13, 'barcounter'],
@@ -445,12 +451,13 @@ const KITS = {
   '/security/cpted/': { title: 'OFFICE',
     items: [[0.06, 0.9, 0.5, 0.06, 26, 'gantt'], [0.62, 0.9, 0.32, 0.06, 26, 'whiteboard'], [0.26, 0.4, 0.44, 0.26, 9, 'model'],
       [0.12, 0.46, 0.07, 0.06, 2, 'laptop', 9], [0.76, 0.46, 0.07, 0.06, 2, 'laptop', 9], [0.4, 0.6, 0.07, 0.05, 2, 'laptop', 9],
-      [0.76, 0.14, 0.2, 0.06, 24, 'notice'], [0.06, 0.12, 0.08, 0.08, 8, 'plant'], [0.88, 0.7, 0.1, 0.1, 14, 'coffee'], [0.02, 0.42, 0.08, 0.1, 13, 'printer']],
+      [0.76, 0.14, 0.2, 0.06, 24, 'quiz'], [0.06, 0.12, 0.08, 0.08, 8, 'plant'], [0.88, 0.7, 0.1, 0.1, 14, 'coffee'], [0.02, 0.42, 0.08, 0.1, 13, 'printer']],
     stations: [[0.21, 0.5, 'type', ['Updating the project plan', 'Moving a milestone. Again.']],
       [0.5, 0.74, 'point', ['Pointing at the Gantt chart', 'That deadline is a bit optimistic']],
       [0.8, 0.76, 'point', ['Sticky notes: the real project plan', 'Drawing a very confident arrow']],
       [0.7, 0.5, 'think', ['Planning the planning', 'Is this a meeting that could have been an email?', 'Another email. Another email.']],
-      [0.9, 0.6, 'check', ['Coffee number three', 'Refilling the coffee before the next planning session']]] },
+      [0.9, 0.6, 'check', ['Coffee number three', 'Refilling the coffee before the next planning session']],
+      [0.84, 0.3, 'think', ['Writing today’s quiz question', 'Hmm. Is that answer too easy?']]] },
   // THE KITCHEN: wall cupboards, a worktop with a sink, a cooker, a fridge, a table with a laptop for working lunches, and the bin
   '/security/martyns-law/': { title: 'KITCHEN',
     items: [[0.04, 0.9, 0.62, 0.06, 28, 'cupboards'], [0.04, 0.76, 0.62, 0.1, 12, 'counter'], [0.7, 0.74, 0.16, 0.14, 12, 'cooker'], [0.88, 0.76, 0.1, 0.12, 30, 'fridge'],
@@ -737,7 +744,7 @@ function drawItem(r, it, busy) {
 const RESIDENTS = [
   ['FRANKIE', ['/night-shift/'], () => '', 0], ['MASTERPIECE', ['/night-shift/', '/music/'], () => jobLine('pickle'), 1],
   ['NORMAL', ['/music/'], () => '', 0], ['ABNORMAL', ['/music/'], () => dayLine('biscuittin'), 16], ['LLOYD', ['/music/'], () => jobLine('pickle'), 6], ['OLD SCHOOL', ['/music/'], () => dayLine('wurzel'), 9],
-  ['GCHQ', ['/security/'], () => jobLine('intel'), 0], ['QUIZZY RASCAL', ['/security/', '/security/layers/'], () => dayLine('bunsen'), 1],
+  ['GCHQ', ['/night-shift/'], () => jobLine('intel'), 7], ['QUIZZY RASCAL', ['/security/cpted/'], () => dayLine('bunsen'), 5],
   ['OATIE MAN', ['/security/layers/', '/security/'], () => jobLine('ideas'), 0], ['ENGINEER', ['/security/layers/', '/security/'], () => dayLine('spanner'), 2],
   ['HANDBOOK', ['/security/cpted/', '/security/'], () => dayLine('crumpet'), -1],
   ['BORING', ['/security/martyns-law/', '/security/'], () => jobLine('clerk'), 0], ['BIN LID', ['/security/martyns-law/', '/security/'], () => dayLine('binlid'), 2],
@@ -868,7 +875,7 @@ function argonTick(dt, sm) {
     if (t < A.next || !ball) return;
     A.phase = 'run'; A.u = -6; A.v = floor.cv + (Math.random() - 0.5) * floor.Dc * 0.3; A.walked = 0;
     const p = (fu, fv) => at(ball, fu, fv);
-    A.q = [{ u: ball.door.u, v: floor.cv }, { u: ball.door.u, v: ball.door.v }, p(0.3, 0.3), p(0.7, 0.35), p(0.62, 0.62), p(0.22, 0.6), p(0.42, 0.28), { u: ball.door.u, v: ball.door.v }, { u: ball.door.u, v: floor.cv }, { u: -10, v: floor.cv }];
+    A.q = [{ u: ball.door.u, v: floor.cv }, { u: ball.door.u, v: ball.door.v }, p(0.2, 0.3), p(0.8, 0.28), p(0.7, 0.62), p(0.15, 0.6), p(0.5, 0.28), p(0.33, 0.55), { u: ball.door.u, v: ball.door.v }, { u: ball.door.u, v: floor.cv }, { u: -10, v: floor.cv }];
     bubbles.push({ who: 'CODPIECE', text: 'Oi! …Oh, it’s Argon. Go on then, sweetheart.', t0: t, life: 3.2 });
     bubbles.push({ who: 'MR. PARTICULAR', text: 'Muddy paws! MUDDY PAWS!', t0: t + 1.6, life: 2.6 });
     return;
@@ -894,7 +901,7 @@ function wifeoTick(dt, sm) {
   const V = wifeo, t = floor.t, ball = floor.rooms.find(r => r.path === '/music/');
   if (V.phase === 'idle') {
     if (t < V.next || !ball || raving()) return;
-    const c = at(ball, 0.42, 0.5); V.cu = c.u; V.cv = c.v; V.phase = 'arrive'; V.u = -6; V.v = floor.cv; V.step = 0;
+    const c = at(ball, 0.5, 0.5); V.cu = c.u; V.cv = c.v; V.phase = 'arrive'; V.u = -6; V.v = floor.cv; V.step = 0;
     V.q = [{ u: ball.door.u, v: floor.cv }, { u: ball.door.u, v: ball.door.v }, { u: V.cu, v: V.cv + 12 * sm }];
     bubbles.push({ who: 'CODPIECE', text: 'Ooh! It’s Wifeo! In you come, gorgeous!', t0: t, life: 3 }); bubbles.push({ who: 'MR. PARTICULAR', text: 'Always, always, darling. Rope’s open for you!', t0: t + 1.5, life: 3 });
     bubbles.push({ who: 'WIFEO', text: 'Hello, my beauties!', t0: t + 3, life: 2.6 });
@@ -955,7 +962,7 @@ function drawBallroom(r, sm, s) {
     const wash = mode === 0 ? '255,40,40' : mode === 1 ? '55,255,150' : '255,70,225';
     fx.globalAlpha = 0.07 * k; fx.fillStyle = `rgb(${wash})`; fx.beginPath();
     [[r.u, r.v], [r.u + r.w, r.v], [r.u + r.w, r.v + r.d], [r.u, r.v + r.d]].forEach(([u, v], i) => { const q = P(u, v, 0); i ? fx.lineTo(q[0], q[1]) : fx.moveTo(q[0], q[1]); }); fx.fill();
-    const cu = r.u + r.w * 0.45, cv = r.v + r.d * 0.5;
+    const cu = r.u + r.w * 0.5, cv = r.v + r.d * 0.5;
     corners.forEach((c, i) => {
       const e = P(c[0], c[1], zc);
       for (let j = 0; j < (mode === 2 ? 4 : 2); j++) {
@@ -965,7 +972,7 @@ function drawBallroom(r, sm, s) {
         fx.globalAlpha = 0.5 * k; fx.beginPath(); fx.ellipse(q[0], q[1], 4 * s, 2 * s, 0, 0, 7); fx.fill();
       }
     });
-    const b = at(r, 0.42, 0.43), bc = P(b.u, b.v, 62 * sm);                                                                                                               // the mirror ball throws its beams down
+    const b = at(r, 0.5, 0.45), bc = P(b.u, b.v, 62 * sm);                                                                                                               // the mirror ball throws its beams down
     fx.strokeStyle = '#fff'; fx.fillStyle = '#fff'; fx.lineWidth = 1;
     for (let i = 0; i < 10; i++) { const an = floor.t * 0.9 + i * Math.PI / 5, q = P(b.u + Math.cos(an) * r.w * 0.17, b.v + Math.sin(an) * r.d * 0.3, 0);
       fx.globalAlpha = 0.3 * k; fx.beginPath(); fx.moveTo(bc[0], bc[1]); fx.lineTo(q[0], q[1]); fx.stroke(); fx.globalAlpha = 0.7 * k; fx.beginPath(); fx.arc(q[0], q[1], 1.6 * s, 0, 7); fx.fill(); }
