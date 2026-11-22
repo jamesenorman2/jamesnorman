@@ -109,6 +109,7 @@
 
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
+<script src="/assets/stickmen.js"></script>
 <script>
 (() => {
 'use strict';
@@ -611,6 +612,45 @@ function raveRoute(a, name, homeFn, sm, dt) {
   a.step = (a.step || 0) + sp * 0.3; a.moving = true;
   return true;
 }
+// ─── The main-page roster: whoever is due on the homepage walks to the wormhole, goes through, and comes back out ───
+// (the same clock and settings the homepage uses, see /assets/stickmen.js, so the two always agree)
+const WORM = sm => ({ u: floor.PW - 12 * sm, v: floor.cv });
+const DUTY_OFF = ['Off to the main page!', 'I’m on the homepage. Wish me luck.', 'My turn on the front screen!', 'Right, I’m on. See you on the other side.'];
+const DUTY_BACK = ['Back from the main page.', 'That was fun. Anyone seen my desk?', 'I was just on the homepage, you know.', 'Phew. Public appearance done.'];
+function dutyRoute(a, name, homeFn, sm, dt) {
+  const SK = window.JN_STICK;
+  a.through = 1;
+  if (!SK || !SK.loaded) return false;
+  const st = SK.status(name.replace(/~\w+$/, ''), Date.now()), wh = WORM(sm);
+  if (st.state === 'away') {                                    // on the main page: out of the building
+    if (a.duty !== 'away') { a.duty = 'away'; a.raving = false; a.q = null; a.u = wh.u; a.v = wh.v; }
+    a.through = 0; a.moving = false; return true;
+  }
+  if (st.state === 'going' && a.duty !== 'going') {             // their turn is coming: off to the wormhole
+    a.duty = 'going'; a.raving = false; a.q = routeTo(a.u, a.v, null, wh); bubbles.push({ who: name, text: pickOne(DUTY_OFF), t0: floor.t, life: 3 });
+  } else if (st.state === 'back' && a.duty === 'away') {        // their turn is over: out of the wormhole and back to work
+    a.duty = 'back'; a.raving = false; a.u = wh.u; a.v = wh.v; a.born = floor.t;
+    const h = homeFn && homeFn(); a.q = h ? routeTo(wh.u, wh.v, roomAt(h.u, h.v), h) : routeTo(wh.u, wh.v, null, { u: wh.u - 70 * sm, v: floor.cv });
+    bubbles.push({ who: name, text: pickOne(DUTY_BACK), t0: floor.t + 1.2, life: 3 });
+  } else if (a.duty !== 'going' && a.duty !== 'back') { a.duty = null; return false; }
+  else if (a.duty === 'going' && st.state !== 'going') { a.duty = null; return false; }
+  if (a.duty === 'back') a.through = Math.min(1, (floor.t - a.born) / 1.4);   // growing out of the wormhole
+  if (a.q && a.q.length) {
+    const p = a.q[0], du = p.u - a.u, dv = p.v - a.v, d = Math.hypot(du, dv), sp = 95 * sm * dt;
+    if (d <= sp) { a.u = p.u; a.v = p.v; a.q.shift(); } else { a.u += du / d * sp; a.v += dv / d * sp; }
+    a.step = (a.step || 0) + sp * 0.3; a.moving = true; return true;
+  }
+  a.moving = false;
+  if (a.duty === 'back') { a.duty = null; return false; }                      // home again
+  a.through = Math.max(0, Math.min(1, st.left / 2.5)); return true;             // waiting at the wormhole, then in
+}
+// draws something shrinking into (or growing out of) the wormhole when a.through is below 1
+function throughWorm(a, sm, draw) {
+  if (a.through === 0) return;
+  if (a.through == null || a.through >= 1) { draw(); return; }
+  const c = P(floor.PW - 12 * sm, floor.cv, 16 * sm);
+  fx.save(); fx.translate(c[0], c[1]); fx.rotate((1 - a.through) * 6); fx.scale(a.through, a.through); fx.translate(-c[0], -c[1]); draw(); fx.restore();
+}
 // dancing on the beat: each agent has its own style; arms and bounces land on the beat
 function danceMan(x, y, s, a, name, k) {
   const ph = beatPhase() + (k % 2) * 0.5, on = Math.abs(Math.sin(ph * Math.PI)), hit = Math.min(1, beatNow().hit || 0);
@@ -667,7 +707,8 @@ function drawFloor(dt) {
       let a = res[w.name];
       if (!a || a.room !== r) { const k0 = w.fav >= 0 && w.fav < st.length ? w.fav : i % st.length, p0 = at(r, st[k0][0], st[k0][1]); a = res[w.name] = { room: r, st: k0, u: p0.u, v: p0.v, dwell: 2 + Math.random() * 4, step: 0 }; }
       let moving, pose;
-      if (raveRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'rave'; }
+      if (dutyRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'check'; }
+      else if (raveRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'rave'; }
       else {
         const tgt = at(r, st[a.st][0], st[a.st][1]), du = tgt.u - a.u, dvv = tgt.v - a.v, dist = Math.hypot(du, dvv), sp = 34 * sm * dt;
         if (dist > 0.8) { const k = Math.min(1, sp / dist); a.u += du * k; a.v += dvv * k; a.step += Math.min(dist, sp) * 0.3; }
@@ -691,14 +732,14 @@ function drawFloor(dt) {
         if (!moving && pose === 'dance') { pose = 'rave'; if (!a.style) a.style = DANCES[Math.floor(Math.random() * DANCES.length)]; }   // dance stations: on the beat
       }
       const stn = st[a.st] || [], up = !moving && !a.raving && stn[4] ? stn[4] * sm : 0, nudge = up && stn[5] ? stn[5] * r.d : 0;
-      Z.push({ z: a.v + 0.5 + nudge, f: () => {
+      Z.push({ z: a.v + 0.5 + nudge, f: () => throughWorm(a, sm, () => {
         const [x, y] = P(a.u, a.v, up);
         if (pose === 'rave') danceMan(x, y, sm, a, w.name, i);
         else stickMan(x, y, sm, moving ? a.step : t * 2 + i, pose, w.name);
         text(w.name, x, y + 9 * s, 7.5 * s, 0.65);
         const msg = w.line();
         if (msg && !moving && !raving() && pose !== 'rave' && r.w / Math.max(1, who.length) > 60) text(msg, Math.max(P(r.u, a.v)[0] + 46, Math.min(P(r.u + r.w, a.v)[0] - 46, x)), y - 36 * sm - (i % 2) * 10 * s, 8 * s, 0.8);
-      } });
+      }) });
     });
   });
 
@@ -716,11 +757,11 @@ function drawFloor(dt) {
   // Codpiece on the front door at the left end of the corridor (and at the rave, when there is one)
   { const home = { u: 14 * sm, v: floor.cv + floor.Dc * 0.2 };
     const a = res.CODPIECE || (res.CODPIECE = { u: home.u, v: home.v, step: 0 });
-    const inRave = raveRoute(a, 'CODPIECE', () => home, sm, dt);
+    const onDuty = dutyRoute(a, 'CODPIECE', () => home, sm, dt), inRave = !onDuty && raveRoute(a, 'CODPIECE', () => home, sm, dt);
     Z.push({ z: floor.Dr + floor.Dc * 0.85, f: () => frontDoor(sm, s) });
-    Z.push({ z: a.v + 0.5, f: () => { const [x, y] = P(a.u, a.v);
-      if (inRave && !a.moving) danceMan(x, y, sm, a, 'CODPIECE', 3); else stickMan(x, y, sm, inRave ? a.step : t, inRave ? 'walk' : 'check', 'CODPIECE');
-      text('CODPIECE', x, y + 9 * s, 7.5 * s, 0.65); if (!inRave) text(jobLine('gatekeeper'), x + 18 * sm, y - 34 * sm, 8.5 * s, 0.85, 'left'); } }); }
+    Z.push({ z: a.v + 0.5, f: () => throughWorm(a, sm, () => { const [x, y] = P(a.u, a.v);
+      if (inRave && !a.moving) danceMan(x, y, sm, a, 'CODPIECE', 3); else stickMan(x, y, sm, inRave || onDuty ? a.step : t, inRave || onDuty ? (a.moving ? 'walk' : 'check') : 'check', 'CODPIECE');
+      text('CODPIECE', x, y + 9 * s, 7.5 * s, 0.65); if (!inRave && !onDuty) text(jobLine('gatekeeper'), x + 18 * sm, y - 34 * sm, 8.5 * s, 0.85, 'left'); }) }); }
 
   // the wormhole at the far end of the corridor: Fish's way out to the sites this one relies on
   { const wu = PW - 12 * sm, wv = floor.cv; Z.push({ z: wv + floor.Dc * 0.3, f: () => wormhole(P(wu, wv, 16 * sm), sm, s, t) }); }
@@ -733,14 +774,16 @@ function drawFloor(dt) {
   floor.men.forEach(m => {
     if (!m.path.length) return;
     let pose = 'walk';
-    if (raveRoute(m, m.name, null, sm, dt)) { pose = m.moving ? 'walk' : 'rave'; }
+    if (dutyRoute(m, m.name, null, sm, dt)) { pose = m.moving ? 'walk' : 'check'; }
+    else if (raveRoute(m, m.name, null, sm, dt)) { pose = m.moving ? 'walk' : 'rave'; }
     else if (m.pause > 0) { m.pause -= dt; pose = 'check'; }
     else {
       const p = m.path[m.i], du = p.u - m.u, dvv = p.v - m.v, dist = Math.hypot(du, dvv), stepLen = speed * dt;
       if (dist <= stepLen) { m.u = p.u; m.v = p.v; m.i = (m.i + 1) % m.path.length; if (p.check) { p.check.seen = 1; m.pause = 1.4; } if (p.hold) m.pause = p.hold; }
       else { m.u += du / dist * stepLen; m.v += dvv / dist * stepLen; m.step += stepLen * 0.25; }
     }
-    const through = m.name === 'FISH' && pose === 'check' && m.pause > 0 ? Math.abs(Math.cos(Math.PI * (1 - m.pause / 3))) : 1;   // into the wormhole and back out
+    const through = m.through < 1 ? m.through : m.name === 'FISH' && pose === 'check' && m.pause > 0 ? Math.abs(Math.cos(Math.PI * (1 - m.pause / 3))) : 1;   // into the wormhole and back out
+    if (m.through === 0) return;
     Z.push({ z: m.v + 0.5, f: () => { const [x, y] = P(m.u, m.v); fx.save(); if (through < 1) { const c = P(PW - 12 * sm, floor.cv, 16 * sm); fx.translate(c[0], c[1]); fx.rotate((1 - through) * 6); fx.scale(through, through); fx.translate(-c[0], -c[1]); } if (pose === 'rave') danceMan(x, y, sm, m, m.name, 5); else stickMan(x, y, sm, pose === 'walk' ? m.step : 0, pose, m.name); text(m.name, x, y + 9 * s, 7.5 * s, 0.65);
       if (m.name === 'FISH') { text(jobLine('links'), x, y - 34 * sm, 8.5 * s, 0.8); if (pose === 'check') text('Through the wormhole →', x - 4, y - 46 * sm, 8 * s, 0.5, 'right'); } fx.restore(); } });
   });
@@ -796,7 +839,13 @@ function wormhole(c, sm, s, t) {
     fx.stroke();
   }
   fx.restore();
-  text('WORMHOLE', c[0], c[1] - R - 5 * sm, 7 * s, 0.5);
+  text('WORMHOLE TO THE MAIN PAGE', c[0] + R * 0.8, c[1] - R - 5 * sm, 7 * s, 0.5, 'right');
+  const SK = window.JN_STICK;
+  if (SK && SK.loaded) {                                          // who is on the homepage right now, and who is next
+    const d = SK.duty(), m = Math.floor(d.left / 60000), sec = String(Math.floor(d.left / 1000) % 60).padStart(2, '0');
+    text('ON THE MAIN PAGE: ' + d.agent, c[0] + R * 0.8, c[1] + R + 9 * sm, 7.5 * s, 0.8, 'right');
+    text('NEXT: ' + d.next + ' IN ' + m + ':' + sec, c[0] + R * 0.8, c[1] + R + 19 * sm, 7 * s, 0.5, 'right');
+  }
 }
 let cat = null, nextCat = 25 + Math.random() * 30;
 window.JN_cat = () => { nextCat = 0; const fr = res.FRANKIE; return { cat, fr: fr && { room: fr.room && fr.room.path, u: Math.round(fr.u) }, control: floor.control && floor.control.path, raving: raving() }; };                       // call the cat in from the console

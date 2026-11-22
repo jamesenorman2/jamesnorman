@@ -53,7 +53,10 @@
   .man.off{opacity:.5}
   .man .tog{display:inline-flex;gap:.35rem;align-items:center;margin:0;letter-spacing:.12em;cursor:pointer;color:var(--fg)}
   .man .tog input{width:auto;accent-color:#fff}
-  .man input.nm{margin-top:.5rem}
+  .man input.nm,.man select{margin-top:.2rem}
+  .man select{width:100%;background:#000;color:#fff;border:1px solid #333;font:inherit;font-size:.8rem;padding:.55rem .5rem;border-radius:0}
+  .duty{border:1px solid var(--line);padding:.7rem .9rem;margin:1rem 0;font-size:.78rem;line-height:1.6}
+  .duty b{font-weight:500}
   .man .mini{padding:.4rem .7rem;font-size:.6rem}
   .hint{color:var(--dim);font-size:.7rem;margin-top:.3rem;line-height:1.5}
   .back{display:inline-block;margin-top:3rem;color:var(--dim);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;text-decoration:none}
@@ -124,6 +127,8 @@
     <div class="card" style="margin-top:1rem">
       <div class="k">Stick men <span id="smCount" class="badge"></span></div>
       <div class="v">Everyone who turns up on the front screen, what they do and what they say. Change the words (one line per thing he might say, he picks one at random), switch a man off, or add your own. Press Save and the homepage picks it up next time it loads.</div>
+      <div class="v" style="margin-top:.7rem">Every stick man is an agent: pick which one, and their name shows under him on the homepage. Every three minutes one agent is due on the main page, and only their stick men can appear then. On the Agents page that agent walks to the wormhole, goes through, is missing while they are on, and comes back out. Agents with no stick man never go. Choose “Whoever is on the main page” and he turns up as whichever agent is on.</div>
+      <div class="duty" id="smDuty">…</div>
       <div id="smList"></div>
       <div class="row">
         <button type="button" class="ghost" id="smAdd">+ Add a stick man</button>
@@ -250,18 +255,21 @@ const SM = window.JN_STICK;
 let customMen = [];
 const linesOf = t => t.split('\n').map(x => x.replace(/\s+/g, ' ').trim()).filter(Boolean);
 const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+const agentOpts = (cur, any) => (any ? `<option value="*"${cur === '*' ? ' selected' : ''}>Whoever is on the main page</option>` : '') + SM.AGENTS.map(a => `<option${a === cur ? ' selected' : ''}>${escH(a)}</option>`).join('');
 function manHtml(m) {
   const off = !SM.on(m.id);
   return `<div class="man${off ? ' off' : ''}" data-id="${escH(m.id)}"><h3>${escH(m.name)}
     <label class="tog"><input type="checkbox" class="en"${off ? '' : ' checked'}> On</label></h3>
     <p class="does">${escH(m.does)}</p>
+    ${m.id === 'corner' ? '' : `<label class="when">Which agent is he? (the name shown on the homepage)</label><select class="ag">${agentOpts(SM.agentOf(m.id), true)}</select>`}
     ${m.slots.map(sl => `<label class="when">${escH(sl.when)}</label><textarea data-slot="${escH(sl.key)}" spellcheck="true">${escH(SM.lines(m.id, sl.key).join('\n'))}</textarea>`).join('')}
     ${m.slots.length ? '<div class="row"><button type="button" class="ghost mini" data-reset>Put the original words back</button></div>' : ''}</div>`;
 }
 function customHtml(m, i) {
   return `<div class="man custom${m.enabled ? '' : ' off'}" data-i="${i}"><h3>${escH(m.name || 'New stick man')}
     <label class="tog"><input type="checkbox" class="en"${m.enabled ? ' checked' : ''}> On</label></h3>
-    <label class="when">His name (shown on his label)</label><input class="nm" maxlength="40" value="${escH(m.name)}" placeholder="e.g. DAVE">
+    <label class="when">Which agent is he? (the name shown on the homepage)</label><select class="ag">${agentOpts(m.agent, false)}</select>
+    <label class="when">What to call him in this list</label><input class="nm" maxlength="40" value="${escH(m.name)}" placeholder="e.g. The bass shouter">
     <label class="when">What he does</label><textarea class="does-in" maxlength="300" placeholder="e.g. Pops up now and then and shouts about the bass">${escH(m.does)}</textarea>
     <label class="when">What he says (one per line, he picks one at random)</label><textarea class="lines" placeholder="Turn it up!&#10;More bass!">${escH(m.lines.join('\n'))}</textarea>
     <div class="row"><button type="button" class="ghost mini" data-del>Remove him</button></div></div>`;
@@ -275,17 +283,23 @@ function renderStick() {
 function readCustom() {   // keep what's been typed before re-drawing the list
   document.querySelectorAll('#smList .man.custom').forEach(el => {
     const m = customMen[+el.dataset.i]; if (!m) return;
-    m.name = el.querySelector('.nm').value; m.does = el.querySelector('.does-in').value; m.lines = linesOf(el.querySelector('.lines').value); m.enabled = el.querySelector('.en').checked;
+    m.name = el.querySelector('.nm').value; m.does = el.querySelector('.does-in').value; m.lines = linesOf(el.querySelector('.lines').value); m.enabled = el.querySelector('.en').checked; m.agent = el.querySelector('.ag').value;
   });
 }
 async function loadStick() {
   await SM.ready;
   customMen = SM.cfg.custom.map(m => ({ ...m }));
   renderStick();
+  showDuty(); setInterval(showDuty, 1000);
+}
+// who is on the main page now and who is next (the same roster the homepage and the Agents page use)
+function showDuty() {
+  const d = SM.duty(), l = Math.max(0, Math.floor(d.left / 1000));
+  $('smDuty').innerHTML = `On the main page now: <b>${escH(d.agent)}</b> (${Math.floor(l / 60)}:${String(l % 60).padStart(2, '0')} left) · Next: <b>${escH(d.next)}</b><br><span style="color:var(--dim)">In the rotation: ${SM.candidates().map(escH).join(', ')}</span>`;
 }
 $('smAdd').addEventListener('click', () => {
   readCustom();
-  customMen.push({ id: 'custom' + Date.now().toString(36), name: '', does: '', lines: [], enabled: true });
+  customMen.push({ id: 'custom' + Date.now().toString(36), name: '', agent: SM.AGENTS[0], does: '', lines: [], enabled: true });
   renderStick();
   const last = document.querySelector('#smList .man.custom:last-child .nm'); if (last) last.focus();
 });
@@ -304,20 +318,21 @@ $('smSave').addEventListener('click', async () => {
   const men = {};
   document.querySelectorAll('#smList .man:not(.custom)').forEach(el => {
     const d = SM.DEFAULTS.find(x => x.id === el.dataset.id), o = { enabled: el.querySelector('.en').checked, slots: {} };
+    const ag = el.querySelector('.ag'); if (ag) o.agent = ag.value;
     d.slots.forEach(sl => {
       const l = linesOf(el.querySelector(`textarea[data-slot="${sl.key}"]`).value);
       if (l.length && !same(l, sl.lines)) o.slots[sl.key] = l;   // only keep the ones you've changed
     });
     men[d.id] = o;
   });
-  const custom = customMen.filter(m => m.name.trim() || m.lines.length).map(m => ({ id: m.id, name: m.name.trim() || 'New stick man', does: m.does.trim(), enabled: m.enabled, lines: m.lines }));
+  const custom = customMen.filter(m => m.name.trim() || m.lines.length).map(m => ({ id: m.id, name: m.name.trim() || 'New stick man', agent: m.agent, does: m.does.trim(), enabled: m.enabled, lines: m.lines }));
   const noWords = custom.find(m => !m.lines.length);
   if (noWords) { say(msg, `${noWords.name} needs at least one thing to say.`, 'err'); return; }
   say(msg, 'Saving…');
   try {
     const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men, custom } });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
-    SM.apply({ men, custom }); customMen = SM.cfg.custom.map(m => ({ ...m })); renderStick();
+    SM.apply({ men, custom }); customMen = SM.cfg.custom.map(m => ({ ...m })); renderStick(); showDuty();
     say(msg, 'Saved. The homepage will use it next time it loads.', 'ok');
   } catch (err) { say(msg, 'Couldn’t save. The database may need its stick men update applying first.', 'err'); }
 });

@@ -108,6 +108,7 @@
   .chairman .bub{position:absolute;bottom:100px;left:50%;translate:-50% 0;font-size:.72rem;letter-spacing:.04em;color:#fff;background:#000;border:1px solid #fff;border-radius:6px;padding:.32rem .6rem;white-space:nowrap;opacity:0;transition:opacity .25s}
   .chairman .bub.on{opacity:1}
   .chairman.loo{width:96px}
+  .chairman .nm{position:absolute;left:50%;bottom:-13px;translate:-50% 0;font-size:.55rem;letter-spacing:.18em;color:#9a9a9a;white-space:nowrap}
   .stickbtn{position:fixed;left:1rem;bottom:.9rem;z-index:6;background:none;border:0;padding:.3rem;cursor:pointer;opacity:.4;transition:opacity .2s,transform .2s}
   .stickbtn svg{width:14px;height:24px;display:block}
   .stickbtn:hover,.stickbtn:focus-visible{opacity:1;transform:translateY(-2px)}
@@ -277,7 +278,7 @@
 <iframe class="shell-frame" id="shellFrame" title="Page" aria-label="Page"></iframe>
 <button class="stickbtn" id="stickBtn" type="button" title="Bring on a stick man" aria-label="Bring on a stick man"><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-8-6M13 15l8-6"/></svg></button>
 <div class="chairman loo" id="loo" aria-hidden="true"><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M40 92h18M44 92l2-14h8l2 14M34 70h30q0 10-10 10H44q-10 0-10-10zM34 70h30M60 70V50h8v20M58 50h12"/></svg></div>
-<div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/><text class="tx" fill="#fff" stroke="none" font-size="8" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text></svg></div>
+<div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><div class="nm"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/><text class="tx" fill="#fff" stroke="none" font-size="8" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text></svg></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
@@ -2222,17 +2223,19 @@ if (TV) {
 }
 
 /* ─── Now and then an agent pops up to have a word, especially when you skip their track ─── */
-const PEEK_NAMES_FALLBACK = ['NORMAL'];
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 let lastPeek = -1e9, peekTimer = 0;
 function peek(kind) {
   const now = performance.now(), el = $('peek');
   if (now - lastPeek < 20000 || !document.body.classList.contains('intro-done')) return;
   lastPeek = now;
-  const cu = SM.customs(), custom = SM.on('peek') ? (cu.length && Math.random() < 0.3 ? pickOne(cu) : null) : pickOne(cu.length ? cu : [null]);   // one of the extra men from the admin page now and then
-  if (!custom && !SM.on('peek')) { lastPeek = -1e9; return; }
+  // the agent due on the main page right now (the agents page shows them going through the wormhole): one of their own
+  // men if they have one, otherwise a plain pop-up with their name on it
+  const due = SM.duty().agent, cu = SM.customsHere(), plain = SM.on('peek') && (SM.agentOf('peek') === '*' || SM.agentOf('peek') === due);
+  const custom = cu.length && (!plain || Math.random() < 0.5) ? pickOne(cu) : null;
+  if (!custom && !plain) { lastPeek = -1e9; return; }
   el.querySelector('.bub').textContent = custom ? pickOne(custom.lines) : (SM.say('peek', kind) || '…');
-  el.querySelector('.nm').textContent = custom ? custom.name.toUpperCase() : 'AGENT ' + (SM.say('peek', 'names') || PEEK_NAMES_FALLBACK[0]);
+  el.querySelector('.nm').textContent = 'AGENT ' + (custom ? custom.agent : SM.who('peek'));
   el.style.left = (20 + Math.random() * 60) + 'vw';
   el.classList.add('on'); clearTimeout(peekTimer); peekTimer = setTimeout(() => el.classList.remove('on'), 3600);
 }
@@ -2251,9 +2254,9 @@ function onBigBreak() {
   if (!chairBusy && now - lastChair > 150000 && Math.random() < 0.45) { chairDance(); return; }
   if (Math.random() < 0.7) { if (now - lastPeek > 20000) peek('break'); }
 }
-function chairDance() {
-  const el = $('chairman'); if (!el || chairBusy || !SM.on('chair')) return;
-  chairBusy = true; lastChair = performance.now();
+function chairDance(force) {
+  const el = $('chairman'); if (!el || chairBusy || !(force ? SM.on('chair') : SM.here('chair'))) return;
+  chairBusy = true; lastChair = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('chair');
   const ch = el.querySelector('.ch'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), bub = el.querySelector('.bub');
   el.querySelector('.pt').setAttribute('d', ''); el.querySelector('.fx').setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   const from = Math.random() < 0.5 ? -1 : 1;                                  // walks in from the left or the right
@@ -2301,8 +2304,8 @@ function chairDance() {
 let lastPaint = -1e9;
 function uvPaint(force) {
   const el = $('chairman');
-  if (!el || chairBusy || !SM.on('uv') || calm || (!force && (!document.body.classList.contains('intro-done') || performance.now() - lastPaint < 120000))) return;
-  chairBusy = true; lastPaint = performance.now();
+  if (!el || chairBusy || !(force ? SM.on('uv') : SM.here('uv')) || calm || (!force && (!document.body.classList.contains('intro-done') || performance.now() - lastPaint < 120000))) return;
+  chairBusy = true; lastPaint = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('uv');
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub');
   ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   el.style.left = (18 + Math.random() * 55) + 'vw'; el.classList.add('on');
@@ -2345,8 +2348,8 @@ window.JN_lights = sc => { if (sc) { score = sc; lloydKey = ''; lloydState = nul
 let lastPoo = -1e9;
 function pooRun(force) {
   const el = $('chairman'), loo = $('loo');
-  if (!el || !loo || chairBusy || !SM.on('poo') || calm || (!force && !document.body.classList.contains('intro-done'))) return;
-  chairBusy = true; lastPoo = performance.now();
+  if (!el || !loo || chairBusy || !(force ? SM.on('poo') : SM.here('poo')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
+  chairBusy = true; lastPoo = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('poo');
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub');
   ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   const vw = innerWidth / 100, start = 8 + Math.random() * 20, looAt = Math.min(start + 30, 70);
@@ -2385,8 +2388,8 @@ setInterval(() => { if (musicOn() && performance.now() - lastPoo > 420000 && per
 // Frankie's pick: a stick man with a cooking pot on his head, banging it with a spoon on every beat.
 function potDrum(force) {
   const el = $('chairman');
-  if (!el || chairBusy || !SM.on('pot') || calm || (!force && !document.body.classList.contains('intro-done'))) return;
-  chairBusy = true;
+  if (!el || chairBusy || !(force ? SM.on('pot') : SM.here('pot')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
+  chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.who('pot');
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub'), tx = el.querySelector('.tx');
   ch.setAttribute('d', ''); fx.setAttribute('d', '');
   el.style.left = (15 + Math.random() * 55) + 'vw'; el.classList.add('on');
@@ -2421,8 +2424,8 @@ function catPath(x, y, f, sit, step) {
 }
 function catStroke(force) {
   const el = $('chairman');
-  if (!el || chairBusy || !SM.on('cat') || calm || (!force && !document.body.classList.contains('intro-done'))) return;
-  chairBusy = true;
+  if (!el || chairBusy || !(force ? SM.on('cat') : SM.here('cat')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
+  chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.who('cat');
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub'), tx = el.querySelector('.tx');
   pt.setAttribute('d', ''); fx.setAttribute('d', ''); tx.textContent = '';
   el.style.left = (12 + Math.random() * 50) + 'vw'; el.classList.add('on');
@@ -2452,19 +2455,19 @@ window.JN_pot = () => { chairBusy = false; potDrum(true); };
 // the little stick man in the corner: click him and one of the others comes on
 $('stickBtn').addEventListener('click', () => {
   if (chairBusy) return;
-  const acts = [];
-  if (SM.on('chair')) acts.push(() => chairDance());
-  if (SM.on('uv')) acts.push(() => { lastPaint = -1e9; uvPaint(true); });
-  if (SM.on('poo')) acts.push(() => pooRun(true));
-  if (SM.on('pot')) acts.push(() => potDrum(true));
-  if (SM.on('cat')) acts.push(() => catStroke(true));
-  if (SM.on('peek') || SM.customs().length) acts.push(() => { lastPeek = -1e9; peek(pickOne(['idle', 'break'])); });
-  SM.customs().forEach(() => acts.push(() => { lastPeek = -1e9; peek('idle'); }));
+  const acts = [];                                                    // only the men whose agent is due on the main page
+  if (SM.here('chair')) acts.push(() => chairDance());
+  if (SM.here('uv')) acts.push(() => { lastPaint = -1e9; uvPaint(true); });
+  if (SM.here('poo')) acts.push(() => pooRun(true));
+  if (SM.here('pot')) acts.push(() => potDrum(true));
+  if (SM.here('cat')) acts.push(() => catStroke(true));
+  acts.push(() => { lastPeek = -1e9; peek(pickOne(['idle', 'break'])); });
+  SM.customsHere().forEach(() => acts.push(() => { lastPeek = -1e9; peek('idle'); }));
   if (acts.length) pickOne(acts)();
 });
 window.JN_poo = () => { chairBusy = false; lastPoo = -1e9; pooRun(true); };   // try it from the console
 window.JN_paint = () => { chairBusy = false; lastPaint = -1e9; uvPaint(); };   // try it from the console
-window.JN_chair = () => { chairBusy = false; chairDance(); };   // try it from the console
+window.JN_chair = () => { chairBusy = false; chairDance(true); };   // try it from the console
 window.JN_peek = k => { lastPeek = -1e9; peek(k || 'idle'); };      // try it from the console
 requestAnimationFrame(frame);
 startSoundCloud();
