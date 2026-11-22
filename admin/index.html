@@ -45,6 +45,17 @@
   .idea textarea{width:100%;min-height:3.2em;margin:.5rem 0;background:#000;color:#fff;border:1px solid #333;font:inherit;font-size:.8rem;padding:.5rem}
   .idea .verdict{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase}
   .idea .verdict.agree{color:#4ade80} .idea .verdict.disagree{color:#ff6b5a}
+  .man{border-top:1px solid #222;padding:1rem 0}
+  .man h3{font-family:'Syne',sans-serif;font-weight:500;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+  .man .does{margin:.35rem 0 .6rem;color:#aaa;font-size:.78rem;line-height:1.55}
+  .man .when{display:block;margin:.7rem 0 .3rem;font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim)}
+  .man textarea{width:100%;min-height:3.2em;background:#000;color:#fff;border:1px solid #333;font:inherit;font-size:.8rem;padding:.5rem;line-height:1.5}
+  .man.off{opacity:.5}
+  .man .tog{display:inline-flex;gap:.35rem;align-items:center;margin:0;letter-spacing:.12em;cursor:pointer;color:var(--fg)}
+  .man .tog input{width:auto;accent-color:#fff}
+  .man input.nm{margin-top:.5rem}
+  .man .mini{padding:.4rem .7rem;font-size:.6rem}
+  .hint{color:var(--dim);font-size:.7rem;margin-top:.3rem;line-height:1.5}
   .back{display:inline-block;margin-top:3rem;color:var(--dim);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;text-decoration:none}
   .back:hover{color:var(--fg)}
 </style>
@@ -111,6 +122,17 @@
     </div>
 
     <div class="card" style="margin-top:1rem">
+      <div class="k">Stick men <span id="smCount" class="badge"></span></div>
+      <div class="v">Everyone who turns up on the front screen, what they do and what they say. Change the words (one line per thing he might say, he picks one at random), switch a man off, or add your own. Press Save and the homepage picks it up next time it loads.</div>
+      <div id="smList"></div>
+      <div class="row">
+        <button type="button" class="ghost" id="smAdd">+ Add a stick man</button>
+        <button type="button" id="smSave">Save stick men</button>
+      </div>
+      <div class="msg" id="smMsg" role="status"></div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
       <div class="k">Quizzy Rascal’s LinkedIn post</div>
       <div class="v" id="liQ">Today’s question, ready to paste.</div>
       <textarea id="liPost" readonly style="width:100%;min-height:9em;margin-top:.6rem;background:#000;color:#fff;border:1px solid #333;font:inherit;font-size:.8rem;padding:.6rem"></textarea>
@@ -128,6 +150,7 @@
 </main>
 
 <script src="https://w.soundcloud.com/player/api.js"></script>
+<script src="/assets/stickmen.js"></script>
 <script>
 (() => {
 'use strict';
@@ -182,6 +205,7 @@ $('login').addEventListener('submit', async e => {
     showCurrent();
     loadIdeas();
     loadCrewBits();
+    loadStick();
     $('url').focus();
   } catch (err) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
 });
@@ -219,6 +243,83 @@ $('ideaList').addEventListener('click', async e => {
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
     loadIdeas();
   } catch (err) { say(msg, 'Couldn’t reach the server.', 'err'); }
+});
+
+// Stick men: the built-in ones (editable words, on/off) plus any you add. Saved under one key in the site settings.
+const SM = window.JN_STICK;
+let customMen = [];
+const linesOf = t => t.split('\n').map(x => x.replace(/\s+/g, ' ').trim()).filter(Boolean);
+const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+function manHtml(m) {
+  const off = !SM.on(m.id);
+  return `<div class="man${off ? ' off' : ''}" data-id="${escH(m.id)}"><h3>${escH(m.name)}
+    <label class="tog"><input type="checkbox" class="en"${off ? '' : ' checked'}> On</label></h3>
+    <p class="does">${escH(m.does)}</p>
+    ${m.slots.map(sl => `<label class="when">${escH(sl.when)}</label><textarea data-slot="${escH(sl.key)}" spellcheck="true">${escH(SM.lines(m.id, sl.key).join('\n'))}</textarea>`).join('')}
+    ${m.slots.length ? '<div class="row"><button type="button" class="ghost mini" data-reset>Put the original words back</button></div>' : ''}</div>`;
+}
+function customHtml(m, i) {
+  return `<div class="man custom${m.enabled ? '' : ' off'}" data-i="${i}"><h3>${escH(m.name || 'New stick man')}
+    <label class="tog"><input type="checkbox" class="en"${m.enabled ? ' checked' : ''}> On</label></h3>
+    <label class="when">His name (shown on his label)</label><input class="nm" maxlength="40" value="${escH(m.name)}" placeholder="e.g. DAVE">
+    <label class="when">What he does</label><textarea class="does-in" maxlength="300" placeholder="e.g. Pops up now and then and shouts about the bass">${escH(m.does)}</textarea>
+    <label class="when">What he says (one per line, he picks one at random)</label><textarea class="lines" placeholder="Turn it up!&#10;More bass!">${escH(m.lines.join('\n'))}</textarea>
+    <div class="row"><button type="button" class="ghost mini" data-del>Remove him</button></div></div>`;
+}
+function renderStick() {
+  const built = SM.DEFAULTS.map(manHtml).join('');
+  const mine = customMen.length ? '<p class="hint" style="margin-top:1.4rem">Your own stick men. They pop up now and then with a speech bubble, and the little man in the corner can bring them on.</p>' + customMen.map(customHtml).join('') : '';
+  $('smList').innerHTML = built + mine;
+  $('smCount').textContent = SM.DEFAULTS.length - 1 + customMen.length;
+}
+function readCustom() {   // keep what's been typed before re-drawing the list
+  document.querySelectorAll('#smList .man.custom').forEach(el => {
+    const m = customMen[+el.dataset.i]; if (!m) return;
+    m.name = el.querySelector('.nm').value; m.does = el.querySelector('.does-in').value; m.lines = linesOf(el.querySelector('.lines').value); m.enabled = el.querySelector('.en').checked;
+  });
+}
+async function loadStick() {
+  await SM.ready;
+  customMen = SM.cfg.custom.map(m => ({ ...m }));
+  renderStick();
+}
+$('smAdd').addEventListener('click', () => {
+  readCustom();
+  customMen.push({ id: 'custom' + Date.now().toString(36), name: '', does: '', lines: [], enabled: true });
+  renderStick();
+  const last = document.querySelector('#smList .man.custom:last-child .nm'); if (last) last.focus();
+});
+$('smList').addEventListener('click', e => {
+  const del = e.target.closest('[data-del]'), reset = e.target.closest('[data-reset]');
+  if (del) { readCustom(); customMen.splice(+del.closest('.man').dataset.i, 1); renderStick(); }
+  if (reset) {
+    const box = reset.closest('.man'), d = SM.DEFAULTS.find(x => x.id === box.dataset.id);
+    d.slots.forEach(sl => { box.querySelector(`textarea[data-slot="${sl.key}"]`).value = sl.lines.join('\n'); });
+  }
+});
+$('smList').addEventListener('change', e => { if (e.target.classList.contains('en')) e.target.closest('.man').classList.toggle('off', !e.target.checked); });
+$('smSave').addEventListener('click', async () => {
+  const msg = $('smMsg');
+  readCustom();
+  const men = {};
+  document.querySelectorAll('#smList .man:not(.custom)').forEach(el => {
+    const d = SM.DEFAULTS.find(x => x.id === el.dataset.id), o = { enabled: el.querySelector('.en').checked, slots: {} };
+    d.slots.forEach(sl => {
+      const l = linesOf(el.querySelector(`textarea[data-slot="${sl.key}"]`).value);
+      if (l.length && !same(l, sl.lines)) o.slots[sl.key] = l;   // only keep the ones you've changed
+    });
+    men[d.id] = o;
+  });
+  const custom = customMen.filter(m => m.name.trim() || m.lines.length).map(m => ({ id: m.id, name: m.name.trim() || 'New stick man', does: m.does.trim(), enabled: m.enabled, lines: m.lines }));
+  const noWords = custom.find(m => !m.lines.length);
+  if (noWords) { say(msg, `${noWords.name} needs at least one thing to say.`, 'err'); return; }
+  say(msg, 'Saving…');
+  try {
+    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men, custom } });
+    if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
+    SM.apply({ men, custom }); customMen = SM.cfg.custom.map(m => ({ ...m })); renderStick();
+    say(msg, 'Saved. The homepage will use it next time it loads.', 'ok');
+  } catch (err) { say(msg, 'Couldn’t save. The database may need its stick men update applying first.', 'err'); }
 });
 
 async function loadCrewBits() {
