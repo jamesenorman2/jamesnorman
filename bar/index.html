@@ -66,6 +66,26 @@
   .pick .lead{font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
   .pick .name{font-family:'Syne',sans-serif;font-weight:500;font-size:clamp(1.6rem,6vw,2.4rem);line-height:1.1;margin-top:.4rem}
   .noscroll{overflow:hidden}
+
+  /* your bar: what you have */
+  .cab{border:1px solid var(--line);padding:1.3rem;margin:2rem 0 0}
+  .cab h2{margin:.5rem 0 .5rem}
+  .cabrow{display:flex;gap:.7rem;margin:1rem 0 .4rem}
+  .cabrow input{flex:1 1 auto;min-width:0}
+  .cab .chips{margin:.6rem 0}
+  .chip.have{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .chip.have::after{content:' ×';opacity:.6}
+  .chip.add{color:var(--mid)}
+  .chip.add::before{content:'+ '}
+  .cab .sum{font-size:.78rem;color:var(--mid);margin-top:.6rem;line-height:1.7}
+  .cab .sum b{color:var(--fg);font-weight:400}
+  .cab .buy{font-size:.75rem;color:var(--dim);margin-top:.3rem;line-height:1.7}
+  .drink .ok{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ok);margin-top:.6rem}
+  .drink .no{font-size:.72rem;color:var(--warn);margin-top:.6rem;line-height:1.5}
+  .ing li.miss > span:first-child{color:var(--warn)}
+  .ing li.miss > span:first-child::after{content:' · you need this';font-size:.7rem;opacity:.8}
+  .havenote{font-size:.78rem;margin:1.4rem 0 -.8rem;color:var(--mid)}
+  .havenote.good{color:var(--ok)}
 </style>
 </head>
 <body>
@@ -90,12 +110,29 @@
     <p class="lede">Drinks with the stories behind them. Pick one and make it, scale it up for a party, or spin the wheel and let it decide.</p>
   </div>
 
+  <section class="cab" aria-labelledby="cabH">
+    <div class="kicker">Your bar</div>
+    <h2 id="cabH">What have you got?</h2>
+    <p class="small">Add the spirits, liqueurs and mixers you have and the Bar shows what you can make, what is one ingredient short, and what is worth buying next. Kept on this device only.</p>
+    <form class="cabrow" id="cabForm" autocomplete="off">
+      <input id="cabIn" list="cabList" maxlength="60" placeholder="e.g. gin, Campari, sweet vermouth, lime juice" aria-label="Add something you have">
+      <button type="submit">Add</button>
+    </form>
+    <datalist id="cabList"></datalist>
+    <div class="chips" id="cabChips" aria-label="What you have"></div>
+    <div class="chips" id="cabQuick" aria-label="Tap to add"></div>
+    <div class="sum" id="cabSum" aria-live="polite"></div>
+    <div class="buy" id="cabBuy"></div>
+    <div class="row2" style="margin-top:.8rem"><button type="button" class="ghost" id="cabClear" hidden>Clear my bar</button></div>
+  </section>
+
   <div class="tools">
     <input class="search" id="q" type="search" placeholder="Search drinks or ingredients" aria-label="Search drinks or ingredients" autocomplete="off">
     <button type="button" id="spinBtn">Spin for a drink</button>
   </div>
   <div class="chips" id="fLen" role="group" aria-label="Size of drink"></div>
   <div class="chips" id="fMeth" role="group" aria-label="How it is made"></div>
+  <div class="chips" id="fCab" role="group" aria-label="What you can make"></div>
 
   <div class="count" id="count" aria-live="polite"></div>
   <div class="drinks" id="list"></div>
@@ -116,6 +153,7 @@
       <div class="seg" id="dMakes" role="group" aria-label="How many drinks">Makes</div>
       <div class="seg" id="dUnits" role="group" aria-label="Units"></div>
     </div>
+    <p class="havenote" id="dHave" hidden></p>
     <h3>You need</h3>
     <ul class="ing" id="dIng"></ul>
     <h3>Make it</h3>
@@ -202,12 +240,78 @@ function amount(i) {
   return UNITS_OK.has(unit.toLowerCase()) ? qty + ' ' + plural : qty + ' (' + unit + ')';
 }
 
+/* ─── your bar: what you have, and what that lets you make ─── */
+const HAVE_KEY = 'jn-bar-have';
+let have = [], fCab = null, infoCache = new Map(), quickAll = false;
+try { const v = JSON.parse(localStorage.getItem(HAVE_KEY) || '[]'); if (Array.isArray(v)) have = v.filter(x => typeof x === 'string').slice(0, 80); } catch (e) { /* no storage */ }
+const saveHave = () => { try { localStorage.setItem(HAVE_KEY, JSON.stringify(have)); } catch (e) { /* fine */ } };
+// different names for the same bottle count as the same thing
+const SYN = [[/triple sec|cointreau|cura[cç]ao|orange liqueur|grand marnier/g, 'triplesec'], [/coffee liqueur|kahlua|tia maria/g, 'coffeeliqueur'],
+  [/whisk(e)?y|bourbon|scotch|\brye\b/g, 'whisky'], [/cognac|armagnac/g, 'brandy'], [/prosecco|champagne|cava|sparkling wine/g, 'sparkling'], [/club soda|soda water/g, 'soda']];
+const STOPW = new Set(['fresh', 'freshly', 'squeezed', 'good', 'quality', 'chilled', 'cooled', 'cold', 'of', 'the', 'a', 'an', 'and', 'or', 'some']);
+const STAPLES = new Set(['ice', 'water', 'salt']);                                   // always to hand
+function tok(str) {
+  let t = String(str).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  SYN.forEach(([re, to]) => { t = t.replace(re, to); });
+  return t.split(/[^a-z0-9]+/).filter(w => w && !STOPW.has(w)).map(w => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w));
+}
+const subset = (a, b) => a.length > 0 && a.every(w => b.includes(w));
+let haveTok = [];
+const covered = ing => { const t = tok(ing.name); return !t.length || t.every(w => STAPLES.has(w)) || haveTok.some(h => subset(h, t) || subset(t, h)); };
+// what a drink still needs from you: only the things with an amount count; a garnish does not stop you
+function info(d) {
+  let r = infoCache.get(d.id);
+  if (!r) { const missing = d.ingredients.filter(i => i.qty && !covered(i)); r = { missing, ready: missing.length === 0 }; infoCache.set(d.id, r); }
+  return r;
+}
+const QUICK = ['Gin', 'Vodka', 'Rum', 'Whisky', 'Tequila', 'Brandy', 'Triple sec', 'Sweet vermouth', 'Dry vermouth', 'Campari', 'Coffee liqueur', 'Lime juice', 'Lemon juice',
+  'Sugar syrup', 'Angostura bitters', 'Soda water', 'Tonic water', 'Ginger beer', 'Cola', 'Prosecco', 'Orange juice', 'Cranberry juice', 'Tomato juice', 'Cream'];
+function addHave(text) {
+  text.split(/[,\n]/).map(x => x.trim().slice(0, 40)).filter(Boolean).forEach(x => {
+    const k = tok(x).join(' '); if (k && have.length < 80 && !have.some(h => tok(h).join(' ') === k)) have.push(x);
+  });
+  haveChanged();
+}
+function haveChanged() {
+  saveHave(); infoCache = new Map(); haveTok = have.map(tok).filter(t => t.length);
+  if (!have.length) fCab = null;
+  drawCabinet(); render(); if (current) paint();
+}
+function drawCabinet() {
+  const mine = $('cabChips'); mine.innerHTML = '';
+  have.forEach(h => { const b = el('button', 'chip have', h); b.type = 'button'; b.setAttribute('aria-label', 'Remove ' + h);
+    b.addEventListener('click', () => { have = have.filter(x => x !== h); haveChanged(); }); mine.append(b); });
+  const q = $('cabQuick'); q.innerHTML = '';
+  const left = QUICK.filter(n => !have.some(h => tok(h).join(' ') === tok(n).join(' ')));
+  (quickAll ? left : left.slice(0, 12)).forEach(n => {
+    const b = el('button', 'chip add', n); b.type = 'button'; b.addEventListener('click', () => addHave(n)); q.append(b); });
+  if (left.length > 12) { const m = el('button', 'chip', quickAll ? 'Fewer' : 'More…'); m.type = 'button'; m.addEventListener('click', () => { quickAll = !quickAll; drawCabinet(); }); q.append(m); }
+  $('cabClear').hidden = !have.length;
+  const sum = $('cabSum'), buy = $('cabBuy'); buy.textContent = '';
+  if (!have.length) { sum.textContent = 'Nothing added yet. Tap a few things above to get started.'; return; }
+  const ready = drinks.filter(d => info(d).ready).length, one = drinks.filter(d => info(d).missing.length === 1).length;
+  sum.innerHTML = ''; sum.append(`You have ${have.length} ${have.length === 1 ? 'thing' : 'things'}: you can make `, el('b', null, String(ready)), ready === 1 ? ' drink now' : ' drinks now', one ? `, and ${one} more are one ingredient short.` : '.');
+  const tally = new Map();                                                     // what to buy next: the missing bottle that unlocks the most drinks
+  drinks.forEach(d => { const m = info(d).missing; if (m.length === 1) { const k = tok(m[0].name).join(' '); const t = tally.get(k) || { name: m[0].name, n: 0 }; t.n++; tally.set(k, t); } });
+  const top = [...tally.values()].sort((a, b) => b.n - a.n).slice(0, 4);
+  if (top.length) buy.textContent = 'Worth buying next: ' + top.map(t => `${t.name} (${t.n} more ${t.n === 1 ? 'drink' : 'drinks'})`).join(', ') + '.';
+}
+$('cabForm').addEventListener('submit', e => { e.preventDefault(); addHave($('cabIn').value); $('cabIn').value = ''; });
+$('cabClear').addEventListener('click', () => { have = []; haveChanged(); });
+function fillSuggestions() {                                                   // the ingredients in the library, commonest first, as suggestions for the box
+  const n = new Map(); drinks.forEach(d => d.ingredients.forEach(i => { if (i.qty) n.set(i.name.toLowerCase(), (n.get(i.name.toLowerCase()) || 0) + 1); }));
+  const dl = $('cabList'); dl.innerHTML = '';
+  [...n.entries()].sort((a, b) => b[1] - a[1]).slice(0, 300).forEach(([name]) => { const o = document.createElement('option'); o.value = name; dl.append(o); });
+}
+
 /* ─── the list ─── */
 function visible() {
   const q = $('q').value.trim().toLowerCase();
   const word = q ? new RegExp('(^|[^a-z0-9])' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) : null;   // matches the start of a word, so "gin" finds gin but not "Virgin"
-  return drinks.filter(d => (!fLen || d.length === fLen) && (!fMeth || d.method === fMeth) && (!fAF || d.alcoholFree) &&
+  const list = drinks.filter(d => (!fLen || d.length === fLen) && (!fMeth || d.method === fMeth) && (!fAF || d.alcoholFree) &&
+    (!fCab || !have.length || (fCab === 'ready' ? info(d).ready : info(d).missing.length <= 1)) &&
     (!word || word.test(d.title.toLowerCase()) || d.ingredients.some(i => word.test(i.name.toLowerCase()))));
+  return have.length ? list.slice().sort((a, b) => info(a).missing.length - info(b).missing.length || a.title.localeCompare(b.title)) : list;   // the ones you can make first
 }
 function chips(box, items, get, set, label) {
   box.innerHTML = '';
@@ -223,6 +327,7 @@ function render() {
   const meths = [...new Set(drinks.map(d => d.method).filter(Boolean))].map(k => [k, METH[k] || k]);
   chips($('fLen'), lens, () => fLen, v => { fLen = v; }, 'Size');
   chips($('fMeth'), meths, () => fMeth, v => { fMeth = v; }, 'Method');
+  chips($('fCab'), have.length ? [['ready', 'Ready now'], ['one', 'One short']] : [], () => fCab, v => { fCab = v; }, have.length ? 'My bar' : '');
   if (drinks.some(d => d.alcoholFree)) {
     const b = el('button', 'chip', 'Alcohol-free'); b.type = 'button'; b.setAttribute('aria-pressed', String(fAF));
     b.addEventListener('click', () => { fAF = !fAF; render(); }); $('fMeth').append(b);
@@ -235,6 +340,7 @@ function render() {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 32 40'); svg.setAttribute('aria-hidden', 'true'); glassSvg(svg, d.glass);
     const body = el('div'); body.append(el('div', 't', d.title), el('div', 'm', [d.glass, METH[d.method], d.year].filter(Boolean).join(' · ')),
       el('div', 'i', d.ingredients.filter(i => i.qty || /gin|vodka|rum|whisk|bourbon|tequila|brandy|liqueur|vermouth|campari|juice|cider|prosecco/i.test(i.name)).slice(0, 4).map(i => i.name).join(', ')));
+    if (have.length) { const a = info(d); body.append(a.ready ? el('div', 'ok', '✓ You can make this') : el('div', 'no', 'Missing: ' + a.missing.slice(0, 3).map(i => i.name).join(', ') + (a.missing.length > 3 ? ' +' + (a.missing.length - 3) : ''))); }
     b.append(svg, body); b.addEventListener('click', () => openDrink(d.id, true)); box.append(b);
   });
 }
@@ -276,7 +382,10 @@ function paint() {
   $('dMakes').querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', String(Number(b.textContent) === makes)));
   $('dUnits').querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', String(b.textContent === units)));
   const ul = $('dIng'); ul.innerHTML = '';
-  d.ingredients.forEach(i => { const li = el('li'); li.append(el('span', null, i.name + (i.note ? ' (' + i.note + ')' : '')), el('span', 'q', amount(i))); ul.append(li); });
+  const a = have.length ? info(d) : null;
+  d.ingredients.forEach(i => { const li = el('li', a && a.missing.includes(i) ? 'miss' : null); li.append(el('span', null, i.name + (i.note ? ' (' + i.note + ')' : '')), el('span', 'q', amount(i))); ul.append(li); });
+  const hn = $('dHave'); hn.hidden = !a; hn.className = 'havenote' + (a && a.ready ? ' good' : '');
+  if (a) hn.textContent = a.ready ? 'You have everything you need for this.' : 'You are missing ' + a.missing.length + ': ' + a.missing.map(i => i.name).join(', ') + '.';
 }
 function closeDrink() {
   $('sheet').hidden = true; document.body.classList.remove('noscroll'); current = null; document.title = 'Bar — James Norman';
@@ -357,11 +466,12 @@ addEventListener('hashchange', () => { const id = location.hash.slice(1); if (id
 
 /* ─── go ─── */
 const openHash = () => { const id = location.hash.slice(1); if (id && drinks.some(d => d.id === id) && (!current || current.id !== id)) openDrink(id, false); };
-fetch('/bar/cocktails.json').then(r => r.json()).then(j => { drinks = j.drinks || []; render(); openHash(); })
+const loaded = () => { fillSuggestions(); haveChanged(); openHash(); };
+fetch('/bar/cocktails.json').then(r => r.json()).then(j => { drinks = j.drinks || []; loaded(); })
   .catch(() => { $('count').textContent = 'The bar couldn’t open just now. Try again in a moment.'; })
   .then(() => fetch('/api/bar').then(r => r.json()).then(j => {                 // then upgrade to everything in the recipe library, if it can be reached
     if (!j || !j.ok || !Array.isArray(j.drinks) || !j.drinks.length) return;
-    drinks = j.drinks; live = true; render(); openHash();
+    drinks = j.drinks; live = true; infoCache = new Map(); loaded();
   }).catch(() => { /* the built-in selection is fine */ }));
 })();
 </script>
