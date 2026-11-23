@@ -320,7 +320,7 @@ function layout() {
   const pages = (floor.shift && floor.shift.patrol || []).filter(p => !/\.(css|js|json)$/.test(p.path)).slice(0, 12);
   const list = pages.length ? pages : Object.keys(NAMES).map(path => ({ path, ok: true }));
   ISO.sh = FW < 700 ? 0.06 : 0.16;
-  const m = 10, wallH = 34, lab = 26;                       // lab: a strip above and below for the room names
+  const m = 10, wallH = layout.wh || 34, lab = 26;                       // lab: a strip above and below for the room names
   const PD = (FH - 2 * m - wallH - 2 * lab) / ISO.sq, PW = FW - 2 * m - PD * ISO.sh;
   ISO.ox = m; ISO.oy = m + wallH + lab;
   const Dc = PD * 0.15, Dr = (PD - Dc) / 2, top = Math.ceil(list.length / 2);
@@ -347,6 +347,9 @@ function layout() {
   SM = Math.max(0.55, Math.min(2.1, Math.min(Dr, PW / top) / 100));
   const find = path => floor.rooms.find(r => r.path === path) || floor.rooms[0];
   floor.control = find('/night-shift/');
+  // the back row's room names float 30 units above the wall: on a big screen (full screen) that is taller than the strip kept for them, so make the strip taller to fit
+  const need = Math.max(34, Math.ceil(30 * SM + 32 - lab));
+  if (!layout.busy && need !== wallH) { layout.wh = need; layout.busy = true; try { layout(); } finally { layout.busy = false; } }
 }
 
 // a patrol's route through every office: corridor → door → into the room → back out
