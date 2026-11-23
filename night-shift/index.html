@@ -523,7 +523,7 @@ function drawItem(r, it, busy) {
     fx.save(); fx.globalAlpha = 0.5; poly([P(a.u, a.v, 0), P(a.u + w, a.v, 0), P(a.u + w, a.v + d, 0), P(a.u, a.v + d, 0)]); fx.restore();
     text('♥  EVERYONE’S WELCOME  ♥', c[0], c[1] + 2 * s, 6.5 * s, 0.6); return; }
   if (kind === 'discoball') {                     // just the mirror ball, floating there; it sparkles and turns while the music plays
-    const c = P(a.u + w / 2, a.v + d / 2, z0), rr = 5.5 * s, on = laser.k > 0.02, spin = on ? t * 1.4 : 0.6;
+    const c = P(a.u + w / 2, a.v + d / 2, z0), rr = 11 * s, on = laser.k > 0.02, spin = on ? t * 1.4 : 0.6;
     fx.save(); fx.globalAlpha = 0.9; fx.beginPath(); fx.arc(c[0], c[1], rr, 0, 7); fx.stroke();
     for (let k = -1; k <= 1; k++) { fx.beginPath(); fx.ellipse(c[0], c[1], rr * Math.abs(Math.cos(spin + k * 1.05)), rr, 0, 0, 7); fx.stroke(); }          // the mirror facets turning
     for (let k = -1; k <= 1; k += 1) seg([c[0] - rr * Math.cos(k * 0.5), c[1] + rr * Math.sin(k * 0.5)], [c[0] + rr * Math.cos(k * 0.5), c[1] + rr * Math.sin(k * 0.5)]);
@@ -1466,11 +1466,9 @@ function drawCat(c, s) {
   }
   if (wild) {                                                         // a scar, whiskers, a ragged ear and jagged fur
     const hx = sit ? x : x + f * 6 * s, hy = sit ? y - 9 * s : y - 7 * s;
-    fx.moveTo(hx + 1.2 * s, hy - 2.2 * s); fx.lineTo(hx - 1.2 * s, hy + 2.2 * s);
     if (sit) { fx.moveTo(hx + 2.2 * s, hy + 0.6 * s); fx.lineTo(hx + 6.2 * s, hy - 0.4 * s); fx.moveTo(hx - 2.2 * s, hy + 0.6 * s); fx.lineTo(hx - 6.2 * s, hy - 0.4 * s); }
     else {
       fx.moveTo(hx + f * 2.2 * s, hy + 0.6 * s); fx.lineTo(hx + f * 6.2 * s, hy - 0.4 * s); fx.moveTo(hx + f * 2.2 * s, hy + 0.6 * s); fx.lineTo(hx + f * 6.2 * s, hy + 1.8 * s);
-      fx.moveTo(x - f * 4 * s, y - 6.4 * s); for (let i = 1; i <= 7; i++) fx.lineTo(x - f * 4 * s + f * i * 1.1 * s, y - (6.4 + (i % 2 ? 1.6 : 0)) * s);
       fx.moveTo(x - f * 5 * s, y - 3.5 * s); fx.quadraticCurveTo(x - f * 13 * s, y - 4.5 * s, x - f * 12.5 * s, y - 12.5 * s);
     }
   }

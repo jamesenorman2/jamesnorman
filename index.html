@@ -2555,11 +2555,9 @@ function mousePath(x, y, f, step, up) {
 function wildCat(x, y, f, sit, step) {
   let d = catPath(x, y, f, sit, step);
   const hx = sit ? x : x + f * 6, hy = sit ? y - 9 : y - 7;
-  d += `M${hx + 1.2} ${hy - 2.2}l-2.4 4.4`;                                                     // the scar
-  if (sit) d += `M${hx + 2.2} ${hy + 0.6}l4 -1M${hx - 2.2} ${hy + 0.6}l-4 -1M${x - 3.3} ${y - 2}l-1.1 -1.5l1 -0.9l-1.2 -1.4l1.2 -0.8M${x + 1.4} ${y - 12.6}l0.9 -0.5l-0.2 0.9`;
+  if (sit) d += `M${hx + 2.2} ${hy + 0.6}l4 -1M${hx - 2.2} ${hy + 0.6}l-4 -1M${x + 1.4} ${y - 12.6}l0.9 -0.5l-0.2 0.9`;
   else {
     d += `M${hx + f * 2.2} ${hy + 0.6}l${f * 4} -1M${hx + f * 2.2} ${hy + 0.6}l${f * 4} 1.2M${x + f * 7.6} ${y - 10.6}l${f * 0.9} -0.4l${-f * 0.2} 0.9`;   // whiskers, and the ragged ear
-    d += `M${x - f * 4} ${y - 6.4}`; for (let i = 1; i <= 7; i++) d += `L${x - f * 4 + f * i * 1.1} ${y - 6.4 - (i % 2 ? 1.6 : 0)}`;      // jagged fur
     d += `M${x - f * 5} ${y - 3.5}q${-f * 8} -1 ${-f * 7.5} -9q0 -2 ${-f * 1.5} -2.5`;          // the bushy tail
   }
   return d;
