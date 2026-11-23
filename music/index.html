@@ -70,14 +70,16 @@
       <li><a href="/night-shift/">Agents</a></li>
       <li><a href="/bar/">Bar</a></li>
       <li class="has-sub"><a href="/about/">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/blog/">Blog</a></li><li><a href="/security/">Security</a></li><li class="deep"><a href="/security/layers/">Layers</a></li><li class="deep"><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li class="deep"><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
-      <li><a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">LinkedIn</a></li>
     </ul>
   </nav>
 </header>
 
 <main class="wrap">
+  <div class="hero-wrap">
+    <canvas class="ridge" id="ridge" aria-hidden="true"></canvas>
   <h1>Music</h1>
   <p class="lede">Producer and DJ. On the decks I’m <b style="font-weight:500">James Normal</b>: the name on the door is Norman, one letter different. Everything here plays straight from SoundCloud. Fly through any of it in the <a href="/">visualiser</a>.</p>
+  </div>
 
   <section class="nowgrid" aria-label="Now playing">
     <figure class="art">
@@ -382,6 +384,10 @@ JN.kickShift().then(ran => { if (ran) loadBattle(); });
     document.getElementById('digs').innerHTML = wz.picks.map(p => `<div class="card"><div class="kicker">${escM(p.label)} · ${escM(p.released)}</div><h3>${okUrl(p.url) ? `<a href="${escM(p.url)}" target="_blank" rel="noopener">${escM(p.artist)} – ${escM(p.title)}</a>` : escM(p.artist + ' – ' + p.title)}</h3><p>${escM(p.why)}</p><p class="small">Mix it into: ${escM(p.mix_with)}</p></div>`).join('');
   } else document.getElementById('digSound').textContent = 'Old School files the first dig this week.';
 })();
+</script>
+<script type="module">
+import { heroRidges } from '/assets/hero.js';
+heroRidges(document.getElementById('ridge'), { seed: 5 });
 </script>
 </body>
 </html>

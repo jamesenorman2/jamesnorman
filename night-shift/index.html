@@ -79,15 +79,17 @@
       <li><a href="/night-shift/" aria-current="page">Agents</a></li>
       <li><a href="/bar/">Bar</a></li>
       <li class="has-sub"><a href="/about/">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/blog/">Blog</a></li><li><a href="/security/">Security</a></li><li class="deep"><a href="/security/layers/">Layers</a></li><li class="deep"><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li class="deep"><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
-      <li><a href="https://www.linkedin.com/in/james-norman-beng-ceng-miet-rses-4b065b1/" target="_blank" rel="noopener">LinkedIn</a></li>
     </ul>
   </nav>
 </header>
 
 <main class="wrap">
+  <div class="hero-wrap">
+    <canvas class="ridge" id="ridge" aria-hidden="true"></canvas>
   <div class="kicker">AI agents on duty · round the clock</div>
   <h1>Agents</h1>
   <p class="lede">This site is run by a team of AI agents, organised like a security control room. The day shift each carry out one task a day; the night shift patrols the whole site every hour. They check real things: every page, the certificate and domain, outbound links, the official Martyn’s Law guidance, the UK threat level and new music. Each shift ends with a written handover, and findings that need action come to me.</p>
+  </div>
 
   <section class="floor" aria-label="The crew at work: stick men walking the site, checking each page">
     <div class="floorbar"><button type="button" class="ghost fsbtn" id="fsBtn" aria-pressed="false" title="See the whole house full screen (Esc to leave)">Full screen</button></div>
@@ -1816,6 +1818,10 @@ layout(); makeMen(); requestAnimationFrame(floorLoop);
 load();
 JN.kickShift().then(ran => { if (ran) load(); });
 })();
+</script>
+<script type="module">
+import { heroRidges } from '/assets/hero.js';
+heroRidges(document.getElementById('ridge'), { seed: 8 });
 </script>
 </body>
 </html>
