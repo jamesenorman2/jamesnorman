@@ -165,6 +165,7 @@ function mountPlayer(url, autoPlay) {
   const E = SC.Widget.Events;
   widget.bind(E.READY, () => readSound());
   widget.bind(E.PLAY, () => { if (inSite()) handOff(); else { playing = true; readSound(); } });   // over the site player: hand the pick to it
+  widget.bind(E.SEEK, e => { if (inSite() && !local) forwardSeek(e && e.currentPosition); });   // dragging this box's seek bar moves the site player's playhead
   widget.bind(E.PAUSE, () => { playing = false; });
   widget.bind(E.FINISH, () => { playing = false; });
   widget.bind(E.PLAY_PROGRESS, e => { pos = e.currentPosition; posAt = performance.now(); });
@@ -174,12 +175,22 @@ function mountPlayer(url, autoPlay) {
 // the bottom bar changes, the artwork follows, and this box is paused so two tracks never play at once. If the site player can't take it yet, this box plays it itself.
 let local = false;
 function inSite() { try { return window.parent !== window && !!window.parent.JN_NOW; } catch (e) { return false; } }
+// Tell the site player where this box's seek bar was moved to (it only takes it if it is playing that same track).
+// A new pick can still be loading in the site player, so it is tried again a little later.
+function forwardSeek(ms) {
+  if (!(ms > 1200)) return;
+  widget.getCurrentSound(s => {
+    if (!s) return;
+    const url = (s.permalink_url || '').split('?')[0];
+    [0, 1500, 3500].forEach(wait => setTimeout(() => { try { window.parent.JN_SEEK(url, ms); } catch (e) { /* not in the site */ } }, wait));
+  });
+}
 function handOff() {
   widget.getCurrentSound(s => {
     if (!s) return;
     let ok = false;
     try { ok = !!window.parent.JN_PLAY((s.permalink_url || '').split('?')[0], s.title, null); } catch (e) { ok = false; }
-    if (ok) { local = false; widget.pause(); }
+    if (ok) { local = false; widget.getPosition(ms => forwardSeek(ms)); widget.pause(); }   // a pick made part-way along carries its position over
     else { local = true; playing = true; readSound(true); }
   });
 }

@@ -2202,6 +2202,14 @@ window.JN_PLAY = (url, title, by) => {
   const it = { url, key: url, title: title || '', by: by || null };
   queue.push(it); qi = queue.length - 1; playItem(it); return true;
 };
+// and a way to move the playhead, for when somebody drags the seek bar in the music page's own SoundCloud box (only if it is the track playing here)
+window.JN_SEEK = (url, ms) => {
+  const same = u => String(u || '').split('?')[0];
+  if (!sc || !scReady || !nowSound || same(nowSound.permalink_url) !== same(url) || !(ms >= 0)) return false;
+  try { sc.seekTo(ms); } catch (e) { return false; }
+  scPos = ms; scPosAt = performance.now();
+  return true;
+};
 // what the agents page (open over the player) needs to dance: is music playing, which tune, and the beat
 window.JN_BEAT = () => ({ playing: !!musicOn(), title: (nowEl && nowEl.textContent) || '', hit,
   period: (source === 'file' || source === 'mic') && music.bpm >= 70 && music.bpm <= 190 ? music.beat : 60 / 124 });
