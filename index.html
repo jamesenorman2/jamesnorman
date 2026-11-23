@@ -2632,7 +2632,13 @@ window.JN_argon = () => { chairBusy = false; argonChase(true); };
 function famFig(x, G, sc, step, o) {
   const y0 = G - (o.hop || 0), hipY = y0 - 19 * sc, shY = y0 - 32 * sc, hr = (o.baby ? 7 : 4.6) * sc, hdY = shY - hr - 0.8 * sc, sw = Math.sin(step) * 6 * sc, c = (cx, cy, r) => `M${cx + r} ${cy}a${r} ${r} 0 1 0 ${-2 * r} 0a${r} ${r} 0 1 0 ${2 * r} 0`;
   let d = c(x, hdY, hr) + `M${x} ${hdY + hr}V${hipY}`;
-  if (o.dress) d += `M${x - 3.4 * sc} ${shY + 3 * sc}h${6.8 * sc}v${4 * sc}h${-6.8 * sc}ZM${x - 3.8 * sc} ${hipY - sc}H${x + 3.8 * sc}L${x + 4.4 * sc} ${hipY + 4 * sc}H${x + 0.5 * sc}L${x} ${hipY + 2 * sc}L${x - 0.5 * sc} ${hipY + 4 * sc}H${x - 4.4 * sc}Z` + `M${x - 3 * sc} ${hipY + 4 * sc}L${x - 3 * sc + sw * 0.5} ${y0}M${x + 3 * sc} ${hipY + 4 * sc}L${x + 3 * sc - sw * 0.5} ${y0}`;
+  if (o.dress) {                                              // a fitted evening dress: sweetheart neckline, pinched waist, a flared hem, and heels
+    const wY = shY + 8.5 * sc, hY = hipY + sc, hemY = hipY + 9 * sc, L = x - 6.6 * sc, R = x + 6.6 * sc;
+    d += `M${x - 3.6 * sc} ${shY + 2 * sc}Q${x - 2.7 * sc} ${wY - 2 * sc} ${x - 2.4 * sc} ${wY}Q${x - 5 * sc} ${hY - sc} ${L} ${hemY}Q${x - 3.3 * sc} ${hemY + 2.4 * sc} ${x} ${hemY}Q${x + 3.3 * sc} ${hemY - 2.4 * sc} ${R} ${hemY}` +
+      `Q${x + 5 * sc} ${hY - sc} ${x + 2.4 * sc} ${wY}Q${x + 2.7 * sc} ${wY - 2 * sc} ${x + 3.6 * sc} ${shY + 2 * sc}Q${x + 1.8 * sc} ${shY + 4.6 * sc} ${x} ${shY + 3 * sc}Q${x - 1.8 * sc} ${shY + 4.6 * sc} ${x - 3.6 * sc} ${shY + 2 * sc}Z` +
+      `M${x - 2.4 * sc} ${hemY + 0.6 * sc}L${x - 2.6 * sc + sw * 0.5} ${y0}l${-2 * sc} 0M${x + 2.4 * sc} ${hemY + 0.6 * sc}L${x + 2.6 * sc - sw * 0.5} ${y0}l${2 * sc} 0` +
+      `M${x - hr - 0.2 * sc} ${hdY + hr * 0.8}v${1.8 * sc}M${x + hr + 0.2 * sc} ${hdY + hr * 0.8}v${1.8 * sc}`;             // legs in heels, drop earrings
+  }
   else {                                                     // legs: a proper stance when standing, knees bending when dancing, a stride when walking
     const T = o.t || 0, dd = o.dance, q = Math.sin(T * 6.5), q2 = Math.sin(T * 6.5 + Math.PI), kn = (kx, ky, fx2, fy) => `M${x} ${hipY}L${x + kx * sc} ${hipY + ky * sc}L${x + fx2 * sc} ${y0 + fy * sc}`;
     if (o.walking) d += `M${x} ${hipY}L${x + sw} ${y0}M${x} ${hipY}L${x - sw} ${y0}`;
@@ -2679,9 +2685,9 @@ function familyParade(force) {
     { n: 'AGENT NORMAL', sc: 1, sg: 0, from: 1, o: { headphones: 1 } }];
   cast.forEach(c => { c.d = c.sg / V; c.sp = stopX - dir * c.sg; c.arr = Math.abs(c.sp - startX) / V + c.d; });
   const a0 = cast[0].arr, L0 = a0 + 26.5, END = L0 + (W + 260) / V + 1;
-  { const dd = cast[6]; dd.start = dir > 0 ? W + 70 : -70; dd.sp = stopX + dir * 46; dd.arr = a0 + 7.6; }                    // Daddy hurries on from the other side, holding a record, just after they start asking where he is
+  { const dd = cast[6]; dd.start = dir > 0 ? W + 70 : -70; dd.sp = stopX + dir * 46; dd.arr = a0 + 6.9; dd.run = a0 + 3.6; }                    // Daddy hurries on from the other side, holding a record, just after they start asking where he is
   const S = { find: SM.say('family', 'find'), kiss: SM.say('family', 'kisses'), d1: SM.say('family', 'daddy1'), d2: SM.say('family', 'daddy2'), d3: SM.say('family', 'daddy3'), love: SM.say('family', 'love'), silly: SM.say('family', 'silly'), baby: SM.say('family', 'baby'), rec: SM.say('family', 'record') };
-  const talk = [[0, a0 + 0.2, a0 + 3.4, S.find], [0, a0 + 3.6, a0 + 6, S.kiss], [1, a0 + 4.2, a0 + 6.2, S.d1], [2, a0 + 6.3, a0 + 7.9, S.d2], [0, a0 + 8, a0 + 9.6, S.d3],
+  const talk = [[0, a0 + 0.2, a0 + 3.4, S.find], [0, a0 + 3.6, a0 + 6, S.kiss], [1, a0 + 4.2, a0 + 6.2, S.d1], [2, a0 + 6.3, a0 + 7.9, S.d2], [0, a0 + 7.8, a0 + 9.2, 'Mwah! I love you!'], [6, a0 + 7.9, a0 + 9.6, 'Oof! Got you!'], [0, a0 + 9.8, a0 + 11.6, S.d3],
     [6, a0 + 9.8, a0 + 13.4, S.rec], [0, a0 + 13.8, a0 + 16.2, 'Right, everybody: DANCE PARTY!'], [6, a0 + 16.4, a0 + 18.6, 'Do the robot!'], [6, a0 + 19.4, a0 + 21.6, 'Cartwheel!'], [6, a0 + 21.8, a0 + 23.8, 'Rolly-polly!'], [2, a0 + 19, a0 + 21, 'Sprinkler! Sprinkler!'], [3, a0 + 21.2, a0 + 23, S.baby], [0, a0 + 22.6, a0 + 24.6, 'Kick! Kick! Higher, Daddy!'], [1, a0 + 24.4, a0 + 26.4, S.love], [4, a0 + 11, a0 + 12.4, '♥'], [5, a0 + 14.2, a0 + 15.6, '♥'], [2, cast[2].arr - 2.2, cast[2].arr - 0.2, S.silly]];
   el.innerHTML = `<svg viewBox="0 0 ${W} 120" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">` + cast.map((c, i) => `<path class="p${i}"/><text class="n${i}" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".55">${c.n}</text>`).join('') +
     Array.from({ length: 16 }, (_, k) => `<text class="h${k}" fill="#fff" stroke="none" font-size="11" text-anchor="middle"></text>`).join('') + '</svg>' + cast.map((c, i) => `<div class="fb b${i}"></div>`).join('');
@@ -2695,21 +2701,28 @@ function familyParade(force) {
       const tt = t - c.d, leave = L0 + i * 0.3; let x, mv;
       if (c.from) {                                                                         // Daddy: a quick trot on from the far side
         if (t >= leave) { x = c.sp + dir * V * (t - leave); mv = true; }
-        else if (t <= 0.5) { x = c.start; mv = false; }
-        else if (t < c.arr) { x = c.start + (c.sp - c.start) * ((t - 0.5) / (c.arr - 0.5)); mv = true; }
+        else if (t <= c.run) { x = c.start; mv = false; }                                      // waits out of sight until Wifeo starts asking for him…
+        else if (t < c.arr) { x = c.start + (c.sp - c.start) * ((t - c.run) / (c.arr - c.run)); mv = true; }      // …then RUNS to her, twice as fast as anyone has walked
         else { x = c.sp; mv = false; }
       }
       else if (t >= leave) { x = c.sp + dir * V * (t - leave); mv = true; }
       else if (tt <= 0) { x = startX; mv = false; }
       else if (t - c.d < c.arr - c.d) { x = startX + dir * V * tt; mv = true; }
       else { x = c.sp; mv = false; }
+      let ex = 0, hug = false;
+      if (i === 0) {                                                                       // Wifeo leaps into Daddy's arms and gives him a kiss, then hops down again
+        const dd = cast[6], tA = dd.arr, hx = dd.sp - dir * 7;
+        if (t >= tA && t < tA + 0.8) { const k = (t - tA) / 0.8; x = c.sp + (hx - c.sp) * k; ex = Math.sin(k * Math.PI) * 22 + 14 * k; hug = true; }
+        else if (t >= tA + 0.8 && t < tA + 3.0) { x = hx; ex = 14 + Math.abs(Math.sin((t - tA) * 5)) * 1.5; hug = true; }
+        else if (t >= tA + 3.0 && t < tA + 3.4) { const k = (t - tA - 3) / 0.4; x = hx + (c.sp - hx) * k; ex = Math.sin(k * Math.PI) * 8 + 14 * (1 - k); hug = true; }
+      }
       xs[i] = x;
-      const dsT = t - (a0 + 13.6), grooving = dsT > 0 && t < L0 - 1 && !mv, hop = grooving ? Math.abs(Math.sin(t * 6)) * (c.cat ? 5 : 7) : !mv && t > c.arr ? Math.abs(Math.sin(t * 7 + i * 1.3)) * (c.cat ? 2 : 4) : mv ? Math.abs(Math.sin(t * 9 + i)) * 1.5 : 0, step = grooving ? t * 5 : t * 9 + i * 2;
-      const kissing = i === 0 && t > a0 + 3.6 && t < a0 + 6, dancing = i > 0 && !mv && t > c.arr;
+      const dsT = t - (a0 + 13.6), grooving = dsT > 0 && t < L0 - 1 && !mv, hop = grooving ? Math.abs(Math.sin(t * 6)) * (c.cat ? 5 : 7) : !mv && t > c.arr ? Math.abs(Math.sin(t * 7 + i * 1.3)) * (c.cat ? 2 : 4) : mv ? Math.abs(Math.sin(t * 9 + i)) * 1.5 : 0, step = grooving ? t * 5 : i === 6 && mv ? t * 19 : t * 9 + i * 2;
+      const kissing = i === 0 && ((t > a0 + 3.6 && t < a0 + 6) || hug), dancing = i > 0 && !mv && t > c.arr;
       if (c.cat) { const sit = !mv && t > c.arr + 0.3;
         if (c.n === 'ARAGON') { P[i].setAttribute('vector-effect', 'non-scaling-stroke'); P[i].setAttribute('stroke-width', '1.8'); P[i].setAttribute('transform', `translate(${x} ${G - hop}) scale(1.3)`); P[i].setAttribute('d', wildCat(0, 0, mv ? dir : -dir, sit, step)); tops[i] = G - (sit ? 20 : 17); }
         else { P[i].setAttribute('d', catPath(x, G - hop, mv ? dir : -dir, sit, step)); tops[i] = G - (sit ? 14 : 12); } }
-      else { const f = famFig(x, G, c.sc, mv || grooving ? step : 0, { ...c.o, hop, t, walking: mv && !grooving, idle: !mv && !grooving, dance: grooving ? ['jazz', 'disco', 'robot', 'sprinkler', 'kick'][Math.floor(dsT / 3.2) % 5] : null, arms: kissing ? 'kiss' : (i === 0 && !mv && t > a0) || dancing ? 'up' : 'swing' }); P[i].setAttribute('d', f.d); tops[i] = f.top;
+      else { const f = famFig(x, G, c.sc, mv || grooving ? step : 0, { ...c.o, hop: hop + ex, t, walking: mv && !grooving, idle: !mv && !grooving, dance: grooving ? ['jazz', 'disco', 'robot', 'sprinkler', 'kick'][Math.floor(dsT / 3.2) % 5] : null, arms: kissing ? 'kiss' : (i === 0 && !mv && t > a0) || dancing ? 'up' : 'swing' }); P[i].setAttribute('d', f.d); tops[i] = f.top;
         if (i === 6) {                                                                           // Agent Normal does a cartwheel, then a rolly-polly, in the dance party
           const nt = t - (a0 + 19.4), cx = x, cy = G - (hop || 0) - 14;
           if (!mv && nt > 0 && nt < 4.8) {
