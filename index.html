@@ -130,7 +130,9 @@
   .family svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
   .family .fb{position:absolute;font-size:.72rem;letter-spacing:.04em;color:#fff;background:#000;border:1px solid #fff;border-radius:6px;padding:.32rem .6rem;white-space:nowrap;opacity:0;transition:opacity .2s;transform:translate(-50%,-100%)}
   .family .fb.on{opacity:1}
+  .family.sans{height:260px;z-index:7}
   body.shell-on .family{bottom:4.8rem}
+  body.tv .sans{display:none!important}
   body.tv .family{display:none!important}
   .argon:not(.on){visibility:hidden}
   .argon svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
@@ -296,6 +298,7 @@ html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
 <div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><div class="nm"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><path class="pn"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/><text class="tx" fill="#fff" stroke="none" font-size="8" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text></svg></div>
 <div class="argon" id="argon" aria-hidden="true"><svg viewBox="0 0 400 64" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path class="ac"/><path class="am"/><path class="ab" fill="#000"/><text class="at" fill="#fff" stroke="none" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text><text class="al" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".55"></text></svg></div>
 <div class="family" id="family" aria-hidden="true"></div>
+<div class="family sans" id="sansRun" aria-hidden="true"></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
@@ -2751,6 +2754,65 @@ function familyParade(force) {
 setInterval(() => { if (!chairBusy && performance.now() - lastFam > 150000 && performance.now() - lastPeek > 20000 && Math.random() < 0.35) familyParade(); }, 20000);   // every few minutes
 window.JN_family = () => { chairBusy = false; familyParade(true); };
 
+// ─── Agent Sanassi: runs on in his red shorts, does a daft kneeling, bending-down, stabbing-hands dance, shouts "Seven more.", runs off and climbs a building ───
+let lastSans = -1e9;
+const sansHere = () => (SM.cfg.agents || []).some(a => a.enabled && a.name === 'SANASSI');
+function sansRun(force) {
+  if (!force && !musicOn()) return;
+  const el = $('sansRun');
+  if (!el || chairBusy || calm || !sansHere() || (!force && !document.body.classList.contains('intro-done'))) return;
+  chairBusy = true; lastSans = performance.now();
+  const W = innerWidth, G = 250, T0 = performance.now(), cx = Math.max(90, Math.min(W - 200, W * 0.38)), xw = Math.max(cx + 120, W - (W < 560 ? 80 : 120)), bw = Math.min(70, W - xw - 6), BH = 205;
+  const tRun = 2.2, tDance = tRun + 6, tShout = tDance + 1.8, tGo = tShout + 1.8, tClimb = tGo + 3.6, tRoof = tClimb + 2, END = tRoof + 1.2;
+  const S = Math.sin, C = Math.cos, pt = (a, b) => `${a.toFixed(1)} ${b.toFixed(1)}`;
+  const limb = (a, k, f) => `M${pt(...a)}L${pt(...k)}L${pt(...f)}`;
+  const circ = (cxx, cy, r) => `M${cxx + r} ${cy}a${r} ${r} 0 1 0 ${-2 * r} 0a${r} ${r} 0 1 0 ${2 * r} 0`;
+  const shorts = (hx, hy) => `M${pt(hx - 4.2, hy - 1)}L${pt(hx + 4.2, hy - 1)}L${pt(hx + 4.8, hy + 6)}L${pt(hx + 0.6, hy + 6)}L${pt(hx, hy + 3)}L${pt(hx - 0.6, hy + 6)}L${pt(hx - 4.8, hy + 6)}Z`;
+  let bd = ''; for (let k = 0; k <= 1; k++) bd += ''; 
+  const building = `M${xw} ${G}V${G - BH}H${xw + bw}V${G}` + Array.from({ length: 9 }, (_, r) => Array.from({ length: Math.max(2, Math.floor(bw / 22)) }, (_, c) => `M${xw + 8 + c * 22} ${G - 24 - r * 21}h10v12h-10z`).join('')).join('') + `M${xw - 4} ${G - BH}H${xw + bw + 4}`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} 260" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="${building}" opacity=".75" stroke-width="1.2"/><path class="sf"/><path class="ss" fill="#e11d2e" stroke="#ff4d5e"/><text class="sn" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".6">SANASSI</text></svg><div class="fb sb"></div>`;
+  const F = el.querySelector('.sf'), SH = el.querySelector('.ss'), N = el.querySelector('.sn'), B = el.querySelector('.sb');
+  el.classList.add('on'); el.style.opacity = 1;
+  const say = (txt, x, y) => { if (B.textContent !== txt) B.textContent = txt; B.style.left = Math.max(70, Math.min(W - 70, x)) + 'px'; B.style.top = y + 'px'; B.classList.toggle('on', !!txt); B.style.fontWeight = txt === 'SEVEN MORE.' ? '600' : '400'; B.style.fontSize = txt === 'SEVEN MORE.' ? '1.05rem' : '.72rem'; };
+  const tick = () => {
+    const t = (performance.now() - T0) / 1000;
+    if (t > END) { el.classList.remove('on'); chairBusy = false; el.innerHTML = ''; return; }
+    let d = '', hx = 0, hy = 0, nx = cx, top = G - 40, msg = '';
+    if (t < tRun) {                                                              // running on from the left
+      const k = t / tRun, x = -40 + (cx + 40) * k, f = famFig(x, G, 1, t * 20, { walking: true, arms: 'swing', hop: Math.abs(S(t * 20)) * 2 }); d = f.d; hx = x; hy = G - 19 - Math.abs(S(t * 20)) * 2; nx = x; top = f.top;
+    } else if (t < tDance) {                                                     // the dance: down on one knee, bent right over, both hands stabbing at the floor
+      const u = t - tRun, bob = S(u * 9) * 1.4, lean = 1.0 + S(u * 4) * 0.12, hip = [cx, G - 11], kn = [cx - 7, G - 1], ft = [cx - 16, G - 1], k2 = [cx + 10, G - 12], f2 = [cx + 10, G];
+      const sh = [hip[0] + S(lean) * 14, hip[1] - C(lean) * 14 + bob], hd = [sh[0] + S(lean) * 6.5, sh[1] - C(lean) * 6.5], st = ph => [sh[0] + 7 + 5 * C(ph), G - 3 - 7 * (0.5 + 0.5 * S(ph))];
+      const hA = st(u * 11), hB = st(u * 11 + Math.PI), eA = [(sh[0] + hA[0]) / 2 + 3, (sh[1] + hA[1]) / 2 - 3], eB = [(sh[0] + hB[0]) / 2 + 3, (sh[1] + hB[1]) / 2 - 3];
+      d = circ(hd[0], hd[1], 5) + `M${pt(...hip)}L${pt(...sh)}` + limb(hip, kn, ft) + limb(hip, k2, f2) + limb(sh, eA, hA) + limb(sh, eB, hB); hx = hip[0]; hy = hip[1]; nx = cx; top = hd[1] - 6;
+      if (u > 0.6 && u < 2.6) msg = pickOneStable(['Stab stab stab stab!', 'Eat that, floor!']);
+      if (u > 3 && u < 5.2) msg = 'Stab. Stab. Stab. Stab.';
+    } else if (t < tShout) {                                                     // standing up to shout
+      const f = famFig(cx, G, 1, 0, { arms: 'up', idle: true, t, hop: Math.abs(S(t * 14)) * 2 }); d = f.d; hx = cx; hy = G - 19 - Math.abs(S(t * 14)) * 2; top = f.top; msg = 'SEVEN MORE.';
+    } else if (t < tGo) {                                                        // and off he runs, to the building
+      const k = (t - tShout) / (tGo - tShout), x = cx + (xw - 9 - cx) * k, f = famFig(x, G, 1, t * 22, { walking: true, arms: 'swing', hop: Math.abs(S(t * 22)) * 2 }); d = f.d; hx = x; hy = G - 19 - Math.abs(S(t * 22)) * 2; nx = x; top = f.top;
+    } else if (t < tClimb) {                                                     // up the wall, hand over hand
+      const k = (t - tGo) / (tClimb - tGo), yc = G - 26 - (BH - 36) * k, ph = k * 26, x = xw - 5;
+      const hip = [x, yc], sh = [x + 1, yc - 14], hd = [x + 1.5, yc - 21];
+      const hA = [xw, yc - 22 - 5 * S(ph)], hB = [xw, yc - 22 + 5 * S(ph)], fA = [xw, yc + 9 + 4 * S(ph + Math.PI)], fB = [xw, yc + 9 + 4 * S(ph)];
+      d = circ(hd[0], hd[1], 5) + `M${pt(...hip)}L${pt(...sh)}` + limb(sh, [x - 4, yc - 20 - 3 * S(ph)], hA) + limb(sh, [x - 4, yc - 20 + 3 * S(ph)], hB) + limb(hip, [x - 5, yc + 3 + 3 * S(ph + Math.PI)], fA) + limb(hip, [x - 5, yc + 3 + 3 * S(ph)], fB);
+      hx = hip[0]; hy = hip[1]; nx = x - 14; top = hd[1] - 6;
+    } else {                                                                      // on the roof, waving
+      const roof = G - BH, x = xw + bw * 0.5, w = S((t - tClimb) * 9) * 4, hip = [x, roof - 20], sh = [x, roof - 34], hd = [x, roof - 40];
+      d = circ(hd[0], hd[1], 5) + `M${pt(...hip)}L${pt(...sh)}` + limb(hip, [x - 4, roof - 10], [x - 5, roof]) + limb(hip, [x + 4, roof - 10], [x + 5, roof]) + limb(sh, [x - 8, sh[1] + 2], [x - 12, sh[1] + 11]) + limb(sh, [x + 8, sh[1] - 4], [x + 11 + w, sh[1] - 15]);
+      hx = hip[0]; hy = hip[1]; nx = x; top = hd[1] - 6; if (t - tClimb < 1.6) msg = 'Seven more floors!';
+      if (t > tRoof) el.style.opacity = Math.max(0, 1 - (t - tRoof) / 1.2);
+    }
+    F.setAttribute('d', d); SH.setAttribute('d', shorts(hx, hy)); N.setAttribute('x', nx); N.setAttribute('y', 258);
+    say(msg, nx, top - 4);
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+const pickOneStable = list => list[Math.floor(performance.now() / 1500) % list.length];
+setInterval(() => { if (!chairBusy && performance.now() - lastSans > 200000 && performance.now() - lastPeek > 20000 && Math.random() < 0.3) sansRun(); }, 25000);   // every few minutes
+window.JN_sanassi = () => { chairBusy = false; sansRun(true); };
+
 window.JN_cat = () => { chairBusy = false; catStroke(true); };
 window.JN_pot = () => { chairBusy = false; potDrum(true); };
 // ─── The little stick man in the corner: every so often he does something daft ───
@@ -2875,6 +2937,7 @@ function clickEntries() {
   if (SM.on('cat')) e.push(['cat', () => catStroke(true)]);
   if (SM.on('peek')) e.push(['peek', () => { lastPeek = -1e9; peek(pickOne(['idle', 'break']), 'plain'); }]);
   e.push(['argon', () => argonChase(true)]);
+  if (sansHere()) e.push(['sanassi', () => sansRun(true)]);
   if (SM.on('family')) e.push(['family', () => familyParade(true)]);
   SM.customs().forEach(m => e.push(['c:' + m.id, () => { lastPeek = -1e9; peek('idle', m); }]));
   return e;
