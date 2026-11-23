@@ -1979,6 +1979,16 @@ function newsLine(name) {
   if ((name === 'MONKEY MONKEY' || name === 'FISH FISH') && slow) return `${slow.path} took ${slow.ms} ms. Who did this?`;
   return null;
 }
+// The whole house reacts to the real numbers: a raised UK threat level makes everyone edgy, and new SoundCloud plays make everyone cheerful
+function dataLine() {
+  const L = floor.shift || {}, i = L.jobs && L.jobs.intel, out = [];
+  const lvl = i && i.ok ? String(i.level || '').toUpperCase() : '';
+  if (lvl === 'SUBSTANTIAL') out.push('Threat level is SUBSTANTIAL. Eyes open, everybody.', 'SUBSTANTIAL. That’s one off SEVERE. I’m not having a nice day.', 'Keep an eye on bags, doors and Dave.');
+  if (lvl === 'SEVERE' || lvl === 'CRITICAL') out.push(`Threat level ${lvl}. Nobody put the kettle on, we need our wits.`, `${lvl}! Stay alert, stay calm, stay near the door.`, 'Everybody check your phone for the latest from GOV.UK.');
+  const rep = floor.day && floor.day.biscuittin && floor.day.biscuittin.report, up = rep && Array.isArray(rep.tracks) ? rep.tracks.reduce((n, t) => n + (t.new_plays > 0 ? t.new_plays : 0), 0) : 0;
+  if (up > 0) out.push(`Plays are up by ${up.toLocaleString('en-GB')}. Dance break!`, `${up.toLocaleString('en-GB')} new plays! Somebody tell the DJ!`, 'People are listening. Real people. Act natural.');
+  return out.length ? pickOne(out) : null;
+}
 const bubbles = [], lastSaid = {};
 const QUIET_LINES = ['Why is it so quiet?', 'I can hear myself think. What’s wrong?', 'Is the DJ dead?', 'Hello? Is this thing on?', 'I can hear my own footsteps. I hate it.', 'Somebody put a tune on!', 'This is a ballroom, not a library!', 'It’s like a morgue in here.', 'I can hear the fridge. THE FRIDGE.', 'Silence is not a genre.', 'Has someone unplugged it?', 'I’ve forgotten how to dance without a beat.'];
 let nextChat = 2;
@@ -1990,7 +2000,7 @@ function banter(s) {
     // the nearest other agent is who they talk to
     const others = names.filter(n => n !== a).sort((p, q) => Math.hypot(seenAt[p].x - seenAt[a].x, seenAt[p].y - seenAt[a].y) - Math.hypot(seenAt[q].x - seenAt[a].x, seenAt[q].y - seenAt[a].y));
     const b = others[0], near = Math.hypot(seenAt[b].x - seenAt[a].x, seenAt[b].y - seenAt[a].y) < 260 * s;
-    const news = Math.random() < 0.35 ? newsLine(a) : null;
+    const news = Math.random() < 0.35 ? newsLine(a) : (Math.random() < 0.22 ? dataLine() : null);
     const said = news || (near && Math.random() < 0.45 ? pick(AT).replace(/\{B\}/g, shown(b).split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ')) : pick(LINES[ma] || LINES.fine));
     bubbles.push({ who: a, text: said, t0: floor.t, life: 3.2 });
     if (near && Math.random() < 0.6) bubbles.push({ who: b, text: pick(REPLIES[moodOf(b).kind] || REPLIES.fine), t0: floor.t + 1.4, life: 2.6 });

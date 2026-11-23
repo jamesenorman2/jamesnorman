@@ -23,7 +23,7 @@ Answer each with **Y** (do it), **N** (skip), **L** (later) or **M** (do it, but
 | 15 | Bouncers actually check the guest list: a queue of "visitors" (real visit counts, anonymous) at the front door L | Not answered; parked. |
 | 16 | A weather system outside the building matching real Brighton weather L | No preference given; parked. |
 | 17 | Seasonal changes: Christmas lights, Halloween, summer festival flags, driven by the date Y | Built: Christmas (1 Dec to 6 Jan), Halloween (24 Oct to 1 Nov), summer bunting (Jul/Aug). Preview with ?season=xmas / halloween / summer. |
-| 18 | Agents react to real data: more people dancing when the SoundCloud plays go up, nervous when the threat level changes | | |
+| 18 | Agents react to real data: more people dancing when the SoundCloud plays go up, nervous when the threat level changes Y | Built: edgy lines when the UK threat level is SUBSTANTIAL or higher; cheerful lines when SoundCloud plays are up. |
 | 19 | Handover note you can read in the house: click the office desk to open the latest written handover | | |
 | 20 | A "visitor's guide" tour: a 60-second guided walk through the house for first-time visitors | | |
 | 21 | Sound: optional, off by default (muffled bass through the walls, door whoosh, CHOMP), toggled by a speaker icon | | |
