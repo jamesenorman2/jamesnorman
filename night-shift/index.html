@@ -928,6 +928,34 @@ function dayLine(id) { const D = floor.day || {}, r = D[id], t = (r && r.report 
 const res = {};
 // Roaming: an agent's home room is where they mainly stay, but if they are set to roam they now and then wander off round the house
 // (to a work spot in another room, hang about for a bit, say something) and then walk back home.
+// Agent Normal (the DJ) comes down off the decks now and then to do cartwheels and rolly-pollies on the dance floor
+function normalStunt(a, r, sm, dt, homeFn) {
+  if (r.path !== '/music/') { a.stunt = null; a.trick = null; return false; }
+  const t = floor.t;
+  if (a.nextStunt == null) a.nextStunt = t + 12 + Math.random() * 15;
+  let S = a.stunt;
+  if (!S) {
+    if (t < a.nextStunt || raving() || a.dutyBusy) return false;
+    S = a.stunt = { phase: 'go', kind: Math.random() < 0.5 ? 'cart' : 'roll', dir: Math.random() < 0.5 ? 1 : -1, n: 2 + Math.floor(Math.random() * 2) };
+    const sp = at(r, 0.3 + Math.random() * 0.12, 0.45 + Math.random() * 0.15); a.q = routeTo(a.u, a.v, r, sp);
+    bubbles.push({ who: 'NORMAL', text: S.kind === 'cart' ? 'Cartwheel time!' : 'Rolly-polly time!', t0: t + 0.2, life: 2.6 });
+  }
+  if (a.q && a.q.length) {
+    const g = a.q[0], du = g.u - a.u, dv = g.v - a.v, d = Math.hypot(du, dv), sp = 60 * sm * dt;
+    if (d <= sp) { a.u = g.u; a.v = g.v; a.q.shift(); } else { a.u += du / d * sp; a.v += dv / d * sp; }
+    a.step = (a.step || 0) + sp * 0.3; a.moving = true; return true;
+  }
+  a.moving = false;
+  if (S.phase === 'go') { S.phase = 'do'; S.t0 = t; S.u0 = a.u; S.v0 = a.v; S.dur = 2.1 * S.n; }
+  if (S.phase === 'do') {
+    const k = (t - S.t0) / S.dur;
+    if (k >= 1) { a.trick = null; S.phase = 'back'; a.q = routeTo(a.u, a.v, r, homeFn()); bubbles.push({ who: 'NORMAL', text: pickOne(['Ta-da!', 'Still got it.', 'Ow. My back.', 'Nailed it.']), t0: t, life: 2.4 }); return true; }
+    a.u = Math.max(r.u + 14, Math.min(r.u + r.w - 14, S.u0 + S.dir * S.n * 16 * sm * k));
+    a.trick = { kind: S.kind, ph: (k * S.n) % 1, dir: S.dir };
+    return true;
+  }
+  a.stunt = null; a.trick = null; a.nextStunt = t + 40 + Math.random() * 60; return false;
+}
 function roamRoute(a, name, homeFn, sm, dt) {
   const lvl = ROAM[name], t = floor.t; if (!lvl) return false;
   if (raving()) { a.trip = null; return false; }
@@ -1495,6 +1523,7 @@ function drawFloor(dt) {
       let moving, pose;
       if (dutyRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'check'; a.famIn = false; }
       else if (KIDS.includes(w.name) && famRoute(a, w.name, sm, dt)) { moving = a.moving; pose = a.pose; }
+      else if (w.name === 'NORMAL' && normalStunt(a, r, sm, dt, () => at(r, st[a.st][0], st[a.st][1]))) { moving = a.moving; pose = a.moving ? 'walk' : 'dance'; }
       else if (roamRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : a.trip.pose; }
       else if (raveRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'rave'; }
       else {
@@ -1525,9 +1554,12 @@ function drawFloor(dt) {
       Z.push({ z: a.v + 0.5 + nudge, f: () => throughWorm(a, sm, () => {
         const [x, y] = P(a.u, a.v, up + hop), turning = up && stn[6] === 'spin';
         if (turning) { fx.save(); fx.translate(x, 0); fx.scale(Math.cos(spinAng), 1); fx.translate(-x, 0); }       // turning round with the podium
+        const trick = w.name === 'NORMAL' && a.trick;
+        if (trick) { const cy = y - 14 * sm; fx.save(); fx.translate(x, cy); fx.rotate(trick.dir * trick.ph * Math.PI * 2); if (trick.kind === 'roll') fx.scale(1, 0.62); fx.translate(-x, -cy); }       // a cartwheel (arms and legs out) or a forward roll (tucked up)
         const hoop = w.name === 'SMILEY JO' && !moving;                                           // Smiley Jo is always hula hooping
         if (pose === 'rave') danceMan(x, y, sm, a, w.name, i);
         else stickMan(x, y, sm, moving ? a.step : t * 2 + i, hoop ? 'dance' : pose, w.name);
+        if (trick) fx.restore();
         if (hoop) {
           const ph = t * 8, hx = x + Math.sin(ph) * 3.2 * sm, hy = y - 13 * sm + Math.cos(ph) * 1.4 * sm;
           fx.save(); fx.globalAlpha = 0.95; fx.strokeStyle = '#ffd34d'; fx.lineWidth = 1.4; fx.beginPath(); fx.ellipse(hx, hy, 8.5 * sm, 2.6 * sm, Math.sin(ph) * 0.18, 0, 7); fx.stroke(); fx.restore();

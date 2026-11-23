@@ -2633,7 +2633,17 @@ function famFig(x, G, sc, step, o) {
   const y0 = G - (o.hop || 0), hipY = y0 - 19 * sc, shY = y0 - 32 * sc, hr = (o.baby ? 7 : 4.6) * sc, hdY = shY - hr - 0.8 * sc, sw = Math.sin(step) * 6 * sc, c = (cx, cy, r) => `M${cx + r} ${cy}a${r} ${r} 0 1 0 ${-2 * r} 0a${r} ${r} 0 1 0 ${2 * r} 0`;
   let d = c(x, hdY, hr) + `M${x} ${hdY + hr}V${hipY}`;
   if (o.dress) d += `M${x - 3.4 * sc} ${shY + 3 * sc}h${6.8 * sc}v${4 * sc}h${-6.8 * sc}ZM${x - 3.8 * sc} ${hipY - sc}H${x + 3.8 * sc}L${x + 4.4 * sc} ${hipY + 4 * sc}H${x + 0.5 * sc}L${x} ${hipY + 2 * sc}L${x - 0.5 * sc} ${hipY + 4 * sc}H${x - 4.4 * sc}Z` + `M${x - 3 * sc} ${hipY + 4 * sc}L${x - 3 * sc + sw * 0.5} ${y0}M${x + 3 * sc} ${hipY + 4 * sc}L${x + 3 * sc - sw * 0.5} ${y0}`;
-  else d += `M${x} ${hipY}L${x + sw} ${y0}M${x} ${hipY}L${x - sw} ${y0}`;
+  else {                                                     // legs: a proper stance when standing, knees bending when dancing, a stride when walking
+    const T = o.t || 0, dd = o.dance, q = Math.sin(T * 6.5), q2 = Math.sin(T * 6.5 + Math.PI), kn = (kx, ky, fx2, fy) => `M${x} ${hipY}L${x + kx * sc} ${hipY + ky * sc}L${x + fx2 * sc} ${y0 + fy * sc}`;
+    if (o.walking) d += `M${x} ${hipY}L${x + sw} ${y0}M${x} ${hipY}L${x - sw} ${y0}`;
+    else if (dd === 'jazz') d += kn(-4 - 2 * q, 9, -5 - 2.5 * q, -(q > 0 ? 3 : 0)) + kn(4 + 2 * q2, 9, 5 + 2.5 * q2, -(q2 > 0 ? 3 : 0));                          // jazz hands: knees pump in and out, heels up
+    else if (dd === 'disco') d += kn(-4, 9, -6 - 2 * q, 0) + kn(4, 9, 6 - 2 * q, 0);
+    else if (dd === 'robot') d += kn(-3, 9.5, -4, 0) + (q > 0 ? kn(4, 8, 8, -3) : kn(3, 9.5, 4, 0));                                                               // a stiff step-touch
+    else if (dd === 'sprinkler') d += kn(-5.5, 8, -3.5 + q * 1.5, 0) + kn(5.5, 8, 3.5 + q * 1.5, 0);                                                              // knees bent, rocking
+    else if (dd) d += kn(-3, 9.5, -4, 0) + kn(6, 5, 10, -8 * Math.abs(q));                                                                                         // one leg planted, the other kicked
+    else if (o.idle) d += kn(-3 - Math.sin(T * 7) * 1.4, 9.5, -4.5 - Math.sin(T * 7) * 1.6, -(Math.sin(T * 7) > 0.5 ? 2 : 0)) + kn(3 - Math.sin(T * 7) * 1.4, 9.5, 4.5 - Math.sin(T * 7) * 1.6, -(Math.sin(T * 7) < -0.5 ? 2 : 0));   // a little step-together, side to side
+    else d += kn(-2.6, 9.5, -4.2, 0) + kn(2.6, 9.5, 4.2, 0);                                  // just standing, feet apart
+  }
   if (o.hair) d += `M${x - hr} ${hdY}q${-3 * sc} ${9 * sc} ${-1 * sc} ${20 * sc}M${x + hr} ${hdY}q${3 * sc} ${9 * sc} ${1 * sc} ${20 * sc}M${x - hr * 0.5} ${hdY - hr}q${-2 * sc} ${6 * sc} ${-5 * sc} ${14 * sc}`;
   if (o.tuft) d += `M${x - 1.5 * sc} ${hdY - hr}l${-1 * sc} ${-3.5 * sc}M${x} ${hdY - hr}v${-4 * sc}M${x + 1.5 * sc} ${hdY - hr}l${1 * sc} ${-3.5 * sc}`;
   if (o.cap) d += `M${x - hr - 0.5 * sc} ${hdY - hr * 0.35}H${x + hr + 4 * sc}M${x - hr} ${hdY - hr * 0.35}a${hr} ${hr} 0 0 1 ${2 * hr} 0`;
@@ -2648,6 +2658,7 @@ function famFig(x, G, sc, step, o) {
     const dd = o.dance, q = Math.sin(step * 1.4);
     if (dd === 'jazz') d += `M${x} ${shY + 2 * sc}L${x - 9 * sc} ${shY - 6 * sc - q * 4 * sc}M${x} ${shY + 2 * sc}L${x + 9 * sc} ${shY - 6 * sc + q * 4 * sc}`;
     else if (dd === 'robot') d += `M${x} ${shY + 2 * sc}L${x - 8 * sc} ${shY + 2 * sc}L${x - 8 * sc} ${shY + 2 * sc - (q > 0 ? 8 : 0) * sc}M${x} ${shY + 2 * sc}L${x + 8 * sc} ${shY + 2 * sc}L${x + 8 * sc} ${shY + 2 * sc - (q > 0 ? 0 : 8) * sc}`;
+    else if (dd === 'disco') d += (q > 0 ? `M${x} ${shY + 2 * sc}L${x + 9 * sc} ${shY - 9 * sc}M${x} ${shY + 2 * sc}L${x - 8 * sc} ${shY + 12 * sc}` : `M${x} ${shY + 2 * sc}L${x - 9 * sc} ${shY - 9 * sc}M${x} ${shY + 2 * sc}L${x + 8 * sc} ${shY + 12 * sc}`);   // Saturday Night Fever: point up, point down
     else if (dd === 'sprinkler') d += `M${x} ${shY + 2 * sc}L${x + 11 * sc} ${shY + 2 * sc - q * 5 * sc}M${x} ${shY + 2 * sc}L${x - 4 * sc} ${shY - 3 * sc}L${x} ${hdY + hr * 0.4}`;
     else d += `M${x} ${shY + 2 * sc}L${x - 10 * sc} ${shY + 6 * sc}M${x} ${shY + 2 * sc}L${x + 10 * sc} ${shY + 6 * sc}M${x} ${hipY}L${x + 10 * sc} ${y0 - 8 * sc * Math.abs(q)}`;      // arms out, a leg kicked
   }
@@ -2671,7 +2682,7 @@ function familyParade(force) {
   { const dd = cast[6]; dd.start = dir > 0 ? W + 70 : -70; dd.sp = stopX + dir * 46; dd.arr = a0 + 7.6; }                    // Daddy hurries on from the other side, holding a record, just after they start asking where he is
   const S = { find: SM.say('family', 'find'), kiss: SM.say('family', 'kisses'), d1: SM.say('family', 'daddy1'), d2: SM.say('family', 'daddy2'), d3: SM.say('family', 'daddy3'), love: SM.say('family', 'love'), silly: SM.say('family', 'silly'), baby: SM.say('family', 'baby'), rec: SM.say('family', 'record') };
   const talk = [[0, a0 + 0.2, a0 + 3.4, S.find], [0, a0 + 3.6, a0 + 6, S.kiss], [1, a0 + 4.2, a0 + 6.2, S.d1], [2, a0 + 6.3, a0 + 7.9, S.d2], [0, a0 + 8, a0 + 9.6, S.d3],
-    [6, a0 + 9.8, a0 + 13.4, S.rec], [0, a0 + 13.8, a0 + 16.2, 'Right, everybody: DANCE PARTY!'], [6, a0 + 16.4, a0 + 18.6, 'Do the robot!'], [2, a0 + 19, a0 + 21, 'Sprinkler! Sprinkler!'], [3, a0 + 21.2, a0 + 23, S.baby], [0, a0 + 22.6, a0 + 24.6, 'Kick! Kick! Higher, Daddy!'], [1, a0 + 24.4, a0 + 26.4, S.love], [4, a0 + 11, a0 + 12.4, '♥'], [5, a0 + 14.2, a0 + 15.6, '♥'], [2, cast[2].arr - 2.2, cast[2].arr - 0.2, S.silly]];
+    [6, a0 + 9.8, a0 + 13.4, S.rec], [0, a0 + 13.8, a0 + 16.2, 'Right, everybody: DANCE PARTY!'], [6, a0 + 16.4, a0 + 18.6, 'Do the robot!'], [6, a0 + 19.4, a0 + 21.6, 'Cartwheel!'], [6, a0 + 21.8, a0 + 23.8, 'Rolly-polly!'], [2, a0 + 19, a0 + 21, 'Sprinkler! Sprinkler!'], [3, a0 + 21.2, a0 + 23, S.baby], [0, a0 + 22.6, a0 + 24.6, 'Kick! Kick! Higher, Daddy!'], [1, a0 + 24.4, a0 + 26.4, S.love], [4, a0 + 11, a0 + 12.4, '♥'], [5, a0 + 14.2, a0 + 15.6, '♥'], [2, cast[2].arr - 2.2, cast[2].arr - 0.2, S.silly]];
   el.innerHTML = `<svg viewBox="0 0 ${W} 120" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">` + cast.map((c, i) => `<path class="p${i}"/><text class="n${i}" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".55">${c.n}</text>`).join('') +
     Array.from({ length: 16 }, (_, k) => `<text class="h${k}" fill="#fff" stroke="none" font-size="11" text-anchor="middle"></text>`).join('') + '</svg>' + cast.map((c, i) => `<div class="fb b${i}"></div>`).join('');
   const P = cast.map((c, i) => el.querySelector('.p' + i)), N = cast.map((c, i) => el.querySelector('.n' + i)), B = cast.map((c, i) => el.querySelector('.b' + i)), Hh = Array.from({ length: 16 }, (_, k) => el.querySelector('.h' + k));
@@ -2698,7 +2709,14 @@ function familyParade(force) {
       if (c.cat) { const sit = !mv && t > c.arr + 0.3;
         if (c.n === 'ARAGON') { P[i].setAttribute('vector-effect', 'non-scaling-stroke'); P[i].setAttribute('stroke-width', '1.8'); P[i].setAttribute('transform', `translate(${x} ${G - hop}) scale(1.3)`); P[i].setAttribute('d', wildCat(0, 0, mv ? dir : -dir, sit, step)); tops[i] = G - (sit ? 20 : 17); }
         else { P[i].setAttribute('d', catPath(x, G - hop, mv ? dir : -dir, sit, step)); tops[i] = G - (sit ? 14 : 12); } }
-      else { const f = famFig(x, G, c.sc, mv || grooving ? step : 0, { ...c.o, hop, dance: grooving ? ['jazz', 'robot', 'sprinkler', 'kick'][Math.floor(dsT / 3.2) % 4] : null, arms: kissing ? 'kiss' : (i === 0 && !mv && t > a0) || dancing ? 'up' : 'swing' }); P[i].setAttribute('d', f.d); tops[i] = f.top; }
+      else { const f = famFig(x, G, c.sc, mv || grooving ? step : 0, { ...c.o, hop, t, walking: mv && !grooving, idle: !mv && !grooving, dance: grooving ? ['jazz', 'disco', 'robot', 'sprinkler', 'kick'][Math.floor(dsT / 3.2) % 5] : null, arms: kissing ? 'kiss' : (i === 0 && !mv && t > a0) || dancing ? 'up' : 'swing' }); P[i].setAttribute('d', f.d); tops[i] = f.top;
+        if (i === 6) {                                                                           // Agent Normal does a cartwheel, then a rolly-polly, in the dance party
+          const nt = t - (a0 + 19.4), cx = x, cy = G - (hop || 0) - 14;
+          if (!mv && nt > 0 && nt < 4.8) {
+            const cart = nt < 2.4, k = cart ? nt / 2.4 : (nt - 2.4) / 2.4, sx = cart ? 1 : 0.62, off = (cart ? 38 : 0) * k * -dir;
+            P[i].setAttribute('transform', `translate(${cx + off} ${cy}) rotate(${(cart ? -dir : dir) * k * 360}) scale(1 ${sx}) translate(${-cx} ${-cy})`);
+          } else P[i].removeAttribute('transform');
+        } }
       N[i].setAttribute('x', x); N[i].setAttribute('y', 114 + (i % 2) * 7);
     });
     B.forEach(b => b.classList.remove('on'));
