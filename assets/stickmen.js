@@ -47,7 +47,7 @@
         { key: 'look', when: 'Looking for the cat', lines: ['Where’s my tiger baby?'] },
         { key: 'found', when: 'The cat arrives', lines: ['There’s my tiger baby!'] }
       ] },
-    { id: 'family', agent: 'WIFEO', name: 'The Family (Agent Wifeo, the kids and the cats)', does: 'A main player, on the front screen every few minutes (and on the agents page all the time). Agent Wifeo strolls on looking for James because she wants kisses, with Frankie, Jack Man, baby Oatie Man, Argon and Tiger Baby trotting along behind her. The little ones ask where Daddy is, and off they all go to watch him DJ. Not tied to the roster: she turns up whoever is due.',
+    { id: 'family', agent: 'WIFEO', name: 'The Family (Agent Wifeo, the kids and the cats)', does: 'A main player, on the front screen every few minutes (and on the agents page all the time). Agent Wifeo strolls on looking for James because she wants kisses, with Frankie, Jack Man, baby Oatie Man, Aragon and Tiger Baby trotting along behind her. The little ones ask where Daddy is, and off they all go to watch him DJ. Not tied to the roster: she turns up whoever is due.',
       slots: [
         { key: 'find', when: 'Wifeo comes on', lines: ['Has anybody seen James? I want kisses!'] },
         { key: 'kisses', when: 'Blowing kisses', lines: ['Mwah! Mwah! Kisses for everyone!', 'Kisses! Come on, James! KISSES!'] },
@@ -55,7 +55,7 @@
         { key: 'daddy2', when: 'The second little one asks', lines: ['Is he DJing?'] },
         { key: 'daddy3', when: 'Wifeo has an idea', lines: ['Let’s go watch Daddy!'] },
         { key: 'love', when: 'A little one, as they leave', lines: ['I love you, Mum.', 'I love you, Mum. A LOT.', 'Love you, Mum!'] },
-        { key: 'silly', when: 'While they trot along', lines: ['Mum, wait for us!', 'Are we nearly there?', 'I’m a train! Choo choo!', 'Mum, Argon’s eating my sock'] },
+        { key: 'silly', when: 'While they trot along', lines: ['Mum, wait for us!', 'Are we nearly there?', 'I’m a train! Choo choo!', 'Mum, Aragon’s eating my sock'] },
         { key: 'baby', when: 'The baby', lines: ['Da-da! DA-DA!', 'Goo goo! Mama!', 'Ba ba ba!'] }
       ] },
     { id: 'corner', name: 'The little stick man in the corner', does: 'The small white stick man at the bottom left of the screen. Click him and one of the others above (or one of your own below) comes on at random. He doesn’t say anything himself.', slots: [] }

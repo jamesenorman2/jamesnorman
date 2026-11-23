@@ -120,7 +120,7 @@
   @media(max-width:700px){.stickbtn{left:.5rem;bottom:calc(.5rem + env(safe-area-inset-bottom,0px))}}
   .chairman .fx{filter:drop-shadow(0 0 2px #a55bff) drop-shadow(0 0 5px #8f4bff)}
   body.shell-on .chairman{bottom:4.8rem}
-  /* Argon the cat, chasing a mouse along the bottom of the screen */
+  /* Aragon the cat, chasing a mouse along the bottom of the screen */
   .argon{position:fixed;left:0;right:0;bottom:calc(4.2rem + 4rem + .5rem);height:64px;z-index:6;pointer-events:none;opacity:0;transition:opacity .3s}
   .argon.on{opacity:1}
   /* the family: Agent Wifeo, the kids and the cats, strolling across the bottom of the screen */
@@ -2532,7 +2532,7 @@ function catStroke(force) {
   };
   requestAnimationFrame(tick);
 }
-// Argon the cat: now and then he chases a mouse across the bottom of the screen, catches it, and the two of them dance.
+// Aragon the cat: now and then he chases a mouse across the bottom of the screen, catches it, and the two of them dance.
 function mousePath(x, y, f, step, up) {
   const w = Math.sin(step) * 1.1;
   if (up) return `M${x + 2.2} ${y - 6.5}a2.2 3.6 0 1 0 -4.4 0a2.2 3.6 0 1 0 4.4 0M${x + 1.7} ${y - 12}a1.7 1.7 0 1 0 -3.4 0a1.7 1.7 0 1 0 3.4 0` +
@@ -2560,11 +2560,11 @@ function argonChase(force) {
     } else if (t < TP) {                                                        // the pounce
       const k = (t - T1) / 0.9; mx = catchX; hop = 0; cx = mx - dir * 15 * (1 - k); my = 0;
       ac.setAttribute('d', catPath(cx, G - Math.sin(Math.PI * k) * 16, f, false, t * 14)); am.setAttribute('d', mousePath(mx, G, -f, t * 20, false));
-      bubble(0, 0, ''); al.setAttribute('x', cx); al.setAttribute('y', 63); al.textContent = 'ARGON';
+      bubble(0, 0, ''); al.setAttribute('x', cx); al.setAttribute('y', 63); al.textContent = 'ARAGON';
       requestAnimationFrame(tick); return;
     } else if (t < TD) {                                                        // caught, and then they dance: the cat sits up swaying, the mouse on its hind legs
       const ph = (t - TP) / beat * Math.PI; sway = Math.sin(ph / 2) * 4; sit = true; up = true; cx = catchX - dir * 14 + sway; mx = catchX + dir * 8 - sway * 0.8; hop = Math.abs(Math.sin(ph)) * 3;
-      // cats can't talk: Argon says a love heart, the mouse says one back, and then they dance
+      // cats can't talk: Aragon says a love heart, the mouse says one back, and then they dance
       hx = t < TP + 0.4 ? null : t < TP + 2.1 ? cx : t < TP + 3.8 ? mx : (cx + mx) / 2; say = t < TP + 0.4 ? '' : t < TP + 3.8 ? '♥' : '♪';
     } else {                                                                     // and off they trot together
       const k = t - TD; mx = catchX + dir * 8 + dir * 60 * k; cx = catchX - dir * 14 + dir * 60 * k; sit = false; up = false; hop = Math.abs(Math.sin(t * 16)) * 2;
@@ -2572,7 +2572,7 @@ function argonChase(force) {
     ac.setAttribute('d', catPath(cx, G, sit ? -dir : f, sit, t * 14) + (sit && up ? `M${cx - 3} ${G - 7}l${-3} ${-4 - Math.sin(t * 8) * 2}M${cx + 3} ${G - 7}l${3} ${-4 + Math.sin(t * 8) * 2}` : ''));   // paws in the air
     am.setAttribute('d', mousePath(mx, G - hop, up ? 0 : -f, t * 20, up));
     bubble(hx == null ? (cx + mx) / 2 : hx, G - 22 - (up ? 6 : 0), say);
-    al.setAttribute('x', cx); al.setAttribute('y', 63); al.textContent = 'ARGON';
+    al.setAttribute('x', cx); al.setAttribute('y', 63); al.textContent = 'ARAGON';
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
@@ -2602,7 +2602,7 @@ function familyParade(force) {
   chairBusy = true; lastFam = performance.now();
   const W = innerWidth, G = 100, V = 92, dir = Math.random() < 0.5 ? 1 : -1, startX = dir > 0 ? -70 : W + 70, T0 = performance.now(), stopX = W * (0.3 + 0.4 * Math.random());
   const cast = [{ n: 'AGENT WIFEO', sc: 1, sg: 0, o: { dress: 1, hair: 1 } }, { n: 'FRANKIE', sc: 0.72, sg: 46, o: { tuft: 1 } }, { n: 'JACK MAN', sc: 0.72, sg: 80, o: { cap: 1 } },
-    { n: 'OATIE MAN', sc: 0.52, sg: 112, o: { baby: 1 } }, { n: 'ARGON', cat: 1, sg: 142 }, { n: 'TIGER BABY', cat: 1, sg: 172 }];
+    { n: 'OATIE MAN', sc: 0.52, sg: 112, o: { baby: 1 } }, { n: 'ARAGON', cat: 1, sg: 142 }, { n: 'TIGER BABY', cat: 1, sg: 172 }];
   cast.forEach(c => { c.d = c.sg / V; c.sp = stopX - dir * c.sg; c.arr = Math.abs(c.sp - startX) / V + c.d; });
   const a0 = cast[0].arr, L0 = a0 + 13.6, END = L0 + (W + 260) / V + 1;
   const S = { find: SM.say('family', 'find'), kiss: SM.say('family', 'kisses'), d1: SM.say('family', 'daddy1'), d2: SM.say('family', 'daddy2'), d3: SM.say('family', 'daddy3'), love: SM.say('family', 'love'), silly: SM.say('family', 'silly'), baby: SM.say('family', 'baby') };

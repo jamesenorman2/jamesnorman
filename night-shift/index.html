@@ -220,7 +220,7 @@ const CREW = [
   ['AGENT NORMAL', 'DJ. Picks a track for the hour to suit the time of day, and sets up the DJ battle.', L => {
     const d = L.dj; return [d && d.track ? '♪ ' + d.track.title : '–'];
   }],
-  ['AGENT WIFEO', 'Morale, and Mum. Always on the move round the house with Frankie, Jack Man, baby Oatie Man, Argon and Tiger Baby trailing after, all having a lovely time. Looks for James (she wants kisses), and takes everyone to watch Daddy DJ.', () => { try { return [fam.phase === 'wait' ? 'Just arriving' : fam.mode === 'daddy' ? 'Watching Daddy DJ' : 'Touring: ' + ((KITS[fam.room.path] || {}).title || 'the house')]; } catch (e) { return ['Touring the house']; } }]
+  ['AGENT WIFEO', 'Morale, and Mum. Always on the move round the house with Frankie, Jack Man, baby Oatie Man, Aragon and Tiger Baby trailing after, all having a lovely time. Looks for James (she wants kisses), and takes everyone to watch Daddy DJ.', () => { try { return [fam.phase === 'wait' ? 'Just arriving' : fam.mode === 'daddy' ? 'Watching Daddy DJ' : 'Touring: ' + ((KITS[fam.room.path] || {}).title || 'the house')]; } catch (e) { return ['Touring the house']; } }]
 ];
 function renderCrew(L) {
   const box = document.getElementById('crew');
@@ -973,18 +973,18 @@ function partyTick(dt, sm) {
   }
 }
 // ─── THE FAMILY ───
-// Agent Wifeo is always on the go, and her little ones (Frankie, Jack Man and baby Oatie Man) trail along behind her with the two cats, Argon and Tiger Baby,
+// Agent Wifeo is always on the go, and her little ones (Frankie, Jack Man and baby Oatie Man) trail along behind her with the two cats, Aragon and Tiger Baby,
 // everyone having a lovely time. They tour the whole house, stopping in each room to be silly, and every so often (or whenever the music is on) they go and watch Daddy DJing.
 const KIDS = ['FRANKIE', 'JACK MAN', 'OATIE MAN'];
-const FOLLOW = [{ n: 'FRANKIE', lag: 15 }, { n: 'JACK MAN', lag: 30 }, { n: 'OATIE MAN', lag: 44 }, { n: 'ARGON', lag: 62, cat: 1 }, { n: 'TIGER BABY', lag: 80, cat: 1 }];
+const FOLLOW = [{ n: 'FRANKIE', lag: 15 }, { n: 'JACK MAN', lag: 30 }, { n: 'OATIE MAN', lag: 44 }, { n: 'ARAGON', lag: 62, cat: 1 }, { n: 'TIGER BABY', lag: 80, cat: 1 }];
 const FAM_ASK = ['Has anybody seen James? I want kisses!', 'James? JAMES? I want kisses!', 'Has anybody seen James? Kisses, please!', 'Where’s my James? I need kisses!'];
 const FAM_WALK = ['Come on, my beauties!', 'Keep up, you lot!', 'Everybody hold hands. Mind the cats!', 'Chop chop, my little ducks!', 'Who wants a cuddle? Everybody? Good.', 'I love you all SO much!', 'Right: where next?'];
 const KID_LOVE = ['I love you, Mum.', 'I love you, Mum. A LOT.', 'Love you, Mum!', 'Mum, you’re the best.', 'I love you, Mum. Can I have a biscuit?'];
 const KID_DADDY = ['Where’s Daddy? Is he playing? Is he DJing?', 'Is Daddy DJing yet?', 'Are we going to watch Daddy?', 'Is Daddy playing? Is he DJing?', 'Let’s go watch Daddy!'];
-const KID_SILLY = ['Are we nearly there?', 'Mum, Argon’s eating my sock', 'I’m a train! Choo choo!', 'Race you to the next room!', 'Bottoms!', 'Can we have a biscuit?', 'Mum, look! I’m a plane!',
+const KID_SILLY = ['Are we nearly there?', 'Mum, Aragon’s eating my sock', 'I’m a train! Choo choo!', 'Race you to the next room!', 'Bottoms!', 'Can we have a biscuit?', 'Mum, look! I’m a plane!',
   'I can’t see! Someone’s on my head', 'I’m not holding hands. …Okay I’m holding hands.', 'Can we get a pet tiger? …Oh, we have one', 'Mum, I need a wee. …Not any more', 'I’m the leader now! No I’m not.', 'Wheeeee!', 'Mum, Frankie’s looking at me', 'Piggyback! Piggyback!'];
 const BABY_SAY = ['Goo goo! Mama!', 'Ba ba ba!', 'Da-da! DA-DA!', 'Mama mama mama!', 'Goo goo… Daddy?', 'Bleurgh. (Love you, Mum.)'];
-const CAT_SAY = { ARGON: ['♥'], 'TIGER BABY': ['♥'] };           // cats can't talk: a love heart is all they say
+const CAT_SAY = { ARAGON: ['♥'], 'TIGER BABY': ['♥'] };           // cats can't talk: a love heart is all they say
 const DADDY_W = ['There he is! My DJ!', 'Go on, James! Go on!', 'Mwah! Kisses for the DJ!', 'James! Look at me! Look at us!', 'He’s so good at this. I want kisses!', 'Wave at Daddy, everybody!'];
 const DADDY_KID = ['DADDY! DADDY! DADDY!', 'That’s my Daddy!', 'Go Daddy, go Daddy!', 'Daddy’s the best DJ in the world', 'Play the one I like!', 'Daddy! Daddy! Look at me dancing!', 'Can I press a button?'];
 const DADDY_REPLY = ['Hello, my beautiful family!', 'Love you lot! Back in a minute, I’m mixing!', 'Kisses later, I’m on the decks!', 'Mwah! Right: where was I?', 'Everybody say hi to the speakers!'];
@@ -1051,7 +1051,7 @@ function famTick(dt, sm) {
     const dd = Math.hypot(nu - o.u, nv - o.v);
     if (dd > 0.01) o.dir = nu >= o.u ? 1 : -1;
     o.step += dd * 0.35; o.moving = F.stopK < 0.97 || dd > 0.02; o.u = nu; o.v = nv; F.pos[f.n] = o;
-    if (f.n === 'ARGON' && o.moving && roomAt(o.u, o.v) === ball) {                       // a few pale paw prints across the dance floor, fading quickly
+    if (f.n === 'ARAGON' && o.moving && roomAt(o.u, o.v) === ball) {                       // a few pale paw prints across the dance floor, fading quickly
       o.walked = (o.walked || 0) + dd; if (o.walked > 17 * sm) { o.walked = 0; o.side = -(o.side || 1); prints.push({ u: o.u, v: o.v + o.side * 1.2 * sm, t0: t, ang: Math.atan2(nv - (o.pv || nv), nu - (o.pu || nu)) }); if (prints.length > 36) prints.shift(); }
     }
     o.pu = nu; o.pv = nv;
@@ -1064,10 +1064,10 @@ function famTick(dt, sm) {
     else if (stopped && daddy) {
       const r = Math.random();
       if (r < 0.3) famSay('WIFEO', pickOne(DADDY_W), 0); else if (r < 0.55) famSay(pickOne(['FRANKIE', 'JACK MAN']), pickOne(DADDY_KID), 0); else if (r < 0.72) famSay('OATIE MAN', pickOne(BABY_SAY), 0);
-      else if (r < 0.88) famSay('NORMAL', pickOne(DADDY_REPLY), 0.2); else famSay(pickOne(['ARGON', 'TIGER BABY']), '♥', 0, 2);
+      else if (r < 0.88) famSay('NORMAL', pickOne(DADDY_REPLY), 0.2); else famSay(pickOne(['ARAGON', 'TIGER BABY']), '♥', 0, 2);
     } else if (stopped) {
       if (!F.roomSaid) { F.roomSaid = true; const rw = ROOM_W[F.room && F.room.path]; famSay('WIFEO', Math.random() < 0.35 ? pickOne(FAM_ASK) : rw ? pickOne(rw) : pickOne(FAM_WALK), 0); famSay(pickOne(KIDS), pickOne(KID_LOVE), 1.8); }
-      else { const r = Math.random(); famSay(r < 0.5 ? pickOne(['FRANKIE', 'JACK MAN']) : 'OATIE MAN', r < 0.5 ? pickOne(KID_SILLY) : pickOne(BABY_SAY), 0); if (r > 0.7) { const c = pickOne(['ARGON', 'TIGER BABY']); famSay(c, pickOne(CAT_SAY[c]), 1.4, 2); } }
+      else { const r = Math.random(); famSay(r < 0.5 ? pickOne(['FRANKIE', 'JACK MAN']) : 'OATIE MAN', r < 0.5 ? pickOne(KID_SILLY) : pickOne(BABY_SAY), 0); if (r > 0.7) { const c = pickOne(['ARAGON', 'TIGER BABY']); famSay(c, pickOne(CAT_SAY[c]), 1.4, 2); } }
     } else {
       const r = Math.random();
       if (r < 0.34) famSay(pickOne(['FRANKIE', 'JACK MAN']), pickOne(daddy ? KID_DADDY : KID_SILLY), 0); else if (r < 0.62) famSay(pickOne(KIDS), pickOne(KID_LOVE), 0);
@@ -1092,7 +1092,7 @@ function famRoute(a, name, sm, dt) {
   a.pose = p.moving ? 'walk' : (name === 'FRANKIE' && Math.floor(floor.t / 7) % 2 ? 'stroke' : 'rave'); a.style = fam.style[name] || 'dance';
   return true;
 }
-function drawPrints(sm) {                          // small pale paw prints (a pad and four toes) where Argon has trotted, fading quickly
+function drawPrints(sm) {                          // small pale paw prints (a pad and four toes) where Aragon has trotted, fading quickly
   fx.save(); fx.fillStyle = '#e4dccd';
   prints.forEach(p => {
     const k = 1 - (floor.t - p.t0) / 18; if (k <= 0) return;
@@ -1276,7 +1276,7 @@ function drawFloor(dt) {
     Z.push({ z: F.v + 0.5, f: () => { const [x, y] = P(F.u, F.v);
       stickMan(x, y, sm, stopped ? t * 2 : F.step, stopped ? 'dance' : 'walk', 'WIFEO'); text('WIFEO', x, y + 9 * s, 7.5 * s, 0.75);
       for (let k = 0; k < 3; k++) { const ph = (t * 0.4 + k / 3) % 1; text('♥', x + Math.sin(ph * 5 + k * 2) * 12 * s, y - 36 * s - ph * 26 * s, (7 + k) * s, (stopped ? 1 : 0.6) * (1 - ph)); } } });
-    ['ARGON', 'TIGER BABY'].forEach(n => { const c = F.pos[n]; if (!c) return;
+    ['ARAGON', 'TIGER BABY'].forEach(n => { const c = F.pos[n]; if (!c) return;
       Z.push({ z: c.v + 0.4, f: () => { drawCat({ u: c.u, v: c.v, dir: c.dir || 1, phase: stopped && !c.moving ? 'sit' : 'walk', step: c.step || 0 }, sm); const [x, y] = P(c.u, c.v); seenAt[n] = { x, y, at: floor.t, s: sm }; text(n, x, y + 8 * s, 6.5 * s, 0.6); } }); });
   }
 
