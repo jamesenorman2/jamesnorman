@@ -520,7 +520,8 @@ addEventListener('hashchange', () => { const id = location.hash.slice(1); if (id
 
 /* ─── go ─── */
 const openHash = () => { const id = location.hash.slice(1); if (id && drinks.some(d => d.id === id) && (!current || current.id !== id)) openDrink(id, false); };
-const loaded = () => { fillSuggestions(); haveChanged(); openHash(); };
+let spunFromHash = false;
+const loaded = () => { fillSuggestions(); haveChanged(); openHash(); if (location.hash === '#spin' && !spunFromHash && drinks.length) { spunFromHash = true; openSpin(); } };      // /bar/#spin opens the wheel straight away (the Agents page's prize wheel links here)
 fetch('/bar/cocktails.json').then(r => r.json()).then(j => { drinks = j.drinks || []; loaded(); })
   .catch(() => { $('count').textContent = 'The bar couldn’t open just now. Try again in a moment.'; })
   .then(() => fetch('/api/bar').then(r => r.json()).then(j => {                 // then upgrade to everything in the recipe library, if it can be reached

@@ -521,9 +521,11 @@ const KIT_PLAIN = { title: '', items: [[0.2, 0.42, 0.32, 0.16, 9, 'desk'], [0.3,
 // plan position of a point given as fractions of a room, fv measured from the door wall
 const at = (r, fu, fv) => ({ u: r.u + fu * r.w, v: r.upper ? r.v + r.d * (1 - fv) : r.v + r.d * fv });
 
+const hot = {};                                                    // clickable props: where they were drawn this frame
 function drawItem(r, it, busy) {
   const [fu, fv, fw, fd, h0, kind, zz] = it, t = floor.t, s = SM, h = h0 * s, z0 = (zz || 0) * s;
   const a = at(r, fu, r.upper ? fv + fd : fv), w = fw * r.w, d = fd * r.d;
+  if (kind === 'model') { const c0 = P(a.u + w / 2, a.v + d / 2, h + z0), e0 = P(a.u + w, a.v + d / 2, h + z0); hot.desk = { x: c0[0], y: c0[1], r: Math.max(22, Math.abs(e0[0] - c0[0]) * 1.1), at: t }; }       // the office desk
   if (kind === 'bunting') {                       // a string of little flags along the back wall: friendly
     const n = Math.max(8, Math.floor(w / (10 * s))), p0 = P(a.u, a.v + d, z0), p1 = P(a.u + w, a.v + d, z0);
     const pt = f => [p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f + Math.sin(Math.PI * f) * 6 * s];
@@ -762,6 +764,7 @@ function drawItem(r, it, busy) {
   }
   else if (kind === 'spinwheel') {                 // the prize wheel: SPIN FOR A DRINK. It turns slowly, and whirls when somebody has a go
     const c = [X + W / 2, Y + B.h * 0.55], R = Math.min(W / 2 - 2, B.h * 0.46), ang = busy ? t * 7 : t * 0.8, n = 8;
+    hot.spin = { x: c[0], y: c[1], r: R * 1.3, at: t };
     fx.beginPath(); fx.arc(c[0], c[1], R, 0, 7); fx.stroke(); fx.beginPath(); fx.arc(c[0], c[1], R * 0.18, 0, 7); fx.stroke();
     for (let k = 0; k < n; k++) { const an = ang + k * Math.PI * 2 / n; seg([c[0] + Math.cos(an) * R * 0.18, c[1] + Math.sin(an) * R * 0.18], [c[0] + Math.cos(an) * R, c[1] + Math.sin(an) * R]);
       if (k % 2 === 0) { const a2 = an + Math.PI / n; fx.save(); fx.globalAlpha = 0.5; fx.beginPath(); fx.moveTo(c[0] + Math.cos(an) * R * 0.5, c[1] + Math.sin(an) * R * 0.5); fx.arc(c[0], c[1], R * 0.5, an, an + Math.PI * 2 / n); fx.lineTo(c[0] + Math.cos(an + Math.PI * 2 / n) * R * 0.85, c[1] + Math.sin(an + Math.PI * 2 / n) * R * 0.85); fx.stroke(); fx.restore(); } }
@@ -2105,6 +2108,20 @@ function drawSeason(kind, sm, s) {
   }
   fx.restore();
 }
+// The office desk: click it to read the latest written handover without leaving the building
+function openHandover() {
+  const box = document.querySelector('.floor'), L = floor.shift || {}, a = L.analyst || {};
+  const old = box.querySelector('.hpanel'); if (old) old.remove();
+  const pnl = document.createElement('div'); pnl.className = 'acard hpanel'; pnl.setAttribute('role', 'dialog'); pnl.setAttribute('aria-label', 'Latest handover');
+  const h = document.createElement('b'); h.textContent = 'Latest handover' + (a.status ? ' · ' + a.status : '');
+  const body = document.createElement('div'); body.style.whiteSpace = 'pre-wrap'; body.textContent = a.handover || L.note || 'No handover written yet.';
+  pnl.append(h, body);
+  (a.findings || []).slice(0, 4).forEach(f => { const i = document.createElement('i'); i.textContent = (f.severity || 'note') + ': ' + (f.title || ''); const d = document.createElement('div'); d.textContent = f.detail || ''; pnl.append(i, d); });
+  const x = document.createElement('button'); x.type = 'button'; x.className = 'btn'; x.textContent = 'Close'; x.style.cssText = 'margin-top:.7rem;padding:.35rem .7rem;font-size:.6rem;letter-spacing:.2em'; x.onclick = () => pnl.remove();
+  pnl.append(x); pnl.style.cssText = 'left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(460px,88%);max-height:80%;overflow:auto';
+  box.appendChild(pnl);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.hpanel').forEach(p => p.remove()); });
 // Click an agent for a little card: what they've just said, and a funny thought
 const THOUGHTS = ['If I stand very still, does the meeting end sooner?', 'Somebody should check on the printer. Nobody has. Ever.', 'I have 14 tabs open and I can only remember why one of them is.',
   'What if the HTTPS padlock is just a very small, very polite bouncer?', 'Are we sure the cats aren\'t running this place?', 'I\'d like to think I\'d survive a power cut. I would not.',
@@ -2123,7 +2140,12 @@ const THOUGHTS_BY = { 'SMILEY JO': ['Hula hooping is just standing still, but ha
     let best = null, bd = 1e9;
     Object.keys(seenAt).forEach(n => { const p = seenAt[n]; if (floor.t - p.at > 0.5) return; const d = Math.hypot(p.x - x, p.y - 16 * (p.s || 1) - y); if (d < bd) { bd = d; best = n; } });
     close();
-    if (!best || bd > 34) return;
+    if (!best || bd > 34) {
+      const hit = k => hot[k] && floor.t - hot[k].at < 0.5 && Math.hypot(hot[k].x - x, hot[k].y - y) < hot[k].r;
+      if (hit('spin')) { location.href = '/bar/#spin'; return; }                               // the bar's prize wheel opens the real spinner on the Bar page
+      if (hit('desk')) { openHandover(); return; }
+      return;
+    }
     const said = lastSaid[best], recent = said && floor.t - said.at < 120;
     const th = (THOUGHTS_BY[best] ? THOUGHTS_BY[best].concat(THOUGHTS) : THOUGHTS);
     card = document.createElement('div'); card.className = 'acard'; card.setAttribute('role', 'status');
