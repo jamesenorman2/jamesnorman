@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agents — James Norman</title>
-<meta name="description" content="While I sleep, a crew of AI agents patrols this site, writes the handover and picks the music.">
+<meta name="description" content="A crew of AI agents patrols this site, writes the handover and picks the music.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="canonical" href="https://www.jamesnorman.co.uk/night-shift/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="James Norman">
 <meta property="og:title" content="Agents — James Norman">
-<meta property="og:description" content="While I sleep, a crew of AI agents patrols this site, writes the handover and picks the music.">
+<meta property="og:description" content="A crew of AI agents patrols this site, writes the handover and picks the music.">
 <meta property="og:url" content="https://www.jamesnorman.co.uk/night-shift/">
 <meta property="og:image" content="https://www.jamesnorman.co.uk/og.png">
 <meta property="og:image:width" content="1200">
@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/site.css?v=20261123">
 <style>
   .floor{margin:2.5rem 0 0;position:relative}
   .floorbar{display:flex;justify-content:flex-end;padding:0 0 .5rem}
@@ -28,6 +28,9 @@
   .floor.full .floorbar{padding:max(.5rem,env(safe-area-inset-top,0px)) max(.6rem,env(safe-area-inset-right,0px)) .4rem}
   .floor.full{overflow:hidden}
   .floor.full canvas{flex:1;min-height:0;height:auto!important;touch-action:none;transform-origin:0 0}
+  .acard{position:absolute;z-index:5;max-width:min(260px,80%);background:#000;border:1px solid #fff;padding:.7rem .85rem;font-size:.72rem;line-height:1.55;color:#ddd;box-shadow:0 0 18px rgba(255,255,255,.18)}
+  .acard b{display:block;font-family:'Syne',sans-serif;font-weight:500;font-size:.85rem;letter-spacing:.12em;color:#fff;margin-bottom:.35rem}
+  .acard i{display:block;font-style:normal;color:#8a8a8a;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;margin-top:.5rem}
   .fshint{display:none;position:absolute;left:0;right:0;bottom:1rem;text-align:center;font-size:.7rem;letter-spacing:.15em;color:var(--dim);pointer-events:none}
   @media(orientation:portrait){.floor.full .fshint{display:block}}
   body.floor-lock{overflow:hidden}
@@ -78,8 +81,8 @@
       <li><a href="/">Home</a></li>
       <li><a href="/music/">Music</a></li>
       <li><a href="/night-shift/" aria-current="page">Agents</a></li>
-      <li><a href="/bar/">Bar</a></li>
-      <li class="has-sub"><a href="/about/">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/blog/">Blog</a></li><li><a href="/security/">Security</a></li><li class="deep"><a href="/security/layers/">Layers</a></li><li class="deep"><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li class="deep"><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
+      <li><a href="/bar/">Bar</a></li><li><a href="/blog/">Blog</a></li>
+      <li class="has-sub"><a href="/about/">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/security/">Security</a></li></ul></li>
     </ul>
   </nav>
 </header>
@@ -87,26 +90,26 @@
 <main class="wrap">
   <div class="hero-wrap">
     <canvas class="ridge" id="ridge" aria-hidden="true"></canvas>
-  <div class="kicker">AI agents on duty · round the clock</div>
+  <div class="kicker">AI agents at work</div>
   <h1>Agents</h1>
-  <p class="lede">This site is run by a team of AI agents, organised like a security control room. The day shift each carry out one task a day; the night shift patrols the whole site every hour. They check real things: every page, the certificate and domain, outbound links, the official Martyn’s Law guidance, the UK threat level and new music. Each shift ends with a written handover, and findings that need action come to me.</p>
+  <p class="lede">Behind the site is a small team of AI agents, run like a security control room. Each daily agent has one job a day (Old School, once a week), and a site patrol checks the whole site every six hours: pages, certificate and domain, outbound links, the Martyn’s Law guidance, the UK threat level and new music. Every shift ends with a written handover, and anything that needs action comes to me.</p>
   </div>
 
   <section class="floor" aria-label="The crew at work: stick men walking the site, checking each page">
-    <div class="floorbar"><button type="button" class="ghost fsbtn" id="fsBtn" aria-pressed="false" title="See the whole house full screen (Esc to leave)">Full screen</button></div>
+    <div class="floorbar"><span id="eggCount" class="small" hidden style="margin-right:auto;align-self:center;letter-spacing:.15em"></span><button type="button" class="ghost fsbtn" id="sndBtn" aria-pressed="false" title="Sound effects: door whoosh, chomp, muffled bass through the walls" style="margin-right:.5rem">Sound: off</button><button type="button" class="ghost fsbtn" id="fsBtn" aria-pressed="false" title="See the whole house full screen (Esc to leave)">Full screen</button></div>
     <canvas id="floor"></canvas>
     <div class="fshint">Turn your phone sideways for a bigger view</div>
   </section>
 
   <section aria-labelledby="day-h">
-    <h2 id="day-h">The day shift</h2>
-    <p class="small">Once a day (Old School weekly), each of these agents does one job and files a report. Open a card for the detail.</p>
-    <div class="daycrew" id="daycrew"><p class="small">Waking the day crew…</p></div>
+    <h2 id="day-h">The daily agents</h2>
+    <p class="small">About once a day (Old School once a week), each of these agents does one job and files a report. Open a card for the detail.</p>
+    <div class="daycrew" id="daycrew"><p class="small">Waking the daily agents…</p></div>
   </section>
 
   <section aria-labelledby="night-h">
-    <h2 id="night-h">The night shift</h2>
-    <p class="small">Every hour, round the clock: these agents walk the site, check what it depends on and write the handover.</p>
+    <h2 id="night-h">The site patrol</h2>
+    <p class="small">Every six hours: these agents walk the site, check what it depends on and write the handover.</p>
   <div class="crew" id="crew" aria-live="polite"></div>
   </section>
 
@@ -123,11 +126,14 @@
 
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
-<script src="/assets/stickmen.js?v=7"></script>
+<script src="/assets/stickmen.js?v=9"></script>
 <script>
 (() => {
 'use strict';
 const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;
+// the name shown for an agent: the one chosen on the admin page, or the built-in one (NORMAL~STATS shows as NORMAL)
+const AGENT_NAMES = {};
+const shown = n => AGENT_NAMES[n] || String(n).replace(/~\w+$/, '');
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
 function renderShift(row) {
@@ -234,13 +240,13 @@ function renderCrew(L) {
     const card = el('div', 'card');
     const [txt, cls] = L ? result(L) : ['–'];
     const plural = /&/.test(name);
-    card.append(el('span', 'agent-k', plural ? 'Agents' : 'Agent'), el('b', null, name.replace(/\bAGENT /g, '')), el('span', 'small', job), el('span', 'res ' + (cls || ''), txt));
+    card.append(el('span', 'agent-k', plural ? 'Agents' : 'Agent'), el('b', null, (AGENT_NAMES[name.replace(/^AGENT /, '')] || name.replace(/\bAGENT /g, '')).replace(/~\w+$/, '')), el('span', 'small', job), el('span', 'res ' + (cls || ''), txt));
     box.append(card);
   });
 }
 renderCrew(null);
 
-// The day crew: one report each, read from the database.
+// The daily agents: one report each, read from the database.
 const DAY = [
   ['grumble', 'AGENT BLOG-HEAD', 'Editor. Checks every blog post and incident report against its sources before it goes out.'],
   ['binlid', 'AGENT HARRY', 'Regulation watcher. New GOV.UK guidance on Martyn’s Law, the SIA, protective security and the Building Regulations.'],
@@ -274,10 +280,11 @@ async function loadDayCrew() {
   const latest = {};
   for (const r of rows) if (!latest[r.agent]) latest[r.agent] = r;
   floor.day = latest;
-  box.innerHTML = DAY.map(([id, name, job]) => {
+  window.renderDay = () => { box.innerHTML = DAY.map(([id, name, job]) => {
     const r = latest[id], rep = r ? r.report || {} : null;
-    return `<details><summary><span class="agent-k">Agent</span><b>${escD(name.replace(/^AGENT /, ''))}</b><span class="job">${escD(job)}</span><span class="sum">${rep ? escD(rep.summary || '') : 'First report due soon'}</span>${r ? `<span class="when">${escD(new Date(r.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>` : ''}</summary>${rep ? crewDetail(id, rep) + (rep.note ? `<p class="note">“${escD(rep.note)}”</p>` : '') : ''}</details>`;
-  }).join('');
+    return `<details><summary><span class="agent-k">Agent</span><b>${escD(shown(name.replace(/^AGENT /, '')))}</b><span class="job">${escD(job)}</span><span class="sum">${rep ? escD(rep.summary || '') : 'First report due soon'}</span>${r ? `<span class="when">${escD(new Date(r.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>` : ''}</summary>${rep ? crewDetail(id, rep) + (rep.note ? `<p class="note">“${escD(rep.note)}”</p>` : '') : ''}</details>`;
+  }).join(''); };
+  renderDay();
 }
 loadDayCrew();
 
@@ -317,7 +324,7 @@ function layout() {
   const pages = (floor.shift && floor.shift.patrol || []).filter(p => !/\.(css|js|json)$/.test(p.path)).slice(0, 12);
   const list = pages.length ? pages : Object.keys(NAMES).map(path => ({ path, ok: true }));
   ISO.sh = FW < 700 ? 0.06 : 0.16;
-  const m = 10, wallH = 34, lab = 26;                       // lab: a strip above and below for the room names
+  const m = 10, wallH = layout.wh || 34, lab = 26;                       // lab: a strip above and below for the room names
   const PD = (FH - 2 * m - wallH - 2 * lab) / ISO.sq, PW = FW - 2 * m - PD * ISO.sh;
   ISO.ox = m; ISO.oy = m + wallH + lab;
   const Dc = PD * 0.15, Dr = (PD - Dc) / 2, top = Math.ceil(list.length / 2);
@@ -344,6 +351,9 @@ function layout() {
   SM = Math.max(0.55, Math.min(2.1, Math.min(Dr, PW / top) / 100));
   const find = path => floor.rooms.find(r => r.path === path) || floor.rooms[0];
   floor.control = find('/night-shift/');
+  // the back row's room names float 30 units above the wall: on a big screen (full screen) that is taller than the strip kept for them, so make the strip taller to fit
+  const need = Math.max(34, Math.ceil(30 * SM + 32 - lab));
+  if (!layout.busy && need !== wallH) { layout.wh = need; layout.busy = true; try { layout(); } finally { layout.busy = false; } }
 }
 
 // a patrol's route through every office: corridor → door → into the room → back out
@@ -401,7 +411,7 @@ const KITS = {
   // stations: [fu, fv, pose, lines, standing height, depth nudge]; station 0 is the DJ's, 1 is the guest DJ's (kept for guests)
   '/music/': { title: 'BALLROOM', reserved: [1],
     items: [[0.0, 0.95, 1.0, 0.02, 1, 'bunting', 36], [0.24, 0.9, 0.07, 0.06, 58, 'rig'], [0.69, 0.9, 0.07, 0.06, 58, 'rig'],
-      [0.067, 0.9, 0.147, 0.06, 30, 'recordwall'], [0.32, 0.91, 0.17, 0.06, 38, 'trippy'], [0.51, 0.91, 0.17, 0.06, 38, 'trippy'], [0.79, 0.91, 0.15, 0.05, 30, 'nowplaying', 6], [0.5, 0.64, 0.06, 0.16, 8, 'spinpodium'],
+      [0.067, 0.9, 0.147, 0.06, 30, 'recordwall'], [0.32, 0.91, 0.17, 0.06, 38, 'trippy'], [0.51, 0.91, 0.17, 0.06, 38, 'trippy'], [0.79, 0.91, 0.15, 0.05, 30, 'nowplaying', 6], [0.85, 0.63, 0.06, 0.16, 8, 'spinpodium'],
       [0.84, 0.34, 0.115, 0.12, 15, 'booth'],
       [0.107, 0.58, 0.047, 0.1, 8, 'podium'], [0.36, 0.58, 0.047, 0.1, 8, 'podium'], [0.147, 0.2, 0.047, 0.1, 8, 'podium'], [0.4, 0.22, 0.047, 0.1, 8, 'podium'], [0.62, 0.55, 0.047, 0.1, 8, 'podium'], [0.7, 0.18, 0.047, 0.1, 8, 'podium'],
       [0.485, 0.42, 0.027, 0.06, 4, 'discoball', 64],
@@ -430,18 +440,16 @@ const KITS = {
       [0.645, 0.6, 'dance', ['Podium by the lounge: the best view of the booth', 'Hands up, everyone!'], 8, 0.14],
       [0.725, 0.23, 'dance', ['Up on the podium, loving life', 'Somebody wave back'], 8, 0.14],
       [0.65, 0.1, 'lie', ['Lounging with a view of the dance floor', 'Spacious in here now, isn’t it?']],
-      [0.53, 0.72, 'dance', ['Spinning round on the turntable podium!', 'Whoa, I’m going round and round!', 'Look at me go: 360 degrees!'], 8, 0.14]] },
-  // THE BAR: a proper pub. A long counter with stools and a barman, bottles and a neon OPEN sign, a pool table, a jukebox, a dartboard on the wall and a spin-for-a-drink wheel.
+      [0.88, 0.71, 'dance', ['Spinning round on the turntable podium!', 'Whoa, I’m going round and round!', 'Look at me go: 360 degrees!'], 8, 0.14, 'spin']] },
+  // THE BAR: a proper pub. A long counter with stools and a barman, bottles and a green neon OPEN sign, a jukebox, a dartboard on the wall and a spin-for-a-drink wheel.
   '/bar/': { title: 'BAR', stay: ['HARRY'],
     items: [[0.04, 0.9, 0.5, 0.05, 24, 'bottles'], [0.6, 0.86, 0.36, 0.1, 22, 'spinwheel'], [0.04, 0.08, 0.3, 0.05, 22, 'neon'], [0.84, 0.1, 0.12, 0.1, 30, 'jukebox'],
       [0.08, 0.52, 0.56, 0.12, 13, 'barcounter'], [0.12, 0.72, 0.05, 0.05, 8, 'stool'], [0.27, 0.72, 0.05, 0.05, 8, 'stool'], [0.42, 0.72, 0.05, 0.05, 8, 'stool'], [0.57, 0.72, 0.05, 0.05, 8, 'stool'],
-      [0.62, 0.3, 0.3, 0.17, 9, 'pooltable'], [0.95, 0.56, 0.03, 0.18, 16, 'dartboard', 14], [0.0, 0.3, 0.05, 0.07, 10, 'plant']],
+      [0.95, 0.56, 0.03, 0.18, 16, 'dartboard', 14], [0.0, 0.3, 0.05, 0.07, 10, 'plant']],
     stations: [[0.36, 0.42, 'check', ['Shaking a Negroni. Stirring it. Whatever.', 'Spin for a drink? SPIN FOR A DRINK.', 'Two olives or three?', 'Flipping the shaker. Nailed it.', 'Last orders! …I’m joking. It’s always early.']],
       [0.15, 0.78, 'bench', ['Just the one. Possibly four.', 'Tonic. With a tiny umbrella.', 'This stool is the best stool', 'Barman, surprise me!'], 5],
       [0.45, 0.78, 'bench', ['I’ll have what the DJ’s having', 'Cheers! Everyone’s lovely!', 'Is it cocktail o’clock? It is now.'], 5],
       [0.88, 0.3, 'check', ['Picking a tune on the jukebox', 'B7. Always B7.', 'Putting on something we can all sing to']],
-      [0.7, 0.22, 'point', ['Lining up the shot. Pointing at the pocket.', 'Eight ball, corner pocket', 'I’m going to clear this table']],
-      [0.7, 0.54, 'kick', ['Chalking the cue. Like a pro.', 'Potted! …Oh. That was the white.', 'Bank shot. Nobody saw it, but it was great']],
       [0.78, 0.8, 'point', ['Spinning the wheel!', 'It landed on tequila. Of course.', 'Round and round she goes!']],
       [0.86, 0.66, 'point', ['Bullseye!', 'Double top. Or the wall.', 'Darts: where skill meets guesswork']],
       [0.55, 0.42, 'dance', ['Dancing behind the bar. Nobody’s watching.', 'Jukebox is ON. Dance break!']]] },
@@ -514,9 +522,36 @@ const KIT_PLAIN = { title: '', items: [[0.2, 0.42, 0.32, 0.16, 9, 'desk'], [0.3,
 // plan position of a point given as fractions of a room, fv measured from the door wall
 const at = (r, fu, fv) => ({ u: r.u + fu * r.w, v: r.upper ? r.v + r.d * (1 - fv) : r.v + r.d * fv });
 
+const hot = { eggs: [] };                                          // clickable props: where they were drawn this frame
+const EGGS = {                                                       // Easter eggs: click these props
+  printer: ['PC LOAD LETTER.', '▭', 'Paper jam'], coffee: ['Coffee number four. Vibrating.', '☕', 'Coffee'], plant: ['It has been watered four times today. It is drowning.', '❦', 'Plant'],
+  fountain: ['Make a wish. (Not for a pay rise.)', '●', 'Fountain'], discoball: ['DISCO!', '✦', 'Disco ball'], jukebox: ['Nobody has put a pound in here since 1998.', '♪', 'Jukebox'],
+  safe: ['The code is 1-2-3-4. Don’t tell anyone.', '★', 'Safe'], dartboard: ['BULLSEYE! (It hit the wall.)', '➤', 'Dartboard']
+};
+const eggsFound = (() => { try { return new Set(JSON.parse(localStorage.getItem('jn-eggs') || '[]')); } catch (e) { return new Set(); } })();
+const eggFx = [], eggMsg = { text: '', x: 0, y: 0, t0: -9 };
+function popEgg(kind, x, y) {
+  const E = EGGS[kind]; if (!E) return;
+  const first = !eggsFound.has(kind); eggsFound.add(kind);
+  try { localStorage.setItem('jn-eggs', JSON.stringify([...eggsFound])); } catch (e) { /* fine */ }
+  Object.assign(eggMsg, { text: E[0] + (first ? '  ★ NEW' : ''), x, y, t0: floor.t });
+  for (let i = 0; i < 14; i++) { const an = Math.random() * Math.PI * 2; eggFx.push({ x, y, vx: Math.cos(an) * (20 + Math.random() * 40), vy: -30 - Math.random() * 60, g: E[1], t0: floor.t }); }
+  const n = eggsFound.size, c = document.getElementById('eggCount'); if (c) { c.hidden = false; c.textContent = `Eggs found: ${n} of ${Object.keys(EGGS).length}`; }
+  if (n === Object.keys(EGGS).length && first) { eggMsg.text = 'ALL EIGHT FOUND! You legend.'; for (let i = 0; i < 40; i++) eggFx.push({ x: x + (Math.random() - 0.5) * 80, y: y - 20, vx: (Math.random() - 0.5) * 80, vy: -40 - Math.random() * 90, g: ['★', '✦', '♥', '♪'][i % 4], t0: floor.t + Math.random() * 0.6 }); }
+}
+function drawEggs(s) {
+  for (let i = eggFx.length - 1; i >= 0; i--) { const q = eggFx[i], a = floor.t - q.t0; if (a > 2.2) { eggFx.splice(i, 1); continue; } if (a < 0) continue;
+    text(q.g, q.x + q.vx * a, q.y + q.vy * a + 60 * a * a, 11 * s, Math.max(0, 1 - a / 2.2)); }
+  const a = floor.t - eggMsg.t0; if (a < 0 || a > 3.4) return;
+  fx.font = `400 ${9 * s}px "IBM Plex Mono", monospace`; const w = Math.min(fx.measureText(eggMsg.text).width + 14 * s, FW - 8), bx = Math.max(4, Math.min(FW - w - 4, eggMsg.x - w / 2)), by = Math.max(4, eggMsg.y - 40 * s);
+  fx.globalAlpha = Math.min(1, a / 0.15, (3.4 - a) / 0.4); fx.fillStyle = '#000'; fx.strokeStyle = '#fff'; fx.beginPath(); fx.roundRect ? fx.roundRect(bx, by, w, 18 * s, 5 * s) : fx.rect(bx, by, w, 18 * s); fx.fill(); fx.stroke();
+  fx.fillStyle = '#fff'; fx.textAlign = 'left'; fx.fillText(eggMsg.text, bx + 7 * s, by + 12.5 * s); fx.globalAlpha = 1;
+}
 function drawItem(r, it, busy) {
   const [fu, fv, fw, fd, h0, kind, zz] = it, t = floor.t, s = SM, h = h0 * s, z0 = (zz || 0) * s;
   const a = at(r, fu, r.upper ? fv + fd : fv), w = fw * r.w, d = fd * r.d;
+  if (EGGS[kind]) { const c1 = P(a.u + w / 2, a.v + d / 2, z0 + h / 2), e1 = P(a.u + w, a.v + d / 2, z0 + h / 2); hot.eggs.push({ kind, x: c1[0], y: c1[1], r: Math.max(14, Math.abs(e1[0] - c1[0]) * 1.1, h * 0.55), at: t }); }
+  if (kind === 'model') { const c0 = P(a.u + w / 2, a.v + d / 2, h + z0), e0 = P(a.u + w, a.v + d / 2, h + z0); hot.desk = { x: c0[0], y: c0[1], r: Math.max(22, Math.abs(e0[0] - c0[0]) * 1.1), at: t }; }       // the office desk
   if (kind === 'bunting') {                       // a string of little flags along the back wall: friendly
     const n = Math.max(8, Math.floor(w / (10 * s))), p0 = P(a.u, a.v + d, z0), p1 = P(a.u + w, a.v + d, z0);
     const pt = f => [p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f + Math.sin(Math.PI * f) * 6 * s];
@@ -571,6 +606,7 @@ function drawItem(r, it, busy) {
     fx.globalAlpha = 0.35; seg([c[0] - bw * 0.5, c[1] - bh - 2 * s], [c[0] + bw * 0.5, c[1] - bh - 2 * s]); fx.restore(); return; }
   if (kind === 'spinpodium') {                    // a round podium that turns slowly (faster with the music), with lights round the rim and a dancer on top
     const cu = a.u + w / 2, cv = a.v + d / 2, R = Math.min(w, d) / 2, on = laser.k > 0.02, ang = t * (0.5 + 1.6 * laser.k * (0.5 + mus.e));
+    spinAng = ang;                                // whoever is dancing on it turns round with it
     const ring = (rr, z) => { fx.beginPath(); for (let k = 0; k <= 28; k++) { const an = k / 28 * Math.PI * 2, q = P(cu + Math.cos(an) * rr, cv + Math.sin(an) * rr, z); k ? fx.lineTo(q[0], q[1]) : fx.moveTo(q[0], q[1]); } fx.closePath(); fx.fillStyle = '#000'; fx.fill(); fx.stroke(); };
     fx.save(); ring(R, 0); for (let k = 0; k < 10; k++) { const an = k * Math.PI / 5 + 0.3; seg(P(cu + Math.cos(an) * R, cv + Math.sin(an) * R, 0), P(cu + Math.cos(an) * R, cv + Math.sin(an) * R, h)); }
     ring(R, h); ring(R * 0.72, h);
@@ -746,13 +782,15 @@ function drawItem(r, it, busy) {
   }
   else if (kind === 'neon') {                      // a neon sign on the wall: a cocktail glass and OPEN, flickering now and then
     const fl = Math.sin(t * 3) > -0.9 && !(Math.sin(t * 11) > 0.97) ? 1 : 0.35, cx0 = X + W * 0.2, cy0 = Y + B.h * 0.5;
-    fx.save(); fx.globalAlpha = 0.5 + 0.5 * fl; fx.lineWidth = 1.6;
+    fx.save(); fx.globalAlpha = 0.5 + 0.5 * fl; fx.lineWidth = 1.6; fx.strokeStyle = '#3dff7a'; fx.shadowColor = '#3dff7a'; fx.shadowBlur = 6 * s;      // a green neon cocktail
     fx.beginPath(); fx.moveTo(cx0 - 6 * s, cy0 - 6 * s); fx.lineTo(cx0 + 6 * s, cy0 - 6 * s); fx.lineTo(cx0, cy0 + 1 * s); fx.closePath(); fx.stroke(); seg([cx0, cy0 + 1 * s], [cx0, cy0 + 7 * s]); seg([cx0 - 3 * s, cy0 + 7 * s], [cx0 + 3 * s, cy0 + 7 * s]);
     fx.beginPath(); fx.arc(cx0 + 4 * s, cy0 - 7 * s, 1.4 * s, 0, 7); fx.stroke();
+    fx.shadowBlur = 0; fx.strokeStyle = '#fff';
     text('OPEN', X + W * 0.62, Y + B.h * 0.5 + 2 * s, Math.min(B.h * 0.5, 9 * s), 0.6 + 0.4 * fl); fx.restore();
   }
   else if (kind === 'spinwheel') {                 // the prize wheel: SPIN FOR A DRINK. It turns slowly, and whirls when somebody has a go
     const c = [X + W / 2, Y + B.h * 0.55], R = Math.min(W / 2 - 2, B.h * 0.46), ang = busy ? t * 7 : t * 0.8, n = 8;
+    hot.spin = { x: c[0], y: c[1], r: R * 1.3, at: t };
     fx.beginPath(); fx.arc(c[0], c[1], R, 0, 7); fx.stroke(); fx.beginPath(); fx.arc(c[0], c[1], R * 0.18, 0, 7); fx.stroke();
     for (let k = 0; k < n; k++) { const an = ang + k * Math.PI * 2 / n; seg([c[0] + Math.cos(an) * R * 0.18, c[1] + Math.sin(an) * R * 0.18], [c[0] + Math.cos(an) * R, c[1] + Math.sin(an) * R]);
       if (k % 2 === 0) { const a2 = an + Math.PI / n; fx.save(); fx.globalAlpha = 0.5; fx.beginPath(); fx.moveTo(c[0] + Math.cos(an) * R * 0.5, c[1] + Math.sin(an) * R * 0.5); fx.arc(c[0], c[1], R * 0.5, an, an + Math.PI * 2 / n); fx.lineTo(c[0] + Math.cos(an + Math.PI * 2 / n) * R * 0.85, c[1] + Math.sin(an + Math.PI * 2 / n) * R * 0.85); fx.stroke(); fx.restore(); } }
@@ -919,6 +957,48 @@ function dayLine(id) { const D = floor.day || {}, r = D[id], t = (r && r.report 
 const res = {};
 // Roaming: an agent's home room is where they mainly stay, but if they are set to roam they now and then wander off round the house
 // (to a work spot in another room, hang about for a bit, say something) and then walk back home.
+// Kate and Becka always hang out together: Becka stays at Kate's side, and goes wherever Kate goes (walking, through the doors)
+const BUDDIES = { BECKA: 'KATE' };
+function buddyRoute(a, name, sm, dt) {
+  const L = res[BUDDIES[name]]; if (!L || raving() || L.duty) return false;
+  const goal = { u: L.u + 11 * sm, v: L.v + 3 * sm }, d = Math.hypot(goal.u - a.u, goal.v - a.v), t = floor.t;
+  if (d < 13 * sm && roomAt(a.u, a.v) === roomAt(L.u, L.v) && !(a.q && a.q.length)) { a.moving = false; return true; }                       // standing together, chatting
+  if (!a.q || !a.q.length || t > (a.rtT || 0)) { a.rtT = t + 1.2; const lr = roomAt(L.u, L.v); a.q = lr ? routeTo(a.u, a.v, lr, goal) : []; }
+  if (a.q && a.q.length) {
+    const g = a.q[0], du = g.u - a.u, dv = g.v - a.v, dd = Math.hypot(du, dv), sp = (d > 80 * sm ? 70 : 52) * sm * dt;
+    if (dd <= sp) { a.u = g.u; a.v = g.v; a.q.shift(); } else { a.u += du / dd * sp; a.v += dv / dd * sp; }
+    a.step = (a.step || 0) + sp * 0.3; a.moving = true; return true;
+  }
+  a.moving = false; return true;
+}
+// Agent Normal (the DJ) comes down off the decks now and then to do cartwheels and rolly-pollies on the dance floor
+function normalStunt(a, r, sm, dt, homeFn) {
+  if (r.path !== '/music/') { a.stunt = null; a.trick = null; return false; }
+  const t = floor.t;
+  if (a.nextStunt == null) a.nextStunt = t + 12 + Math.random() * 15;
+  let S = a.stunt;
+  if (!S) {
+    if (t < a.nextStunt || raving() || a.dutyBusy) return false;
+    S = a.stunt = { phase: 'go', kind: Math.random() < 0.5 ? 'cart' : 'roll', dir: Math.random() < 0.5 ? 1 : -1, n: 2 + Math.floor(Math.random() * 2) };
+    const sp = at(r, 0.3 + Math.random() * 0.12, 0.45 + Math.random() * 0.15); a.q = routeTo(a.u, a.v, r, sp);
+    bubbles.push({ who: 'NORMAL', text: S.kind === 'cart' ? 'Cartwheel time!' : 'Rolly-polly time!', t0: t + 0.2, life: 2.6 });
+  }
+  if (a.q && a.q.length) {
+    const g = a.q[0], du = g.u - a.u, dv = g.v - a.v, d = Math.hypot(du, dv), sp = 60 * sm * dt;
+    if (d <= sp) { a.u = g.u; a.v = g.v; a.q.shift(); } else { a.u += du / d * sp; a.v += dv / d * sp; }
+    a.step = (a.step || 0) + sp * 0.3; a.moving = true; return true;
+  }
+  a.moving = false;
+  if (S.phase === 'go') { S.phase = 'do'; S.t0 = t; S.u0 = a.u; S.v0 = a.v; S.dur = 2.1 * S.n; }
+  if (S.phase === 'do') {
+    const k = (t - S.t0) / S.dur;
+    if (k >= 1) { a.trick = null; S.phase = 'back'; a.q = routeTo(a.u, a.v, r, homeFn()); bubbles.push({ who: 'NORMAL', text: pickOne(['Ta-da!', 'Still got it.', 'Ow. My back.', 'Nailed it.']), t0: t, life: 2.4 }); return true; }
+    a.u = Math.max(r.u + 14, Math.min(r.u + r.w - 14, S.u0 + S.dir * S.n * 16 * sm * k));
+    a.trick = { kind: S.kind, ph: (k * S.n) % 1, dir: S.dir };
+    return true;
+  }
+  a.stunt = null; a.trick = null; a.nextStunt = t + 40 + Math.random() * 60; return false;
+}
 function roamRoute(a, name, homeFn, sm, dt) {
   const lvl = ROAM[name], t = floor.t; if (!lvl) return false;
   if (raving()) { a.trip = null; return false; }
@@ -946,21 +1026,82 @@ function roamRoute(a, name, homeFn, sm, dt) {
 }
 // agents added on the admin page: they live in the room that was picked (or the first room) and say what was written for them
 const CUSTOM_SAYS = {}, ROAM = {}; let customSynced = false;
+// Sanassi goes round biting people: every so often he picks someone in his room, lunges, CHOMP, and they hop and yelp
+// Optional sound effects, off until you press the speaker button: small synthesised sounds, nothing is downloaded
+const sfx = (() => {
+  let ac = null, on = false, nb = null, lastDoor = 0, bassTimer = 0;
+  try { on = localStorage.getItem('jn-sfx') === '1'; } catch (e) { /* no storage */ }
+  const ctx = () => { try { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); const n = ac.createBuffer(1, ac.sampleRate * 0.6, ac.sampleRate), d = n.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; nb = n; } if (ac.state === 'suspended') ac.resume(); return ac; } catch (e) { return null; } };
+  const noise = (dur, f0, f1, q, g) => { const a = ctx(); if (!a) return; const src = a.createBufferSource(); src.buffer = nb; const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = q; bp.frequency.setValueAtTime(f0, a.currentTime); bp.frequency.exponentialRampToValueAtTime(f1, a.currentTime + dur); const gn = a.createGain(); gn.gain.setValueAtTime(0.0001, a.currentTime); gn.gain.exponentialRampToValueAtTime(g, a.currentTime + dur * 0.3); gn.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur); src.connect(bp); bp.connect(gn); gn.connect(a.destination); src.start(); src.stop(a.currentTime + dur + 0.05); };
+  const tone = (f0, f1, dur, g, type, lp) => { const a = ctx(); if (!a) return; const o = a.createOscillator(), gn = a.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime); o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + dur); gn.gain.setValueAtTime(g, a.currentTime); gn.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur); let out = gn; if (lp) { const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; gn.connect(f); out = f; } o.connect(gn); out.connect(a.destination); o.start(); o.stop(a.currentTime + dur + 0.05); };
+  const api = {
+    get on() { return on; },
+    set(v) { on = !!v; try { localStorage.setItem('jn-sfx', on ? '1' : '0'); } catch (e) { /* fine */ } if (on) { ctx(); api.bass(); tone(440, 660, 0.12, 0.05); } else clearTimeout(bassTimer); },
+    whoosh() { if (!on || floor.t - lastDoor < 0.7) return; lastDoor = floor.t; noise(0.38, 500, 2200, 0.9, 0.07); },
+    chomp() { if (!on) return; noise(0.07, 2500, 1800, 3, 0.18); setTimeout(() => { noise(0.08, 2200, 1500, 3, 0.2); tone(120, 60, 0.12, 0.18, 'sine'); }, 110); },
+    bass() { clearTimeout(bassTimer); const b = beatNow(); if (on && b.playing === true) tone(95, 42, 0.22, 0.2, 'sine', 160); bassTimer = setTimeout(api.bass, Math.max(250, (b.period || 0.48) * 1000)); }       // a kick drum heard through the walls
+  };
+  return api;
+})();
+{ const sb = document.getElementById('sndBtn'), show = () => { sb.textContent = 'Sound: ' + (sfx.on ? 'on' : 'off'); sb.setAttribute('aria-pressed', String(sfx.on)); };
+  sb.addEventListener('click', () => { sfx.set(!sfx.on); show(); }); show();
+  document.addEventListener('pointerdown', () => { if (sfx.on) sfx.bass(); }, { once: true }); }                  // a remembered 'on' needs one tap before the browser lets it play
+const bite = { next: 20, victim: null, t0: 0, from: null };
+const dayKey = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+const bites = (() => { try { const j = JSON.parse(localStorage.getItem('jn-bites') || 'null'); if (j && j.d === dayKey()) return j; } catch (e) { /* no storage */ } return { d: dayKey(), n: 0, who: {} }; })();
+const saveBites = () => { try { localStorage.setItem('jn-bites', JSON.stringify(bites)); } catch (e) { /* fine */ } };
+const BITE_YELP = ['OW! My leg!', 'SANASSI! Not again!', 'He bit me!', 'Ow ow ow!', 'Rabies jab, anyone?', 'That is my ankle!', 'Oi! Teeth!'];
+// He hunts properly: picks someone, WALKS to them through the doors like everybody else (no teleporting, no gliding through walls), bites, and walks back
+function sanassiHunt(a, r, sm, dt, homeFn) {
+  const t = floor.t, H = a.hunt;
+  if (!H) {
+    if (a.nextHunt == null) a.nextHunt = t + 15 + Math.random() * 15;
+    if (t < a.nextHunt || raving() || a.duty) return false;
+    const prey = Object.keys(res).filter(n => { const q = res[n]; return n !== 'SANASSI' && q && q.room && !q.moving && !q.trip && !q.duty && roomAt(q.u, q.v); });
+    if (!prey.length) { a.nextHunt = t + 10; return false; }
+    const who = pickOne(prey), q = res[who];
+    a.hunt = { who, phase: 'chase', re: t + 1.5, t0: 0 }; a.q = routeTo(a.u, a.v, roomAt(q.u, q.v), { u: q.u - 10, v: q.v });
+    bubbles.push({ who: 'SANASSI', text: pickOne(['I’m hungry…', 'Fresh ankles!', 'Mmm. Calves.', 'Time for a nibble.']), t0: t, life: 2.4 });
+    return true;
+  }
+  const q = res[H.who];
+  if (H.phase === 'chase') {
+    if (!q || q.moving && Math.hypot(q.u - a.u, q.v - a.v) > 90 * sm * 2) { H.phase = 'home'; a.q = routeTo(a.u, a.v, roomAt(homeFn().u, homeFn().v), homeFn()); return true; }
+    if (t > H.re) { H.re = t + 1.5; a.q = routeTo(a.u, a.v, roomAt(q.u, q.v), { u: q.u - 10, v: q.v }); }               // the victim wanders: keep following them
+    if (Math.hypot(q.u - a.u, q.v - a.v) < 15 * sm && roomAt(q.u, q.v) === roomAt(a.u, a.v)) {                         // close enough: CHOMP
+      H.phase = 'bite'; H.t0 = t; a.q = []; a.moving = false; bite.victim = H.who; bite.t0 = t; bite.from = { u: a.u, v: a.v }; setTimeout(() => sfx.chomp(), 650);
+      if (bites.d !== dayKey()) { bites.d = dayKey(); bites.n = 0; bites.who = {}; }
+      bites.n++; bites.who[H.who] = 1; saveBites(); q.biteMsg = BITE_YELP[Math.floor(Math.random() * BITE_YELP.length)]; return true;
+    }
+  } else if (H.phase === 'bite') {
+    a.moving = false; if (t - H.t0 > 1.6) { bite.victim = null; H.phase = 'home'; a.q = routeTo(a.u, a.v, roomAt(homeFn().u, homeFn().v), homeFn()); }
+    return true;
+  } else if (H.phase === 'home' && (!a.q || !a.q.length)) { a.hunt = null; a.nextHunt = t + 25 + Math.random() * 25; a.moving = false; return false; }
+  if (a.q && a.q.length) {                                                          // walking, at a brisk but human pace
+    const g = a.q[0], du = g.u - a.u, dv = g.v - a.v, d = Math.hypot(du, dv), sp = 62 * sm * dt;
+    if (d <= sp) { a.u = g.u; a.v = g.v; a.q.shift(); } else { a.u += du / d * sp; a.v += dv / d * sp; }
+    a.step = (a.step || 0) + sp * 0.3; a.moving = true;
+  } else a.moving = false;
+  return true;
+}
 function syncCustomAgents() {
   const SK = window.JN_STICK; if (customSynced || !SK || !SK.loaded) return;
   customSynced = true;
   const E = SK.cfg.edits || {};                                                       // changes made to the built-in agents
   Object.keys(E).forEach(n => {
     const e = E[n], r = RESIDENTS.find(x => x[0] === n);
+    if (e.name) AGENT_NAMES[n] = e.name;
     if (e.says && e.says.length) CUSTOM_SAYS[n] = e.says;
     if (e.roam) ROAM[n] = e.roam;
     if (e.room && r) r[1] = [e.room];
     if (e.does) { const c = CREW.find(x => x[0] === 'AGENT ' + n), d = DAY.find(x => x[1] === 'AGENT ' + n); if (c) c[1] = e.does; if (d) d[2] = e.does; }
   });
-  if (Object.values(E).some(e => e.does)) renderCrew(crewL);
+  if (Object.values(E).some(e => e.does || e.name)) { renderCrew(crewL); if (typeof renderDay === 'function') try { renderDay(); } catch (x) {} }
+  { const tmpl = {}; Object.values(KITS).forEach(k => (k.items || []).forEach(it => { if (!tmpl[it[5]]) tmpl[it[5]] = it; }));              // furniture placed from the admin picker, sized like the existing pieces of that kind
+    (SK.cfg.props || []).forEach(p => { const kit = KITS[p.room], t = tmpl[p.kind]; if (kit && kit.items && t) kit.items.push([p.fu, p.fv, t[2], t[3], t[4], p.kind, t[6]]); }); }
   (SK.cfg.agents || []).filter(a => a.enabled).forEach(a => {
     if (RESIDENTS.some(r => r[0] === a.name)) return;
-    CUSTOM_SAYS[a.name] = a.says; if (a.roam) ROAM[a.name] = a.roam; RESIDENTS.push([a.name, a.room ? [a.room] : ['/music/'], () => '', -1]);
+    CUSTOM_SAYS[a.name] = a.says; if (a.roam) ROAM[a.name] = a.roam; RESIDENTS.push([a.name, BUDDIES[a.name] ? ((RESIDENTS.find(r => r[0] === BUDDIES[a.name]) || [])[1] || ['/music/']) : DJ_AGENTS.includes(a.name) ? ['/music/'] : a.room ? [a.room] : ['/music/'], () => '', -1]);
   });
 }
 
@@ -1041,6 +1182,10 @@ const BOUNCER_LINES = ['If your name’s not Dan, you’re not coming in, sweeth
   'If your name’s not Dan, you’re not coming out. Or in. Honestly, I’m confused.', 'Nobody in tonight, lovey. Business is booming.', 'Ooh, hello gorgeous. Are you a Dan? No? Tragic.'];
 const BOUNCER_REPLIES = ['Mwah mwah!', 'Gorgeous!', 'Ugh, iconic.', 'Slay, babes!', 'Hunty, you’re glowing!', 'She’s right, you know!', 'Rules are rules, angel.', 'Still no Dan, darling.'];
 const BOUNCER_PRAISE = [n => `Gorgeous, ${n}!`, n => `Love the look, ${n}!`, n => `${n}, you’re an icon!`, n => `Mwah, ${n}!`, n => `Work it, ${n}!`, n => `That walk, ${n}! Serving!`];
+// More agents who DJ: they live in the ballroom and take turns on the guest deck, along with Old School and Lloyd
+const DJ_AGENTS = ['ROBINO', 'CHEEKY', 'POUTY', 'CARLITO'];
+const DJ_GENERIC = ['Back to back with the boss', 'This one’s going out to the whole house', 'Mind the bass, the walls are listening', 'Wait for the drop… wait for it…', 'Crossfader, don’t fail me now', 'Two tunes in the mix, no pressure', 'Bring it down… and BRING IT BACK', 'You’re welcome, ballroom'];
+const guestPool = () => ['OLD SCHOOL', 'LLOYD', ...DJ_AGENTS.filter(n => RESIDENTS.some(r => r[0] === n))];
 const niceName = n => n.split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ');            // "OLD SCHOOL" -> "Old School"
 const laser = { k: 0, force: -1, mode: 0, start: 0 };
 // the music as the front page sees it: loudness, hits and the track's waveform around the playhead (a steady pulse if this page is on its own)
@@ -1058,17 +1203,18 @@ const guest = { name: null, until: -1, next: 55 + Math.random() * 45, said: 0 };
 let djNext = 6, bqNext = 5, bqWho = 0;
 function startLasers(secs) { laser.force = floor.t + secs; }                  // switch the lights on by hand (for testing)
 window.JN_lasers = () => startLasers(14);                    // try it from the console
-window.JN_house = () => ({ family: fam.phase + ' / ' + fam.mode + (fam.room ? ' / ' + fam.room.path : ''), prints: prints.length, guest: guest.name, lasers: laser.k > 0.01, music: beatNow().playing === true, where: Object.fromEntries(Object.entries(res).map(([k, v]) => [k, v.duty === 'away' ? 'on the main page' : v.room ? v.room.path + ' station ' + v.st : 'door'])) });   // what is going on in the house, from the console
+window.JN_house = () => ({ kidsWith: fam.with, kidsFollowing: KIDS.filter(n => res[n] && res[n].famIn).length, family: fam.phase + ' / ' + fam.mode + (fam.room ? ' / ' + fam.room.path : ''), prints: prints.length, guest: guest.name, lasers: laser.k > 0.01, music: beatNow().playing === true, where: Object.fromEntries(Object.entries(res).map(([k, v]) => [k, v.duty === 'away' ? 'on the main page' : v.room ? v.room.path + ' station ' + v.st : 'door'])) });   // what is going on in the house, from the console
+window.JN_items = path => (KITS[path] && KITS[path].items || []).length;      // how many pieces of furniture a room has (check from the console)
 window.JN_guest = n => { guest.name = n || 'LLOYD'; guest.until = floor.t + 70; guest.said = floor.t + 3; };
 function partyTick(dt, sm) {
   const t = floor.t; musicTick(dt); famTick(dt, sm);
   if (t > djNext) { djNext = t + (raving() ? 4.5 : 7.5) + Math.random() * 4; bubbles.push({ who: 'NORMAL', text: pickOne(DJ_LINES), t0: t, life: 3.4 }); }      // the DJ's patter
   if (guest.name && t > guest.until) { bubbles.push({ who: 'NORMAL', text: 'Give it up for ' + niceName(guest.name) + '!', t0: t, life: 3 }); guest.name = null; }
   if (!guest.name && t > guest.next) {                                                                                                                                     // a guest DJ every few minutes
-    guest.name = pickOne(['OLD SCHOOL', 'LLOYD']); guest.until = t + 70 + Math.random() * 30; guest.next = guest.until + 150 + Math.random() * 150; guest.said = t + 5;
+    guest.name = pickOne(guestPool().filter(n => n !== guest.last)); guest.last = guest.name; guest.until = t + 70 + Math.random() * 30; guest.next = guest.until + 80 + Math.random() * 90; guest.said = t + 5;
     bubbles.push({ who: 'NORMAL', text: 'Please welcome ' + niceName(guest.name) + ' to the decks!', t0: t, life: 3.2 });
   }
-  if (guest.name && t > guest.said) { guest.said = t + 6 + Math.random() * 4; bubbles.push({ who: guest.name, text: pickOne(GUEST_LINES[guest.name]), t0: t + 0.3, life: 3 }); }
+  if (guest.name && t > guest.said) { guest.said = t + 6 + Math.random() * 4; bubbles.push({ who: guest.name, text: pickOne(GUEST_LINES[guest.name] || DJ_GENERIC), t0: t + 0.3, life: 3 }); }
   const want = lightsOn(), k0 = laser.k;                                                                                                                                  // the lights come up with the music and fade when it stops
   laser.k = Math.max(0, Math.min(1, laser.k + (want ? dt / 0.9 : -dt / 0.9)));
   if (want && k0 === 0 && laser.k > 0) { laser.start = t; laser.mode = Math.floor(Math.random() * 3); bubbles.push({ who: 'NORMAL', text: pickOne(['And… LASERS!', 'Music on, lasers on!', 'Eyes up: here come the lasers!', 'Lloyd, hit the lights!']), t0: t, life: 2.8 }); }
@@ -1081,11 +1227,12 @@ function partyTick(dt, sm) {
   }
 }
 // ─── THE FAMILY ───
-// Agent Wifeo is always on the go, and her little ones (Frankie, Jack Man and baby Oatie Man) trail along behind her with the two cats, Aragon and Tiger Baby,
-// everyone having a lovely time. They tour the whole house, stopping in each room to be silly, and every so often (or whenever the music is on) they go and watch Daddy DJing.
+// Agent Wifeo is always on the go with the two cats, Aragon and Tiger Baby. Her little ones (Frankie, Jack Man and baby Oatie Man) have their own lives in the house and
+// only meet up with her now and then: they come running when she calls (and whenever she goes to watch Daddy), tag along for a while, then wander off home again. They tour the whole house, stopping in each room to be silly, and every so often (or whenever the music is on) they go and watch Daddy DJing.
 const KIDS = ['FRANKIE', 'JACK MAN', 'OATIE MAN'];
 const FOLLOW = [{ n: 'FRANKIE', lag: 15 }, { n: 'JACK MAN', lag: 30 }, { n: 'OATIE MAN', lag: 44 }, { n: 'ARAGON', lag: 62, cat: 1 }, { n: 'TIGER BABY', lag: 80, cat: 1 }];
 const FAM_ASK = ['Has anybody seen James? I want kisses!', 'James? JAMES? I want kisses!', 'Has anybody seen James? Kisses, please!', 'Where’s my James? I need kisses!'];
+const FAM_ALONE = ['Has anybody seen James? Kisses, please!', 'Lovely day for a wander!', 'Where have my little ones got to?', 'I wonder what the little ones are up to. Trouble, probably.', 'Right: where next?', 'Anybody seen the cats? …Oh, there they are.'];
 const FAM_WALK = ['Come on, my beauties!', 'Keep up, you lot!', 'Everybody hold hands. Mind the cats!', 'Chop chop, my little ducks!', 'Who wants a cuddle? Everybody? Good.', 'I love you all SO much!', 'Right: where next?'];
 const KID_LOVE = ['I love you, Mum.', 'I love you, Mum. A LOT.', 'Love you, Mum!', 'Mum, you’re the best.', 'I love you, Mum. Can I have a biscuit?'];
 const KID_DADDY = ['Where’s Daddy? Is he playing? Is he DJing?', 'Is Daddy DJing yet?', 'Are we going to watch Daddy?', 'Is Daddy playing? Is he DJing?', 'Let’s go watch Daddy!'];
@@ -1101,7 +1248,7 @@ const ROOM_W = { '/security/layers/': ['Chill-out time, everybody!', 'Ooh, the b
   '/about/': ['Everybody wee? Everybody wee!', 'Wash your hands, my beauties!'], '/blog/': ['Nobody tell the newsroom we were here', 'Quiet please, they’re writing the news'],
   '/admin/': ['Don’t touch the servers!', 'Blinky lights! Look at the blinky lights!'], '/night-shift/': ['Say hello to the cameras!', 'Wave! They can see us!'] };
 const prints = [];
-const fam = { phase: 'wait', next: 3, u: 0, v: 0, step: 0, q: [], trail: [], stopK: 0, stopUntil: 0, mode: 'enter', room: null, stops: 0, said: 0, pos: {}, style: {}, first: true, daddyAt: -999, spawn: 0 };
+const fam = { with: false, withUntil: 0, meetAt: 0, phase: 'wait', next: 3, u: 0, v: 0, step: 0, q: [], trail: [], stopK: 0, stopUntil: 0, mode: 'enter', room: null, stops: 0, said: 0, pos: {}, style: {}, first: true, daddyAt: -999, spawn: 0 };
 // somewhere in a room to stop: one of its stations (the ballroom's dance floor if no room is given)
 function famSpot(r) {
   const kit = KITS[r.path] || KIT_PLAIN, st = (kit.stations || []).filter((x, k) => !(kit.reserved || []).includes(k) && x[2] !== 'lie');
@@ -1129,11 +1276,14 @@ function famNext(sm, force) {
   F.stops++; F.act = null; F.actUntil = 0; F.hadConga = false; F.congaing = false;
   let room, spot, mode;
   if (force === 'daddy' || raving() || F.stops % 3 === 0 || (playing && F.stops % 2 === 0)) { mode = 'daddy'; room = ball; spot = at(ball, 0.76, 0.58); F.daddyAt = t; }
+  else if (!F.with && !F.first && Math.random() < 0.35) { mode = 'podium'; room = ball; spot = at(ball, 0.88, 0.71); }          // Wifeo, on her own, goes to dance on the turning podium
   else { mode = 'room'; room = pickOne(floor.rooms.filter(r => r !== F.room && r !== ball && KITS[r.path])) || ball; spot = famSpot(room); }
+  if (mode === 'daddy' && !F.with && Math.random() < 0.1) { F.with = true; F.withUntil = t + 10 + Math.random() * 6; }          // sometimes the little ones come along to watch Daddy
   F.mode = mode; F.room = room; F.q = routeTo(F.u, F.v, room, spot);
   FOLLOW.forEach(f => { F.style[f.n] = pickOne(DANCES); });
   if (mode === 'daddy') { famSay('FRANKIE', 'Where’s Daddy? Is he playing?', 0.4); famSay('JACK MAN', 'Is he DJing?', 2.6); famSay('WIFEO', 'Let’s go watch Daddy!', 4.6); }
-  else famSay('WIFEO', pickOne(FAM_WALK), 0.3);
+  else if (mode === 'podium') famSay('WIFEO', pickOne(['Right, I’m getting on that podium!', 'Podium time! Hold my drink!', 'Somebody give me a hand up!']), 0.3);
+  else famSay('WIFEO', F.with ? pickOne(FAM_WALK) : pickOne(FAM_ALONE), 0.3);
 }
 window.JN_visit = () => { fam.stopUntil = 0; if (fam.phase === 'tour') famNext(SM, 'daddy'); else fam.next = 0; };      // send them to watch Daddy, from the console
 window.JN_argon = () => { fam.next = 0; };
@@ -1143,7 +1293,7 @@ function famTick(dt, sm) {
   if (!ball) return;
   if (F.phase === 'wait') {
     if (t < F.next) return;
-    F.phase = 'tour'; F.u = -8; F.v = floor.cv; F.step = 0; F.mode = 'enter'; F.room = ball; F.stopK = 0; F.stopUntil = 0; F.first = true; F.spawn = t;
+    F.phase = 'tour'; F.u = -8; F.v = floor.cv; F.step = 0; F.mode = 'enter'; F.room = ball; F.stopK = 0; F.stopUntil = 0; F.first = true; F.spawn = t; F.catWith = true; F.catUntil = t + 30; F.catMeet = t + 100; F.with = true; F.withUntil = t + 12; F.meetAt = t + 12 + 480;
     F.trail = []; for (let d = 240; d >= 0; d -= 3) F.trail.push({ u: F.u - d * sm, v: F.v });
     F.q = routeTo(F.u, F.v, ball, at(ball, 0.45, 0.6)); F.said = t + 3.2;
     famSay('CODPIECE', 'Ooh! It’s Wifeo! And all the little ones! In you come, gorgeous!', 0, 3.4); famSay('MR. PARTICULAR', 'Always, always, darlings. Rope’s open for you!', 1.6, 3);
@@ -1161,17 +1311,23 @@ function famTick(dt, sm) {
       if (F.congaing) { F.congaing = false; F.act = null; F.actUntil = t + 1.5; F.stopUntil = Math.max(F.stopUntil, t + 5); F.said = t + 0.5; }
       else {
       F.anchor = { u: F.u, v: F.v }; F.lwt = 0;
-      F.first = false; F.stopUntil = t + (F.mode === 'daddy' ? 22 + Math.random() * 6 : 10 + Math.random() * 4); F.said = t + 0.8; F.said2 = 0; F.actUntil = t + 3; }
+      F.first = false; F.stopUntil = t + (F.mode === 'podium' ? 26 + Math.random() * 8 : F.mode === 'daddy' ? 22 + Math.random() * 6 : 10 + Math.random() * 4); F.said = t + 0.8; F.said2 = 0; F.actUntil = t + 3; }
       if (F.mode === 'room') F.roomSaid = false;
     }
   } else if (t > F.stopUntil) famNext(sm);
+  // the little ones only meet up now and then: called over for a while, then sent off to get on with their day
+  if (F.with && t > F.withUntil && !F.first) { F.with = false; F.meetAt = t + 480 + Math.random() * 300; famSay('WIFEO', pickOne(['Off you go, my beauties. Be good!', 'Go and play! I’ll find you later!', 'Right, you lot: scoot!']), 0, 3); famSay(pickOne(KIDS), 'Bye, Mum!', 1.4, 2); }
+  else if (!F.with && t > F.meetAt && !F.first && F.mode !== 'podium') { F.with = true; F.withUntil = t + 9 + Math.random() * 6; famSay('WIFEO', pickOne(['Where are my little ones? COME HERE!', 'Family meeting! Everybody to Mummy!', 'Who wants a cuddle? Come on!']), 0, 3); famSay(pickOne(KIDS), 'Coming, Mum!', 1.6, 2); }
   else if (raving() && F.mode !== 'daddy' && t - F.daddyAt > 45 && !F.first) famNext(sm, 'daddy');                  // the music's on: off to watch Daddy
+  // the cats only tag along now and then too; the rest of the time they potter about wherever they were
+  if (F.catWith && t > F.catUntil && !F.first) { F.catWith = false; F.catMeet = t + 70 + Math.random() * 80; }
+  else if (!F.catWith && t > F.catMeet && !F.first && F.mode !== 'podium') { F.catWith = true; F.catUntil = t + 25 + Math.random() * 20; FOLLOW.forEach(f => { const o = F.pos[f.n]; if (f.cat && o) o.join = true; }); }
   // when they've stopped nobody stands in a clump: Wifeo drifts about a bit, and the little ones and the cats each wander off to their own bit of floor, dancing where they stop
   const rm = F.room, cl = (u, v) => rm ? { u: Math.max(rm.u + 6, Math.min(rm.u + rm.w - 6, u)), v: Math.max(rm.v + 6, Math.min(rm.v + rm.d - 6, v)) } : { u, v };
   F.lm = false; F.shared = DANCES[Math.floor(t / 3.2) % DANCES.length];
-  if (!moving && F.stopK > 0.8 && !F.first && t > F.actUntil) famPickAct(sm);
+  if (!moving && F.stopK > 0.8 && !F.first && F.with && t > F.actUntil) famPickAct(sm);
   if (!moving && F.stopK > 0.8 && F.anchor) {
-    if (t > F.lwt) { F.lwt = t + 3 + Math.random() * 3; const rr = (F.mode === 'daddy' ? 42 : 24) * sm; F.lt = cl(F.anchor.u + (Math.random() - 0.5) * 2 * rr, F.anchor.v + (Math.random() - 0.5) * 1.2 * rr); }
+    if (F.mode !== 'podium' && t > F.lwt) { F.lwt = t + 3 + Math.random() * 3; const rr = (F.mode === 'daddy' ? 42 : 24) * sm; F.lt = cl(F.anchor.u + (Math.random() - 0.5) * 2 * rr, F.anchor.v + (Math.random() - 0.5) * 1.2 * rr); }
     if (F.lt) { const du = F.lt.u - F.u, dv = F.lt.v - F.v, d0 = Math.hypot(du, dv), sp = 20 * sm * dt; if (d0 > sp) { F.u += du / d0 * sp; F.v += dv / d0 * sp; F.lm = true; F.step += sp * 0.3; } }
   }
   F.stopK = moving ? Math.max(0, F.stopK - dt * 2.5) : Math.min(1, F.stopK + dt * 1.2);
@@ -1182,6 +1338,15 @@ function famTick(dt, sm) {
     for (let j = F.trail.length - 1; j >= 0; j--) { const c = F.trail[j], l = Math.hypot(prev.u - c.u, prev.v - c.v); if (acc + l >= lag) { const e = (lag - acc) / (l || 1); pt = { u: prev.u + (c.u - prev.u) * e, v: prev.v + (c.v - prev.v) * e }; break; } acc += l; prev = c; pt = c; }
     const o = F.pos[f.n] || { u: pt.u, v: pt.v, step: 0, dir: 1 };
     o.cm = false;
+    if (f.cat && !F.catWith) {                                       // off on its own: a little wander round the room it is in
+      if (!o.fr) { o.fr = true; o.fw = 0; o.ft = { u: o.u, v: o.v }; }
+      const c0 = roomAt(o.u, o.v);
+      if (t > o.fw) { o.fw = t + 3 + Math.random() * 5; const R = 22 * sm, tu = o.u + (Math.random() - 0.5) * 2 * R, tv = o.v + (Math.random() - 0.5) * 1.2 * R; o.ft = c0 ? { u: Math.max(c0.u + 6, Math.min(c0.u + c0.w - 6, tu)), v: Math.max(c0.v + 6, Math.min(c0.v + c0.d - 6, tv)) } : { u: o.u, v: o.v }; }
+      const du = o.ft.u - o.u, dv = o.ft.v - o.v, d0 = Math.hypot(du, dv), sp = 22 * sm * dt;
+      if (d0 > sp) { o.u += du / d0 * sp; o.v += dv / d0 * sp; o.cm = true; o.dir = du >= 0 ? 1 : -1; o.step += sp * 0.35; }
+      o.moving = o.cm; o.cinit = false; F.pos[f.n] = o; return;
+    }
+    o.fr = false;
     if (moving) o.cinit = false;
     else if (F.stopK > 0.3) {
       if (!o.cinit) { o.cu = o.u; o.cv = o.v; o.cinit = true; o.wt = 0; }
@@ -1195,7 +1360,9 @@ function famTick(dt, sm) {
       if (d0 > sp) { o.cu += du / d0 * sp; o.cv += dv / d0 * sp; o.cm = true; } else { o.cu = o.tu; o.cv = o.tv; }
     }
     const cu = o.cinit ? o.cu : pt.u, cv = o.cinit ? o.cv : pt.v;
-    const nu = pt.u + (cu - pt.u) * k, nv = pt.v + (cv - pt.v) * k, dd = Math.hypot(nu - o.u, nv - o.v);
+    let nu = pt.u + (cu - pt.u) * k, nv = pt.v + (cv - pt.v) * k;
+    if (o.join) { const jd = Math.hypot(nu - o.u, nv - o.v), js = 85 * sm * dt; if (jd > js) { nu = o.u + (nu - o.u) / jd * js; nv = o.v + (nv - o.v) / jd * js; } else o.join = false; }    // a cat rejoining runs over rather than jumping
+    const dd = Math.hypot(nu - o.u, nv - o.v);
     if (dd > 0.01) o.dir = nu >= o.u ? 1 : -1;
     o.step += dd * 0.35; o.moving = F.stopK < 0.97 || o.cm; o.u = nu; o.v = nv; F.pos[f.n] = o;
     if (f.n === 'ARAGON' && o.moving && roomAt(o.u, o.v) === ball) {                       // a few pale paw prints across the dance floor, fading quickly
@@ -1207,7 +1374,9 @@ function famTick(dt, sm) {
   if (t > F.said) {
     const stopped = !moving && F.stopK > 0.6, daddy = F.mode === 'daddy', kids = KIDS.filter(n => F.pos[n]);
     F.said = t + (stopped ? 2.6 : 5.2) + Math.random() * 1.4;
-    if (F.first) { F.said = t + 5; famSay(pickOne(kids), pickOne(KID_DADDY), 0); }
+    if (!F.with) {                                                   // just Wifeo and the cats for now
+      if (Math.random() < 0.55) famSay('WIFEO', pickOne(FAM_ALONE), 0); else famSay(pickOne(['ARAGON', 'TIGER BABY']), '♥', 0, 2);
+    } else if (F.first) { F.said = t + 5; famSay(pickOne(kids), pickOne(KID_DADDY), 0); }
     else if (stopped && daddy) {
       const r = Math.random();
       if (r < 0.3) famSay('WIFEO', pickOne(DADDY_W), 0); else if (r < 0.55) famSay(pickOne(['FRANKIE', 'JACK MAN']), pickOne(DADDY_KID), 0); else if (r < 0.72) famSay('OATIE MAN', pickOne(BABY_SAY), 0);
@@ -1225,6 +1394,7 @@ function famTick(dt, sm) {
 // a kid walking with the family: the position comes from the trail, or (if they've been through the wormhole) they hurry over to rejoin
 function famRoute(a, name, sm, dt) {
   const p = fam.pos[name]; if (fam.phase === 'wait' || !p) return false;
+  if (!fam.with) { if (a.famIn || a.joinQ) { a.famIn = false; a.joinQ = null; a.q = null; } return false; }       // off living their own lives
   if (!a.famIn) {
     const d = Math.hypot(p.u - a.u, p.v - a.v);
     if (fam.first || d < 8 * sm) a.famIn = true;
@@ -1250,6 +1420,40 @@ function drawPrints(sm) {                          // small pale paw prints (a p
   fx.restore();
 }
 // lasers in the corners, beams from the mirror ball, and a wash of colour: only in the ballroom, and only while the music is playing
+let spinAng = 0;
+// The smoke machine in the ballroom corner: a burst of smoke every five minutes (the first one soon after the page opens)
+const smoke = { next: 25, burst: 0, last: 0, emit: 0, puffs: [] };
+function smokeTick(r, sm, dt) {
+  const t = floor.t;
+  if (t > smoke.next) { smoke.burst = t + 7; smoke.next = t + 300; }
+  if (t < smoke.burst && t > smoke.emit) {
+    smoke.emit = t + 0.11;
+    for (let i = 0; i < 2; i++) smoke.puffs.push({ u: r.u + r.w - 12 * sm + (Math.random() - 0.5) * 4 * sm, v: r.v + r.d - 10 * sm + (Math.random() - 0.5) * 4 * sm, z: 7 * sm, vu: (-0.4 - Math.random() * 1.2) * 14 * sm, vv: (Math.random() - 0.5) * 14 * sm, vz: (9 + Math.random() * 8) * sm, t0: t, life: 7 + Math.random() * 3, r0: 3 + Math.random() * 2, spin: Math.random() * 6 });
+    if (smoke.puffs.length > 90) smoke.puffs.splice(0, smoke.puffs.length - 90);
+  }
+  smoke.puffs = smoke.puffs.filter(q => t - q.t0 < q.life);
+  for (const q of smoke.puffs) { q.u += q.vu * dt; q.v += q.vv * dt; q.z += q.vz * dt; q.vu *= 1 - 0.25 * dt; q.vz *= 1 - 0.18 * dt; }
+}
+function drawSmoke(r, sm, s) {
+  const t = floor.t;
+  // the machine itself: a small box with a nozzle and a pilot light
+  fx.save(); fx.globalAlpha = 0.9;
+  const mu = r.u + r.w - 16 * sm, mv = r.v + r.d - 14 * sm, B = block(mu, mv, 9 * sm, 7 * sm, 6 * sm);
+  const nz = B.top(0.5, 0.5, 1 * sm); fx.beginPath(); fx.arc(nz[0], nz[1], 1.4 * sm, 0, 7); fx.stroke();
+  if (t < smoke.burst) { fx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 25); fx.beginPath(); fx.arc(B.x + B.w * 0.8, B.y + B.h * 0.5, 0.9 * sm, 0, 7); fx.fillStyle = '#ff4a3a'; fx.fill(); }
+  fx.restore();
+  if (!smoke.puffs.length) return;
+  fx.save(); fx.globalCompositeOperation = 'lighter';
+  for (const q of smoke.puffs) {
+    const a = (t - q.t0) / q.life, pt = P(q.u, q.v, q.z), rad = (q.r0 + a * 26) * s * 0.9;
+    const alpha = 0.16 * Math.min(1, (t - q.t0) / 0.6) * (1 - a) * (1 - a);
+    const g = fx.createRadialGradient(pt[0], pt[1], 0, pt[0], pt[1], rad);
+    g.addColorStop(0, `rgba(210,218,235,${alpha})`); g.addColorStop(1, 'rgba(210,218,235,0)');
+    fx.fillStyle = g; fx.fillRect(pt[0] - rad, pt[1] - rad, rad * 2, rad * 2);
+  }
+  fx.restore();
+}
+
 function drawBallroom(r, sm, s) {
   const k = laser.k, on = k > 0.01, zc = 40 * sm;
   const corners = [[r.u + 4, r.v + 3], [r.u + r.w - 4, r.v + 3], [r.u + 4, r.v + r.d - 4], [r.u + r.w - 4, r.v + r.d - 4]];
@@ -1274,6 +1478,26 @@ function drawBallroom(r, sm, s) {
     fx.strokeStyle = '#fff'; fx.fillStyle = '#fff'; fx.lineWidth = 1;
     for (let i = 0; i < 10; i++) { const an = mus.ph * 0.9 + i * Math.PI / 5, q = P(b.u + Math.cos(an) * r.w * (0.1 + 0.12 * mus.e + 0.05 * Math.min(1, mus.hit)), b.v + Math.sin(an) * r.d * (0.18 + 0.2 * mus.e), 0);
       fx.globalAlpha = (0.15 + 0.3 * mus.e + 0.3 * Math.min(1, mus.hit)) * k; fx.beginPath(); fx.moveTo(bc[0], bc[1]); fx.lineTo(q[0], q[1]); fx.stroke(); fx.globalAlpha = 0.7 * k; fx.beginPath(); fx.arc(q[0], q[1], 1.6 * s, 0, 7); fx.fill(); }
+  }
+  fx.restore();
+  drawSmoke(r, sm, s);
+}
+
+// ─── The chill-out room's oil lights: slow coloured oils floating, thrown onto the floor and the back wall ───
+const OIL = ['#ff4fa0', '#ff9a3c', '#8bff6a', '#3cd7ff', '#8f5bff', '#ffd23c', '#ff5a5a'];
+function drawChillOut(r, sm, s, layer) {
+  const t = floor.t, back = r.upper ? r.v : r.v + r.d, wallH = 34 * sm;
+  fx.save(); fx.globalCompositeOperation = 'lighter';
+  const blob = (x, y, rx, ry, col, a) => { fx.save(); fx.translate(x, y); fx.scale(1, ry / rx); const g = fx.createRadialGradient(0, 0, 0, 0, 0, rx); g.addColorStop(0, col + 'ff'); g.addColorStop(0.55, col + '77'); g.addColorStop(1, col + '00'); fx.globalAlpha = a; fx.fillStyle = g; fx.beginPath(); fx.arc(0, 0, rx, 0, 7); fx.fill(); fx.restore(); };
+  for (let i = 0; i < OIL.length; i++) {
+    const ph = i * 2.1, sp = 0.05 + (i % 3) * 0.018;
+    const u = r.u + r.w * (0.5 + 0.44 * Math.sin(t * sp + ph) * Math.cos(t * sp * 0.6 + i)), v = r.v + r.d * (0.5 + 0.42 * Math.cos(t * sp * 0.8 + ph * 1.3));
+    const wob = 1 + 0.18 * Math.sin(t * 0.4 + i * 1.7), br = 0.6 + 0.4 * Math.sin(t * 0.23 + i);
+    if (layer === 'floor') { const q = P(u, v, 0), R = r.w * 0.2 * wob; blob(q[0], q[1], R, R * ISO.sq, OIL[i], 0.26 * br); blob(q[0] + R * 0.25, q[1] - R * 0.1, R * 0.55, R * 0.55 * ISO.sq, OIL[(i + 3) % OIL.length], 0.16 * br); }
+    else {                                                                   // the same oils on the wall behind, drifting sideways
+      const wu = r.u + r.w * (0.5 + 0.46 * Math.sin(t * sp * 0.9 + ph + 1)), wz = wallH * (0.45 + 0.4 * Math.sin(t * sp * 1.3 + ph * 0.7)), q = P(wu, back, wz), R = r.w * 0.13 * wob;
+      blob(q[0], q[1], R, R * 0.8, OIL[(i + 1) % OIL.length], 0.32 * br);
+    }
   }
   fx.restore();
 }
@@ -1327,6 +1551,7 @@ function danceMan(x, y, s, a, name, k) {
 }
 
 function drawFloor(dt) {
+  hot.eggs.length = 0;
   floor.t += dt; syncCustomAgents();
   const t = floor.t, s = Math.max(0.6, Math.min(1.8, FW / 1100)), sm = SM, PW = floor.PW, PD = floor.PD;
   fx.clearRect(0, 0, FW, FH);
@@ -1382,6 +1607,9 @@ function drawFloor(dt) {
       let moving, pose;
       if (dutyRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'check'; a.famIn = false; }
       else if (KIDS.includes(w.name) && famRoute(a, w.name, sm, dt)) { moving = a.moving; pose = a.pose; }
+      else if (w.name === 'SANASSI' && sanassiHunt(a, r, sm, dt, () => at(r, st[a.st][0], st[a.st][1]))) { moving = a.moving; pose = a.moving ? 'walk' : 'check'; }
+      else if (w.name === 'NORMAL' && normalStunt(a, r, sm, dt, () => at(r, st[a.st][0], st[a.st][1]))) { moving = a.moving; pose = a.moving ? 'walk' : 'dance'; }
+      else if (BUDDIES[w.name] && res[BUDDIES[w.name]] && buddyRoute(a, w.name, sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'check'; }
       else if (roamRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : a.trip.pose; }
       else if (raveRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'rave'; }
       else {
@@ -1406,24 +1634,48 @@ function drawFloor(dt) {
         if (w.name === 'FRANKIE' && cat && cat.phase === 'sit' && !moving) pose = 'stroke';   // stroking the tiger baby
         if (!moving && pose === 'dance') { pose = 'rave'; if (!a.style) a.style = DANCES[Math.floor(Math.random() * DANCES.length)]; }   // dance stations: on the beat
       }
+      const bitten = bite.victim === w.name && floor.t - bite.t0 > 0.6, hop = bitten ? Math.abs(Math.sin((floor.t - bite.t0 - 0.6) * 9)) * 9 * sm * Math.max(0, 1 - (floor.t - bite.t0 - 0.6) / 0.8) : 0;
       const stn = st[a.st] || [], up = !moving && !a.raving && stn[4] ? stn[4] * sm : 0, nudge = up && stn[5] ? stn[5] * r.d : 0;
       Z.push({ z: a.v + 0.5 + nudge, f: () => throughWorm(a, sm, () => {
-        const [x, y] = P(a.u, a.v, up);
+        const [x, y] = P(a.u, a.v, up + hop), turning = up && stn[6] === 'spin';
+        if (turning) { fx.save(); fx.translate(x, 0); fx.scale(Math.cos(spinAng), 1); fx.translate(-x, 0); }       // turning round with the podium
+        const trick = w.name === 'NORMAL' && a.trick;
+        if (trick) { const cy = y - 14 * sm; fx.save(); fx.translate(x, cy); fx.rotate(trick.dir * trick.ph * Math.PI * 2); if (trick.kind === 'roll') fx.scale(1, 0.62); fx.translate(-x, -cy); }       // a cartwheel (arms and legs out) or a forward roll (tucked up)
+        const hoop = w.name === 'SMILEY JO' && !moving;                                           // Smiley Jo is always hula hooping
         if (pose === 'rave') danceMan(x, y, sm, a, w.name, i);
-        else stickMan(x, y, sm, moving ? a.step : t * 2 + i, pose, w.name);
-        text(w.name, x, y + 9 * s, 7.5 * s, 0.65);
-        const msg = w.line();
-        if (msg && !moving && !raving() && pose !== 'rave' && r.w / Math.max(1, who.length) > 60) text(msg, Math.max(P(r.u, a.v)[0] + 46, Math.min(P(r.u + r.w, a.v)[0] - 46, x)), y - 36 * sm - (i % 2) * 10 * s, 8 * s, 0.8);
+        else stickMan(x, y, sm, moving ? a.step : t * 2 + i, hoop ? 'dance' : pose, w.name);
+        if (trick) fx.restore();
+        if (hoop) {
+          const ph = t * 8, hx = x + Math.sin(ph) * 3.2 * sm, hy = y - 13 * sm + Math.cos(ph) * 1.4 * sm;
+          fx.save(); fx.globalAlpha = 0.95; fx.strokeStyle = '#ffd34d'; fx.lineWidth = 1.4; fx.beginPath(); fx.ellipse(hx, hy, 8.5 * sm, 2.6 * sm, Math.sin(ph) * 0.18, 0, 7); fx.stroke(); fx.restore();
+        }
+        if (turning) fx.restore();
+        text(shown(w.name), x, y + 9 * s, 7.5 * s, 0.65);
+        if (bites.who[w.name] && bites.d === dayKey()) { fx.save(); fx.lineWidth = 1; fx.strokeRect(x + 2 * s, y - 11 * s, 5 * s, 3 * s); fx.beginPath(); fx.moveTo(x + 4.5 * s, y - 11 * s); fx.lineTo(x + 4.5 * s, y - 8 * s); fx.stroke(); fx.restore(); }     // a plaster where Sanassi got them
+        if (w.name === 'SANASSI' && bites.n) text('BITES TODAY: ' + bites.n, x, y + 17 * s, 6.5 * s, 0.7);
+        if (bitten) { text('CHOMP!', x - 14 * s, y - 44 * s, 10 * s, 1); text(a.biteMsg || 'OW!', x, y - 56 * s, 8 * s, 0.9); }
+        if (w.name === 'SANASSI' && bite.victim) text('★ ★', x, y - 38 * s, 8 * s, 0.9);
+        let msg = w.line();
+        if (r.path === '/music/' && !moving && beatNow().playing !== true) { const k = Math.floor(floor.t / 7 + i * 3 + w.name.length); msg = QUIET_LINES[k % QUIET_LINES.length]; }      // no music: everyone in the ballroom complains
+        const turn = (Math.floor(floor.t / 6) + i * 5 + w.name.length) % 4 === 0;                     // only about one in four speaks at a time, so the house isn't wall-to-wall speech bubbles
+        if (!turn) msg = '';
+        if (msg && !moving && msg.length > 3 && !/^first report/i.test(msg)) lastSaid[w.name] = { text: msg, at: floor.t };
+        if (msg && !moving && !raving() && pose !== 'rave' && (QUIET_LINES.includes(msg) || r.w / Math.max(1, who.length) > 60)) text(msg, Math.max(P(r.u, a.v)[0] + 46, Math.min(P(r.u + r.w, a.v)[0] - 46, x)), y - 36 * sm - (i % 2) * 10 * s, 8 * s, 0.8);
       }) });
     });
   });
 
-  { const ball = floor.rooms.find(r => r.path === '/music/'); if (ball) Z.push({ z: ball.v + ball.d + 3, f: () => drawBallroom(ball, sm, s) }); }
+  { const ball = floor.rooms.find(r => r.path === '/music/'); if (ball) { smokeTick(ball, sm, dt); Z.push({ z: ball.v + ball.d + 3, f: () => drawBallroom(ball, sm, s) }); } }
+  { const chill = floor.rooms.find(r => r.path === '/security/layers/'); if (chill) { Z.push({ z: chill.v - 0.5, f: () => drawChillOut(chill, sm, s, 'floor') }); Z.push({ z: (chill.upper ? chill.v : chill.v + chill.d) + 0.2, f: () => drawChillOut(chill, sm, s, 'wall') }); } }
 
   if (fam.phase !== 'wait') {
     const F = fam, stopped = F.q.length === 0 && F.stopK > 0.5;
-    Z.push({ z: F.v + 0.5, f: () => { const [x, y] = P(F.u, F.v);
-      stickMan(x, y, sm, stopped && !F.lm ? t * 2 : F.step, stopped && !F.lm ? 'dance' : 'walk', 'WIFEO'); text('WIFEO', x, y + 9 * s, 7.5 * s, 0.75);
+    const onPod = stopped && F.mode === 'podium';
+    Z.push({ z: F.v + 0.5 + (onPod ? 0.14 * 20 : 0), f: () => { const [x, y] = P(F.u, F.v, onPod ? 8 * sm : 0);
+      if (onPod) { fx.save(); fx.translate(x, 0); fx.scale(Math.cos(spinAng), 1); fx.translate(-x, 0); }
+      stickMan(x, y, sm, stopped && !F.lm ? t * 2 : F.step, stopped && !F.lm ? 'dance' : 'walk', 'WIFEO');
+      if (onPod) fx.restore();
+      text('WIFEO', x, y + 9 * s, 7.5 * s, 0.75);
       for (let k = 0; k < 3; k++) { const ph = (t * 0.4 + k / 3) % 1; text('♥', x + Math.sin(ph * 5 + k * 2) * 12 * s, y - 36 * s - ph * 26 * s, (7 + k) * s, (stopped ? 1 : 0.6) * (1 - ph)); } } });
     ['ARAGON', 'TIGER BABY'].forEach(n => { const c = F.pos[n]; if (!c) return;
       Z.push({ z: c.v + 0.4, f: () => { drawCat({ u: c.u, v: c.v, dir: c.dir || 1, phase: stopped && !c.moving ? 'sit' : 'walk', step: c.step || 0, wild: n === 'ARAGON' }, sm); const [x, y] = P(c.u, c.v); seenAt[n] = { x, y, at: floor.t, s: sm }; text(n, x, y + 8 * s, 6.5 * s, 0.6); } }); });
@@ -1442,9 +1694,10 @@ function drawFloor(dt) {
 
   // the front door is a nightclub entrance: Codpiece and Mr. Particular are the bouncers. Nobody ever comes in.
   Z.push({ z: floor.Dr + floor.Dc * 0.85, f: () => frontDoor(sm, s) });
+  { const sn = season(); if (sn) Z.push({ z: 1e6 - 1, f: () => drawSeason(sn, sm, s) }); }
   const BOUNCE_JOIN = ['Rules say no dancing on shift. Rules can wait!', 'The door looks after itself. DANCE!', 'Mwah! Even security can’t resist this tune!', 'Podium time, babes! Watch this!', 'Nobody’s getting in anyway. WOO!'];
-  [['CODPIECE', 0.12, () => jobLine('gatekeeper')], ['MR. PARTICULAR', 0.88, () => dayLine('teacake')]].forEach(([name, fv, lineFn], bi) => {
-    const home = { u: 16 * sm, v: floor.Dr + floor.Dc * fv }, a = res[name] || (res[name] = { u: home.u, v: home.v, step: 0 });
+  [['CODPIECE', 0.2, () => jobLine('gatekeeper')], ['MR. PARTICULAR', 0.8, () => dayLine('teacake')]].forEach(([name, fv, lineFn], bi) => {
+    const home = { u: 9 * sm, v: floor.Dr + floor.Dc * fv }, a = res[name] || (res[name] = { u: home.u, v: home.v, step: 0 });
     const onDuty = dutyRoute(a, name, () => home, sm, dt), ball = floor.rooms.find(r => r.path === '/music/');
     // when the whole house is raving even the bouncers leave the door, get up on a podium and go absolutely mad
     if (!onDuty && ball) {
@@ -1462,7 +1715,7 @@ function drawFloor(dt) {
     Z.push({ z: a.v + 0.5, f: () => throughWorm(a, sm, () => { const [x, y] = P(a.u, a.v);
       if (mega) danceMan(x, y - up, sm * 1.0, a, name, bi + 3);
       else stickMan(x, y, sm, onDuty || a.moving ? a.step : t, onDuty || a.moving ? (a.moving ? 'walk' : 'check') : 'camp', name);
-      text(name, x, y + 9 * s - up, 7.5 * s, 0.65); if (!onDuty && !a.dj && !a.moving) text(lineFn(), x + 18 * sm, y - 34 * sm, 8 * s, 0.7, 'left'); }) });
+      text(shown(name), x, y + 9 * s - up, 7.5 * s, 0.65); if (!onDuty && !a.dj && !a.moving) text(lineFn(), x + 18 * sm, y - 34 * sm, 8 * s, 0.7, 'left'); }) });
   });
 
   // the wormhole at the far end of the corridor: Fish's way out to the sites this one relies on
@@ -1492,7 +1745,7 @@ function drawFloor(dt) {
 
   raveTick(sm); partyTick(dt, sm);
   Z.sort((p, q) => p.z - q.z).forEach(d => d.f());
-  banter(s);
+  banter(s); drawEggs(s);
 }
 
 function jobLine(job) {
@@ -1518,13 +1771,21 @@ function jobLine(job) {
 // ─── Doors: a frame up to the lintel on the corridor wall of every room, and the door standing open into the room ───
 const doorGap = (r, sm) => r.merged ? Math.min(52 * sm, r.w * 0.2) : Math.min(30 * sm, r.w * 0.3);
 function drawDoor(r, sm) {
-  const gap = doorGap(r, sm), du = r.door.u, dv = r.door.v, h = 22 * sm, dir = r.upper ? -1 : 1, a = 0.75, L = gap * (r.merged ? 0.5 : 0.92) * 0.98;
+  const gap = doorGap(r, sm), du = r.door.u, dv = r.door.v, h = 22 * sm;
+  // automatic sliding doors: they glide open when somebody comes up to them and close again behind
+  const t = floor.t, dt = Math.min(0.1, Math.max(0, t - (r.dT || t))); r.dT = t;
+  const near = Object.keys(res).some(n => { const q = res[n]; return q && q.moving && Math.hypot(q.u - du, q.v - dv) < 24 * sm; }) || (fam.phase !== 'wait' && fam.q && fam.q.length && Math.hypot(fam.u - du, fam.v - dv) < 24 * sm);
+  r.dO = (r.dO || 0) + ((near ? 1 : 0) - (r.dO || 0)) * Math.min(1, dt * 4);
+  if (r.dO > 0.5 && !r.dSnd) { r.dSnd = true; sfx.whoosh(); } else if (r.dO < 0.2) r.dSnd = false;
+  const o = r.dO;
   fx.save(); fx.globalAlpha = 0.95;
   block(du - gap / 2 - 2.2, dv - 2.6, 2.4, 3.2, h); block(du + gap / 2 - 0.2, dv - 2.6, 2.4, 3.2, h); block(du - gap / 2 - 2.2, dv - 2.6, gap + 4.4, 3.2, 3 * sm, h - 3 * sm);   // posts and lintel
-  const leaf = (hu, sign) => { const eu = hu + sign * Math.sin(a) * L, ev = dv + dir * Math.cos(a) * L;
-    poly([P(hu, dv, 1), P(eu, ev, 1), P(eu, ev, h - 4 * sm), P(hu, dv, h - 4 * sm)], '#000');
-    const k = P(hu + (eu - hu) * 0.82, dv + (ev - dv) * 0.82, (h - 4 * sm) * 0.45); fx.beginPath(); fx.arc(k[0], k[1], 1.1 * sm, 0, 7); fx.stroke(); };   // the leaf, and its handle
-  leaf(du - gap / 2, 1); if (r.merged) leaf(du + gap / 2, -1);                                                                               // the ballroom has double doors
+  const panel = (u0, u1) => { poly([P(u0, dv - 1, 1), P(u1, dv - 1, 1), P(u1, dv - 1, h - 4 * sm), P(u0, dv - 1, h - 4 * sm)], '#000');
+    const m = P((u0 + u1) / 2, dv - 1, h * 0.5); fx.beginPath(); fx.moveTo(m[0], m[1] - 3 * sm); fx.lineTo(m[0], m[1] + 3 * sm); fx.stroke(); };     // a glass-and-steel panel with a stile
+  const w = r.merged ? gap / 2 : gap, slide = o * (r.merged ? gap / 2 : gap) * 0.92;
+  if (r.merged) { panel(du - gap / 2 - slide, du - slide); panel(du + slide, du + gap / 2 + slide); }                                           // the ballroom has double sliding doors
+  else panel(du - gap / 2 + slide, du - gap / 2 + slide + w);
+  { const a1 = P(du - gap / 2 - 1, dv - 1, h - 3.5 * sm), a2 = P(du + gap / 2 + 1, dv - 1, h - 3.5 * sm); fx.globalAlpha = 0.6; fx.beginPath(); fx.moveTo(a1[0], a1[1]); fx.lineTo(a2[0], a2[1]); fx.stroke(); }   // the track
   fx.restore();
 }
 
@@ -1533,9 +1794,11 @@ function frontDoor(sm, s) {
   const v0 = floor.Dr + floor.Dc * 0.25, v1 = floor.Dr + floor.Dc * 0.75, h = 22 * sm, t = floor.t;
   fx.save(); fx.globalAlpha = 0.9;
   block(-3, v0 - 2, 3, 2, h); block(-3, v1, 3, 2, h); block(-3, v0 - 2, 3, v1 - v0 + 4, 3 * sm, h);   // frame and lintel
-  const a = 0.45, L = (v1 - v0) * 0.95, ex = Math.sin(a) * L, ev = v0 + Math.cos(a) * L;               // the door, swung open
-  poly([P(0, v0, 1), P(ex, ev, 1), P(ex, ev, h - 1), P(0, v0, h - 1)], '#000');
-  const k = P(ex * 0.85, v0 + (ev - v0) * 0.85, h * 0.45); fx.beginPath(); fx.arc(k[0], k[1], 1.4 * sm, 0, 7); fx.stroke();   // handle
+  const nearD = [res.CODPIECE, res['MR. PARTICULAR']].some(q => q && q.moving && q.u < 40 * sm) || (fam.phase !== 'wait' && fam.u < 30 * sm);
+  frontDoor.o = (frontDoor.o || 0) + ((nearD ? 1 : 0) - (frontDoor.o || 0)) * 0.08;                    // the entrance slides open for anyone coming in
+  const sl = frontDoor.o * (v1 - v0) * 0.55;
+  poly([P(0, v0 + sl, 1), P(0, v1 + sl, 1), P(0, v1 + sl, h - 1), P(0, v0 + sl, h - 1)], '#000');
+  const k = P(0, v0 + sl + (v1 - v0) * 0.85, h * 0.45); fx.beginPath(); fx.moveTo(k[0], k[1] - 3 * sm); fx.lineTo(k[0], k[1] + 3 * sm); fx.stroke();   // door stile
   fx.restore();
   // the sign over the door: a neon that flickers now and then
   const c = P(0, (v0 + v1) / 2, h + 18 * sm), flick = Math.sin(t * 17) > 0.97 || Math.sin(t * 5.3) > 0.992 ? 0.25 : 0.9;
@@ -1657,6 +1920,7 @@ function stickMan(x, y, s, phase, pose, name) {
       if (Math.floor(t * 2) % 3 === 0) { fx.beginPath(); fx.moveTo(cx, cy + 2 * s); fx.lineTo(cx - 2 * s, cy + 6 * s); fx.lineTo(cx + 1 * s, cy + 6 * s); fx.lineTo(cx - 1 * s, cy + 10 * s); fx.stroke(); }
     }
     if (name === 'OATIE MAN') { headK = 1.7; drawMan(x, y, s * 0.58, phase, pose); headK = 1; }   // a very intelligent baby
+    else if (name === 'FRANKIE' || name === 'JACK MAN') { headK = 1.18; drawMan(x, y, s * 0.72, phase, pose); headK = 1; }   // seven-year-old boys: smaller than the grown-ups, with a slightly bigger head for their body
     else drawMan(x, y, s, phase, pose);
     const hy = y - 27 * s;
     if (name === 'NORMAL') {                         // the DJ's headphones
@@ -1670,10 +1934,23 @@ function stickMan(x, y, s, phase, pose, name) {
       fx.moveTo(x, y - 23.6 * s); fx.lineTo(x - 2.8 * s, y - 25 * s); fx.lineTo(x - 2.8 * s, y - 22.2 * s); fx.closePath(); fx.moveTo(x, y - 23.6 * s); fx.lineTo(x + 2.8 * s, y - 25 * s); fx.lineTo(x + 2.8 * s, y - 22.2 * s); fx.closePath(); fx.stroke();   // bow tie
       const tw = floor.t * 2 + x; fx.globalAlpha = 0.4 + 0.5 * Math.abs(Math.sin(tw)); const sx = x + 9 * s, sy = hy - 2 * s + Math.sin(tw * 0.7) * 3 * s;
       fx.beginPath(); fx.moveTo(sx - 2.4 * s, sy); fx.lineTo(sx + 2.4 * s, sy); fx.moveTo(sx, sy - 2.4 * s); fx.lineTo(sx, sy + 2.4 * s); fx.stroke(); fx.globalAlpha = 1;
+    } else if (name === 'LEX' || name === 'MOLLY') {   // really blonde, short, curly hair: a cap of little curls
+      fx.save(); fx.fillStyle = '#f7dc6f'; fx.strokeStyle = '#f7dc6f'; fx.lineWidth = 1;
+      for (let k = 0; k < 11; k++) { const an = Math.PI * (0.92 + k * 0.116), r = 4.2 * s + (k % 2) * 0.5 * s; fx.beginPath(); fx.arc(x + Math.cos(an) * r, hy + Math.sin(an) * r, 1.7 * s, 0, 7); fx.fill(); }
+      for (let k = 0; k < 4; k++) { const an = Math.PI * (1.2 + k * 0.2); fx.beginPath(); fx.arc(x + Math.cos(an) * 2.6 * s, hy + Math.sin(an) * 2.6 * s, 1.5 * s, 0, 7); fx.fill(); }
+      fx.restore();
+    } else if (name === 'SANASSI') {                  // red shorts, always
+      fx.save(); fx.beginPath(); fx.moveTo(x - 4 * s, y - 13 * s); fx.lineTo(x + 4 * s, y - 13 * s); fx.lineTo(x + 4.6 * s, y - 7.5 * s); fx.lineTo(x + 0.6 * s, y - 7.5 * s); fx.lineTo(x, y - 10 * s); fx.lineTo(x - 0.6 * s, y - 7.5 * s); fx.lineTo(x - 4.6 * s, y - 7.5 * s); fx.closePath();
+      fx.fillStyle = '#e11d2e'; fx.strokeStyle = '#ff4d5e'; fx.fill(); fx.stroke(); fx.restore();
     } else if (name === 'WIFEO') {                    // long hair, a boob tube, hot pants and sparkles all round: she looks beautiful
       fx.beginPath(); [-1, 1].forEach(sd => { fx.moveTo(x + sd * 3.2 * s, hy - 1 * s); fx.quadraticCurveTo(x + sd * 7 * s, hy + 4 * s, x + sd * 5 * s, hy + 12 * s); });
-      fx.rect(x - 3.6 * s, y - 22 * s, 7.2 * s, 4.2 * s);                                                             // a boob tube
-      fx.moveTo(x - 3.8 * s, y - 12 * s); fx.lineTo(x + 3.8 * s, y - 12 * s); fx.lineTo(x + 4.4 * s, y - 7.5 * s); fx.lineTo(x + 0.5 * s, y - 7.5 * s); fx.lineTo(x, y - 9.5 * s); fx.lineTo(x - 0.5 * s, y - 7.5 * s); fx.lineTo(x - 4.4 * s, y - 7.5 * s); fx.closePath(); fx.stroke();   // and hot pants
+      const wv = Math.sin(floor.t * 2) * 0.4 * s;                                                                    // a fitted evening dress with a flared, swishing hem, and drop earrings
+      fx.moveTo(x - 3.4 * s, y - 22 * s); fx.quadraticCurveTo(x - 2.6 * s, y - 17.5 * s, x - 2.2 * s, y - 16 * s); fx.quadraticCurveTo(x - 4.6 * s, y - 13 * s, x - 6.6 * s, y - 6.5 * s);
+      fx.quadraticCurveTo(x - 3.2 * s, y - 4.3 * s + wv, x, y - 6.5 * s); fx.quadraticCurveTo(x + 3.2 * s, y - 8.7 * s - wv, x + 6.6 * s, y - 6.5 * s);
+      fx.quadraticCurveTo(x + 4.6 * s, y - 13 * s, x + 2.2 * s, y - 16 * s); fx.quadraticCurveTo(x + 2.6 * s, y - 17.5 * s, x + 3.4 * s, y - 22 * s);
+      fx.quadraticCurveTo(x + 1.6 * s, y - 19.6 * s, x, y - 21 * s); fx.quadraticCurveTo(x - 1.6 * s, y - 19.6 * s, x - 3.4 * s, y - 22 * s); fx.closePath();
+      [-1, 1].forEach(sd => { fx.moveTo(x + sd * 4.4 * s, hy + 2 * s); fx.lineTo(x + sd * 4.4 * s, hy + 4.2 * s); });
+      fx.save(); fx.fillStyle = '#000'; fx.fill(); fx.restore(); fx.stroke();
       const tw = floor.t * 2;
       for (let k = 0; k < 4; k++) { const an = tw * 0.5 + k * 1.57, sx = x + Math.cos(an) * 13 * s, sy = y - 16 * s + Math.sin(an) * 17 * s; fx.globalAlpha = 0.35 + 0.6 * Math.abs(Math.sin(tw * 1.5 + k * 2));
         fx.beginPath(); fx.moveTo(sx - 2.6 * s, sy); fx.lineTo(sx + 2.6 * s, sy); fx.moveTo(sx, sy - 2.6 * s); fx.lineTo(sx, sy + 2.6 * s); fx.stroke(); }
@@ -1700,7 +1977,7 @@ function drawMan(x, y, s, phase, pose) {
   const hip = y - 12 * s + seat, sh = y - 22 * s + seat, head = y - 27 * s + seat;
   fx.beginPath();
   fx.arc(x, head - (headK - 1) * 3 * s, 3.6 * s * headK, 0, Math.PI * 2);
-  if (headK > 1) { fx.moveTo(x + 4.5 * s * headK, head + 1.2 * s); fx.arc(x + 3.6 * s * headK, head + 1.2 * s, 0.9 * s * headK, 0, Math.PI * 2); }   // a dummy
+  if (headK > 1.5) { fx.moveTo(x + 4.5 * s * headK, head + 1.2 * s); fx.arc(x + 3.6 * s * headK, head + 1.2 * s, 0.9 * s * headK, 0, Math.PI * 2); }   // a dummy
   fx.moveTo(x, head + 3.6 * s); fx.lineTo(x, hip);
   if (pose === 'walk') {
     const a = Math.sin(phase) * 0.6;
@@ -1834,7 +2111,18 @@ function newsLine(name) {
   if ((name === 'MONKEY MONKEY' || name === 'FISH FISH') && slow) return `${slow.path} took ${slow.ms} ms. Who did this?`;
   return null;
 }
-const bubbles = [];
+// The whole house reacts to the real numbers: a raised UK threat level makes everyone edgy, and new SoundCloud plays make everyone cheerful
+function dataLine() {
+  const L = floor.shift || {}, i = L.jobs && L.jobs.intel, out = [];
+  const lvl = i && i.ok ? String(i.level || '').toUpperCase() : '';
+  if (lvl === 'SUBSTANTIAL') out.push('Threat level is SUBSTANTIAL. Eyes open, everybody.', 'SUBSTANTIAL. That’s one off SEVERE. I’m not having a nice day.', 'Keep an eye on bags, doors and Dave.');
+  if (lvl === 'SEVERE' || lvl === 'CRITICAL') out.push(`Threat level ${lvl}. Nobody put the kettle on, we need our wits.`, `${lvl}! Stay alert, stay calm, stay near the door.`, 'Everybody check your phone for the latest from GOV.UK.');
+  const rep = floor.day && floor.day.biscuittin && floor.day.biscuittin.report, up = rep && Array.isArray(rep.tracks) ? rep.tracks.reduce((n, t) => n + (t.new_plays > 0 ? t.new_plays : 0), 0) : 0;
+  if (up > 0) out.push(`Plays are up by ${up.toLocaleString('en-GB')}. Dance break!`, `${up.toLocaleString('en-GB')} new plays! Somebody tell the DJ!`, 'People are listening. Real people. Act natural.');
+  return out.length ? pickOne(out) : null;
+}
+const bubbles = [], lastSaid = {};
+const QUIET_LINES = ['Why is it so quiet?', 'I can hear myself think. What’s wrong?', 'Is the DJ dead?', 'Hello? Is this thing on?', 'I can hear my own footsteps. I hate it.', 'Somebody put a tune on!', 'This is a ballroom, not a library!', 'It’s like a morgue in here.', 'I can hear the fridge. THE FRIDGE.', 'Silence is not a genre.', 'Has someone unplugged it?', 'I’ve forgotten how to dance without a beat.'];
 let nextChat = 2;
 function banter(s) {
   const names = Object.keys(seenAt).filter(n => floor.t - seenAt[n].at < 0.5);
@@ -1844,8 +2132,8 @@ function banter(s) {
     // the nearest other agent is who they talk to
     const others = names.filter(n => n !== a).sort((p, q) => Math.hypot(seenAt[p].x - seenAt[a].x, seenAt[p].y - seenAt[a].y) - Math.hypot(seenAt[q].x - seenAt[a].x, seenAt[q].y - seenAt[a].y));
     const b = others[0], near = Math.hypot(seenAt[b].x - seenAt[a].x, seenAt[b].y - seenAt[a].y) < 260 * s;
-    const news = Math.random() < 0.35 ? newsLine(a) : null;
-    const said = news || (near && Math.random() < 0.45 ? pick(AT).replace(/\{B\}/g, b.replace(/~\w+$/, '').split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ')) : pick(LINES[ma] || LINES.fine));
+    const news = Math.random() < 0.35 ? newsLine(a) : (Math.random() < 0.22 ? dataLine() : null);
+    const said = news || (near && Math.random() < 0.45 ? pick(AT).replace(/\{B\}/g, shown(b).split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ')) : pick(LINES[ma] || LINES.fine));
     bubbles.push({ who: a, text: said, t0: floor.t, life: 3.2 });
     if (near && Math.random() < 0.6) bubbles.push({ who: b, text: pick(REPLIES[moodOf(b).kind] || REPLIES.fine), t0: floor.t + 1.4, life: 2.6 });
   }
@@ -1854,6 +2142,7 @@ function banter(s) {
     if (age > bb.life) { bubbles.splice(i, 1); continue; }
     if (age < 0) continue;
     const p = seenAt[bb.who]; if (!p || floor.t - p.at > 0.5) continue;
+    lastSaid[bb.who] = { text: bb.text, at: floor.t };
     const k = Math.min(1, age / 0.2, (bb.life - age) / 0.4);
     fx.font = `300 ${8.5 * s}px "IBM Plex Mono", monospace`;
     const w = Math.min(fx.measureText(bb.text).width, 320 * s) + 12 * s, h = 16 * s;
@@ -1879,6 +2168,108 @@ function floorLoop(now) {
 
 function setFloorShift(log) { floor.shift = log; layout(); makeMen(); }
 addEventListener('resize', () => { layout(); makeMen(); });
+// ─── Seasonal decorations, by the real UK date (add ?season=xmas, halloween or summer to the address to preview) ───
+function season() {
+  const q = new URLSearchParams(location.search).get('season'); if (q) return q === 'none' ? null : q;
+  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/London' })), m = d.getMonth() + 1, day = d.getDate();
+  if (m === 12 || (m === 1 && day <= 6)) return 'xmas';
+  if ((m === 10 && day >= 24) || (m === 11 && day <= 1)) return 'halloween';
+  if (m === 7 || m === 8) return 'summer';
+  return null;
+}
+function drawSeason(kind, sm, s) {
+  const t = floor.t, PW = floor.PW, hz = 27 * sm;
+  fx.save(); fx.lineWidth = 1;
+  const swag = (u0, u1, sag, f) => { const n = 14; let prev = null; for (let i = 0; i <= n; i++) { const k = i / n, u = u0 + (u1 - u0) * k, z = hz - Math.sin(k * Math.PI) * sag, q = P(u, 0, z); if (prev) { fx.globalAlpha = 0.55; fx.beginPath(); fx.moveTo(prev[0], prev[1]); fx.lineTo(q[0], q[1]); fx.stroke(); } prev = q; if (f && i > 0 && i < n) f(q, i, k); } };
+  const span = PW / 9;
+  if (kind === 'xmas') {
+    for (let g = 0; g < 9; g++) swag(g * span, (g + 1) * span, 7 * sm, (q, i, k) => { fx.globalAlpha = 0.45 + 0.55 * (Math.sin(t * 3 + i * 1.7 + g) > 0 ? 1 : 0.2); fx.fillStyle = (i + g) % 2 ? '#ff5a5a' : '#4ade80'; fx.beginPath(); fx.arc(q[0], q[1] + 2 * s, 1.7 * s, 0, 7); fx.fill(); });
+    const b = P(PW * 0.06, floor.cv, 0), h = 30 * sm;                                         // a tree in the corridor, by the front door
+    fx.globalAlpha = 0.95; fx.strokeStyle = '#fff';
+    for (let k = 0; k < 3; k++) { const y0 = b[1] - h * (0.12 + k * 0.28), w = (12 - k * 3) * sm; fx.beginPath(); fx.moveTo(b[0] - w, y0); fx.lineTo(b[0], y0 - h * 0.42); fx.lineTo(b[0] + w, y0); fx.closePath(); fx.stroke(); }
+    fx.fillStyle = '#ffd34d'; fx.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 1.6 * s : 3.4 * s, an = k * Math.PI / 5 - Math.PI / 2; fx.lineTo(b[0] + Math.cos(an) * r, b[1] - h * 1.04 + Math.sin(an) * r); } fx.fill();
+    [[-5, .18], [4, .22], [-2, .45], [5, .5], [0, .7]].forEach(([dx, dz], i) => { fx.fillStyle = i % 2 ? '#ff5a5a' : '#6ab7ff'; fx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 2 + i); fx.beginPath(); fx.arc(b[0] + dx * sm, b[1] - h * dz, 1.5 * s, 0, 7); fx.fill(); });
+  } else if (kind === 'summer') {
+    const cols = ['#ff5a5a', '#ffd34d', '#4ade80', '#6ab7ff', '#c58cff'];
+    for (let g = 0; g < 9; g++) swag(g * span, (g + 1) * span, 6 * sm, (q, i, k) => { fx.globalAlpha = 0.85; fx.fillStyle = cols[(i + g) % cols.length]; fx.beginPath(); fx.moveTo(q[0] - 3 * s, q[1]); fx.lineTo(q[0] + 3 * s, q[1]); fx.lineTo(q[0], q[1] + 7 * s + Math.sin(t * 2 + i) * s); fx.closePath(); fx.fill(); });
+  } else if (kind === 'halloween') {
+    for (let g = 0; g < 9; g++) swag(g * span, (g + 1) * span, 6 * sm, (q, i) => { if (i % 4 === 0) { fx.globalAlpha = 0.7; fx.beginPath(); fx.moveTo(q[0], q[1]); fx.lineTo(q[0], q[1] + 9 * s); fx.stroke(); fx.beginPath(); fx.arc(q[0], q[1] + 11 * s, 1.6 * s, 0, 7); fx.stroke(); } });      // cobweb threads and little spiders
+    for (let k = 0; k < 5; k++) {                                                              // pumpkins along the corridor
+      const c = P(PW * (0.12 + k * 0.19), floor.cv + floor.Dc * 0.3, 0), r = 5 * sm, glow = 0.5 + 0.5 * Math.sin(t * 3 + k * 2);
+      fx.globalAlpha = 0.95; fx.strokeStyle = '#ff9a2e'; fx.beginPath(); fx.ellipse(c[0], c[1] - r, r * 1.1, r, 0, 0, 7); fx.stroke(); fx.beginPath(); fx.ellipse(c[0], c[1] - r, r * 0.5, r, 0, 0, 7); fx.stroke();
+      fx.fillStyle = '#ffd34d'; fx.globalAlpha = 0.5 + 0.5 * glow; fx.beginPath(); fx.moveTo(c[0] - 3 * sm, c[1] - r * 1.25); fx.lineTo(c[0] - 1 * sm, c[1] - r * 1.5); fx.lineTo(c[0] + 1 * sm, c[1] - r * 1.25); fx.fill(); fx.beginPath(); fx.moveTo(c[0] + 1 * sm, c[1] - r * 1.25); fx.lineTo(c[0] + 3 * sm, c[1] - r * 1.5); fx.lineTo(c[0] + 5 * sm, c[1] - r * 1.25); fx.fill(); fx.beginPath(); fx.moveTo(c[0] - 3 * sm, c[1] - r * 0.6); fx.lineTo(c[0], c[1] - r * 0.45); fx.lineTo(c[0] + 3 * sm, c[1] - r * 0.6); fx.fill();
+      fx.strokeStyle = '#4ade80'; fx.globalAlpha = 0.9; fx.beginPath(); fx.moveTo(c[0], c[1] - r * 2); fx.lineTo(c[0] + 1.5 * sm, c[1] - r * 2.4); fx.stroke();
+    }
+    for (let k = 0; k < 3; k++) { const b = P(PW * (0.25 + k * 0.28) + Math.sin(t * 0.7 + k) * 20 * sm, floor.cv, 40 * sm + Math.sin(t * 1.3 + k * 2) * 8 * sm), fl = Math.sin(t * 9 + k) * 2 * s; fx.globalAlpha = 0.8; fx.strokeStyle = '#fff'; fx.beginPath(); fx.moveTo(b[0] - 7 * s, b[1] - fl); fx.quadraticCurveTo(b[0] - 3 * s, b[1] - 4 * s, b[0], b[1]); fx.quadraticCurveTo(b[0] + 3 * s, b[1] - 4 * s, b[0] + 7 * s, b[1] - fl); fx.stroke(); }   // bats
+  }
+  fx.restore();
+}
+// The office desk: click it to read the latest written handover without leaving the building
+function openHandover() {
+  const box = document.querySelector('.floor'), L = floor.shift || {}, a = L.analyst || {};
+  const old = box.querySelector('.hpanel'); if (old) old.remove();
+  const pnl = document.createElement('div'); pnl.className = 'acard hpanel'; pnl.setAttribute('role', 'dialog'); pnl.setAttribute('aria-label', 'Latest handover');
+  const h = document.createElement('b'); h.textContent = 'Latest handover' + (a.status ? ' · ' + a.status : '');
+  const body = document.createElement('div'); body.style.whiteSpace = 'pre-wrap'; body.textContent = a.handover || L.note || 'No handover written yet.';
+  pnl.append(h, body);
+  (a.findings || []).slice(0, 4).forEach(f => { const i = document.createElement('i'); i.textContent = (f.severity || 'note') + ': ' + (f.title || ''); const d = document.createElement('div'); d.textContent = f.detail || ''; pnl.append(i, d); });
+  const x = document.createElement('button'); x.type = 'button'; x.className = 'btn'; x.textContent = 'Close'; x.style.cssText = 'margin-top:.7rem;padding:.35rem .7rem;font-size:.6rem;letter-spacing:.2em'; x.onclick = () => pnl.remove();
+  pnl.append(x); pnl.style.cssText = 'left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(460px,88%);max-height:80%;overflow:auto';
+  box.appendChild(pnl);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.hpanel').forEach(p => p.remove()); });
+// Click an agent for a little card: what they've just said, and a funny thought
+const THOUGHTS = ['If I stand very still, does the meeting end sooner?', 'Somebody should check on the printer. Nobody has. Ever.', 'I have 14 tabs open and I can only remember why one of them is.',
+  'What if the HTTPS padlock is just a very small, very polite bouncer?', 'Are we sure the cats aren\'t running this place?', 'I\'d like to think I\'d survive a power cut. I would not.',
+  'Every corridor looks shorter on the way back. Suspicious.', 'I should drink some water. I will have another coffee instead.', 'There is definitely a better chair somewhere in this building.',
+  'If a page loads and nobody checks it, is it up?', 'Tomorrow I will be organised. Today I am a stick.', 'Honestly the floor plan is mostly corridors and vibes.',
+  'I wonder what the main page looks like from the wormhole side.', 'One day I\'ll get a promotion. Or at least a hat.', 'Why is it always the quiet agent who knows where the biscuits are?',
+  'Technically I\'m always on a break between two other breaks.', 'I tried to think of a joke about latency. It arrived late.', 'My handover notes are 40% facts and 60% sighing.',
+  'Do other buildings have a bar, or have we been misled?', 'I have a feeling the smoke machine is just showing off.'];
+const THOUGHTS_BY = { 'SMILEY JO': ['Hula hooping is just standing still, but harder.', 'I have been going for eleven minutes. Do not stop me.', 'The hoop knows things.'], SANASSI: ['Teeth are only bones that went outside.', 'I bite because I care. Mostly about ankles.', 'Today: ankles. Tomorrow: possibly knees.'], WIFEO: ['Where did I put my little ones? Oh, there they are, doing something loud.', 'I should dance more. I am dancing right now. I should dance more.'],
+  CODPIECE: ['The certificate is fine. I\'m checking it again anyway.', 'Nobody gets in. Except Wifeo. And whoever Wifeo says.'], 'MR. PARTICULAR': ['The rope is a state of mind.', 'I am extremely discreet. I\'ve told nobody.'] };
+{
+  const box = document.querySelector('.floor'); let card = null, cardTimer = 0;
+  const close = () => { if (card) { card.remove(); card = null; } clearTimeout(cardTimer); };
+  fcv.addEventListener('click', e => {
+    const r = fcv.getBoundingClientRect(), kz = fcv.clientWidth / (r.width || 1), x = (e.clientX - r.left) * kz, y = (e.clientY - r.top) * kz;      // (kz undoes the full-screen zoom)
+    let best = null, bd = 1e9;
+    Object.keys(seenAt).forEach(n => { const p = seenAt[n]; if (floor.t - p.at > 0.5) return; const d = Math.hypot(p.x - x, p.y - 16 * (p.s || 1) - y); if (d < bd) { bd = d; best = n; } });
+    close();
+    if (!best || bd > 34) {
+      const hit = k => hot[k] && floor.t - hot[k].at < 0.5 && Math.hypot(hot[k].x - x, hot[k].y - y) < hot[k].r;
+      if (hit('spin')) { location.href = '/bar/#spin'; return; }                               // the bar's prize wheel opens the real spinner on the Bar page
+      if (hit('desk')) { openHandover(); return; }
+      const eg = hot.eggs.filter(h => floor.t - h.at < 0.5 && Math.hypot(h.x - x, h.y - y) < h.r).sort((p, q) => Math.hypot(p.x - x, p.y - y) - Math.hypot(q.x - x, q.y - y))[0];
+      if (eg) { popEgg(eg.kind, eg.x, eg.y); return; }
+      return;
+    }
+    const said = lastSaid[best], recent = said && floor.t - said.at < 120;
+    const th = (THOUGHTS_BY[best] ? THOUGHTS_BY[best].concat(THOUGHTS) : THOUGHTS);
+    card = document.createElement('div'); card.className = 'acard'; card.setAttribute('role', 'status');
+    const nm = document.createElement('b'); nm.textContent = shown(best);
+    const a = document.createElement('i'); a.textContent = recent ? 'Just said' : 'Hasn’t said much lately';
+    const q = document.createElement('div'); q.textContent = said ? '“' + said.text + '”' : '…';
+    const c = document.createElement('i'); c.textContent = 'A funny thought';
+    const f = document.createElement('div'); f.textContent = th[Math.floor(Math.random() * th.length)];
+    card.append(nm, a, q, c, f);
+    const rm = res[best] && res[best].room;                                           // the status is the real result of the last check on the page this agent is working in
+    if (rm) {
+      const st = document.createElement('i'), sv = document.createElement('div'), dot = document.createElement('span');
+      st.textContent = 'Status'; dot.textContent = '● '; dot.style.color = rm.ok === false ? '#ff5a5a' : rm.ok ? '#4ade80' : '#ffb000';
+      sv.append(dot, document.createTextNode(rm.ok === false ? `${rm.name}: last check failed (${rm.status || 'no answer'})` : rm.ok ? `${rm.name}: last check passed${rm.ms != null ? ' · ' + rm.ms + ' ms' : ''}` : `${rm.name}: no check yet`));
+      card.append(st, sv);
+    }
+    if (best === 'SANASSI') { const bi = document.createElement('i'), bv = document.createElement('div'); bi.textContent = 'Bites today'; bv.textContent = String(bites.n); card.append(bi, bv); }
+    else if (bites.who[best]) { const bi = document.createElement('i'), bv = document.createElement('div'); bi.textContent = 'First aid'; bv.textContent = 'Bitten by Sanassi today. Plaster applied.'; card.append(bi, bv); }
+    box.appendChild(card);
+    const bw = card.offsetWidth, bh = card.offsetHeight, br = box.getBoundingClientRect();
+    card.style.left = Math.max(4, Math.min(br.width - bw - 4, x + (r.left - br.left) - bw / 2)) + 'px';
+    card.style.top = Math.max(4, Math.min(br.height - bh - 4, y + (r.top - br.top) - bh - 40)) + 'px';
+    cardTimer = setTimeout(close, 12000);
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+}
 // Full screen: the whole house fills the screen, on a computer or a phone. Where the browser can't do real full screen (iPhone), it covers the page instead.
 {
   const box = document.querySelector('.floor'), btn = document.getElementById('fsBtn');

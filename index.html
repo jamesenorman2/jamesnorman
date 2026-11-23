@@ -10,8 +10,7 @@
 <link rel="canonical" href="https://www.jamesnorman.co.uk/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="James Norman">
-<meta property="og:title" content="James Norman">
-<meta property="og:description" content="James Norman: technical director for AECOM and Chartered Security Consultant with over 27 years protecting people, assets and operations across critical national infrastructure and global capital projects. Also a producer and DJ: fly through the music.">
+<meta property="og:title" content="James Norman / James Normal">
 <meta property="og:url" content="https://www.jamesnorman.co.uk/">
 <meta property="og:image" content="https://www.jamesnorman.co.uk/og.png">
 <meta property="og:image:width" content="1200">
@@ -131,7 +130,9 @@
   .family svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
   .family .fb{position:absolute;font-size:.72rem;letter-spacing:.04em;color:#fff;background:#000;border:1px solid #fff;border-radius:6px;padding:.32rem .6rem;white-space:nowrap;opacity:0;transition:opacity .2s;transform:translate(-50%,-100%)}
   .family .fb.on{opacity:1}
+  .family.sans{height:260px;z-index:7}
   body.shell-on .family{bottom:4.8rem}
+  body.tv .sans{display:none!important}
   body.tv .family{display:none!important}
   .argon:not(.on){visibility:hidden}
   .argon svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
@@ -218,6 +219,10 @@
   }
   /* nothing may make the page wider than the screen (Chrome on Android lays the page out wider and shifts it) */
   html,body{max-width:100%;overflow-x:clip}
+/* no page scrollbar: scrolling still works with the wheel, trackpad, touch and keys */
+html{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
+
   @media(max-width:700px),(hover:none){nav.site .sub{display:none}}
   .chairman:not(.on){visibility:hidden}
   /* phones: tuck the player down so the visualiser gets the screen. The track name and status sit tight
@@ -255,14 +260,11 @@
       <a href="/music/">Music</a>
       <a href="/night-shift/">Agents</a>
       <a href="/bar/">Bar</a>
+      <a href="/blog/">Blog</a>
       <span class="has-sub"><a href="/about/">About</a>
         <span class="sub" aria-label="About">
           <a href="/about/">About me</a>
-          <a href="/blog/">Blog</a>
           <a href="/security/">Security</a>
-          <a href="/security/layers/" class="deep">Layers</a>
-          <a href="/security/cpted/" class="deep">Crime Prevention Through Environmental Design</a>
-          <a href="/security/martyns-law/" class="deep">Martyn’s Law</a>
         </span>
       </span>
     </nav>
@@ -296,12 +298,13 @@
 <div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><div class="nm"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><path class="pn"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/><text class="tx" fill="#fff" stroke="none" font-size="8" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text></svg></div>
 <div class="argon" id="argon" aria-hidden="true"><svg viewBox="0 0 400 64" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path class="ac"/><path class="am"/><path class="ab" fill="#000"/><text class="at" fill="#fff" stroke="none" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text><text class="al" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".55"></text></svg></div>
 <div class="family" id="family" aria-hidden="true"></div>
+<div class="family sans" id="sansRun" aria-hidden="true"></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
 <input type="file" id="file" accept="audio/*">
 
-<script src="/assets/stickmen.js?v=7"></script>
+<script src="/assets/stickmen.js?v=9"></script>
 <script>
 (() => {
 'use strict';
@@ -448,6 +451,12 @@ function loadScript(src) {
 }
 
 let listing = false, choice = null;
+// arriving from another page's play button: start the picked track the same way the play button does (so its waveform, artwork and cues load too)
+function startFromPage() {
+  if (!document.body.classList.contains('needs-tap') || !sc || !scReady) return false;
+  try { if (!startPending()) sc.play(); } catch (e) { return false; }
+  return true;
+}
 async function startSoundCloud() {
   const api = loadScript('https://w.soundcloud.com/player/api.js');   // in parallel with choosing the track
   api.catch(() => {});
@@ -481,17 +490,18 @@ async function startSoundCloud() {
         picks = list; profileMode = false;                // play each pick by its own link, so any track in the catalogue works
         const pick = pickFrom(list); queue = [pick]; qi = 0;
         scReady = true; enableButtons();
-        cue(pick);
+        cue(pick); startFromPage();
         return;
       }
       // the profile list didn't come through: fall back to the RSS tracks and the agents' picks
       const pool = (choice.pool || []).map((p, rank) => ({ ...p, key: p.url, rank }));
-      if (pool.length) { picks = pool; const pick = pickFrom(pool); queue = [pick]; qi = 0; scReady = true; enableButtons(); cue(pick); return; }
+      if (pool.length) { picks = pool; const pick = pickFrom(pool); queue = [pick]; qi = 0; scReady = true; enableButtons(); cue(pick); startFromPage(); return; }
     }
     scReady = true;
     enableButtons();
     readSound();
     if (!scPlaying) setStatus('Ready: press play');       // nothing plays until the visitor asks
+    startFromPage();                                          // they pressed play on another page: start now
   });
   sc.bind(E.PLAY, () => {
     startedSinceLoad = true;
@@ -968,7 +978,7 @@ const INK = getComputedStyle(document.documentElement).getPropertyValue('--ink')
 let last = performance.now();
 
 function frame(now) {
-  if (shellOn) { last = now; requestAnimationFrame(frame); return; }      // hidden behind a page: save the battery
+  if (shellOn) { last = now; drawScrub(); requestAnimationFrame(frame); return; }      // hidden behind a page: save the battery (the waveform bar along the bottom still moves)
   const dt = Math.max(0, Math.min((now - last) / 1000, 0.1));
   last = now;
   source = currentSource();
@@ -2096,7 +2106,7 @@ $('bigPlay').addEventListener('click', () => {
 });
 
 function tapToPlay() {
-  if (document.body.classList.contains('needs-tap') && sc) { sc.play(); return true; }
+  if (document.body.classList.contains('needs-tap') && sc) { if (!startFromPage()) sc.play(); return true; }
   return false;
 }
 
@@ -2286,7 +2296,7 @@ function peek(kind, forced) {
   if (forced) { custom = forced === 'plain' ? null : forced; plain = forced === 'plain'; }        // a click picks exactly who comes on
   if (!custom && !plain) { lastPeek = -1e9; return; }
   el.querySelector('.bub').textContent = custom ? pickOne(custom.lines) : (SM.say('peek', kind) || '…');
-  el.querySelector('.nm').textContent = 'AGENT ' + (custom ? custom.agent : SM.who('peek'));
+  el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(custom ? custom.agent : SM.who('peek'));
   el.style.left = (20 + Math.random() * 60) + 'vw';
   el.classList.add('on'); clearTimeout(peekTimer); peekTimer = setTimeout(() => el.classList.remove('on'), 3600);
 }
@@ -2308,7 +2318,7 @@ function onBigBreak() {
 function chairDance(force) {
   if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman'); if (!el || chairBusy || !(force ? SM.on('chair') : SM.here('chair'))) return;
-  chairBusy = true; lastChair = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('chair');
+  chairBusy = true; lastChair = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(SM.who('chair'));
   const ch = el.querySelector('.ch'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), bub = el.querySelector('.bub');
   el.querySelector('.pt').setAttribute('d', ''); el.querySelector('.fx').setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   const from = Math.random() < 0.5 ? -1 : 1;                                  // walks in from the left or the right
@@ -2358,7 +2368,7 @@ function uvPaint(force) {
   if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman');
   if (!el || chairBusy || !(force ? SM.on('uv') : SM.here('uv')) || calm || (!force && (!document.body.classList.contains('intro-done') || performance.now() - lastPaint < 120000))) return;
-  chairBusy = true; lastPaint = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('uv');
+  chairBusy = true; lastPaint = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(SM.who('uv'));
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub');
   ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   el.style.left = (18 + Math.random() * 55) + 'vw'; el.classList.add('on');
@@ -2403,7 +2413,7 @@ function pooRun(force) {
   if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman'), loo = $('loo');
   if (!el || !loo || chairBusy || !(force ? SM.on('poo') : SM.here('poo')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
-  chairBusy = true; lastPoo = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('poo');
+  chairBusy = true; lastPoo = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(SM.who('poo'));
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub');
   ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   const vw = innerWidth / 100, start = 8 + Math.random() * 20, looAt = Math.min(start + 30, 70);
@@ -2466,7 +2476,7 @@ function potDrum(force) {
   if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman');
   if (!el || chairBusy || !(force ? SM.on('pot') : SM.here('pot')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
-  chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.who('pot');
+  chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(SM.who('pot'));
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), pn = el.querySelector('.pn'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub'), tx = el.querySelector('.tx');
   ch.setAttribute('d', ''); fx.setAttribute('d', '');
   // a saucepan, drawn about its own middle: upside down on his head, so a flat base on top for the spoon and the long handle out to the left
@@ -2532,7 +2542,7 @@ function catStroke(force) {
   if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman');
   if (!el || chairBusy || !(force ? SM.on('cat') : SM.here('cat')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
-  chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.who('cat');
+  chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(SM.who('cat'));
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub'), tx = el.querySelector('.tx');
   pt.setAttribute('d', ''); fx.setAttribute('d', ''); tx.textContent = '';
   el.style.left = (12 + Math.random() * 50) + 'vw'; el.classList.add('on');
@@ -2625,8 +2635,24 @@ window.JN_argon = () => { chairBusy = false; argonChase(true); };
 function famFig(x, G, sc, step, o) {
   const y0 = G - (o.hop || 0), hipY = y0 - 19 * sc, shY = y0 - 32 * sc, hr = (o.baby ? 7 : 4.6) * sc, hdY = shY - hr - 0.8 * sc, sw = Math.sin(step) * 6 * sc, c = (cx, cy, r) => `M${cx + r} ${cy}a${r} ${r} 0 1 0 ${-2 * r} 0a${r} ${r} 0 1 0 ${2 * r} 0`;
   let d = c(x, hdY, hr) + `M${x} ${hdY + hr}V${hipY}`;
-  if (o.dress) d += `M${x - 3.4 * sc} ${shY + 3 * sc}h${6.8 * sc}v${4 * sc}h${-6.8 * sc}ZM${x - 3.8 * sc} ${hipY - sc}H${x + 3.8 * sc}L${x + 4.4 * sc} ${hipY + 4 * sc}H${x + 0.5 * sc}L${x} ${hipY + 2 * sc}L${x - 0.5 * sc} ${hipY + 4 * sc}H${x - 4.4 * sc}Z` + `M${x - 3 * sc} ${hipY + 4 * sc}L${x - 3 * sc + sw * 0.5} ${y0}M${x + 3 * sc} ${hipY + 4 * sc}L${x + 3 * sc - sw * 0.5} ${y0}`;
-  else d += `M${x} ${hipY}L${x + sw} ${y0}M${x} ${hipY}L${x - sw} ${y0}`;
+  if (o.dress) {                                              // a fitted evening dress: sweetheart neckline, pinched waist, a flared hem, and heels
+    const wY = shY + 8.5 * sc, hY = hipY + sc, hemY = hipY + 9 * sc, L = x - 6.6 * sc, R = x + 6.6 * sc;
+    d += `M${x - 3.6 * sc} ${shY + 2 * sc}Q${x - 2.7 * sc} ${wY - 2 * sc} ${x - 2.4 * sc} ${wY}Q${x - 5 * sc} ${hY - sc} ${L} ${hemY}Q${x - 3.3 * sc} ${hemY + 2.4 * sc} ${x} ${hemY}Q${x + 3.3 * sc} ${hemY - 2.4 * sc} ${R} ${hemY}` +
+      `Q${x + 5 * sc} ${hY - sc} ${x + 2.4 * sc} ${wY}Q${x + 2.7 * sc} ${wY - 2 * sc} ${x + 3.6 * sc} ${shY + 2 * sc}Q${x + 1.8 * sc} ${shY + 4.6 * sc} ${x} ${shY + 3 * sc}Q${x - 1.8 * sc} ${shY + 4.6 * sc} ${x - 3.6 * sc} ${shY + 2 * sc}Z` +
+      `M${x - 2.4 * sc} ${hemY + 0.6 * sc}L${x - 2.6 * sc + sw * 0.5} ${y0}l${-2 * sc} 0M${x + 2.4 * sc} ${hemY + 0.6 * sc}L${x + 2.6 * sc - sw * 0.5} ${y0}l${2 * sc} 0` +
+      `M${x - hr - 0.2 * sc} ${hdY + hr * 0.8}v${1.8 * sc}M${x + hr + 0.2 * sc} ${hdY + hr * 0.8}v${1.8 * sc}`;             // legs in heels, drop earrings
+  }
+  else {                                                     // legs: a proper stance when standing, knees bending when dancing, a stride when walking
+    const T = o.t || 0, dd = o.dance, q = Math.sin(T * 6.5), q2 = Math.sin(T * 6.5 + Math.PI), kn = (kx, ky, fx2, fy) => `M${x} ${hipY}L${x + kx * sc} ${hipY + ky * sc}L${x + fx2 * sc} ${y0 + fy * sc}`;
+    if (o.walking) d += `M${x} ${hipY}L${x + sw} ${y0}M${x} ${hipY}L${x - sw} ${y0}`;
+    else if (dd === 'jazz') d += kn(-4 - 2 * q, 9, -5 - 2.5 * q, -(q > 0 ? 3 : 0)) + kn(4 + 2 * q2, 9, 5 + 2.5 * q2, -(q2 > 0 ? 3 : 0));                          // jazz hands: knees pump in and out, heels up
+    else if (dd === 'disco') d += kn(-4, 9, -6 - 2 * q, 0) + kn(4, 9, 6 - 2 * q, 0);
+    else if (dd === 'robot') d += kn(-3, 9.5, -4, 0) + (q > 0 ? kn(4, 8, 8, -3) : kn(3, 9.5, 4, 0));                                                               // a stiff step-touch
+    else if (dd === 'sprinkler') d += kn(-5.5, 8, -3.5 + q * 1.5, 0) + kn(5.5, 8, 3.5 + q * 1.5, 0);                                                              // knees bent, rocking
+    else if (dd) d += kn(-3, 9.5, -4, 0) + kn(6, 5, 10, -8 * Math.abs(q));                                                                                         // one leg planted, the other kicked
+    else if (o.idle) d += kn(-3 - Math.sin(T * 7) * 1.4, 9.5, -4.5 - Math.sin(T * 7) * 1.6, -(Math.sin(T * 7) > 0.5 ? 2 : 0)) + kn(3 - Math.sin(T * 7) * 1.4, 9.5, 4.5 - Math.sin(T * 7) * 1.6, -(Math.sin(T * 7) < -0.5 ? 2 : 0));   // a little step-together, side to side
+    else d += kn(-2.6, 9.5, -4.2, 0) + kn(2.6, 9.5, 4.2, 0);                                  // just standing, feet apart
+  }
   if (o.hair) d += `M${x - hr} ${hdY}q${-3 * sc} ${9 * sc} ${-1 * sc} ${20 * sc}M${x + hr} ${hdY}q${3 * sc} ${9 * sc} ${1 * sc} ${20 * sc}M${x - hr * 0.5} ${hdY - hr}q${-2 * sc} ${6 * sc} ${-5 * sc} ${14 * sc}`;
   if (o.tuft) d += `M${x - 1.5 * sc} ${hdY - hr}l${-1 * sc} ${-3.5 * sc}M${x} ${hdY - hr}v${-4 * sc}M${x + 1.5 * sc} ${hdY - hr}l${1 * sc} ${-3.5 * sc}`;
   if (o.cap) d += `M${x - hr - 0.5 * sc} ${hdY - hr * 0.35}H${x + hr + 4 * sc}M${x - hr} ${hdY - hr * 0.35}a${hr} ${hr} 0 0 1 ${2 * hr} 0`;
@@ -2641,6 +2667,7 @@ function famFig(x, G, sc, step, o) {
     const dd = o.dance, q = Math.sin(step * 1.4);
     if (dd === 'jazz') d += `M${x} ${shY + 2 * sc}L${x - 9 * sc} ${shY - 6 * sc - q * 4 * sc}M${x} ${shY + 2 * sc}L${x + 9 * sc} ${shY - 6 * sc + q * 4 * sc}`;
     else if (dd === 'robot') d += `M${x} ${shY + 2 * sc}L${x - 8 * sc} ${shY + 2 * sc}L${x - 8 * sc} ${shY + 2 * sc - (q > 0 ? 8 : 0) * sc}M${x} ${shY + 2 * sc}L${x + 8 * sc} ${shY + 2 * sc}L${x + 8 * sc} ${shY + 2 * sc - (q > 0 ? 0 : 8) * sc}`;
+    else if (dd === 'disco') d += (q > 0 ? `M${x} ${shY + 2 * sc}L${x + 9 * sc} ${shY - 9 * sc}M${x} ${shY + 2 * sc}L${x - 8 * sc} ${shY + 12 * sc}` : `M${x} ${shY + 2 * sc}L${x - 9 * sc} ${shY - 9 * sc}M${x} ${shY + 2 * sc}L${x + 8 * sc} ${shY + 12 * sc}`);   // Saturday Night Fever: point up, point down
     else if (dd === 'sprinkler') d += `M${x} ${shY + 2 * sc}L${x + 11 * sc} ${shY + 2 * sc - q * 5 * sc}M${x} ${shY + 2 * sc}L${x - 4 * sc} ${shY - 3 * sc}L${x} ${hdY + hr * 0.4}`;
     else d += `M${x} ${shY + 2 * sc}L${x - 10 * sc} ${shY + 6 * sc}M${x} ${shY + 2 * sc}L${x + 10 * sc} ${shY + 6 * sc}M${x} ${hipY}L${x + 10 * sc} ${y0 - 8 * sc * Math.abs(q)}`;      // arms out, a leg kicked
   }
@@ -2661,10 +2688,10 @@ function familyParade(force) {
     { n: 'AGENT NORMAL', sc: 1, sg: 0, from: 1, o: { headphones: 1 } }];
   cast.forEach(c => { c.d = c.sg / V; c.sp = stopX - dir * c.sg; c.arr = Math.abs(c.sp - startX) / V + c.d; });
   const a0 = cast[0].arr, L0 = a0 + 26.5, END = L0 + (W + 260) / V + 1;
-  { const dd = cast[6]; dd.start = dir > 0 ? W + 70 : -70; dd.sp = stopX + dir * 46; dd.arr = a0 + 7.6; }                    // Daddy hurries on from the other side, holding a record, just after they start asking where he is
+  { const dd = cast[6]; dd.start = dir > 0 ? W + 70 : -70; dd.sp = stopX + dir * 46; dd.arr = a0 + 6.9; dd.run = a0 + 3.6; }                    // Daddy hurries on from the other side, holding a record, just after they start asking where he is
   const S = { find: SM.say('family', 'find'), kiss: SM.say('family', 'kisses'), d1: SM.say('family', 'daddy1'), d2: SM.say('family', 'daddy2'), d3: SM.say('family', 'daddy3'), love: SM.say('family', 'love'), silly: SM.say('family', 'silly'), baby: SM.say('family', 'baby'), rec: SM.say('family', 'record') };
-  const talk = [[0, a0 + 0.2, a0 + 3.4, S.find], [0, a0 + 3.6, a0 + 6, S.kiss], [1, a0 + 4.2, a0 + 6.2, S.d1], [2, a0 + 6.3, a0 + 7.9, S.d2], [0, a0 + 8, a0 + 9.6, S.d3],
-    [6, a0 + 9.8, a0 + 13.4, S.rec], [0, a0 + 13.8, a0 + 16.2, 'Right, everybody: DANCE PARTY!'], [6, a0 + 16.4, a0 + 18.6, 'Do the robot!'], [2, a0 + 19, a0 + 21, 'Sprinkler! Sprinkler!'], [3, a0 + 21.2, a0 + 23, S.baby], [0, a0 + 22.6, a0 + 24.6, 'Kick! Kick! Higher, Daddy!'], [1, a0 + 24.4, a0 + 26.4, S.love], [4, a0 + 11, a0 + 12.4, '♥'], [5, a0 + 14.2, a0 + 15.6, '♥'], [2, cast[2].arr - 2.2, cast[2].arr - 0.2, S.silly]];
+  const talk = [[0, a0 + 0.2, a0 + 3.4, S.find], [0, a0 + 3.6, a0 + 6, S.kiss], [1, a0 + 4.2, a0 + 6.2, S.d1], [2, a0 + 6.3, a0 + 7.9, S.d2], [0, a0 + 7.8, a0 + 9.2, 'Mwah! I love you!'], [6, a0 + 7.9, a0 + 9.6, 'Oof! Got you!'], [0, a0 + 9.8, a0 + 11.6, S.d3],
+    [6, a0 + 9.8, a0 + 13.4, S.rec], [0, a0 + 13.8, a0 + 16.2, 'Right, everybody: DANCE PARTY!'], [6, a0 + 16.4, a0 + 18.6, 'Do the robot!'], [6, a0 + 19.4, a0 + 21.6, 'Cartwheel!'], [6, a0 + 21.8, a0 + 23.8, 'Rolly-polly!'], [2, a0 + 19, a0 + 21, 'Sprinkler! Sprinkler!'], [3, a0 + 21.2, a0 + 23, S.baby], [0, a0 + 22.6, a0 + 24.6, 'Kick! Kick! Higher, Daddy!'], [1, a0 + 24.4, a0 + 26.4, S.love], [4, a0 + 11, a0 + 12.4, '♥'], [5, a0 + 14.2, a0 + 15.6, '♥'], [2, cast[2].arr - 2.2, cast[2].arr - 0.2, S.silly]];
   el.innerHTML = `<svg viewBox="0 0 ${W} 120" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">` + cast.map((c, i) => `<path class="p${i}"/><text class="n${i}" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".55">${c.n}</text>`).join('') +
     Array.from({ length: 16 }, (_, k) => `<text class="h${k}" fill="#fff" stroke="none" font-size="11" text-anchor="middle"></text>`).join('') + '</svg>' + cast.map((c, i) => `<div class="fb b${i}"></div>`).join('');
   const P = cast.map((c, i) => el.querySelector('.p' + i)), N = cast.map((c, i) => el.querySelector('.n' + i)), B = cast.map((c, i) => el.querySelector('.b' + i)), Hh = Array.from({ length: 16 }, (_, k) => el.querySelector('.h' + k));
@@ -2677,21 +2704,35 @@ function familyParade(force) {
       const tt = t - c.d, leave = L0 + i * 0.3; let x, mv;
       if (c.from) {                                                                         // Daddy: a quick trot on from the far side
         if (t >= leave) { x = c.sp + dir * V * (t - leave); mv = true; }
-        else if (t <= 0.5) { x = c.start; mv = false; }
-        else if (t < c.arr) { x = c.start + (c.sp - c.start) * ((t - 0.5) / (c.arr - 0.5)); mv = true; }
+        else if (t <= c.run) { x = c.start; mv = false; }                                      // waits out of sight until Wifeo starts asking for him…
+        else if (t < c.arr) { x = c.start + (c.sp - c.start) * ((t - c.run) / (c.arr - c.run)); mv = true; }      // …then RUNS to her, twice as fast as anyone has walked
         else { x = c.sp; mv = false; }
       }
       else if (t >= leave) { x = c.sp + dir * V * (t - leave); mv = true; }
       else if (tt <= 0) { x = startX; mv = false; }
       else if (t - c.d < c.arr - c.d) { x = startX + dir * V * tt; mv = true; }
       else { x = c.sp; mv = false; }
+      let ex = 0, hug = false;
+      if (i === 0) {                                                                       // Wifeo leaps into Daddy's arms and gives him a kiss, then hops down again
+        const dd = cast[6], tA = dd.arr, hx = dd.sp - dir * 7;
+        if (t >= tA && t < tA + 0.8) { const k = (t - tA) / 0.8; x = c.sp + (hx - c.sp) * k; ex = Math.sin(k * Math.PI) * 22 + 14 * k; hug = true; }
+        else if (t >= tA + 0.8 && t < tA + 3.0) { x = hx; ex = 14 + Math.abs(Math.sin((t - tA) * 5)) * 1.5; hug = true; }
+        else if (t >= tA + 3.0 && t < tA + 3.4) { const k = (t - tA - 3) / 0.4; x = hx + (c.sp - hx) * k; ex = Math.sin(k * Math.PI) * 8 + 14 * (1 - k); hug = true; }
+      }
       xs[i] = x;
-      const dsT = t - (a0 + 13.6), grooving = dsT > 0 && t < L0 - 1 && !mv, hop = grooving ? Math.abs(Math.sin(t * 6)) * (c.cat ? 5 : 7) : !mv && t > c.arr ? Math.abs(Math.sin(t * 7 + i * 1.3)) * (c.cat ? 2 : 4) : mv ? Math.abs(Math.sin(t * 9 + i)) * 1.5 : 0, step = grooving ? t * 5 : t * 9 + i * 2;
-      const kissing = i === 0 && t > a0 + 3.6 && t < a0 + 6, dancing = i > 0 && !mv && t > c.arr;
+      const dsT = t - (a0 + 13.6), grooving = dsT > 0 && t < L0 - 1 && !mv, hop = grooving ? Math.abs(Math.sin(t * 6)) * (c.cat ? 5 : 7) : !mv && t > c.arr ? Math.abs(Math.sin(t * 7 + i * 1.3)) * (c.cat ? 2 : 4) : mv ? Math.abs(Math.sin(t * 9 + i)) * 1.5 : 0, step = grooving ? t * 5 : i === 6 && mv ? t * 19 : t * 9 + i * 2;
+      const kissing = i === 0 && ((t > a0 + 3.6 && t < a0 + 6) || hug), dancing = i > 0 && !mv && t > c.arr;
       if (c.cat) { const sit = !mv && t > c.arr + 0.3;
         if (c.n === 'ARAGON') { P[i].setAttribute('vector-effect', 'non-scaling-stroke'); P[i].setAttribute('stroke-width', '1.8'); P[i].setAttribute('transform', `translate(${x} ${G - hop}) scale(1.3)`); P[i].setAttribute('d', wildCat(0, 0, mv ? dir : -dir, sit, step)); tops[i] = G - (sit ? 20 : 17); }
         else { P[i].setAttribute('d', catPath(x, G - hop, mv ? dir : -dir, sit, step)); tops[i] = G - (sit ? 14 : 12); } }
-      else { const f = famFig(x, G, c.sc, mv || grooving ? step : 0, { ...c.o, hop, dance: grooving ? ['jazz', 'robot', 'sprinkler', 'kick'][Math.floor(dsT / 3.2) % 4] : null, arms: kissing ? 'kiss' : (i === 0 && !mv && t > a0) || dancing ? 'up' : 'swing' }); P[i].setAttribute('d', f.d); tops[i] = f.top; }
+      else { const f = famFig(x, G, c.sc, mv || grooving ? step : 0, { ...c.o, hop: hop + ex, t, walking: mv && !grooving, idle: !mv && !grooving, dance: grooving ? ['jazz', 'disco', 'robot', 'sprinkler', 'kick'][Math.floor(dsT / 3.2) % 5] : null, arms: kissing ? 'kiss' : (i === 0 && !mv && t > a0) || dancing ? 'up' : 'swing' }); P[i].setAttribute('d', f.d); tops[i] = f.top;
+        if (i === 6) {                                                                           // Agent Normal does a cartwheel, then a rolly-polly, in the dance party
+          const nt = t - (a0 + 19.4), cx = x, cy = G - (hop || 0) - 14;
+          if (!mv && nt > 0 && nt < 4.8) {
+            const cart = nt < 2.4, k = cart ? nt / 2.4 : (nt - 2.4) / 2.4, sx = cart ? 1 : 0.62, off = (cart ? 38 : 0) * k * -dir;
+            P[i].setAttribute('transform', `translate(${cx + off} ${cy}) rotate(${(cart ? -dir : dir) * k * 360}) scale(1 ${sx}) translate(${-cx} ${-cy})`);
+          } else P[i].removeAttribute('transform');
+        } }
       N[i].setAttribute('x', x); N[i].setAttribute('y', 114 + (i % 2) * 7);
     });
     B.forEach(b => b.classList.remove('on'));
@@ -2712,6 +2753,65 @@ function familyParade(force) {
 }
 setInterval(() => { if (!chairBusy && performance.now() - lastFam > 150000 && performance.now() - lastPeek > 20000 && Math.random() < 0.35) familyParade(); }, 20000);   // every few minutes
 window.JN_family = () => { chairBusy = false; familyParade(true); };
+
+// ─── Agent Sanassi: runs on in his red shorts, does a daft kneeling, bending-down, stabbing-hands dance, shouts "Seven more.", runs off and climbs a building ───
+let lastSans = -1e9;
+const sansHere = () => (SM.cfg.agents || []).some(a => a.enabled && a.name === 'SANASSI');
+function sansRun(force) {
+  if (!force && !musicOn()) return;
+  const el = $('sansRun');
+  if (!el || chairBusy || calm || !sansHere() || (!force && !document.body.classList.contains('intro-done'))) return;
+  chairBusy = true; lastSans = performance.now();
+  const W = innerWidth, G = 250, T0 = performance.now(), cx = Math.max(90, Math.min(W - 200, W * 0.38)), xw = Math.max(cx + 120, W - (W < 560 ? 80 : 120)), bw = Math.min(70, W - xw - 6), BH = 205;
+  const tRun = 2.2, tDance = tRun + 6, tShout = tDance + 1.8, tGo = tShout + 1.8, tClimb = tGo + 3.6, tRoof = tClimb + 2, END = tRoof + 1.2;
+  const S = Math.sin, C = Math.cos, pt = (a, b) => `${a.toFixed(1)} ${b.toFixed(1)}`;
+  const limb = (a, k, f) => `M${pt(...a)}L${pt(...k)}L${pt(...f)}`;
+  const circ = (cxx, cy, r) => `M${cxx + r} ${cy}a${r} ${r} 0 1 0 ${-2 * r} 0a${r} ${r} 0 1 0 ${2 * r} 0`;
+  const shorts = (hx, hy) => `M${pt(hx - 4.2, hy - 1)}L${pt(hx + 4.2, hy - 1)}L${pt(hx + 4.8, hy + 6)}L${pt(hx + 0.6, hy + 6)}L${pt(hx, hy + 3)}L${pt(hx - 0.6, hy + 6)}L${pt(hx - 4.8, hy + 6)}Z`;
+  let bd = ''; for (let k = 0; k <= 1; k++) bd += ''; 
+  const building = `M${xw} ${G}V${G - BH}H${xw + bw}V${G}` + Array.from({ length: 9 }, (_, r) => Array.from({ length: Math.max(2, Math.floor(bw / 22)) }, (_, c) => `M${xw + 8 + c * 22} ${G - 24 - r * 21}h10v12h-10z`).join('')).join('') + `M${xw - 4} ${G - BH}H${xw + bw + 4}`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} 260" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="${building}" opacity=".75" stroke-width="1.2"/><path class="sf"/><path class="ss" fill="#e11d2e" stroke="#ff4d5e"/><text class="sn" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".6">SANASSI</text></svg><div class="fb sb"></div>`;
+  const F = el.querySelector('.sf'), SH = el.querySelector('.ss'), N = el.querySelector('.sn'), B = el.querySelector('.sb');
+  el.classList.add('on'); el.style.opacity = 1;
+  const say = (txt, x, y) => { if (B.textContent !== txt) B.textContent = txt; B.style.left = Math.max(70, Math.min(W - 70, x)) + 'px'; B.style.top = y + 'px'; B.classList.toggle('on', !!txt); B.style.fontWeight = txt === 'SEVEN MORE.' ? '600' : '400'; B.style.fontSize = txt === 'SEVEN MORE.' ? '1.05rem' : '.72rem'; };
+  const tick = () => {
+    const t = (performance.now() - T0) / 1000;
+    if (t > END) { el.classList.remove('on'); chairBusy = false; el.innerHTML = ''; return; }
+    let d = '', hx = 0, hy = 0, nx = cx, top = G - 40, msg = '';
+    if (t < tRun) {                                                              // running on from the left
+      const k = t / tRun, x = -40 + (cx + 40) * k, f = famFig(x, G, 1, t * 20, { walking: true, arms: 'swing', hop: Math.abs(S(t * 20)) * 2 }); d = f.d; hx = x; hy = G - 19 - Math.abs(S(t * 20)) * 2; nx = x; top = f.top;
+    } else if (t < tDance) {                                                     // the dance: down on one knee, bent right over, both hands stabbing at the floor
+      const u = t - tRun, bob = S(u * 9) * 1.4, lean = 1.0 + S(u * 4) * 0.12, hip = [cx, G - 11], kn = [cx - 7, G - 1], ft = [cx - 16, G - 1], k2 = [cx + 10, G - 12], f2 = [cx + 10, G];
+      const sh = [hip[0] + S(lean) * 14, hip[1] - C(lean) * 14 + bob], hd = [sh[0] + S(lean) * 6.5, sh[1] - C(lean) * 6.5], st = ph => [sh[0] + 7 + 5 * C(ph), G - 3 - 7 * (0.5 + 0.5 * S(ph))];
+      const hA = st(u * 11), hB = st(u * 11 + Math.PI), eA = [(sh[0] + hA[0]) / 2 + 3, (sh[1] + hA[1]) / 2 - 3], eB = [(sh[0] + hB[0]) / 2 + 3, (sh[1] + hB[1]) / 2 - 3];
+      d = circ(hd[0], hd[1], 5) + `M${pt(...hip)}L${pt(...sh)}` + limb(hip, kn, ft) + limb(hip, k2, f2) + limb(sh, eA, hA) + limb(sh, eB, hB); hx = hip[0]; hy = hip[1]; nx = cx; top = hd[1] - 6;
+      if (u > 0.6 && u < 2.6) msg = pickOneStable(['Stab stab stab stab!', 'Eat that, floor!']);
+      if (u > 3 && u < 5.2) msg = 'Stab. Stab. Stab. Stab.';
+    } else if (t < tShout) {                                                     // standing up to shout
+      const f = famFig(cx, G, 1, 0, { arms: 'up', idle: true, t, hop: Math.abs(S(t * 14)) * 2 }); d = f.d; hx = cx; hy = G - 19 - Math.abs(S(t * 14)) * 2; top = f.top; msg = 'SEVEN MORE.';
+    } else if (t < tGo) {                                                        // and off he runs, to the building
+      const k = (t - tShout) / (tGo - tShout), x = cx + (xw - 9 - cx) * k, f = famFig(x, G, 1, t * 22, { walking: true, arms: 'swing', hop: Math.abs(S(t * 22)) * 2 }); d = f.d; hx = x; hy = G - 19 - Math.abs(S(t * 22)) * 2; nx = x; top = f.top;
+    } else if (t < tClimb) {                                                     // up the wall, hand over hand
+      const k = (t - tGo) / (tClimb - tGo), yc = G - 26 - (BH - 36) * k, ph = k * 26, x = xw - 5;
+      const hip = [x, yc], sh = [x + 1, yc - 14], hd = [x + 1.5, yc - 21];
+      const hA = [xw, yc - 22 - 5 * S(ph)], hB = [xw, yc - 22 + 5 * S(ph)], fA = [xw, yc + 9 + 4 * S(ph + Math.PI)], fB = [xw, yc + 9 + 4 * S(ph)];
+      d = circ(hd[0], hd[1], 5) + `M${pt(...hip)}L${pt(...sh)}` + limb(sh, [x - 4, yc - 20 - 3 * S(ph)], hA) + limb(sh, [x - 4, yc - 20 + 3 * S(ph)], hB) + limb(hip, [x - 5, yc + 3 + 3 * S(ph + Math.PI)], fA) + limb(hip, [x - 5, yc + 3 + 3 * S(ph)], fB);
+      hx = hip[0]; hy = hip[1]; nx = x - 14; top = hd[1] - 6;
+    } else {                                                                      // on the roof, waving
+      const roof = G - BH, x = xw + bw * 0.5, w = S((t - tClimb) * 9) * 4, hip = [x, roof - 20], sh = [x, roof - 34], hd = [x, roof - 40];
+      d = circ(hd[0], hd[1], 5) + `M${pt(...hip)}L${pt(...sh)}` + limb(hip, [x - 4, roof - 10], [x - 5, roof]) + limb(hip, [x + 4, roof - 10], [x + 5, roof]) + limb(sh, [x - 8, sh[1] + 2], [x - 12, sh[1] + 11]) + limb(sh, [x + 8, sh[1] - 4], [x + 11 + w, sh[1] - 15]);
+      hx = hip[0]; hy = hip[1]; nx = x; top = hd[1] - 6; if (t - tClimb < 1.6) msg = 'Seven more floors!';
+      if (t > tRoof) el.style.opacity = Math.max(0, 1 - (t - tRoof) / 1.2);
+    }
+    F.setAttribute('d', d); SH.setAttribute('d', shorts(hx, hy)); N.setAttribute('x', nx); N.setAttribute('y', 258);
+    say(msg, nx, top - 4);
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+const pickOneStable = list => list[Math.floor(performance.now() / 1500) % list.length];
+setInterval(() => { if (!chairBusy && performance.now() - lastSans > 200000 && performance.now() - lastPeek > 20000 && Math.random() < 0.3) sansRun(); }, 25000);   // every few minutes
+window.JN_sanassi = () => { chairBusy = false; sansRun(true); };
 
 window.JN_cat = () => { chairBusy = false; catStroke(true); };
 window.JN_pot = () => { chairBusy = false; potDrum(true); };
@@ -2827,7 +2927,7 @@ const cornerAct = (() => {
 window.JN_corner = cornerAct;   // try it from the console: JN_corner('cartwheel'), or JN_corner.list for them all
 // the little stick man in the corner: click him and one of the others comes on
 // Each click brings on a different one: everyone takes a turn in a shuffled order before anyone repeats, so the toilet comes round too.
-let clickBag = [], lastClick = '';
+let clickIdx = 0, lastClick = '';
 function clickEntries() {
   const e = [];
   if (SM.on('chair')) e.push(['chair', () => chairDance(true)]);
@@ -2837,31 +2937,33 @@ function clickEntries() {
   if (SM.on('cat')) e.push(['cat', () => catStroke(true)]);
   if (SM.on('peek')) e.push(['peek', () => { lastPeek = -1e9; peek(pickOne(['idle', 'break']), 'plain'); }]);
   e.push(['argon', () => argonChase(true)]);
+  if (sansHere()) e.push(['sanassi', () => sansRun(true)]);
   if (SM.on('family')) e.push(['family', () => familyParade(true)]);
   SM.customs().forEach(m => e.push(['c:' + m.id, () => { lastPeek = -1e9; peek('idle', m); }]));
+  (cornerAct.list || []).forEach(k => e.push(['k:' + k, () => cornerAct(k)]));            // and all of the little corner man's own dances
   return e;
 }
 // Something is "on" while a routine is playing, a pop-up agent is showing, or the little man himself is mid-move. The button is greyed out and ignores clicks until it's over.
-const routineBusy = () => !musicOn() || chairBusy || $('peek').classList.contains('on') || !!(window.JN_corner && window.JN_corner.busy && window.JN_corner.busy());
+let musicSeen = performance.now(), queuedClick = false;       // between tracks the player reports 'not playing' for a moment: that must not grey the button
+const musicRecent = () => { if (musicOn()) musicSeen = performance.now(); return performance.now() - musicSeen < 25000; };
+const routineBusy = () => chairBusy || $('peek').classList.contains('on') || !!(window.JN_corner && window.JN_corner.busy && window.JN_corner.busy());
 let busyAt = 0;
 setInterval(() => {
-  const b = routineBusy(); $('stickBtn').classList.toggle('busy', b); $('stickBtn').setAttribute('aria-disabled', String(b));
-  $('stickBtn').title = musicOn() ? 'Bring on a stick man' : 'Start some music and they’ll turn up';
+  const b = routineBusy(); $('stickBtn').classList.remove('busy');                    // never greyed out: a click while one is playing is queued
+  if (queuedClick && !b) { queuedClick = false; $('stickBtn').click(); } $('stickBtn').setAttribute('aria-disabled', 'false');
+  $('stickBtn').title = 'Bring on a stick man';
   if (!chairBusy) busyAt = 0; else if (!busyAt) busyAt = performance.now(); else if (performance.now() - busyAt > 90000) { chairBusy = false; busyAt = 0; }   // never stuck on: if something has been "playing" for 90 seconds it has failed
 }, 150);
 $('stickBtn').addEventListener('click', () => {
-  if (routineBusy()) return;                                                      // wait for the last one to finish
+  if (routineBusy()) { queuedClick = true; setTimeout(() => { queuedClick = false; }, 60000); return; }   // a click during another routine is remembered: he comes on as soon as it ends
   const all = clickEntries(); if (!all.length) return;
-  // take the next one in the shuffled order; if it can't come on for some reason, move on to the one after rather than doing nothing
-  for (let tries = 0; tries < all.length + 1; tries++) {
-    clickBag = clickBag.filter(k => all.some(e => e[0] === k));                       // drop any that have been switched off since
-    if (!clickBag.length) {                                                         // a fresh shuffled round, not starting with the one just shown
-      clickBag = all.map(e => e[0]).sort(() => Math.random() - 0.5);
-      if (clickBag.length > 1 && clickBag[0] === lastClick) clickBag.push(clickBag.shift());
-    }
-    lastClick = clickBag.shift();
+  // one by one through ALL of them, in a fixed order, then round again; if one can't come on for some reason, move on to the next rather than doing nothing
+  for (let tries = 0; tries < all.length; tries++) {
+    clickIdx = clickIdx % all.length;
+    const entry = all[clickIdx++];
     const was = calm; calm = false;                                                 // he was asked for, so he comes on even in Calm mode
-    try { all.find(e => e[0] === lastClick)[1](); } catch (err) { /* try the next one */ } finally { calm = was; }
+    try { entry[1](); } catch (err) { /* try the next one */ } finally { calm = was; }
+    lastClick = entry[0];
     if (routineBusy()) break;
   }
 });

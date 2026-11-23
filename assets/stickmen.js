@@ -18,6 +18,7 @@
     'MR. PARTICULAR', 'JACK MAN', 'SNOOPY', 'BLOG-HEAD', 'MONKEY MONKEY', 'FISH FISH', 'FISH', 'CODPIECE', 'ABNORMAL', 'WIFEO'];
   const BASE_AGENTS = AGENTS.slice();   // the built-in ones; any you add on the admin page are put on the end of AGENTS
   // the rooms an agent you add can live in (the agents page works out which room each page is)
+  const PROP_KINDS = [['plant', 'Plant'], ['sofa', 'Sofa'], ['jukebox', 'Jukebox'], ['arcade', 'Arcade machine'], ['lavalamp', 'Lava lamp'], ['fountain', 'Fountain'], ['discoball', 'Disco ball'], ['coffee', 'Coffee machine'], ['printer', 'Printer'], ['safe', 'Safe'], ['dartboard', 'Dartboard'], ['foosball', 'Table football'], ['beanbag', 'Beanbag'], ['fan', 'Fan'], ['bin', 'Bin'], ['lamp', 'Lamp'], ['fridge', 'Fridge'], ['speaker', 'Speaker'], ['bench', 'Bench'], ['stool', 'Stool']];
   const ROOMS = [['/music/', 'Ballroom'], ['/night-shift/', 'Control room'], ['/security/layers/', 'Chill-out room'], ['/security/cpted/', 'Office'], ['/security/martyns-law/', 'Kitchen'],
     ['/about/', 'Toilets'], ['/bar/', 'Bar'], ['/blog/', 'Newsroom'], ['/admin/', 'Server room']];
   // what each built-in agent does and where they mainly live, for the admin table (an agent can be edited there; these are what they are without edits)
@@ -97,19 +98,24 @@
 
   const SM = {
     DEFAULTS,
-    cfg: { men: {}, custom: [], agents: [], edits: {} },
+    cfg: { men: {}, custom: [], agents: [], edits: {}, props: [] },
     // Lay the saved edits over the defaults. Anything missing or broken falls back to the defaults.
     apply(saved) {
-      const c = { men: {}, custom: [], agents: [], edits: {} };
+      const c = { men: {}, custom: [], agents: [], edits: {}, props: [] };
       if (saved && typeof saved === 'object') {
         if (Array.isArray(saved.agents)) c.agents = saved.agents.slice(0, 40).map((a, i) => ({
           id: clean(a && a.id, 30) || 'agent' + i, name: clean(a && a.name, 24).toUpperCase(), does: clean(a && a.does, 300), says: cleanLines(a && a.says),
           room: ROOMS.some(r => r[0] === (a && a.room)) ? a.room : '', roam: ['sometimes', 'often'].includes(a && a.roam) ? a.roam : '', enabled: !(a && a.enabled === false)
         })).filter(a => a.name && !BASE_AGENTS.includes(a.name));
+        if (Array.isArray(saved.props)) c.props = saved.props.slice(0, 60).map((p, i) => ({                       // furniture you placed from the admin picker
+          id: clean(p && p.id, 30) || 'prop' + i, room: ROOMS.some(r => r[0] === (p && p.room)) ? p.room : '', kind: PROP_KINDS.some(k => k[0] === (p && p.kind)) ? p.kind : '',
+          fu: Math.max(0.02, Math.min(0.95, Number(p && p.fu) || 0.5)), fv: Math.max(0.02, Math.min(0.95, Number(p && p.fv) || 0.5))
+        })).filter(p => p.room && p.kind);
         if (saved.edits && typeof saved.edits === 'object') for (const n of BASE_AGENTS) {                       // changes to the built-in agents: what they do, what they say, which room
           const e = saved.edits[n]; if (!e || typeof e !== 'object') continue;
-          const o = { does: clean(e.does, 300), says: cleanLines(e.says), room: ROOMS.some(r => r[0] === e.room) ? e.room : '', roam: ['sometimes', 'often'].includes(e.roam) ? e.roam : '' };
-          if (o.does || o.says.length || o.room || o.roam) c.edits[n] = o;
+          const o = { name: clean(e.name, 24).toUpperCase(), does: clean(e.does, 300), says: cleanLines(e.says), room: ROOMS.some(r => r[0] === e.room) ? e.room : '', roam: ['sometimes', 'often'].includes(e.roam) ? e.roam : '' };
+          if (o.name === n) o.name = '';
+          if (o.name || o.does || o.says.length || o.room || o.roam) c.edits[n] = o;
         }
         if (saved.men && typeof saved.men === 'object') for (const id of Object.keys(saved.men)) {
           const m = saved.men[id]; if (!m || typeof m !== 'object') continue;
@@ -125,7 +131,7 @@
       AGENTS.length = 0; AGENTS.push(...BASE_AGENTS, ...c.agents.filter(a => a.enabled).map(a => a.name));      // the agents you added can be given stick men too
       SM.cfg = c;
     },
-    AGENTS, BASE_AGENTS, ROOMS, INFO, SLOT, LEAD, RETURN, loaded: false,
+    AGENTS, BASE_AGENTS, ROOMS, PROP_KINDS, INFO, SLOT, LEAD, RETURN, loaded: false,
     // which agent a man is: the one you picked on the admin page, or his default
     agentOf(id) { const m = SM.cfg.men[id], d = DEFAULTS.find(x => x.id === id); return (m && m.agent) || (d && d.agent) || '*'; },
     on(id) { const m = SM.cfg.men[id]; return !m || m.enabled !== false; },
@@ -181,6 +187,8 @@
     // is this man allowed on the homepage right now? (switched on, and his agent is the one due)
     here(id) { return SM.on(id) && (SM.agentOf(id) === '*' || SM.agentOf(id) === SM.duty().agent); },
     // the agent whose name is shown on a man: his own agent, or whoever is due if he is set to "*"
+    // the name to show for an agent: the one chosen on the admin page, or the built-in one
+    shown(n) { const e = SM.cfg.edits && SM.cfg.edits[n]; return (e && e.name) || n; },
     who(id) { const a = SM.agentOf(id); return a === '*' ? SM.duty().agent : a; },
     customsHere() { const a = SM.duty().agent; return SM.customs().filter(m => m.agent === a); },
     async load() {

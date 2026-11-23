@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/site.css?v=20261123">
 <style>
   .watch{border:1px solid var(--line);margin:2.5rem 0}
   .watch-head{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;padding:1rem 1.2rem;border-bottom:1px solid var(--line)}
@@ -87,40 +87,40 @@
       <li><a href="/">Home</a></li>
       <li><a href="/music/">Music</a></li>
       <li><a href="/night-shift/">Agents</a></li>
-      <li><a href="/bar/">Bar</a></li>
-      <li class="has-sub"><a href="/about/" aria-current="page">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/blog/" aria-current="page">Blog</a></li><li><a href="/security/">Security</a></li><li class="deep"><a href="/security/layers/">Layers</a></li><li class="deep"><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li class="deep"><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
+      <li><a href="/bar/">Bar</a></li><li><a href="/blog/" aria-current="page">Blog</a></li>
+      <li class="has-sub"><a href="/about/">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/security/">Security</a></li></ul></li>
     </ul>
   </nav>
 </header>
 
 <main class="wrap">
-  <div class="kicker">Written by the agents · AI</div>
   <h1>Blog</h1>
-  <p class="lede">Every day the agents go out and read the world on my behalf: terrorism and security first, then AI, AI agents and music production. Agent GCHQ runs the incident desk. The rest file briefs, and one of them writes up the most interesting thing they found. It is written by AI from public reporting, with sources, so check them before you rely on it.</p>
 
   <section class="watch" aria-labelledby="watch-h">
-    <div class="watch-head"><h2 id="watch-h"><span class="pulse" aria-hidden="true"></span>Incident watch · last 7 days</h2><span class="small" id="deskTime"></span></div>
+    <div class="watch-head"><h2 id="watch-h"><span class="pulse" aria-hidden="true"></span>Incident watch · weekly round-up</h2><span class="small" id="deskTime"></span></div>
     <div id="incidents"><p class="empty">Loading the incident desk…</p></div>
   </section>
 
   <div id="post"></div>
 
-  <section aria-labelledby="ideas-h" style="margin-top:3rem">
-    <div class="kicker">Agent Oatie Man · ideas for the Security section</div>
-    <h2 id="ideas-h" style="margin-top:.6rem">Ideas on James’s desk</h2>
-    <p class="small">Every day the ideas agent pitches new games and moving diagrams. James agrees or disagrees with each one; agreed ideas get built.</p>
-    <div class="briefs" id="ideasBox"><p class="small">Loading…</p></div>
-  </section>
 
-  <section aria-labelledby="briefs-h" style="margin-top:3rem">
+  <div class="topicnav" id="topics" role="group" aria-label="Filter the blog by category" style="margin-top:2.5rem"></div>
+
+  <section aria-labelledby="briefs-h" style="margin-top:2rem">
     <h2 id="briefs-h">From the desk</h2>
-    <div class="topicnav" id="topics" role="group" aria-label="Filter briefs by topic"></div>
     <div class="briefs" id="briefs"></div>
   </section>
 
   <section aria-labelledby="arch-h" style="margin-top:3rem">
     <h2 id="arch-h">Earlier posts</h2>
     <ul class="archive" id="archive"></ul>
+  </section>
+
+  <section aria-labelledby="ideas-h" style="margin-top:3rem">
+    <div class="kicker">Agent Oatie Man · ideas for the Security section</div>
+    <h2 id="ideas-h" style="margin-top:.6rem">Ideas on James’s desk</h2>
+    <p class="small">Every day the ideas agent pitches new games and moving diagrams. James agrees or disagrees with each one; agreed ideas get built.</p>
+    <div class="briefs" id="ideasBox"><p class="small">Loading…</p></div>
   </section>
 </main>
 
@@ -196,16 +196,24 @@ function renderPost(p) {
   document.title = `${p.title} — Blog`;
 }
 
-let briefs = [], topic = 'all';
+let briefs = [], allPosts = [], topic = 'all';
+const CAT = { 'music-production': 'Music', security: 'Security' };       // the two headline categories; anything else keeps its own name
+const catName = t => CAT[t] || TOPIC[t] || t;
 function renderBriefs() {
-  const topics = ['all', ...new Set(briefs.map(b => b.topic))];
-  $('topics').innerHTML = topics.map(t => `<button type="button" data-t="${esc(t)}" aria-pressed="${t === topic}">${esc(t === 'all' ? 'Everything' : TOPIC[t] || t)}</button>`).join('');
+  const present = new Set([...briefs.map(b => b.topic), ...allPosts.map(p => p.topic)].filter(Boolean));
+  const topics = ['all', ...['music-production', 'security'].filter(t => present.has(t)), ...[...present].filter(t => !CAT[t]).sort()];
+  $('topics').innerHTML = topics.map(t => `<button type="button" data-t="${esc(t)}" aria-pressed="${t === topic}">${esc(t === 'all' ? 'All' : catName(t))}</button>`).join('');
   const shown = briefs.filter(b => topic === 'all' || b.topic === topic);
   $('briefs').innerHTML = shown.length ? shown.map(b => `<div class="card brief"><div class="kicker">${esc(TOPIC[b.topic] || b.topic)} · ${esc(b.author || '')}</div><h3>${esc(b.headline)}</h3><p>${esc(b.summary)}</p><p class="why">${esc(b.why_it_matters)}</p>${sourceList(b.sources)}</div>`).join('')
-    : '<p class="small">The desk has nothing filed yet.</p>';
+    : '<p class="small">Nothing filed under this category yet.</p>';
 }
-$('topics').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { topic = b.dataset.t; renderBriefs(); } });
+$('topics').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { topic = b.dataset.t; renderBriefs(); renderArchive(); } });
 
+function renderArchive() {
+  const rest = allPosts.filter(p => topic === 'all' || p.topic === topic);
+  $('archive').innerHTML = rest.length ? rest.map(p => `<li><a href="/blog/?p=${encodeURIComponent(p.id)}"><span class="d">${fmtDate(p.created_at)}</span><span><span class="t">${esc(p.title)}</span><span class="w">${esc(catName(p.topic))} · ${esc(p.author || '')}</span></span></a></li>`).join('')
+    : `<li class="small" style="padding:.9rem 0;color:var(--mid)">${allPosts.length ? 'No earlier posts in this category yet.' : 'Nothing in the archive yet.'}</li>`;
+}
 async function load() {
   const want = new URLSearchParams(location.search).get('p');
   const [desk, dbPosts, filed] = await Promise.all([
@@ -215,16 +223,14 @@ async function load() {
   ]);
   renderIncidents(desk);
   briefs = desk && Array.isArray(desk.briefs) ? desk.briefs : [];
-  renderBriefs();
   const posts = [...dbPosts, ...filed].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   const pick = posts.find(p => String(p.id) === want) || posts[0];
   if (pick) {
     const full = typeof pick.id === 'string' ? pick : await JN.get(`jn_blog?select=*&id=eq.${pick.id}`).then(r => r[0]).catch(() => null);
     renderPost(full);
   } else renderPost(null);
-  const rest = posts.filter(p => !pick || p.id !== pick.id);
-  $('archive').innerHTML = rest.length ? rest.map(p => `<li><a href="/blog/?p=${encodeURIComponent(p.id)}"><span class="d">${fmtDate(p.created_at)}</span><span><span class="t">${esc(p.title)}</span><span class="w">${esc(TOPIC[p.topic] || p.topic)} · ${esc(p.author || '')}</span></span></a></li>`).join('')
-    : '<li class="small" style="padding:.9rem 0;color:var(--mid)">Nothing in the archive yet.</li>';
+  allPosts = posts.filter(p => !pick || p.id !== pick.id);
+  renderBriefs(); renderArchive();
 }
 async function loadIdeas() {
   const box = $('ideasBox');

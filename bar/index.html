@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/site.css?v=20261123">
 <style>
   .tools{display:flex;gap:.8rem;flex-wrap:wrap;align-items:stretch;margin:2rem 0 1rem}
   .tools .search{flex:1 1 16rem;min-width:0}
@@ -104,8 +104,8 @@
       <li><a href="/">Home</a></li>
       <li><a href="/music/">Music</a></li>
       <li><a href="/night-shift/">Agents</a></li>
-      <li><a href="/bar/" aria-current="page">Bar</a></li>
-      <li class="has-sub"><a href="/about/">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/blog/">Blog</a></li><li><a href="/security/">Security</a></li><li class="deep"><a href="/security/layers/">Layers</a></li><li class="deep"><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li class="deep"><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
+      <li><a href="/bar/" aria-current="page">Bar</a></li><li><a href="/blog/">Blog</a></li>
+      <li class="has-sub"><a href="/about/">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/security/">Security</a></li></ul></li>
     </ul>
   </nav>
 </header>
@@ -179,6 +179,7 @@
   <div class="in">
     <div class="top"><span class="where" id="spTitle">Spin for a drink</span><button type="button" class="ghost" id="spClose">Close</button></div>
     <div class="wheelwrap">
+      <div class="chips" id="spTypes" role="group" aria-label="Kind of drink" style="justify-content:center"></div>
       <canvas id="wheel" width="440" height="440" role="img" aria-label="A wheel of drinks"></canvas>
       <div class="pick" id="pick" aria-live="polite"></div>
       <div class="actions" style="margin:0;justify-content:center"><button type="button" id="spGo">Spin</button><button type="button" class="ghost" id="spMake" hidden>Make it</button></div>
@@ -436,15 +437,30 @@ function drawWheel() {
   cx.setTransform(dpr, 0, 0, dpr, 0, 0);
   cx.fillStyle = '#fff'; cx.beginPath(); cx.moveTo(size - 2, size / 2); cx.lineTo(size - 20, size / 2 - 9); cx.lineTo(size - 20, size / 2 + 9); cx.closePath(); cx.fill();   // the pointer, on the right
 }
-function openSpin() {
-  const list = visible(); if (!list.length) return;
+// The wheel: choose the kind of drink first (any, shots, short, long, hot), then spin. Each time it takes 50 of them at random.
+let spLen = null;
+function spinPool() { const keep = fLen; fLen = spLen; try { return visible(); } finally { fLen = keep; } }
+function buildWheel() {
+  const all = spinPool();
+  const list = all.length > 50 ? all.map(d => [Math.random(), d]).sort((x, y) => x[0] - y[0]).slice(0, 50).map(x => x[1]) : all;
   wheel = { list, rot: Math.random() * Math.PI * 2, spinning: false, win: -1, vel: 0, drag: false };
+  $('pick').innerHTML = ''; $('pick').dataset.i = ''; $('spMake').hidden = true; $('spGo').textContent = 'Spin'; $('spGo').disabled = !list.length;
+  const filt = fMeth || fAF || $('q').value, kind = spLen ? spLen + ' ' : '';
+  $('spNote').textContent = !list.length ? 'No drinks of that kind match your filters.' : all.length > list.length ? `Spinning 50 ${kind}drinks picked at random from ${all.length}${filt ? ' that match your filters' : ''}.` : `Spinning ${all.length} ${kind}drinks${filt ? ' that match your filters' : ''}.`;
+  const box = $('spTypes'); box.innerHTML = ''; box.append(el('span', 'lab', 'Kind'));
+  [[null, 'Any'], ...[...new Set(drinks.map(d => d.length).filter(Boolean))].map(k => [k, LEN[k] || k])].forEach(([k, text]) => {
+    const b = el('button', 'chip', text); b.type = 'button'; b.setAttribute('aria-pressed', String(spLen === k));
+    b.addEventListener('click', () => { if (wheel && wheel.spinning) return; spLen = k; buildWheel(); });
+    box.append(b);
+  });
+  if (list.length) drawWheel(); else { cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, cv.width, cv.height); }
+}
+function openSpin() {
+  if (!visible().length) return;
+  spLen = fLen;                                                                    // start from whatever size is chosen on the page
   lastFocus = document.activeElement; $('sheet').hidden = true;
   $('spin').hidden = false; document.body.classList.add('noscroll');
-  $('pick').innerHTML = ''; $('pick').dataset.i = ''; $('spMake').hidden = true; $('spGo').textContent = 'Spin';
-  $('spNote').textContent = (fLen || fMeth || fAF || $('q').value) ? 'Spinning through the ' + list.length + ' drinks that match your filters.' : 'Spinning through all ' + list.length + ' drinks.';
-  drawWheel(); $('spGo').focus({ preventScroll: true });
-  setTimeout(() => { if (!$('spin').hidden && !wheel.spinning) spinIt(); }, 350);        // it spins as soon as it opens
+  buildWheel(); $('spGo').focus({ preventScroll: true });                          // it waits for you to press Spin
 }
 // The wheel has real momentum: it starts spinning when it opens, and you can flick it (or tap it, or press Spin) to spin it again.
 // It slows down by itself and lands on whichever slice is under the pointer.
@@ -520,7 +536,8 @@ addEventListener('hashchange', () => { const id = location.hash.slice(1); if (id
 
 /* ─── go ─── */
 const openHash = () => { const id = location.hash.slice(1); if (id && drinks.some(d => d.id === id) && (!current || current.id !== id)) openDrink(id, false); };
-const loaded = () => { fillSuggestions(); haveChanged(); openHash(); };
+let spunFromHash = false;
+const loaded = () => { fillSuggestions(); haveChanged(); openHash(); if (location.hash === '#spin' && !spunFromHash && drinks.length) { spunFromHash = true; openSpin(); } };      // /bar/#spin opens the wheel straight away (the Agents page's prize wheel links here)
 fetch('/bar/cocktails.json').then(r => r.json()).then(j => { drinks = j.drinks || []; loaded(); })
   .catch(() => { $('count').textContent = 'The bar couldn’t open just now. Try again in a moment.'; })
   .then(() => fetch('/api/bar').then(r => r.json()).then(j => {                 // then upgrade to everything in the recipe library, if it can be reached

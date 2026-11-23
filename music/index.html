@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/site.css?v=20261123">
 <style>
   .nowgrid{display:grid;gap:2rem;grid-template-columns:1fr;align-items:end}
   @media(min-width:800px){.nowgrid{grid-template-columns:minmax(240px,380px) 1fr}}
@@ -68,8 +68,8 @@
       <li><a href="/">Home</a></li>
       <li><a href="/music/" aria-current="page">Music</a></li>
       <li><a href="/night-shift/">Agents</a></li>
-      <li><a href="/bar/">Bar</a></li>
-      <li class="has-sub"><a href="/about/">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/blog/">Blog</a></li><li><a href="/security/">Security</a></li><li class="deep"><a href="/security/layers/">Layers</a></li><li class="deep"><a href="/security/cpted/">Crime Prevention Through Environmental Design</a></li><li class="deep"><a href="/security/martyns-law/">Martyn’s Law</a></li></ul></li>
+      <li><a href="/bar/">Bar</a></li><li><a href="/blog/">Blog</a></li>
+      <li class="has-sub"><a href="/about/">About</a><ul class="sub" aria-label="About"><li><a href="/about/">About me</a></li><li><a href="/security/">Security</a></li></ul></li>
     </ul>
   </nav>
 </header>
@@ -78,7 +78,7 @@
   <div class="hero-wrap">
     <canvas class="ridge" id="ridge" aria-hidden="true"></canvas>
   <h1>Music</h1>
-  <p class="lede">Producer and DJ. On the decks I’m <b style="font-weight:500">James Normal</b>: the name on the door is Norman, one letter different. Everything here plays straight from SoundCloud. Fly through any of it in the <a href="/">visualiser</a>.</p>
+  <p class="lede">DJ, remixer and producer. On the decks I’m <b style="font-weight:500">James Normal</b>: the name on the door is Norman, one letter different. Everything here plays straight from SoundCloud, and you can fly through any of it in the <a href="/">visualiser</a>.</p>
   </div>
 
   <section class="nowgrid" aria-label="Now playing">
@@ -106,7 +106,7 @@
   <section aria-labelledby="battle-h">
     <div class="kicker">Agent DJ battle</div>
     <h2 id="battle-h" style="margin-top:.4rem">Two AI agents. One track each. You decide.</h2>
-    <p class="small" id="battleDate">Every hour the agents pick two of my tracks and argue their case.</p>
+    <p class="small" id="battleDate">Every few hours the agents pick two of my tracks and argue their case.</p>
     <div id="battle" hidden>
       <div class="battle" style="margin-top:1.5rem">
         <article class="card agent" data-side="a"></article>
