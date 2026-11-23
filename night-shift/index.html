@@ -88,7 +88,7 @@
     <canvas class="ridge" id="ridge" aria-hidden="true"></canvas>
   <div class="kicker">AI agents at work</div>
   <h1>Agents</h1>
-  <p class="lede">This site is run by a team of AI agents, organised like a security control room. The daily agents each carry out one job a day (Old School once a week); the site patrol checks the whole site every six hours. They check real things: every page, the certificate and domain, outbound links, the official Martyn’s Law guidance, the UK threat level and new music. Each shift ends with a written handover, and findings that need action come to me.</p>
+  <p class="lede">Behind the site is a small team of AI agents, run like a security control room. Each daily agent has one job a day (Old School, once a week), and a site patrol checks the whole site every six hours: pages, certificate and domain, outbound links, the Martyn’s Law guidance, the UK threat level and new music. Every shift ends with a written handover, and anything that needs action comes to me.</p>
   </div>
 
   <section class="floor" aria-label="The crew at work: stick men walking the site, checking each page">
@@ -404,7 +404,7 @@ const KITS = {
   // stations: [fu, fv, pose, lines, standing height, depth nudge]; station 0 is the DJ's, 1 is the guest DJ's (kept for guests)
   '/music/': { title: 'BALLROOM', reserved: [1],
     items: [[0.0, 0.95, 1.0, 0.02, 1, 'bunting', 36], [0.24, 0.9, 0.07, 0.06, 58, 'rig'], [0.69, 0.9, 0.07, 0.06, 58, 'rig'],
-      [0.067, 0.9, 0.147, 0.06, 30, 'recordwall'], [0.32, 0.91, 0.17, 0.06, 38, 'trippy'], [0.51, 0.91, 0.17, 0.06, 38, 'trippy'], [0.79, 0.91, 0.15, 0.05, 30, 'nowplaying', 6], [0.5, 0.64, 0.06, 0.16, 8, 'spinpodium'],
+      [0.067, 0.9, 0.147, 0.06, 30, 'recordwall'], [0.32, 0.91, 0.17, 0.06, 38, 'trippy'], [0.51, 0.91, 0.17, 0.06, 38, 'trippy'], [0.79, 0.91, 0.15, 0.05, 30, 'nowplaying', 6], [0.85, 0.63, 0.06, 0.16, 8, 'spinpodium'],
       [0.84, 0.34, 0.115, 0.12, 15, 'booth'],
       [0.107, 0.58, 0.047, 0.1, 8, 'podium'], [0.36, 0.58, 0.047, 0.1, 8, 'podium'], [0.147, 0.2, 0.047, 0.1, 8, 'podium'], [0.4, 0.22, 0.047, 0.1, 8, 'podium'], [0.62, 0.55, 0.047, 0.1, 8, 'podium'], [0.7, 0.18, 0.047, 0.1, 8, 'podium'],
       [0.485, 0.42, 0.027, 0.06, 4, 'discoball', 64],
@@ -433,18 +433,16 @@ const KITS = {
       [0.645, 0.6, 'dance', ['Podium by the lounge: the best view of the booth', 'Hands up, everyone!'], 8, 0.14],
       [0.725, 0.23, 'dance', ['Up on the podium, loving life', 'Somebody wave back'], 8, 0.14],
       [0.65, 0.1, 'lie', ['Lounging with a view of the dance floor', 'Spacious in here now, isn’t it?']],
-      [0.53, 0.72, 'dance', ['Spinning round on the turntable podium!', 'Whoa, I’m going round and round!', 'Look at me go: 360 degrees!'], 8, 0.14]] },
-  // THE BAR: a proper pub. A long counter with stools and a barman, bottles and a neon OPEN sign, a pool table, a jukebox, a dartboard on the wall and a spin-for-a-drink wheel.
+      [0.88, 0.71, 'dance', ['Spinning round on the turntable podium!', 'Whoa, I’m going round and round!', 'Look at me go: 360 degrees!'], 8, 0.14, 'spin']] },
+  // THE BAR: a proper pub. A long counter with stools and a barman, bottles and a green neon OPEN sign, a jukebox, a dartboard on the wall and a spin-for-a-drink wheel.
   '/bar/': { title: 'BAR', stay: ['HARRY'],
     items: [[0.04, 0.9, 0.5, 0.05, 24, 'bottles'], [0.6, 0.86, 0.36, 0.1, 22, 'spinwheel'], [0.04, 0.08, 0.3, 0.05, 22, 'neon'], [0.84, 0.1, 0.12, 0.1, 30, 'jukebox'],
       [0.08, 0.52, 0.56, 0.12, 13, 'barcounter'], [0.12, 0.72, 0.05, 0.05, 8, 'stool'], [0.27, 0.72, 0.05, 0.05, 8, 'stool'], [0.42, 0.72, 0.05, 0.05, 8, 'stool'], [0.57, 0.72, 0.05, 0.05, 8, 'stool'],
-      [0.62, 0.3, 0.3, 0.17, 9, 'pooltable'], [0.95, 0.56, 0.03, 0.18, 16, 'dartboard', 14], [0.0, 0.3, 0.05, 0.07, 10, 'plant']],
+      [0.95, 0.56, 0.03, 0.18, 16, 'dartboard', 14], [0.0, 0.3, 0.05, 0.07, 10, 'plant']],
     stations: [[0.36, 0.42, 'check', ['Shaking a Negroni. Stirring it. Whatever.', 'Spin for a drink? SPIN FOR A DRINK.', 'Two olives or three?', 'Flipping the shaker. Nailed it.', 'Last orders! …I’m joking. It’s always early.']],
       [0.15, 0.78, 'bench', ['Just the one. Possibly four.', 'Tonic. With a tiny umbrella.', 'This stool is the best stool', 'Barman, surprise me!'], 5],
       [0.45, 0.78, 'bench', ['I’ll have what the DJ’s having', 'Cheers! Everyone’s lovely!', 'Is it cocktail o’clock? It is now.'], 5],
       [0.88, 0.3, 'check', ['Picking a tune on the jukebox', 'B7. Always B7.', 'Putting on something we can all sing to']],
-      [0.7, 0.22, 'point', ['Lining up the shot. Pointing at the pocket.', 'Eight ball, corner pocket', 'I’m going to clear this table']],
-      [0.7, 0.54, 'kick', ['Chalking the cue. Like a pro.', 'Potted! …Oh. That was the white.', 'Bank shot. Nobody saw it, but it was great']],
       [0.78, 0.8, 'point', ['Spinning the wheel!', 'It landed on tequila. Of course.', 'Round and round she goes!']],
       [0.86, 0.66, 'point', ['Bullseye!', 'Double top. Or the wall.', 'Darts: where skill meets guesswork']],
       [0.55, 0.42, 'dance', ['Dancing behind the bar. Nobody’s watching.', 'Jukebox is ON. Dance break!']]] },
@@ -574,6 +572,7 @@ function drawItem(r, it, busy) {
     fx.globalAlpha = 0.35; seg([c[0] - bw * 0.5, c[1] - bh - 2 * s], [c[0] + bw * 0.5, c[1] - bh - 2 * s]); fx.restore(); return; }
   if (kind === 'spinpodium') {                    // a round podium that turns slowly (faster with the music), with lights round the rim and a dancer on top
     const cu = a.u + w / 2, cv = a.v + d / 2, R = Math.min(w, d) / 2, on = laser.k > 0.02, ang = t * (0.5 + 1.6 * laser.k * (0.5 + mus.e));
+    spinAng = ang;                                // whoever is dancing on it turns round with it
     const ring = (rr, z) => { fx.beginPath(); for (let k = 0; k <= 28; k++) { const an = k / 28 * Math.PI * 2, q = P(cu + Math.cos(an) * rr, cv + Math.sin(an) * rr, z); k ? fx.lineTo(q[0], q[1]) : fx.moveTo(q[0], q[1]); } fx.closePath(); fx.fillStyle = '#000'; fx.fill(); fx.stroke(); };
     fx.save(); ring(R, 0); for (let k = 0; k < 10; k++) { const an = k * Math.PI / 5 + 0.3; seg(P(cu + Math.cos(an) * R, cv + Math.sin(an) * R, 0), P(cu + Math.cos(an) * R, cv + Math.sin(an) * R, h)); }
     ring(R, h); ring(R * 0.72, h);
@@ -749,9 +748,10 @@ function drawItem(r, it, busy) {
   }
   else if (kind === 'neon') {                      // a neon sign on the wall: a cocktail glass and OPEN, flickering now and then
     const fl = Math.sin(t * 3) > -0.9 && !(Math.sin(t * 11) > 0.97) ? 1 : 0.35, cx0 = X + W * 0.2, cy0 = Y + B.h * 0.5;
-    fx.save(); fx.globalAlpha = 0.5 + 0.5 * fl; fx.lineWidth = 1.6;
+    fx.save(); fx.globalAlpha = 0.5 + 0.5 * fl; fx.lineWidth = 1.6; fx.strokeStyle = '#3dff7a'; fx.shadowColor = '#3dff7a'; fx.shadowBlur = 6 * s;      // a green neon cocktail
     fx.beginPath(); fx.moveTo(cx0 - 6 * s, cy0 - 6 * s); fx.lineTo(cx0 + 6 * s, cy0 - 6 * s); fx.lineTo(cx0, cy0 + 1 * s); fx.closePath(); fx.stroke(); seg([cx0, cy0 + 1 * s], [cx0, cy0 + 7 * s]); seg([cx0 - 3 * s, cy0 + 7 * s], [cx0 + 3 * s, cy0 + 7 * s]);
     fx.beginPath(); fx.arc(cx0 + 4 * s, cy0 - 7 * s, 1.4 * s, 0, 7); fx.stroke();
+    fx.shadowBlur = 0; fx.strokeStyle = '#fff';
     text('OPEN', X + W * 0.62, Y + B.h * 0.5 + 2 * s, Math.min(B.h * 0.5, 9 * s), 0.6 + 0.4 * fl); fx.restore();
   }
   else if (kind === 'spinwheel') {                 // the prize wheel: SPIN FOR A DRINK. It turns slowly, and whirls when somebody has a go
@@ -949,6 +949,26 @@ function roamRoute(a, name, homeFn, sm, dt) {
 }
 // agents added on the admin page: they live in the room that was picked (or the first room) and say what was written for them
 const CUSTOM_SAYS = {}, ROAM = {}; let customSynced = false;
+// Sanassi goes round biting people: every so often he picks someone in his room, lunges, CHOMP, and they hop and yelp
+const bite = { next: 20, victim: null, t0: 0, from: null };
+const BITE_YELP = ['OW! My leg!', 'SANASSI! Not again!', 'He bit me!', 'Ow ow ow!', 'Rabies jab, anyone?', 'That is my ankle!', 'Oi! Teeth!'];
+function biteStep(a, r, dt) {                                       // called for Sanassi each frame
+  const t = floor.t;
+  if (bite.victim) {
+    const v = res[bite.victim]; if (!v || v.room !== a.room) { bite.victim = null; return; }
+    const k = (t - bite.t0) / 1.4;
+    if (k < 0.5) { const e = k / 0.5; a.u = bite.from.u + (v.u - 9 - bite.from.u) * e; a.v = bite.from.v + (v.v - bite.from.v) * e; a.dwell = Math.max(a.dwell, 1); }     // the lunge
+    else if (k < 1) { a.u = v.u - 9; a.v = v.v; a.dwell = Math.max(a.dwell, 1); }
+    else bite.victim = null;
+    return;
+  }
+  if (t < bite.next) return;
+  const prey = Object.keys(res).filter(n => n !== 'SANASSI' && res[n].room === a.room && !res[n].moving);
+  bite.next = t + 18 + Math.random() * 22;
+  if (!prey.length) return;
+  bite.victim = prey[Math.floor(Math.random() * prey.length)]; bite.t0 = t; bite.from = { u: a.u, v: a.v };
+  const say = res[bite.victim]; say.biteMsg = BITE_YELP[Math.floor(Math.random() * BITE_YELP.length)];
+}
 function syncCustomAgents() {
   const SK = window.JN_STICK; if (customSynced || !SK || !SK.loaded) return;
   customSynced = true;
@@ -1062,7 +1082,7 @@ const guest = { name: null, until: -1, next: 55 + Math.random() * 45, said: 0 };
 let djNext = 6, bqNext = 5, bqWho = 0;
 function startLasers(secs) { laser.force = floor.t + secs; }                  // switch the lights on by hand (for testing)
 window.JN_lasers = () => startLasers(14);                    // try it from the console
-window.JN_house = () => ({ family: fam.phase + ' / ' + fam.mode + (fam.room ? ' / ' + fam.room.path : ''), prints: prints.length, guest: guest.name, lasers: laser.k > 0.01, music: beatNow().playing === true, where: Object.fromEntries(Object.entries(res).map(([k, v]) => [k, v.duty === 'away' ? 'on the main page' : v.room ? v.room.path + ' station ' + v.st : 'door'])) });   // what is going on in the house, from the console
+window.JN_house = () => ({ kidsWith: fam.with, kidsFollowing: KIDS.filter(n => res[n] && res[n].famIn).length, family: fam.phase + ' / ' + fam.mode + (fam.room ? ' / ' + fam.room.path : ''), prints: prints.length, guest: guest.name, lasers: laser.k > 0.01, music: beatNow().playing === true, where: Object.fromEntries(Object.entries(res).map(([k, v]) => [k, v.duty === 'away' ? 'on the main page' : v.room ? v.room.path + ' station ' + v.st : 'door'])) });   // what is going on in the house, from the console
 window.JN_guest = n => { guest.name = n || 'LLOYD'; guest.until = floor.t + 70; guest.said = floor.t + 3; };
 function partyTick(dt, sm) {
   const t = floor.t; musicTick(dt); famTick(dt, sm);
@@ -1085,11 +1105,12 @@ function partyTick(dt, sm) {
   }
 }
 // ─── THE FAMILY ───
-// Agent Wifeo is always on the go, and her little ones (Frankie, Jack Man and baby Oatie Man) trail along behind her with the two cats, Aragon and Tiger Baby,
-// everyone having a lovely time. They tour the whole house, stopping in each room to be silly, and every so often (or whenever the music is on) they go and watch Daddy DJing.
+// Agent Wifeo is always on the go with the two cats, Aragon and Tiger Baby. Her little ones (Frankie, Jack Man and baby Oatie Man) have their own lives in the house and
+// only meet up with her now and then: they come running when she calls (and whenever she goes to watch Daddy), tag along for a while, then wander off home again. They tour the whole house, stopping in each room to be silly, and every so often (or whenever the music is on) they go and watch Daddy DJing.
 const KIDS = ['FRANKIE', 'JACK MAN', 'OATIE MAN'];
 const FOLLOW = [{ n: 'FRANKIE', lag: 15 }, { n: 'JACK MAN', lag: 30 }, { n: 'OATIE MAN', lag: 44 }, { n: 'ARAGON', lag: 62, cat: 1 }, { n: 'TIGER BABY', lag: 80, cat: 1 }];
 const FAM_ASK = ['Has anybody seen James? I want kisses!', 'James? JAMES? I want kisses!', 'Has anybody seen James? Kisses, please!', 'Where’s my James? I need kisses!'];
+const FAM_ALONE = ['Has anybody seen James? Kisses, please!', 'Lovely day for a wander!', 'Where have my little ones got to?', 'I wonder what the little ones are up to. Trouble, probably.', 'Right: where next?', 'Anybody seen the cats? …Oh, there they are.'];
 const FAM_WALK = ['Come on, my beauties!', 'Keep up, you lot!', 'Everybody hold hands. Mind the cats!', 'Chop chop, my little ducks!', 'Who wants a cuddle? Everybody? Good.', 'I love you all SO much!', 'Right: where next?'];
 const KID_LOVE = ['I love you, Mum.', 'I love you, Mum. A LOT.', 'Love you, Mum!', 'Mum, you’re the best.', 'I love you, Mum. Can I have a biscuit?'];
 const KID_DADDY = ['Where’s Daddy? Is he playing? Is he DJing?', 'Is Daddy DJing yet?', 'Are we going to watch Daddy?', 'Is Daddy playing? Is he DJing?', 'Let’s go watch Daddy!'];
@@ -1105,7 +1126,7 @@ const ROOM_W = { '/security/layers/': ['Chill-out time, everybody!', 'Ooh, the b
   '/about/': ['Everybody wee? Everybody wee!', 'Wash your hands, my beauties!'], '/blog/': ['Nobody tell the newsroom we were here', 'Quiet please, they’re writing the news'],
   '/admin/': ['Don’t touch the servers!', 'Blinky lights! Look at the blinky lights!'], '/night-shift/': ['Say hello to the cameras!', 'Wave! They can see us!'] };
 const prints = [];
-const fam = { phase: 'wait', next: 3, u: 0, v: 0, step: 0, q: [], trail: [], stopK: 0, stopUntil: 0, mode: 'enter', room: null, stops: 0, said: 0, pos: {}, style: {}, first: true, daddyAt: -999, spawn: 0 };
+const fam = { with: false, withUntil: 0, meetAt: 0, phase: 'wait', next: 3, u: 0, v: 0, step: 0, q: [], trail: [], stopK: 0, stopUntil: 0, mode: 'enter', room: null, stops: 0, said: 0, pos: {}, style: {}, first: true, daddyAt: -999, spawn: 0 };
 // somewhere in a room to stop: one of its stations (the ballroom's dance floor if no room is given)
 function famSpot(r) {
   const kit = KITS[r.path] || KIT_PLAIN, st = (kit.stations || []).filter((x, k) => !(kit.reserved || []).includes(k) && x[2] !== 'lie');
@@ -1133,11 +1154,14 @@ function famNext(sm, force) {
   F.stops++; F.act = null; F.actUntil = 0; F.hadConga = false; F.congaing = false;
   let room, spot, mode;
   if (force === 'daddy' || raving() || F.stops % 3 === 0 || (playing && F.stops % 2 === 0)) { mode = 'daddy'; room = ball; spot = at(ball, 0.76, 0.58); F.daddyAt = t; }
+  else if (!F.with && !F.first && Math.random() < 0.35) { mode = 'podium'; room = ball; spot = at(ball, 0.88, 0.71); }          // Wifeo, on her own, goes to dance on the turning podium
   else { mode = 'room'; room = pickOne(floor.rooms.filter(r => r !== F.room && r !== ball && KITS[r.path])) || ball; spot = famSpot(room); }
+  if (mode === 'daddy' && !F.with && Math.random() < 0.5) { F.with = true; F.withUntil = t + 26 + Math.random() * 10; }          // sometimes the little ones come along to watch Daddy
   F.mode = mode; F.room = room; F.q = routeTo(F.u, F.v, room, spot);
   FOLLOW.forEach(f => { F.style[f.n] = pickOne(DANCES); });
   if (mode === 'daddy') { famSay('FRANKIE', 'Where’s Daddy? Is he playing?', 0.4); famSay('JACK MAN', 'Is he DJing?', 2.6); famSay('WIFEO', 'Let’s go watch Daddy!', 4.6); }
-  else famSay('WIFEO', pickOne(FAM_WALK), 0.3);
+  else if (mode === 'podium') famSay('WIFEO', pickOne(['Right, I’m getting on that podium!', 'Podium time! Hold my drink!', 'Somebody give me a hand up!']), 0.3);
+  else famSay('WIFEO', F.with ? pickOne(FAM_WALK) : pickOne(FAM_ALONE), 0.3);
 }
 window.JN_visit = () => { fam.stopUntil = 0; if (fam.phase === 'tour') famNext(SM, 'daddy'); else fam.next = 0; };      // send them to watch Daddy, from the console
 window.JN_argon = () => { fam.next = 0; };
@@ -1147,7 +1171,7 @@ function famTick(dt, sm) {
   if (!ball) return;
   if (F.phase === 'wait') {
     if (t < F.next) return;
-    F.phase = 'tour'; F.u = -8; F.v = floor.cv; F.step = 0; F.mode = 'enter'; F.room = ball; F.stopK = 0; F.stopUntil = 0; F.first = true; F.spawn = t;
+    F.phase = 'tour'; F.u = -8; F.v = floor.cv; F.step = 0; F.mode = 'enter'; F.room = ball; F.stopK = 0; F.stopUntil = 0; F.first = true; F.spawn = t; F.catWith = true; F.catUntil = t + 30; F.catMeet = t + 100; F.with = true; F.withUntil = t + 28; F.meetAt = t + 28 + 110;
     F.trail = []; for (let d = 240; d >= 0; d -= 3) F.trail.push({ u: F.u - d * sm, v: F.v });
     F.q = routeTo(F.u, F.v, ball, at(ball, 0.45, 0.6)); F.said = t + 3.2;
     famSay('CODPIECE', 'Ooh! It’s Wifeo! And all the little ones! In you come, gorgeous!', 0, 3.4); famSay('MR. PARTICULAR', 'Always, always, darlings. Rope’s open for you!', 1.6, 3);
@@ -1165,17 +1189,23 @@ function famTick(dt, sm) {
       if (F.congaing) { F.congaing = false; F.act = null; F.actUntil = t + 1.5; F.stopUntil = Math.max(F.stopUntil, t + 5); F.said = t + 0.5; }
       else {
       F.anchor = { u: F.u, v: F.v }; F.lwt = 0;
-      F.first = false; F.stopUntil = t + (F.mode === 'daddy' ? 22 + Math.random() * 6 : 10 + Math.random() * 4); F.said = t + 0.8; F.said2 = 0; F.actUntil = t + 3; }
+      F.first = false; F.stopUntil = t + (F.mode === 'podium' ? 26 + Math.random() * 8 : F.mode === 'daddy' ? 22 + Math.random() * 6 : 10 + Math.random() * 4); F.said = t + 0.8; F.said2 = 0; F.actUntil = t + 3; }
       if (F.mode === 'room') F.roomSaid = false;
     }
   } else if (t > F.stopUntil) famNext(sm);
+  // the little ones only meet up now and then: called over for a while, then sent off to get on with their day
+  if (F.with && t > F.withUntil && !F.first && !raving()) { F.with = false; F.meetAt = t + 120 + Math.random() * 120; famSay('WIFEO', pickOne(['Off you go, my beauties. Be good!', 'Go and play! I’ll find you later!', 'Right, you lot: scoot!']), 0, 3); famSay(pickOne(KIDS), 'Bye, Mum!', 1.4, 2); }
+  else if (!F.with && t > F.meetAt && !F.first && F.mode !== 'podium') { F.with = true; F.withUntil = t + 22 + Math.random() * 16; famSay('WIFEO', pickOne(['Where are my little ones? COME HERE!', 'Family meeting! Everybody to Mummy!', 'Who wants a cuddle? Come on!']), 0, 3); famSay(pickOne(KIDS), 'Coming, Mum!', 1.6, 2); }
   else if (raving() && F.mode !== 'daddy' && t - F.daddyAt > 45 && !F.first) famNext(sm, 'daddy');                  // the music's on: off to watch Daddy
+  // the cats only tag along now and then too; the rest of the time they potter about wherever they were
+  if (F.catWith && t > F.catUntil && !F.first) { F.catWith = false; F.catMeet = t + 70 + Math.random() * 80; }
+  else if (!F.catWith && t > F.catMeet && !F.first && F.mode !== 'podium') { F.catWith = true; F.catUntil = t + 25 + Math.random() * 20; FOLLOW.forEach(f => { const o = F.pos[f.n]; if (f.cat && o) o.join = true; }); }
   // when they've stopped nobody stands in a clump: Wifeo drifts about a bit, and the little ones and the cats each wander off to their own bit of floor, dancing where they stop
   const rm = F.room, cl = (u, v) => rm ? { u: Math.max(rm.u + 6, Math.min(rm.u + rm.w - 6, u)), v: Math.max(rm.v + 6, Math.min(rm.v + rm.d - 6, v)) } : { u, v };
   F.lm = false; F.shared = DANCES[Math.floor(t / 3.2) % DANCES.length];
-  if (!moving && F.stopK > 0.8 && !F.first && t > F.actUntil) famPickAct(sm);
+  if (!moving && F.stopK > 0.8 && !F.first && F.with && t > F.actUntil) famPickAct(sm);
   if (!moving && F.stopK > 0.8 && F.anchor) {
-    if (t > F.lwt) { F.lwt = t + 3 + Math.random() * 3; const rr = (F.mode === 'daddy' ? 42 : 24) * sm; F.lt = cl(F.anchor.u + (Math.random() - 0.5) * 2 * rr, F.anchor.v + (Math.random() - 0.5) * 1.2 * rr); }
+    if (F.mode !== 'podium' && t > F.lwt) { F.lwt = t + 3 + Math.random() * 3; const rr = (F.mode === 'daddy' ? 42 : 24) * sm; F.lt = cl(F.anchor.u + (Math.random() - 0.5) * 2 * rr, F.anchor.v + (Math.random() - 0.5) * 1.2 * rr); }
     if (F.lt) { const du = F.lt.u - F.u, dv = F.lt.v - F.v, d0 = Math.hypot(du, dv), sp = 20 * sm * dt; if (d0 > sp) { F.u += du / d0 * sp; F.v += dv / d0 * sp; F.lm = true; F.step += sp * 0.3; } }
   }
   F.stopK = moving ? Math.max(0, F.stopK - dt * 2.5) : Math.min(1, F.stopK + dt * 1.2);
@@ -1186,6 +1216,15 @@ function famTick(dt, sm) {
     for (let j = F.trail.length - 1; j >= 0; j--) { const c = F.trail[j], l = Math.hypot(prev.u - c.u, prev.v - c.v); if (acc + l >= lag) { const e = (lag - acc) / (l || 1); pt = { u: prev.u + (c.u - prev.u) * e, v: prev.v + (c.v - prev.v) * e }; break; } acc += l; prev = c; pt = c; }
     const o = F.pos[f.n] || { u: pt.u, v: pt.v, step: 0, dir: 1 };
     o.cm = false;
+    if (f.cat && !F.catWith) {                                       // off on its own: a little wander round the room it is in
+      if (!o.fr) { o.fr = true; o.fw = 0; o.ft = { u: o.u, v: o.v }; }
+      const c0 = roomAt(o.u, o.v);
+      if (t > o.fw) { o.fw = t + 3 + Math.random() * 5; const R = 22 * sm, tu = o.u + (Math.random() - 0.5) * 2 * R, tv = o.v + (Math.random() - 0.5) * 1.2 * R; o.ft = c0 ? { u: Math.max(c0.u + 6, Math.min(c0.u + c0.w - 6, tu)), v: Math.max(c0.v + 6, Math.min(c0.v + c0.d - 6, tv)) } : { u: o.u, v: o.v }; }
+      const du = o.ft.u - o.u, dv = o.ft.v - o.v, d0 = Math.hypot(du, dv), sp = 22 * sm * dt;
+      if (d0 > sp) { o.u += du / d0 * sp; o.v += dv / d0 * sp; o.cm = true; o.dir = du >= 0 ? 1 : -1; o.step += sp * 0.35; }
+      o.moving = o.cm; o.cinit = false; F.pos[f.n] = o; return;
+    }
+    o.fr = false;
     if (moving) o.cinit = false;
     else if (F.stopK > 0.3) {
       if (!o.cinit) { o.cu = o.u; o.cv = o.v; o.cinit = true; o.wt = 0; }
@@ -1199,7 +1238,9 @@ function famTick(dt, sm) {
       if (d0 > sp) { o.cu += du / d0 * sp; o.cv += dv / d0 * sp; o.cm = true; } else { o.cu = o.tu; o.cv = o.tv; }
     }
     const cu = o.cinit ? o.cu : pt.u, cv = o.cinit ? o.cv : pt.v;
-    const nu = pt.u + (cu - pt.u) * k, nv = pt.v + (cv - pt.v) * k, dd = Math.hypot(nu - o.u, nv - o.v);
+    let nu = pt.u + (cu - pt.u) * k, nv = pt.v + (cv - pt.v) * k;
+    if (o.join) { const jd = Math.hypot(nu - o.u, nv - o.v), js = 85 * sm * dt; if (jd > js) { nu = o.u + (nu - o.u) / jd * js; nv = o.v + (nv - o.v) / jd * js; } else o.join = false; }    // a cat rejoining runs over rather than jumping
+    const dd = Math.hypot(nu - o.u, nv - o.v);
     if (dd > 0.01) o.dir = nu >= o.u ? 1 : -1;
     o.step += dd * 0.35; o.moving = F.stopK < 0.97 || o.cm; o.u = nu; o.v = nv; F.pos[f.n] = o;
     if (f.n === 'ARAGON' && o.moving && roomAt(o.u, o.v) === ball) {                       // a few pale paw prints across the dance floor, fading quickly
@@ -1211,7 +1252,9 @@ function famTick(dt, sm) {
   if (t > F.said) {
     const stopped = !moving && F.stopK > 0.6, daddy = F.mode === 'daddy', kids = KIDS.filter(n => F.pos[n]);
     F.said = t + (stopped ? 2.6 : 5.2) + Math.random() * 1.4;
-    if (F.first) { F.said = t + 5; famSay(pickOne(kids), pickOne(KID_DADDY), 0); }
+    if (!F.with) {                                                   // just Wifeo and the cats for now
+      if (Math.random() < 0.55) famSay('WIFEO', pickOne(FAM_ALONE), 0); else famSay(pickOne(['ARAGON', 'TIGER BABY']), '♥', 0, 2);
+    } else if (F.first) { F.said = t + 5; famSay(pickOne(kids), pickOne(KID_DADDY), 0); }
     else if (stopped && daddy) {
       const r = Math.random();
       if (r < 0.3) famSay('WIFEO', pickOne(DADDY_W), 0); else if (r < 0.55) famSay(pickOne(['FRANKIE', 'JACK MAN']), pickOne(DADDY_KID), 0); else if (r < 0.72) famSay('OATIE MAN', pickOne(BABY_SAY), 0);
@@ -1229,6 +1272,7 @@ function famTick(dt, sm) {
 // a kid walking with the family: the position comes from the trail, or (if they've been through the wormhole) they hurry over to rejoin
 function famRoute(a, name, sm, dt) {
   const p = fam.pos[name]; if (fam.phase === 'wait' || !p) return false;
+  if (!fam.with) { if (a.famIn || a.joinQ) { a.famIn = false; a.joinQ = null; a.q = null; } return false; }       // off living their own lives
   if (!a.famIn) {
     const d = Math.hypot(p.u - a.u, p.v - a.v);
     if (fam.first || d < 8 * sm) a.famIn = true;
@@ -1254,6 +1298,40 @@ function drawPrints(sm) {                          // small pale paw prints (a p
   fx.restore();
 }
 // lasers in the corners, beams from the mirror ball, and a wash of colour: only in the ballroom, and only while the music is playing
+let spinAng = 0;
+// The smoke machine in the ballroom corner: a burst of smoke every five minutes (the first one soon after the page opens)
+const smoke = { next: 25, burst: 0, last: 0, emit: 0, puffs: [] };
+function smokeTick(r, sm, dt) {
+  const t = floor.t;
+  if (t > smoke.next) { smoke.burst = t + 7; smoke.next = t + 300; }
+  if (t < smoke.burst && t > smoke.emit) {
+    smoke.emit = t + 0.11;
+    for (let i = 0; i < 2; i++) smoke.puffs.push({ u: r.u + r.w - 12 * sm + (Math.random() - 0.5) * 4 * sm, v: r.v + r.d - 10 * sm + (Math.random() - 0.5) * 4 * sm, z: 7 * sm, vu: (-0.4 - Math.random() * 1.2) * 14 * sm, vv: (Math.random() - 0.5) * 14 * sm, vz: (9 + Math.random() * 8) * sm, t0: t, life: 7 + Math.random() * 3, r0: 3 + Math.random() * 2, spin: Math.random() * 6 });
+    if (smoke.puffs.length > 90) smoke.puffs.splice(0, smoke.puffs.length - 90);
+  }
+  smoke.puffs = smoke.puffs.filter(q => t - q.t0 < q.life);
+  for (const q of smoke.puffs) { q.u += q.vu * dt; q.v += q.vv * dt; q.z += q.vz * dt; q.vu *= 1 - 0.25 * dt; q.vz *= 1 - 0.18 * dt; }
+}
+function drawSmoke(r, sm, s) {
+  const t = floor.t;
+  // the machine itself: a small box with a nozzle and a pilot light
+  fx.save(); fx.globalAlpha = 0.9;
+  const mu = r.u + r.w - 16 * sm, mv = r.v + r.d - 14 * sm, B = block(mu, mv, 9 * sm, 7 * sm, 6 * sm);
+  const nz = B.top(0.5, 0.5, 1 * sm); fx.beginPath(); fx.arc(nz[0], nz[1], 1.4 * sm, 0, 7); fx.stroke();
+  if (t < smoke.burst) { fx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 25); fx.beginPath(); fx.arc(B.x + B.w * 0.8, B.y + B.h * 0.5, 0.9 * sm, 0, 7); fx.fillStyle = '#ff4a3a'; fx.fill(); }
+  fx.restore();
+  if (!smoke.puffs.length) return;
+  fx.save(); fx.globalCompositeOperation = 'lighter';
+  for (const q of smoke.puffs) {
+    const a = (t - q.t0) / q.life, pt = P(q.u, q.v, q.z), rad = (q.r0 + a * 26) * s * 0.9;
+    const alpha = 0.16 * Math.min(1, (t - q.t0) / 0.6) * (1 - a) * (1 - a);
+    const g = fx.createRadialGradient(pt[0], pt[1], 0, pt[0], pt[1], rad);
+    g.addColorStop(0, `rgba(210,218,235,${alpha})`); g.addColorStop(1, 'rgba(210,218,235,0)');
+    fx.fillStyle = g; fx.fillRect(pt[0] - rad, pt[1] - rad, rad * 2, rad * 2);
+  }
+  fx.restore();
+}
+
 function drawBallroom(r, sm, s) {
   const k = laser.k, on = k > 0.01, zc = 40 * sm;
   const corners = [[r.u + 4, r.v + 3], [r.u + r.w - 4, r.v + 3], [r.u + 4, r.v + r.d - 4], [r.u + r.w - 4, r.v + r.d - 4]];
@@ -1278,6 +1356,26 @@ function drawBallroom(r, sm, s) {
     fx.strokeStyle = '#fff'; fx.fillStyle = '#fff'; fx.lineWidth = 1;
     for (let i = 0; i < 10; i++) { const an = mus.ph * 0.9 + i * Math.PI / 5, q = P(b.u + Math.cos(an) * r.w * (0.1 + 0.12 * mus.e + 0.05 * Math.min(1, mus.hit)), b.v + Math.sin(an) * r.d * (0.18 + 0.2 * mus.e), 0);
       fx.globalAlpha = (0.15 + 0.3 * mus.e + 0.3 * Math.min(1, mus.hit)) * k; fx.beginPath(); fx.moveTo(bc[0], bc[1]); fx.lineTo(q[0], q[1]); fx.stroke(); fx.globalAlpha = 0.7 * k; fx.beginPath(); fx.arc(q[0], q[1], 1.6 * s, 0, 7); fx.fill(); }
+  }
+  fx.restore();
+  drawSmoke(r, sm, s);
+}
+
+// ─── The chill-out room's oil lights: slow coloured oils floating, thrown onto the floor and the back wall ───
+const OIL = ['#ff4fa0', '#ff9a3c', '#8bff6a', '#3cd7ff', '#8f5bff', '#ffd23c', '#ff5a5a'];
+function drawChillOut(r, sm, s, layer) {
+  const t = floor.t, back = r.upper ? r.v : r.v + r.d, wallH = 34 * sm;
+  fx.save(); fx.globalCompositeOperation = 'lighter';
+  const blob = (x, y, rx, ry, col, a) => { fx.save(); fx.translate(x, y); fx.scale(1, ry / rx); const g = fx.createRadialGradient(0, 0, 0, 0, 0, rx); g.addColorStop(0, col + 'ff'); g.addColorStop(0.55, col + '77'); g.addColorStop(1, col + '00'); fx.globalAlpha = a; fx.fillStyle = g; fx.beginPath(); fx.arc(0, 0, rx, 0, 7); fx.fill(); fx.restore(); };
+  for (let i = 0; i < OIL.length; i++) {
+    const ph = i * 2.1, sp = 0.05 + (i % 3) * 0.018;
+    const u = r.u + r.w * (0.5 + 0.44 * Math.sin(t * sp + ph) * Math.cos(t * sp * 0.6 + i)), v = r.v + r.d * (0.5 + 0.42 * Math.cos(t * sp * 0.8 + ph * 1.3));
+    const wob = 1 + 0.18 * Math.sin(t * 0.4 + i * 1.7), br = 0.6 + 0.4 * Math.sin(t * 0.23 + i);
+    if (layer === 'floor') { const q = P(u, v, 0), R = r.w * 0.2 * wob; blob(q[0], q[1], R, R * ISO.sq, OIL[i], 0.26 * br); blob(q[0] + R * 0.25, q[1] - R * 0.1, R * 0.55, R * 0.55 * ISO.sq, OIL[(i + 3) % OIL.length], 0.16 * br); }
+    else {                                                                   // the same oils on the wall behind, drifting sideways
+      const wu = r.u + r.w * (0.5 + 0.46 * Math.sin(t * sp * 0.9 + ph + 1)), wz = wallH * (0.45 + 0.4 * Math.sin(t * sp * 1.3 + ph * 0.7)), q = P(wu, back, wz), R = r.w * 0.13 * wob;
+      blob(q[0], q[1], R, R * 0.8, OIL[(i + 1) % OIL.length], 0.32 * br);
+    }
   }
   fx.restore();
 }
@@ -1410,24 +1508,35 @@ function drawFloor(dt) {
         if (w.name === 'FRANKIE' && cat && cat.phase === 'sit' && !moving) pose = 'stroke';   // stroking the tiger baby
         if (!moving && pose === 'dance') { pose = 'rave'; if (!a.style) a.style = DANCES[Math.floor(Math.random() * DANCES.length)]; }   // dance stations: on the beat
       }
+      if (w.name === 'SANASSI') biteStep(a, r, dt);
+      const bitten = bite.victim === w.name && floor.t - bite.t0 > 0.6, hop = bitten ? Math.abs(Math.sin((floor.t - bite.t0 - 0.6) * 9)) * 9 * sm * Math.max(0, 1 - (floor.t - bite.t0 - 0.6) / 0.8) : 0;
       const stn = st[a.st] || [], up = !moving && !a.raving && stn[4] ? stn[4] * sm : 0, nudge = up && stn[5] ? stn[5] * r.d : 0;
       Z.push({ z: a.v + 0.5 + nudge, f: () => throughWorm(a, sm, () => {
-        const [x, y] = P(a.u, a.v, up);
+        const [x, y] = P(a.u, a.v, up + hop), turning = up && stn[6] === 'spin';
+        if (turning) { fx.save(); fx.translate(x, 0); fx.scale(Math.cos(spinAng), 1); fx.translate(-x, 0); }       // turning round with the podium
         if (pose === 'rave') danceMan(x, y, sm, a, w.name, i);
         else stickMan(x, y, sm, moving ? a.step : t * 2 + i, pose, w.name);
+        if (turning) fx.restore();
         text(shown(w.name), x, y + 9 * s, 7.5 * s, 0.65);
+        if (bitten) { text('CHOMP!', x - 14 * s, y - 44 * s, 10 * s, 1); text(a.biteMsg || 'OW!', x, y - 56 * s, 8 * s, 0.9); }
+        if (w.name === 'SANASSI' && bite.victim) text('★ ★', x, y - 38 * s, 8 * s, 0.9);
         const msg = w.line();
         if (msg && !moving && !raving() && pose !== 'rave' && r.w / Math.max(1, who.length) > 60) text(msg, Math.max(P(r.u, a.v)[0] + 46, Math.min(P(r.u + r.w, a.v)[0] - 46, x)), y - 36 * sm - (i % 2) * 10 * s, 8 * s, 0.8);
       }) });
     });
   });
 
-  { const ball = floor.rooms.find(r => r.path === '/music/'); if (ball) Z.push({ z: ball.v + ball.d + 3, f: () => drawBallroom(ball, sm, s) }); }
+  { const ball = floor.rooms.find(r => r.path === '/music/'); if (ball) { smokeTick(ball, sm, dt); Z.push({ z: ball.v + ball.d + 3, f: () => drawBallroom(ball, sm, s) }); } }
+  { const chill = floor.rooms.find(r => r.path === '/security/layers/'); if (chill) { Z.push({ z: chill.v - 0.5, f: () => drawChillOut(chill, sm, s, 'floor') }); Z.push({ z: (chill.upper ? chill.v : chill.v + chill.d) + 0.2, f: () => drawChillOut(chill, sm, s, 'wall') }); } }
 
   if (fam.phase !== 'wait') {
     const F = fam, stopped = F.q.length === 0 && F.stopK > 0.5;
-    Z.push({ z: F.v + 0.5, f: () => { const [x, y] = P(F.u, F.v);
-      stickMan(x, y, sm, stopped && !F.lm ? t * 2 : F.step, stopped && !F.lm ? 'dance' : 'walk', 'WIFEO'); text('WIFEO', x, y + 9 * s, 7.5 * s, 0.75);
+    const onPod = stopped && F.mode === 'podium';
+    Z.push({ z: F.v + 0.5 + (onPod ? 0.14 * 20 : 0), f: () => { const [x, y] = P(F.u, F.v, onPod ? 8 * sm : 0);
+      if (onPod) { fx.save(); fx.translate(x, 0); fx.scale(Math.cos(spinAng), 1); fx.translate(-x, 0); }
+      stickMan(x, y, sm, stopped && !F.lm ? t * 2 : F.step, stopped && !F.lm ? 'dance' : 'walk', 'WIFEO');
+      if (onPod) fx.restore();
+      text('WIFEO', x, y + 9 * s, 7.5 * s, 0.75);
       for (let k = 0; k < 3; k++) { const ph = (t * 0.4 + k / 3) % 1; text('♥', x + Math.sin(ph * 5 + k * 2) * 12 * s, y - 36 * s - ph * 26 * s, (7 + k) * s, (stopped ? 1 : 0.6) * (1 - ph)); } } });
     ['ARAGON', 'TIGER BABY'].forEach(n => { const c = F.pos[n]; if (!c) return;
       Z.push({ z: c.v + 0.4, f: () => { drawCat({ u: c.u, v: c.v, dir: c.dir || 1, phase: stopped && !c.moving ? 'sit' : 'walk', step: c.step || 0, wild: n === 'ARAGON' }, sm); const [x, y] = P(c.u, c.v); seenAt[n] = { x, y, at: floor.t, s: sm }; text(n, x, y + 8 * s, 6.5 * s, 0.6); } }); });
@@ -1447,8 +1556,8 @@ function drawFloor(dt) {
   // the front door is a nightclub entrance: Codpiece and Mr. Particular are the bouncers. Nobody ever comes in.
   Z.push({ z: floor.Dr + floor.Dc * 0.85, f: () => frontDoor(sm, s) });
   const BOUNCE_JOIN = ['Rules say no dancing on shift. Rules can wait!', 'The door looks after itself. DANCE!', 'Mwah! Even security can’t resist this tune!', 'Podium time, babes! Watch this!', 'Nobody’s getting in anyway. WOO!'];
-  [['CODPIECE', 0.12, () => jobLine('gatekeeper')], ['MR. PARTICULAR', 0.88, () => dayLine('teacake')]].forEach(([name, fv, lineFn], bi) => {
-    const home = { u: 16 * sm, v: floor.Dr + floor.Dc * fv }, a = res[name] || (res[name] = { u: home.u, v: home.v, step: 0 });
+  [['CODPIECE', 0.2, () => jobLine('gatekeeper')], ['MR. PARTICULAR', 0.8, () => dayLine('teacake')]].forEach(([name, fv, lineFn], bi) => {
+    const home = { u: 9 * sm, v: floor.Dr + floor.Dc * fv }, a = res[name] || (res[name] = { u: home.u, v: home.v, step: 0 });
     const onDuty = dutyRoute(a, name, () => home, sm, dt), ball = floor.rooms.find(r => r.path === '/music/');
     // when the whole house is raving even the bouncers leave the door, get up on a podium and go absolutely mad
     if (!onDuty && ball) {
@@ -1522,13 +1631,20 @@ function jobLine(job) {
 // ─── Doors: a frame up to the lintel on the corridor wall of every room, and the door standing open into the room ───
 const doorGap = (r, sm) => r.merged ? Math.min(52 * sm, r.w * 0.2) : Math.min(30 * sm, r.w * 0.3);
 function drawDoor(r, sm) {
-  const gap = doorGap(r, sm), du = r.door.u, dv = r.door.v, h = 22 * sm, dir = r.upper ? -1 : 1, a = 0.75, L = gap * (r.merged ? 0.5 : 0.92) * 0.98;
+  const gap = doorGap(r, sm), du = r.door.u, dv = r.door.v, h = 22 * sm;
+  // automatic sliding doors: they glide open when somebody comes up to them and close again behind
+  const t = floor.t, dt = Math.min(0.1, Math.max(0, t - (r.dT || t))); r.dT = t;
+  const near = Object.keys(res).some(n => { const q = res[n]; return q && q.moving && Math.hypot(q.u - du, q.v - dv) < 24 * sm; }) || (fam.phase !== 'wait' && fam.q && fam.q.length && Math.hypot(fam.u - du, fam.v - dv) < 24 * sm);
+  r.dO = (r.dO || 0) + ((near ? 1 : 0) - (r.dO || 0)) * Math.min(1, dt * 4);
+  const o = r.dO;
   fx.save(); fx.globalAlpha = 0.95;
   block(du - gap / 2 - 2.2, dv - 2.6, 2.4, 3.2, h); block(du + gap / 2 - 0.2, dv - 2.6, 2.4, 3.2, h); block(du - gap / 2 - 2.2, dv - 2.6, gap + 4.4, 3.2, 3 * sm, h - 3 * sm);   // posts and lintel
-  const leaf = (hu, sign) => { const eu = hu + sign * Math.sin(a) * L, ev = dv + dir * Math.cos(a) * L;
-    poly([P(hu, dv, 1), P(eu, ev, 1), P(eu, ev, h - 4 * sm), P(hu, dv, h - 4 * sm)], '#000');
-    const k = P(hu + (eu - hu) * 0.82, dv + (ev - dv) * 0.82, (h - 4 * sm) * 0.45); fx.beginPath(); fx.arc(k[0], k[1], 1.1 * sm, 0, 7); fx.stroke(); };   // the leaf, and its handle
-  leaf(du - gap / 2, 1); if (r.merged) leaf(du + gap / 2, -1);                                                                               // the ballroom has double doors
+  const panel = (u0, u1) => { poly([P(u0, dv - 1, 1), P(u1, dv - 1, 1), P(u1, dv - 1, h - 4 * sm), P(u0, dv - 1, h - 4 * sm)], '#000');
+    const m = P((u0 + u1) / 2, dv - 1, h * 0.5); fx.beginPath(); fx.moveTo(m[0], m[1] - 3 * sm); fx.lineTo(m[0], m[1] + 3 * sm); fx.stroke(); };     // a glass-and-steel panel with a stile
+  const w = r.merged ? gap / 2 : gap, slide = o * (r.merged ? gap / 2 : gap) * 0.92;
+  if (r.merged) { panel(du - gap / 2 - slide, du - slide); panel(du + slide, du + gap / 2 + slide); }                                           // the ballroom has double sliding doors
+  else panel(du - gap / 2 + slide, du - gap / 2 + slide + w);
+  { const a1 = P(du - gap / 2 - 1, dv - 1, h - 3.5 * sm), a2 = P(du + gap / 2 + 1, dv - 1, h - 3.5 * sm); fx.globalAlpha = 0.6; fx.beginPath(); fx.moveTo(a1[0], a1[1]); fx.lineTo(a2[0], a2[1]); fx.stroke(); }   // the track
   fx.restore();
 }
 
@@ -1537,9 +1653,11 @@ function frontDoor(sm, s) {
   const v0 = floor.Dr + floor.Dc * 0.25, v1 = floor.Dr + floor.Dc * 0.75, h = 22 * sm, t = floor.t;
   fx.save(); fx.globalAlpha = 0.9;
   block(-3, v0 - 2, 3, 2, h); block(-3, v1, 3, 2, h); block(-3, v0 - 2, 3, v1 - v0 + 4, 3 * sm, h);   // frame and lintel
-  const a = 0.45, L = (v1 - v0) * 0.95, ex = Math.sin(a) * L, ev = v0 + Math.cos(a) * L;               // the door, swung open
-  poly([P(0, v0, 1), P(ex, ev, 1), P(ex, ev, h - 1), P(0, v0, h - 1)], '#000');
-  const k = P(ex * 0.85, v0 + (ev - v0) * 0.85, h * 0.45); fx.beginPath(); fx.arc(k[0], k[1], 1.4 * sm, 0, 7); fx.stroke();   // handle
+  const nearD = [res.CODPIECE, res['MR. PARTICULAR']].some(q => q && q.moving && q.u < 40 * sm) || (fam.phase !== 'wait' && fam.u < 30 * sm);
+  frontDoor.o = (frontDoor.o || 0) + ((nearD ? 1 : 0) - (frontDoor.o || 0)) * 0.08;                    // the entrance slides open for anyone coming in
+  const sl = frontDoor.o * (v1 - v0) * 0.55;
+  poly([P(0, v0 + sl, 1), P(0, v1 + sl, 1), P(0, v1 + sl, h - 1), P(0, v0 + sl, h - 1)], '#000');
+  const k = P(0, v0 + sl + (v1 - v0) * 0.85, h * 0.45); fx.beginPath(); fx.moveTo(k[0], k[1] - 3 * sm); fx.lineTo(k[0], k[1] + 3 * sm); fx.stroke();   // door stile
   fx.restore();
   // the sign over the door: a neon that flickers now and then
   const c = P(0, (v0 + v1) / 2, h + 18 * sm), flick = Math.sin(t * 17) > 0.97 || Math.sin(t * 5.3) > 0.992 ? 0.25 : 0.9;
