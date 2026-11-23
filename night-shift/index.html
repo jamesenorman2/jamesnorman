@@ -26,7 +26,8 @@
   .fsbtn{padding:.5rem .8rem;font-size:.62rem;letter-spacing:.2em}
   .floor.full{position:fixed;inset:0;z-index:200;margin:0;background:#000;display:flex;flex-direction:column}
   .floor.full .floorbar{padding:max(.5rem,env(safe-area-inset-top,0px)) max(.6rem,env(safe-area-inset-right,0px)) .4rem}
-  .floor.full canvas{flex:1;min-height:0;height:auto!important}
+  .floor.full{overflow:hidden}
+  .floor.full canvas{flex:1;min-height:0;height:auto!important;touch-action:none;transform-origin:0 0}
   .fshint{display:none;position:absolute;left:0;right:0;bottom:1rem;text-align:center;font-size:.7rem;letter-spacing:.15em;color:var(--dim);pointer-events:none}
   @media(orientation:portrait){.floor.full .fshint{display:block}}
   body.floor-lock{overflow:hidden}
@@ -1883,12 +1884,40 @@ addEventListener('resize', () => { layout(); makeMen(); });
   const box = document.querySelector('.floor'), btn = document.getElementById('fsBtn');
   const redraw = () => { layout(); makeMen(); };
   const set = on => {
-    box.classList.toggle('full', on); document.body.classList.toggle('floor-lock', on); btn.textContent = on ? 'Close' : 'Full screen'; btn.setAttribute('aria-pressed', String(on));
+    if (typeof window.__resetFloorZoom === 'function' && on) window.__resetFloorZoom();
+    box.classList.toggle('full', on); document.body.classList.toggle('floor-lock', on); if (!on && window.__resetFloorZoom) window.__resetFloorZoom(); btn.textContent = on ? 'Close' : 'Full screen'; btn.setAttribute('aria-pressed', String(on));
     if (on) { try { if (box.requestFullscreen) box.requestFullscreen().catch(() => {}); } catch (e) { /* the page cover is enough */ } try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* not allowed here */ } }
     else { try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) { /* fine */ } try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) { /* fine */ } }
     setTimeout(redraw, 60); setTimeout(redraw, 400);
   };
   btn.addEventListener('click', () => set(!box.classList.contains('full')));
+  // Zoom in full screen: pinch with two fingers (or scroll the wheel) to zoom, drag to look round, double-tap to put it back
+  const cvs = document.getElementById('floor'), Z = { s: 1, x: 0, y: 0 }, ptrs = new Map();
+  const apply = () => {
+    const w = cvs.clientWidth, h = cvs.clientHeight;
+    Z.s = Math.max(1, Math.min(6, Z.s)); Z.x = Math.min(0, Math.max(w * (1 - Z.s), Z.x)); Z.y = Math.min(0, Math.max(h * (1 - Z.s), Z.y));
+    cvs.style.transform = Z.s === 1 ? '' : `translate(${Z.x}px, ${Z.y}px) scale(${Z.s})`;
+  };
+  const resetZoom = () => { Z.s = 1; Z.x = Z.y = 0; ptrs.clear(); apply(); };
+  const zoomAt = (px, py, f) => { const r = cvs.parentElement.getBoundingClientRect(), cx = px - r.left, cy = py - r.top - cvs.offsetTop, ns = Math.max(1, Math.min(6, Z.s * f)), k = ns / Z.s; Z.x = cx - (cx - Z.x) * k; Z.y = cy - (cy - Z.y) * k; Z.s = ns; apply(); };
+  window.__resetFloorZoom = resetZoom;
+  const full = () => box.classList.contains('full');
+  cvs.addEventListener('wheel', e => { if (!full()) return; e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+  let lastTap = 0, pinch = 0;
+  cvs.addEventListener('pointerdown', e => {
+    if (!full()) return; try { cvs.setPointerCapture(e.pointerId); } catch (err) { /* fine */ } ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 1) { const now = performance.now(); if (now - lastTap < 300) { resetZoom(); lastTap = 0; } else lastTap = now; }
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
+  });
+  cvs.addEventListener('pointermove', e => {
+    if (!full() || !ptrs.has(e.pointerId)) return;
+    const prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d / pinch); pinch = d; }
+    else if (ptrs.size === 1 && Z.s > 1) { Z.x += e.clientX - prev.x; Z.y += e.clientY - prev.y; apply(); }
+  });
+  const up = e => { ptrs.delete(e.pointerId); pinch = 0; };
+  cvs.addEventListener('pointerup', up); cvs.addEventListener('pointercancel', up);
+  addEventListener('resize', () => { if (full()) apply(); });
   document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && box.classList.contains('full')) set(false); });
   addEventListener('keydown', e => { if (e.key === 'Escape' && box.classList.contains('full')) set(false); });
 }
