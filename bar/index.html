@@ -70,7 +70,14 @@
 
   /* your bar: what you have */
   .cab{border:1px solid var(--line);padding:1.3rem;margin:2rem 0 0}
-  .cab h2{margin:.5rem 0 .5rem}
+  .cab h2{margin:.9rem 0 .5rem}
+  .cab>summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:baseline;gap:.4rem 1rem;position:relative;padding-right:2rem}
+  .cab>summary::-webkit-details-marker{display:none}
+  .cab>summary::after{content:'+';position:absolute;right:0;top:0;font-size:1.2rem;color:var(--mid)}
+  .cab[open]>summary::after{content:'−'}
+  .cab .cabq{font-size:1rem;letter-spacing:.04em}
+  .cab .cabhint{flex:1 1 100%;font-size:.75rem;color:var(--dim)}
+  .cab>summary:focus-visible{outline:1px solid var(--fg);outline-offset:4px}
   .cabrow{display:flex;gap:.7rem;margin:1rem 0 .4rem}
   .cabrow input{flex:1 1 auto;min-width:0}
   .cab .chips{margin:.6rem 0}
@@ -112,8 +119,8 @@
     <p class="lede">Drinks with the stories behind them. Pick one and make it, scale it up for a party, or spin the wheel and let it decide.</p>
   </div>
 
-  <section class="cab" aria-labelledby="cabH">
-    <div class="kicker">Your bar</div>
+  <details class="cab" id="cabBox">
+    <summary><span class="kicker">Your bar (optional)</span><span class="cabq">Make what I’ve got</span><span class="cabhint">Tell the Bar what you have and it shows what you can make</span></summary>
     <h2 id="cabH">What have you got?</h2>
     <p class="small">Add the spirits, liqueurs and mixers you have and the Bar shows what you can make, what is one ingredient short, and what is worth buying next. Kept on this device only.</p>
     <form class="cabrow" id="cabForm" autocomplete="off">
@@ -126,7 +133,7 @@
     <div class="sum" id="cabSum" aria-live="polite"></div>
     <div class="buy" id="cabBuy"></div>
     <div class="row2" style="margin-top:.8rem"><button type="button" class="ghost" id="cabClear" hidden>Clear my bar</button></div>
-  </section>
+  </details>
 
   <div class="tools">
     <input class="search" id="q" type="search" placeholder="Search drinks or ingredients" aria-label="Search drinks or ingredients" autocomplete="off">
@@ -281,6 +288,7 @@ function haveChanged() {
   drawCabinet(); render(); if (current) paint();
 }
 function drawCabinet() {
+  if (have.length) $('cabBox').open = true;             // already told it what you have: leave it open
   const mine = $('cabChips'); mine.innerHTML = '';
   have.forEach(h => { const b = el('button', 'chip have', h); b.type = 'button'; b.setAttribute('aria-label', 'Remove ' + h);
     b.addEventListener('click', () => { have = have.filter(x => x !== h); haveChanged(); }); mine.append(b); });

@@ -58,6 +58,10 @@
   .duty{border:1px solid var(--line);padding:.7rem .9rem;margin:1rem 0;font-size:.78rem;line-height:1.6}
   .duty b{font-weight:500}
   .man .mini{padding:.4rem .7rem;font-size:.6rem}
+  .tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.2rem}
+  .tabs button{padding:.6rem 1rem;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;background:#000;color:#aaa;border:1px solid #333;cursor:pointer;font-family:inherit}
+  .tabs button[aria-selected=true]{color:#000;background:#fff;border-color:#fff}
+  #panel>.card{margin-top:0!important}
   .agtab{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:.8rem}
   .agtab th{text-align:left;font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);font-weight:400;padding:.4rem .5rem;border-bottom:1px solid #333}
   .agtab td{padding:.5rem;border-bottom:1px solid #222;vertical-align:top}
@@ -89,6 +93,7 @@
   </form>
 
   <section id="panel" hidden>
+    <div class="tabs" id="adminTabs" role="tablist" aria-label="Admin sections"></div>
     <div class="card">
       <div class="k">Now playing on the site</div>
       <div class="v" id="current">…</div>
@@ -107,7 +112,7 @@
     <div id="preview"></div>
 
     <div class="card" style="margin-top:2.5rem">
-      <div class="k">Agents</div>
+      <div class="k">Night shift</div>
       <div class="v">A new shift starts at most once an hour while people visit the site, plus a daily 05:00 UTC backup. Reads your tracks straight from SoundCloud. Run one now to test.</div>
       <div class="row"><button type="button" class="ghost" id="shiftBtn">Run night shift now</button></div>
       <div class="msg" id="shiftMsg" role="status"></div>
@@ -453,6 +458,25 @@ $('agSave').addEventListener('click', async () => {
     say(msg, 'Saved. They will turn up on the Agents page next time it loads.', 'ok');
   } catch (err) { say(msg, 'Couldn’t save the agents.', 'err'); }
 });
+
+// The sections of this page each sit under their own button.
+(() => {
+  const SECTIONS = [['Music', ['Now playing']], ['Blog and ideas', ['Research desk', 'Ideas to review', 'Quizzy Rascal']], ['Crew', ['Night shift', 'Day crew', 'Engineer']], ['Stick men and agents', ['Stick men']], ['Back up', ['Back up']]];
+  const cards = [...document.querySelectorAll('#panel > .card')], bar = $('adminTabs');
+  cards.forEach(c => {
+    const t = (c.querySelector('.k') || {}).textContent || '';
+    let i = c.querySelector('#agTable') ? 3 : SECTIONS.findIndex(s => s[1].some(p => t.trim().startsWith(p)));
+    c.dataset.sec = i < 0 ? 0 : i;
+  });
+  const show = n => {
+    cards.forEach(c => { c.hidden = +c.dataset.sec !== n; });
+    [...bar.children].forEach((b, i) => b.setAttribute('aria-selected', String(i === n)));
+    try { sessionStorage.setItem('jn-admin-tab', String(n)); } catch (e) { /* fine */ }
+  };
+  SECTIONS.forEach(([name], i) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.textContent = name; b.addEventListener('click', () => show(i)); bar.append(b); });
+  let start = 0; try { start = Math.min(SECTIONS.length - 1, +sessionStorage.getItem('jn-admin-tab') || 0); } catch (e) { /* fine */ }
+  show(start);
+})();
 
 async function loadCrewBits() {
   try {
