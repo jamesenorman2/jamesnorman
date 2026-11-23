@@ -10,7 +10,7 @@ Answer each with **Y** (do it), **N** (skip), **L** (later) or **M** (do it, but
 | 2 | Show real status on each agent (green/amber/red dot from their latest run), not just their name | M: card only | Status dot shown on the click card, not in the building. Built. |
 | 3 | A "what just happened" ticker under the building: last five real events (page checked, brief filed, track picked) L | Parked for later. |
 | 4 | Pause button, plus a speed control (normal / slow / fast-forward) for the whole house N | Skipped. |
-| 5 | Follow-cam: pick an agent and the view stays on them | | |
+| 5 | Follow-cam: pick an agent and the view stays on them N | Skipped. |
 | 6 | Day and night lighting that follows the real UK time, so the house is dim at 3am | | |
 | 7 | A proper phone layout: pinch to zoom, drag to pan, tap an agent, instead of a tiny shrunken building | | |
 | 8 | Keyboard and screen-reader access: a plain list of who is where, and keyboard focus on agents | | |
