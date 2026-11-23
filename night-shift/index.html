@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/site.css?v=20261123">
 <style>
   .floor{margin:2.5rem 0 0;position:relative}
   .floorbar{display:flex;justify-content:flex-end;padding:0 0 .5rem}
@@ -957,6 +957,9 @@ function roamRoute(a, name, homeFn, sm, dt) {
 const CUSTOM_SAYS = {}, ROAM = {}; let customSynced = false;
 // Sanassi goes round biting people: every so often he picks someone in his room, lunges, CHOMP, and they hop and yelp
 const bite = { next: 20, victim: null, t0: 0, from: null };
+const dayKey = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+const bites = (() => { try { const j = JSON.parse(localStorage.getItem('jn-bites') || 'null'); if (j && j.d === dayKey()) return j; } catch (e) { /* no storage */ } return { d: dayKey(), n: 0, who: {} }; })();
+const saveBites = () => { try { localStorage.setItem('jn-bites', JSON.stringify(bites)); } catch (e) { /* fine */ } };
 const BITE_YELP = ['OW! My leg!', 'SANASSI! Not again!', 'He bit me!', 'Ow ow ow!', 'Rabies jab, anyone?', 'That is my ankle!', 'Oi! Teeth!'];
 function biteStep(a, r, dt) {                                       // called for Sanassi each frame
   const t = floor.t;
@@ -973,6 +976,8 @@ function biteStep(a, r, dt) {                                       // called fo
   bite.next = t + 18 + Math.random() * 22;
   if (!prey.length) return;
   bite.victim = prey[Math.floor(Math.random() * prey.length)]; bite.t0 = t; bite.from = { u: a.u, v: a.v };
+  if (bites.d !== dayKey()) { bites.d = dayKey(); bites.n = 0; bites.who = {}; }
+  bites.n++; bites.who[bite.victim] = 1; saveBites();
   const say = res[bite.victim]; say.biteMsg = BITE_YELP[Math.floor(Math.random() * BITE_YELP.length)];
 }
 function syncCustomAgents() {
@@ -1524,6 +1529,8 @@ function drawFloor(dt) {
         else stickMan(x, y, sm, moving ? a.step : t * 2 + i, pose, w.name);
         if (turning) fx.restore();
         text(shown(w.name), x, y + 9 * s, 7.5 * s, 0.65);
+        if (bites.who[w.name] && bites.d === dayKey()) { fx.save(); fx.lineWidth = 1; fx.strokeRect(x + 2 * s, y - 11 * s, 5 * s, 3 * s); fx.beginPath(); fx.moveTo(x + 4.5 * s, y - 11 * s); fx.lineTo(x + 4.5 * s, y - 8 * s); fx.stroke(); fx.restore(); }     // a plaster where Sanassi got them
+        if (w.name === 'SANASSI' && bites.n) text('BITES TODAY: ' + bites.n, x, y + 17 * s, 6.5 * s, 0.7);
         if (bitten) { text('CHOMP!', x - 14 * s, y - 44 * s, 10 * s, 1); text(a.biteMsg || 'OW!', x, y - 56 * s, 8 * s, 0.9); }
         if (w.name === 'SANASSI' && bite.victim) text('★ ★', x, y - 38 * s, 8 * s, 0.9);
         const msg = w.line(); if (msg && !moving && msg.length > 3 && !/^first report/i.test(msg)) lastSaid[w.name] = { text: msg, at: floor.t };
@@ -2043,6 +2050,8 @@ const THOUGHTS_BY = { SANASSI: ['Teeth are only bones that went outside.', 'I bi
       sv.append(dot, document.createTextNode(rm.ok === false ? `${rm.name}: last check failed (${rm.status || 'no answer'})` : rm.ok ? `${rm.name}: last check passed${rm.ms != null ? ' · ' + rm.ms + ' ms' : ''}` : `${rm.name}: no check yet`));
       card.append(st, sv);
     }
+    if (best === 'SANASSI') { const bi = document.createElement('i'), bv = document.createElement('div'); bi.textContent = 'Bites today'; bv.textContent = String(bites.n); card.append(bi, bv); }
+    else if (bites.who[best]) { const bi = document.createElement('i'), bv = document.createElement('div'); bi.textContent = 'First aid'; bv.textContent = 'Bitten by Sanassi today. Plaster applied.'; card.append(bi, bv); }
     box.appendChild(card);
     const bw = card.offsetWidth, bh = card.offsetHeight, br = box.getBoundingClientRect();
     card.style.left = Math.max(4, Math.min(br.width - bw - 4, x + (r.left - br.left) - bw / 2)) + 'px';

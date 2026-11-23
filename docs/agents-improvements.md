@@ -18,7 +18,7 @@ Answer each with **Y** (do it), **N** (skip), **L** (later) or **M** (do it, but
 | 10 | Lower frame rate on slow devices (auto-detect), so it never stutters L | Parked for later. |
 | 11 | Room pop-ups: hover a room to see what it does and which page it links to L | No preference given; parked. |
 | 12 | Failed checks as visible events: a red alarm light and agents running to the room that broke L | Parked for later. |
-| 13 | Sanassi's bite count, shown as a small scoreboard, with victims getting a plaster for the rest of the day | | |
+| 13 | Sanassi's bite count, shown as a small scoreboard, with victims getting a plaster for the rest of the day Y | Built: count under Sanassi's name and on his card; victims get a plaster until midnight (UK). |
 | 14 | Wifeo's family dashboard: a toggle to follow the family, with a log of where they have been | | |
 | 15 | Bouncers actually check the guest list: a queue of "visitors" (real visit counts, anonymous) at the front door | | |
 | 16 | A weather system outside the building matching real Brighton weather | | |
