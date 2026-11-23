@@ -2210,6 +2210,16 @@ window.JN_SEEK = (url, ms) => {
   scPos = ms; scPosAt = performance.now();
   return true;
 };
+// the music as the picture sees it, for the agents page's lasers and screens: how loud it is now, the last big hit, and the track's waveform around the playhead
+window.JN_WAVE = () => {
+  const o = { playing: !!musicOn(), energy, hit, peaks: null };
+  if (wave && scDuration) {
+    const pos = scPos + (scPlaying ? performance.now() - scPosAt : 0), n = wave.length, c = (pos / scDuration) * n, half = Math.max(8, Math.round((14000 / scDuration) * n)), out = new Array(56);
+    for (let i = 0; i < 56; i++) { const k = Math.max(0, Math.min(n - 1, Math.round(c - half + (i / 55) * 2 * half))); out[i] = Math.max(0, Math.min(1, (wave[k] - waveLo) / (waveHi - waveLo || 1))); }
+    o.peaks = out;
+  }
+  return o;
+};
 // what the agents page (open over the player) needs to dance: is music playing, which tune, and the beat
 window.JN_BEAT = () => ({ playing: !!musicOn(), title: (nowEl && nowEl.textContent) || '', hit,
   period: (source === 'file' || source === 'mic') && music.bpm >= 70 && music.bpm <= 190 ? music.beat : 60 / 124 });

@@ -790,8 +790,9 @@ function drawItem(r, it, busy) {
     if (busy && Math.floor(t * 2) % 2 === 0) text('HIGH SCORE!', X + W / 2, Y - 3 * s, 5.5 * s, 0.9);
   }
   else if (kind === 'trippy') {                    // a big screen on the dance floor wall playing a psychedelic video in colour: a tunnel, a kaleidoscope, or drifting plasma
-    const mode = Math.max(0, Math.min(2, Math.round((fu - 0.32) / 0.19) * 2)), on = laser.k > 0.02, k = laser.k, cx = X + W / 2, cy = Y + B.h / 2, R = Math.hypot(W, B.h) / 2, sp = 0.7 + 0.8 * laser.k;
-    fx.save(); fx.beginPath(); fx.rect(X + 1.5, Y + 1.5, W - 3, B.h - 3); fx.clip(); fx.fillStyle = '#000'; fx.fillRect(X, Y, W, B.h); fx.globalAlpha = k;
+    const mode = Math.max(0, Math.min(2, Math.round((fu - 0.32) / 0.19) * 2)), on = laser.k > 0.02, k = laser.k, cx = X + W / 2, cy = Y + B.h / 2, R = Math.hypot(W, B.h) / 2, sp = 0.6 + 1.2 * mus.e;
+    const seg2 = (t + (fu - 0.32) * 40) % 22, wv = seg2 < 7 ? Math.min(1, seg2 / 0.7, (7 - seg2) / 0.7) : 0;                // every so often the screen shows the front page's waveform
+    fx.save(); fx.beginPath(); fx.rect(X + 1.5, Y + 1.5, W - 3, B.h - 3); fx.clip(); fx.fillStyle = '#000'; fx.fillRect(X, Y, W, B.h); fx.globalAlpha = k * (1 - wv);
     if (!on) { /* the music's off: the screen is off */ } else if (mode === 0) {                              // a tunnel: rings in every colour rushing out of the middle
       for (let i = 0; i < 16; i++) { const f = ((i / 16) + t * 0.22 * sp) % 1, rr = R * f * f * 1.15 + 1;
         fx.strokeStyle = `hsl(${(f * 330 + t * 70) % 360} 100% ${45 + 18 * f}%)`; fx.lineWidth = 0.7 + 2.6 * f; fx.beginPath();
@@ -807,6 +808,13 @@ function drawItem(r, it, busy) {
         g.addColorStop(0, `hsla(${h},100%,55%,.8)`); g.addColorStop(1, `hsla(${h},100%,50%,0)`); fx.fillStyle = g; fx.fillRect(X, Y, W, B.h); }
       fx.globalCompositeOperation = 'source-over'; fx.lineWidth = 1.1;
       for (let j = 0; j < 6; j++) { fx.strokeStyle = `hsla(${(j * 60 + t * 80) % 360},100%,75%,.8)`; fx.beginPath(); for (let u = 0; u <= 24; u++) { const x = X + W * u / 24, y = Y + B.h * (0.12 + j * 0.15) + Math.sin(u * 0.7 + t * 2.2 * sp + j) * B.h * 0.12; u ? fx.lineTo(x, y) : fx.moveTo(x, y); } fx.stroke(); }
+    }
+    if (on && wv > 0.01) {                         // the track's waveform around the playhead, as on the front page: played part bright, still to come dim, a red playhead
+      const pk = mus.peaks, n = 56, mid = Y + B.h * 0.5, bw = (W - 6) / n;
+      fx.fillStyle = '#000'; fx.globalAlpha = k * wv; fx.fillRect(X, Y, W, B.h); fx.strokeStyle = '#fff'; fx.lineWidth = Math.max(1, bw * 0.55);
+      for (let i = 0; i < n; i++) { const v = pk ? pk[Math.floor(i / n * pk.length)] : 0.3 + 0.5 * Math.abs(Math.sin(i * 0.7 + t * 3)), a = Math.max(0.05, v) * B.h * 0.42 * (1 + mus.hit * 0.2);
+        fx.globalAlpha = k * wv * (i / n < 0.5 ? 0.95 : 0.35); seg([X + 3 + i * bw + bw / 2, mid - a], [X + 3 + i * bw + bw / 2, mid + a]); }
+      fx.globalAlpha = k * wv; fx.strokeStyle = '#ff3b3b'; fx.lineWidth = 1.2; seg([cx, Y + 2], [cx, Y + B.h - 2]);
     }
     fx.restore(); fx.strokeStyle = '#fff'; fx.strokeRect(X + 1.5, Y + 1.5, W - 3, B.h - 3);
     if (!on) { fx.fillStyle = '#ff3b3b'; fx.globalAlpha = 0.7; fx.beginPath(); fx.arc(X + W - 5, Y + B.h - 5, 1.2 * s, 0, 7); fx.fill(); }          // just a little red standby light
@@ -976,7 +984,17 @@ const BOUNCER_LINES = ['If your name’s not Dan, you’re not coming in, sweeth
 const BOUNCER_REPLIES = ['Mwah mwah!', 'Gorgeous!', 'Ugh, iconic.', 'Slay, babes!', 'Hunty, you’re glowing!', 'She’s right, you know!', 'Rules are rules, angel.', 'Still no Dan, darling.'];
 const BOUNCER_PRAISE = [n => `Gorgeous, ${n}!`, n => `Love the look, ${n}!`, n => `${n}, you’re an icon!`, n => `Mwah, ${n}!`, n => `Work it, ${n}!`, n => `That walk, ${n}! Serving!`];
 const niceName = n => n.split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ');            // "OLD SCHOOL" -> "Old School"
-const laser = { k: 0, force: -1, mode: 0, start: 0 };                                // k: how far the light show is up (0 off, 1 full)
+const laser = { k: 0, force: -1, mode: 0, start: 0 };
+// the music as the front page sees it: loudness, hits and the track's waveform around the playhead (a steady pulse if this page is on its own)
+const mus = { e: 0.35, hit: 0, peaks: null, ph: 0 };
+function musicTick(dt) {
+  let w = null; try { if (window.parent !== window && window.parent.JN_WAVE) w = window.parent.JN_WAVE(); } catch (e) { w = null; }
+  const target = w && w.playing ? (w.energy == null ? 0.4 : w.energy) : 0.45 + 0.25 * Math.abs(Math.sin(beatPhase() * Math.PI));
+  mus.peaks = w && w.playing ? w.peaks : null;
+  mus.hit = Math.max(mus.hit * Math.exp(-dt * 5), w && w.playing ? Math.min(1, w.hit || 0) : 0);
+  mus.e += (target - mus.e) * Math.min(1, dt * 9);
+  mus.ph += dt * (0.5 + 2.6 * mus.e + mus.hit);
+}                                // k: how far the light show is up (0 off, 1 full)
 const lightsOn = () => floor.t < laser.force || beatNow().playing === true;          // the lasers and the mirror ball run while the music does
 const guest = { name: null, until: -1, next: 55 + Math.random() * 45, said: 0 };
 let djNext = 6, bqNext = 5, bqWho = 0;
@@ -985,7 +1003,7 @@ window.JN_lasers = () => startLasers(14);                    // try it from the 
 window.JN_house = () => ({ family: fam.phase + ' / ' + fam.mode + (fam.room ? ' / ' + fam.room.path : ''), prints: prints.length, guest: guest.name, lasers: laser.k > 0.01, music: beatNow().playing === true, where: Object.fromEntries(Object.entries(res).map(([k, v]) => [k, v.duty === 'away' ? 'on the main page' : v.room ? v.room.path + ' station ' + v.st : 'door'])) });   // what is going on in the house, from the console
 window.JN_guest = n => { guest.name = n || 'LLOYD'; guest.until = floor.t + 70; guest.said = floor.t + 3; };
 function partyTick(dt, sm) {
-  const t = floor.t; famTick(dt, sm);
+  const t = floor.t; musicTick(dt); famTick(dt, sm);
   if (t > djNext) { djNext = t + (raving() ? 4.5 : 7.5) + Math.random() * 4; bubbles.push({ who: 'NORMAL', text: pickOne(DJ_LINES), t0: t, life: 3.4 }); }      // the DJ's patter
   if (guest.name && t > guest.until) { bubbles.push({ who: 'NORMAL', text: 'Give it up for ' + niceName(guest.name) + '!', t0: t, life: 3 }); guest.name = null; }
   if (!guest.name && t > guest.next) {                                                                                                                                     // a guest DJ every few minutes
@@ -1143,22 +1161,22 @@ function drawBallroom(r, sm, s) {
   if (on) {
     const COL = ['#ff2a2a', '#37ff7a', '#36c9ff', '#ff48e0', '#ffe23b'], mode = (laser.mode + Math.floor((floor.t - laser.start) / 4)) % 3;       // 0 red, 1 green and blue, 2 everything
     const wash = mode === 0 ? '255,40,40' : mode === 1 ? '55,255,150' : '255,70,225';
-    fx.globalAlpha = 0.07 * k; fx.fillStyle = `rgb(${wash})`; fx.beginPath();
+    fx.globalAlpha = (0.04 + 0.08 * mus.e + 0.1 * Math.min(1, mus.hit)) * k; fx.fillStyle = `rgb(${wash})`; fx.beginPath();
     [[r.u, r.v], [r.u + r.w, r.v], [r.u + r.w, r.v + r.d], [r.u, r.v + r.d]].forEach(([u, v], i) => { const q = P(u, v, 0); i ? fx.lineTo(q[0], q[1]) : fx.moveTo(q[0], q[1]); }); fx.fill();
-    const cu = r.u + r.w * 0.5, cv = r.v + r.d * 0.5;
+    const cu = r.u + r.w * 0.5, cv = r.v + r.d * 0.5, E = mus.e, H = Math.min(1, mus.hit), reach = 0.5 + 0.75 * E + 0.2 * H;                 // the beams sweep faster and reach further the louder it gets, and flash on a hit
     corners.forEach((c, i) => {
       const e = P(c[0], c[1], zc);
-      for (let j = 0; j < (mode === 2 ? 4 : 2); j++) {
-        const ph = floor.t * (0.8 + j * 0.25) + i * 1.7 + j * 2.3, q = P(cu + Math.sin(ph) * r.w * 0.32, cv + Math.cos(ph * 1.3) * r.d * 0.34, 0);
+      for (let j = 0; j < (mode === 2 || E > 0.7 ? 4 : E < 0.3 ? 1 : 2); j++) {
+        const ph = mus.ph * (0.8 + j * 0.25) + i * 1.7 + j * 2.3, q = P(cu + Math.sin(ph) * r.w * 0.32 * reach, cv + Math.cos(ph * 1.3) * r.d * 0.34 * reach, 0);
         const col = mode === 0 ? COL[0] : mode === 1 ? COL[1 + (i + j) % 2] : COL[(i + j) % COL.length];
-        fx.strokeStyle = col; fx.fillStyle = col; fx.lineWidth = 1.3; fx.globalAlpha = 0.8 * k; fx.beginPath(); fx.moveTo(e[0], e[1]); fx.lineTo(q[0], q[1]); fx.stroke();
-        fx.globalAlpha = 0.5 * k; fx.beginPath(); fx.ellipse(q[0], q[1], 4 * s, 2 * s, 0, 0, 7); fx.fill();
+        fx.strokeStyle = col; fx.fillStyle = col; fx.lineWidth = 1 + 0.6 * E + 1.4 * H; fx.globalAlpha = Math.min(1, 0.4 + 0.5 * E + 0.4 * H) * k; fx.beginPath(); fx.moveTo(e[0], e[1]); fx.lineTo(q[0], q[1]); fx.stroke();
+        fx.globalAlpha = (0.3 + 0.4 * H) * k; fx.beginPath(); fx.ellipse(q[0], q[1], (3 + 3 * E + 3 * H) * s, (1.5 + 1.5 * E + 1.5 * H) * s, 0, 0, 7); fx.fill();
       }
     });
     const b = at(r, 0.5, 0.45), bc = P(b.u, b.v, 62 * sm);                                                                                                               // the mirror ball throws its beams down
     fx.strokeStyle = '#fff'; fx.fillStyle = '#fff'; fx.lineWidth = 1;
-    for (let i = 0; i < 10; i++) { const an = floor.t * 0.9 + i * Math.PI / 5, q = P(b.u + Math.cos(an) * r.w * 0.17, b.v + Math.sin(an) * r.d * 0.3, 0);
-      fx.globalAlpha = 0.3 * k; fx.beginPath(); fx.moveTo(bc[0], bc[1]); fx.lineTo(q[0], q[1]); fx.stroke(); fx.globalAlpha = 0.7 * k; fx.beginPath(); fx.arc(q[0], q[1], 1.6 * s, 0, 7); fx.fill(); }
+    for (let i = 0; i < 10; i++) { const an = mus.ph * 0.9 + i * Math.PI / 5, q = P(b.u + Math.cos(an) * r.w * (0.1 + 0.12 * mus.e + 0.05 * Math.min(1, mus.hit)), b.v + Math.sin(an) * r.d * (0.18 + 0.2 * mus.e), 0);
+      fx.globalAlpha = (0.15 + 0.3 * mus.e + 0.3 * Math.min(1, mus.hit)) * k; fx.beginPath(); fx.moveTo(bc[0], bc[1]); fx.lineTo(q[0], q[1]); fx.stroke(); fx.globalAlpha = 0.7 * k; fx.beginPath(); fx.arc(q[0], q[1], 1.6 * s, 0, 7); fx.fill(); }
   }
   fx.restore();
 }
