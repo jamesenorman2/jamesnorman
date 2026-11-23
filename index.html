@@ -449,6 +449,12 @@ function loadScript(src) {
 }
 
 let listing = false, choice = null;
+// arriving from another page's play button: start the picked track the same way the play button does (so its waveform, artwork and cues load too)
+function startFromPage() {
+  if (!document.body.classList.contains('needs-tap') || !sc || !scReady) return false;
+  try { if (!startPending()) sc.play(); } catch (e) { return false; }
+  return true;
+}
 async function startSoundCloud() {
   const api = loadScript('https://w.soundcloud.com/player/api.js');   // in parallel with choosing the track
   api.catch(() => {});
@@ -482,18 +488,18 @@ async function startSoundCloud() {
         picks = list; profileMode = false;                // play each pick by its own link, so any track in the catalogue works
         const pick = pickFrom(list); queue = [pick]; qi = 0;
         scReady = true; enableButtons();
-        cue(pick);
+        cue(pick); startFromPage();
         return;
       }
       // the profile list didn't come through: fall back to the RSS tracks and the agents' picks
       const pool = (choice.pool || []).map((p, rank) => ({ ...p, key: p.url, rank }));
-      if (pool.length) { picks = pool; const pick = pickFrom(pool); queue = [pick]; qi = 0; scReady = true; enableButtons(); cue(pick); return; }
+      if (pool.length) { picks = pool; const pick = pickFrom(pool); queue = [pick]; qi = 0; scReady = true; enableButtons(); cue(pick); startFromPage(); return; }
     }
     scReady = true;
     enableButtons();
     readSound();
     if (!scPlaying) setStatus('Ready: press play');       // nothing plays until the visitor asks
-    if (document.body.classList.contains('needs-tap')) { try { sc.play(); } catch (e) {} }      // they pressed play on another page: start now (if the browser refuses, the big prompt below asks for one tap)
+    startFromPage();                                          // they pressed play on another page: start now
   });
   sc.bind(E.PLAY, () => {
     startedSinceLoad = true;
@@ -970,7 +976,7 @@ const INK = getComputedStyle(document.documentElement).getPropertyValue('--ink')
 let last = performance.now();
 
 function frame(now) {
-  if (shellOn) { last = now; requestAnimationFrame(frame); return; }      // hidden behind a page: save the battery
+  if (shellOn) { last = now; drawScrub(); requestAnimationFrame(frame); return; }      // hidden behind a page: save the battery (the waveform bar along the bottom still moves)
   const dt = Math.max(0, Math.min((now - last) / 1000, 0.1));
   last = now;
   source = currentSource();
@@ -2098,7 +2104,7 @@ $('bigPlay').addEventListener('click', () => {
 });
 
 function tapToPlay() {
-  if (document.body.classList.contains('needs-tap') && sc) { sc.play(); return true; }
+  if (document.body.classList.contains('needs-tap') && sc) { if (!startFromPage()) sc.play(); return true; }
   return false;
 }
 
