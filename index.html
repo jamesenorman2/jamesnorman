@@ -2275,6 +2275,7 @@ if (TV) {
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 let lastPeek = -1e9, peekTimer = 0;
 function peek(kind, forced) {
+  if (!forced && !musicOn()) return;
   const now = performance.now(), el = $('peek');
   if (now - lastPeek < 20000 || !document.body.classList.contains('intro-done')) return;
   lastPeek = now;
@@ -2305,6 +2306,7 @@ function onBigBreak() {
   if (Math.random() < 0.7) { if (now - lastPeek > 20000) peek('break'); }
 }
 function chairDance(force) {
+  if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman'); if (!el || chairBusy || !(force ? SM.on('chair') : SM.here('chair'))) return;
   chairBusy = true; lastChair = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('chair');
   const ch = el.querySelector('.ch'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), bub = el.querySelector('.bub');
@@ -2353,6 +2355,7 @@ function chairDance(force) {
 // UV: an agent pops up, gets the UV paint out, paints their face and goes "Woohoo!"
 let lastPaint = -1e9;
 function uvPaint(force) {
+  if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman');
   if (!el || chairBusy || !(force ? SM.on('uv') : SM.here('uv')) || calm || (!force && (!document.body.classList.contains('intro-done') || performance.now() - lastPaint < 120000))) return;
   chairBusy = true; lastPaint = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('uv');
@@ -2397,6 +2400,7 @@ window.JN_lights = sc => { if (sc) { score = sc; lloydKey = ''; lloydState = nul
 // Dancing away, then "Oh no, I need a poo!": a dash for the loo, straight past it, and "Oops, too late."
 let lastPoo = -1e9;
 function pooRun(force) {
+  if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman'), loo = $('loo');
   if (!el || !loo || chairBusy || !(force ? SM.on('poo') : SM.here('poo')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
   chairBusy = true; lastPoo = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('poo');
@@ -2459,6 +2463,7 @@ function pooRun(force) {
 setInterval(() => { if (musicOn() && performance.now() - lastPoo > 420000 && performance.now() - lastPeek > 30000 && Math.random() < 0.12) pooRun(); }, 30000);   // very occasionally
 // Frankie's pick: a stick man with a cooking pot on his head, banging it with a spoon on every beat.
 function potDrum(force) {
+  if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman');
   if (!el || chairBusy || !(force ? SM.on('pot') : SM.here('pot')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
   chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.who('pot');
@@ -2524,6 +2529,7 @@ function catPath(x, y, f, sit, step) {
     [[-3, 1], [-1.5, -1], [2, 1], [3.5, -1]].map(([ox, ph]) => `M${x + f * ox} ${y - 2.5}L${x + f * ox + ph * w} ${y}`).join('');
 }
 function catStroke(force) {
+  if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman');
   if (!el || chairBusy || !(force ? SM.on('cat') : SM.here('cat')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
   chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.who('cat');
@@ -2575,6 +2581,7 @@ function wildCat(x, y, f, sit, step) {
 }
 let lastArgon = -1e9;
 function argonChase(force) {
+  if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('argon');
   if (!el || chairBusy || calm || (!force && !document.body.classList.contains('intro-done'))) return;
   chairBusy = true; lastArgon = performance.now();
@@ -2644,6 +2651,7 @@ function famFig(x, G, sc, step, o) {
 }
 let lastFam = -1e9;
 function familyParade(force) {
+  if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('family');
   if (!el || chairBusy || calm || !SM.on('family') || (!force && !document.body.classList.contains('intro-done'))) return;
   chairBusy = true; lastFam = performance.now();
@@ -2834,10 +2842,11 @@ function clickEntries() {
   return e;
 }
 // Something is "on" while a routine is playing, a pop-up agent is showing, or the little man himself is mid-move. The button is greyed out and ignores clicks until it's over.
-const routineBusy = () => chairBusy || $('peek').classList.contains('on') || !!(window.JN_corner && window.JN_corner.busy && window.JN_corner.busy());
+const routineBusy = () => !musicOn() || chairBusy || $('peek').classList.contains('on') || !!(window.JN_corner && window.JN_corner.busy && window.JN_corner.busy());
 let busyAt = 0;
 setInterval(() => {
   const b = routineBusy(); $('stickBtn').classList.toggle('busy', b); $('stickBtn').setAttribute('aria-disabled', String(b));
+  $('stickBtn').title = musicOn() ? 'Bring on a stick man' : 'Start some music and they’ll turn up';
   if (!chairBusy) busyAt = 0; else if (!busyAt) busyAt = performance.now(); else if (performance.now() - busyAt > 90000) { chairBusy = false; busyAt = 0; }   // never stuck on: if something has been "playing" for 90 seconds it has failed
 }, 150);
 $('stickBtn').addEventListener('click', () => {

@@ -1286,7 +1286,8 @@ function dutyRoute(a, name, homeFn, sm, dt) {
   const SK = window.JN_STICK;
   a.through = 1;
   if (!SK || !SK.loaded) return false;
-  const st = SK.status(name.replace(/~\w+$/, ''), Date.now()), wh = WORM(sm);
+  let st = SK.status(name.replace(/~\w+$/, ''), Date.now()); const wh = WORM(sm);
+  if (!beatNow().playing) st = a.duty === 'away' ? { state: 'back', since: 30 } : { state: 'here' };      // no music on the main page: nobody goes through, and anyone who's out comes straight back
   if (st.state === 'away') {                                    // on the main page: out of the building
     if (a.duty !== 'away') { a.duty = 'away'; a.raving = false; a.q = null; a.u = wh.u; a.v = wh.v; }
     a.through = 0; a.moving = false; return true;
