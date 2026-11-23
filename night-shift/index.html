@@ -122,7 +122,7 @@
 
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
-<script src="/assets/stickmen.js"></script>
+<script src="/assets/stickmen.js?v=4"></script>
 <script>
 (() => {
 'use strict';
@@ -1070,9 +1070,24 @@ function famSpot(r) {
   return at(r, p[0], p[1]);
 }
 function famSay(who, text, delay, life) { bubbles.push({ who, text, t0: floor.t + (delay || 0), life: life || 3 }); }
+// the things they get up to when they stop: ring-a-ring-o'-roses, a group hug, a race, a conga round the room, a line dance
+const FAM_ACTS = {
+  circle: ['Ring a ring o’ roses!', 'Everybody hold hands! Round and round!', 'Wheeeee! Faster!'], hug: ['GROUP HUG! Everybody in!', 'Squeeze! Squeeze! Not the cats!', 'Best hug ever. I love you all.'],
+  race: ['Race you to the wall! Ready, steady…', 'I’m the fastest! No, I am!', 'Last one back is a smelly sock!'], conga: ['Conga line! Everybody!', 'Da da da, da da da, da da da DA!', 'Follow me round the room!'],
+  line: ['Line dance! Everybody copy me!', 'Left foot, right foot, and wiggle!', 'Synchronised dancing, everybody!']
+};
+function famPickAct(sm) {
+  const F = fam, t = floor.t, rm = F.room, daddy = F.mode === 'daddy';
+  const pool = daddy ? ['line', 'circle', 'line', 'hug'] : ['circle', 'hug', 'race', 'conga', 'line', 'race', 'line'].filter(k => k !== 'conga' || !F.hadConga);
+  let k = pickOne(pool); if (k === F.act) k = pickOne(pool);
+  F.act = k; F.actUntil = t + 6 + Math.random() * 3; famSay('WIFEO', pickOne(FAM_ACTS[k]), 0.2, 3.2);
+  FOLLOW.forEach(f => { F.style[f.n] = F.shared || 'dance'; });
+  if (k === 'conga' && rm) { F.hadConga = true; F.congaing = true; F.q = [[0.15, 0.2], [0.85, 0.2], [0.85, 0.8], [0.15, 0.8], [0.5, 0.5]].map(p => at(rm, p[0], p[1])).concat([{ u: F.anchor.u, v: F.anchor.v }]); }
+  if (k === 'race') setTimeout(() => famSay(pickOne(KIDS), 'I win!', 0, 1.8), 4500);
+}
 function famNext(sm, force) {
   const F = fam, t = floor.t, ball = floor.rooms.find(r => r.path === '/music/'), playing = beatNow().playing === true;
-  F.stops++;
+  F.stops++; F.act = null; F.actUntil = 0; F.hadConga = false; F.congaing = false;
   let room, spot, mode;
   if (force === 'daddy' || raving() || F.stops % 3 === 0 || (playing && F.stops % 2 === 0)) { mode = 'daddy'; room = ball; spot = at(ball, 0.76, 0.58); F.daddyAt = t; }
   else { mode = 'room'; room = pickOne(floor.rooms.filter(r => r !== F.room && r !== ball && KITS[r.path])) || ball; spot = famSpot(room); }
@@ -1104,15 +1119,18 @@ function famTick(dt, sm) {
     const l = F.trail[F.trail.length - 1];
     if (!l || Math.hypot(F.u - l.u, F.v - l.v) > 1.5 * sm) { F.trail.push({ u: F.u, v: F.v }); if (F.trail.length > 900) F.trail.shift(); }
     if (!F.q.length) {                                                                    // they've got there
+      if (F.congaing) { F.congaing = false; F.act = null; F.actUntil = t + 1.5; F.stopUntil = Math.max(F.stopUntil, t + 5); F.said = t + 0.5; }
+      else {
       F.anchor = { u: F.u, v: F.v }; F.lwt = 0;
-      F.first = false; F.stopUntil = t + (F.mode === 'daddy' ? 22 + Math.random() * 6 : 8 + Math.random() * 4); F.said = t + 0.8; F.said2 = 0;
+      F.first = false; F.stopUntil = t + (F.mode === 'daddy' ? 22 + Math.random() * 6 : 10 + Math.random() * 4); F.said = t + 0.8; F.said2 = 0; F.actUntil = t + 3; }
       if (F.mode === 'room') F.roomSaid = false;
     }
   } else if (t > F.stopUntil) famNext(sm);
   else if (raving() && F.mode !== 'daddy' && t - F.daddyAt > 45 && !F.first) famNext(sm, 'daddy');                  // the music's on: off to watch Daddy
   // when they've stopped nobody stands in a clump: Wifeo drifts about a bit, and the little ones and the cats each wander off to their own bit of floor, dancing where they stop
   const rm = F.room, cl = (u, v) => rm ? { u: Math.max(rm.u + 6, Math.min(rm.u + rm.w - 6, u)), v: Math.max(rm.v + 6, Math.min(rm.v + rm.d - 6, v)) } : { u, v };
-  F.lm = false;
+  F.lm = false; F.shared = DANCES[Math.floor(t / 3.2) % DANCES.length];
+  if (!moving && F.stopK > 0.8 && !F.first && t > F.actUntil) famPickAct(sm);
   if (!moving && F.stopK > 0.8 && F.anchor) {
     if (t > F.lwt) { F.lwt = t + 3 + Math.random() * 3; const rr = (F.mode === 'daddy' ? 42 : 24) * sm; F.lt = cl(F.anchor.u + (Math.random() - 0.5) * 2 * rr, F.anchor.v + (Math.random() - 0.5) * 1.2 * rr); }
     if (F.lt) { const du = F.lt.u - F.u, dv = F.lt.v - F.v, d0 = Math.hypot(du, dv), sp = 20 * sm * dt; if (d0 > sp) { F.u += du / d0 * sp; F.v += dv / d0 * sp; F.lm = true; F.step += sp * 0.3; } }
@@ -1128,8 +1146,13 @@ function famTick(dt, sm) {
     if (moving) o.cinit = false;
     else if (F.stopK > 0.3) {
       if (!o.cinit) { o.cu = o.u; o.cv = o.v; o.cinit = true; o.wt = 0; }
-      if (t > o.wt) { o.wt = t + 2.5 + Math.random() * 3; const an = i * 1.26 + 0.5 + (Math.random() - 0.5) * 1.2, R = (F.mode === 'daddy' ? 26 + Math.random() * 46 : 15 + Math.random() * 26) * sm * (f.cat ? 1.2 : 1), tg = cl(F.u + Math.cos(an) * R, F.v + Math.sin(an) * R * 0.62); o.tu = tg.u; o.tv = tg.v; }
-      const du = o.tu - o.cu, dv = o.tv - o.cv, d0 = Math.hypot(du, dv), sp = (f.cat ? 34 : 24) * sm * dt;
+      let speed = f.cat ? 34 : 24;
+      if (F.act === 'circle') { const an = (i / FOLLOW.length) * Math.PI * 2 + t * 0.9, tg = cl(F.u + Math.cos(an) * (f.cat ? 15 : 26) * sm, F.v + Math.sin(an) * (f.cat ? 15 : 26) * sm * 0.62); o.tu = tg.u; o.tv = tg.v; speed = 75; o.wt = 0; }
+      else if (F.act === 'hug') { const an = i * 1.26, tg = cl(F.u + Math.cos(an) * (f.cat ? 8 : 10) * sm, F.v + Math.sin(an) * (f.cat ? 8 : 10) * sm * 0.62); o.tu = tg.u; o.tv = tg.v; speed = 45; o.wt = 0; }
+      else if (F.act === 'line') { const tg = cl(F.u + (i - 2) * 16 * sm, F.v + 22 * sm); o.tu = tg.u; o.tv = tg.v; speed = 45; o.wt = 0; }
+      else if (F.act === 'race') { speed = 80; if (t > o.wt || (!o.cm && t > o.wt - 1.2)) { o.wt = t + 2.4; const r2 = rm || null, tg = r2 ? cl(r2.u + 8 + Math.random() * (r2.w - 16), r2.v + 8 + Math.random() * (r2.d - 16)) : { u: F.u, v: F.v }; o.tu = tg.u; o.tv = tg.v; } }
+      else if (t > o.wt) { o.wt = t + 2.5 + Math.random() * 3; const an = i * 1.26 + 0.5 + (Math.random() - 0.5) * 1.2, R = (F.mode === 'daddy' ? 26 + Math.random() * 46 : 15 + Math.random() * 26) * sm * (f.cat ? 1.2 : 1), tg = cl(F.u + Math.cos(an) * R, F.v + Math.sin(an) * R * 0.62); o.tu = tg.u; o.tv = tg.v; }
+      const du = o.tu - o.cu, dv = o.tv - o.cv, d0 = Math.hypot(du, dv), sp = speed * sm * dt;
       if (d0 > sp) { o.cu += du / d0 * sp; o.cv += dv / d0 * sp; o.cm = true; } else { o.cu = o.tu; o.cv = o.tv; }
     }
     const cu = o.cinit ? o.cu : pt.u, cv = o.cinit ? o.cv : pt.v;
@@ -1591,9 +1614,10 @@ function stickMan(x, y, s, phase, pose, name) {
       fx.moveTo(x, y - 23.6 * s); fx.lineTo(x - 2.8 * s, y - 25 * s); fx.lineTo(x - 2.8 * s, y - 22.2 * s); fx.closePath(); fx.moveTo(x, y - 23.6 * s); fx.lineTo(x + 2.8 * s, y - 25 * s); fx.lineTo(x + 2.8 * s, y - 22.2 * s); fx.closePath(); fx.stroke();   // bow tie
       const tw = floor.t * 2 + x; fx.globalAlpha = 0.4 + 0.5 * Math.abs(Math.sin(tw)); const sx = x + 9 * s, sy = hy - 2 * s + Math.sin(tw * 0.7) * 3 * s;
       fx.beginPath(); fx.moveTo(sx - 2.4 * s, sy); fx.lineTo(sx + 2.4 * s, sy); fx.moveTo(sx, sy - 2.4 * s); fx.lineTo(sx, sy + 2.4 * s); fx.stroke(); fx.globalAlpha = 1;
-    } else if (name === 'WIFEO') {                    // long hair, a dress, and sparkles all round: she looks beautiful
+    } else if (name === 'WIFEO') {                    // long hair, a boob tube, hot pants and sparkles all round: she looks beautiful
       fx.beginPath(); [-1, 1].forEach(sd => { fx.moveTo(x + sd * 3.2 * s, hy - 1 * s); fx.quadraticCurveTo(x + sd * 7 * s, hy + 4 * s, x + sd * 5 * s, hy + 12 * s); });
-      fx.moveTo(x, y - 22 * s); fx.lineTo(x - 6.8 * s, y - 4 * s); fx.lineTo(x + 6.8 * s, y - 4 * s); fx.closePath(); fx.stroke();
+      fx.rect(x - 3.6 * s, y - 22 * s, 7.2 * s, 4.2 * s);                                                             // a boob tube
+      fx.moveTo(x - 3.8 * s, y - 12 * s); fx.lineTo(x + 3.8 * s, y - 12 * s); fx.lineTo(x + 4.4 * s, y - 7.5 * s); fx.lineTo(x + 0.5 * s, y - 7.5 * s); fx.lineTo(x, y - 9.5 * s); fx.lineTo(x - 0.5 * s, y - 7.5 * s); fx.lineTo(x - 4.4 * s, y - 7.5 * s); fx.closePath(); fx.stroke();   // and hot pants
       const tw = floor.t * 2;
       for (let k = 0; k < 4; k++) { const an = tw * 0.5 + k * 1.57, sx = x + Math.cos(an) * 13 * s, sy = y - 16 * s + Math.sin(an) * 17 * s; fx.globalAlpha = 0.35 + 0.6 * Math.abs(Math.sin(tw * 1.5 + k * 2));
         fx.beginPath(); fx.moveTo(sx - 2.6 * s, sy); fx.lineTo(sx + 2.6 * s, sy); fx.moveTo(sx, sy - 2.6 * s); fx.lineTo(sx, sy + 2.6 * s); fx.stroke(); }

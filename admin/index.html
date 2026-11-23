@@ -199,7 +199,7 @@
 </main>
 
 <script src="https://w.soundcloud.com/player/api.js"></script>
-<script src="/assets/stickmen.js"></script>
+<script src="/assets/stickmen.js?v=4"></script>
 <script>
 (() => {
 'use strict';
@@ -427,14 +427,15 @@ $('smSave').addEventListener('click', async () => {
 
 // Agents: the table of people in the house. The ones you add are saved with the stick men, in the same setting.
 let customAgents = [];
-const roomOpts = cur => '<option value="">Any room</option>' + SM.ROOMS.map(([p, n]) => `<option value="${p}"${p === cur ? ' selected' : ''}>${escH(n)}</option>`).join('');
+const BASE = SM.BASE_AGENTS || SM.AGENTS || [];
+const roomOpts = cur => '<option value="">Any room</option>' + (SM.ROOMS || []).map(([p, n]) => `<option value="${p}"${p === cur ? ' selected' : ''}>${escH(n)}</option>`).join('');
 function renderAgents() {
   const mine = customAgents.map((a, i) => `<tr data-i="${i}"><td><input type="text" class="an" maxlength="24" value="${escH(a.name)}" placeholder="NAME"></td><td><textarea class="ad" rows="3" placeholder="What do they do?">${escH(a.does)}</textarea></td>` +
     `<td><textarea class="as" rows="3" placeholder="One thing they say per line">${escH(a.says.join('\n'))}</textarea></td><td><select class="ar">${roomOpts(a.room)}</select></td>` +
     `<td><label><input type="checkbox" class="ae"${a.enabled ? ' checked' : ''}> On</label><br><button type="button" class="ghost mini" data-del>Remove</button></td></tr>`).join('');
   $('agTable').innerHTML = `<thead><tr><th>Agent</th><th>What they do</th><th>What they say</th><th>Room</th><th></th></tr></thead><tbody>${mine || '<tr><td colspan="5" style="color:#888">No agents added yet. Press “+ Add an agent”.</td></tr>'}</tbody>`;
-  $('agBuiltSum').textContent = `Built-in agents (${SM.BASE_AGENTS.length})`; $('agBuilt').textContent = SM.BASE_AGENTS.join(' · ');
-  $('agCount').textContent = SM.BASE_AGENTS.length + customAgents.length;
+  $('agBuiltSum').textContent = `Built-in agents (${BASE.length})`; $('agBuilt').textContent = BASE.join(' · ');
+  $('agCount').textContent = BASE.length + customAgents.length;
 }
 function readAgents() {
   document.querySelectorAll('#agTable tbody tr[data-i]').forEach(tr => {
@@ -450,7 +451,7 @@ $('agSave').addEventListener('click', async () => {
   const msg = $('agMsg'); readAgents();
   const agents = customAgents.filter(a => a.name.trim()).map(a => ({ id: a.id, name: a.name.trim().toUpperCase(), does: a.does.trim(), says: a.says, room: a.room, enabled: a.enabled }));
   const bad = agents.find(a => !a.says.length); if (bad) { say(msg, `${bad.name} needs at least one thing to say.`, 'err'); return; }
-  if (agents.some(a => SM.BASE_AGENTS.includes(a.name))) { say(msg, 'That name is already a built-in agent. Pick another.', 'err'); return; }
+  if (agents.some(a => BASE.includes(a.name))) { say(msg, 'That name is already a built-in agent. Pick another.', 'err'); return; }
   say(msg, 'Saving…');
   try {
     const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men: SM.cfg.men, custom: SM.cfg.custom, agents } });
@@ -462,11 +463,11 @@ $('agSave').addEventListener('click', async () => {
 
 // The sections of this page each sit under their own button.
 (() => {
-  const SECTIONS = [['Music', ['Now playing']], ['Blog and ideas', ['Research desk', 'Ideas to review', 'Quizzy Rascal']], ['Crew', ['Night shift', 'Day crew', 'Engineer']], ['Stick men and agents', ['Stick men']], ['Back up', ['Back up']]];
+  const SECTIONS = [['Music', ['Now playing']], ['Blog and ideas', ['Research desk', 'Ideas to review', 'Quizzy Rascal']], ['Crew', ['Night shift', 'Day crew', 'Engineer']], ['Stick men', ['Stick men']], ['Agents in the house', []], ['Back up', ['Back up']]];
   const cards = [...document.querySelectorAll('#panel > .card')], bar = $('adminTabs');
   cards.forEach(c => {
     const t = (c.querySelector('.k') || {}).textContent || '';
-    let i = c.querySelector('#agTable') ? 3 : SECTIONS.findIndex(s => s[1].some(p => t.trim().startsWith(p)));
+    let i = c.querySelector('#agTable') ? 4 : SECTIONS.findIndex(s => s[1].some(p => t.trim().startsWith(p)));
     c.dataset.sec = i < 0 ? 0 : i;
   });
   const show = n => {
