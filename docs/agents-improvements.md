@@ -28,6 +28,6 @@ Answer each with **Y** (do it), **N** (skip), **L** (later) or **M** (do it, but
 | 20 | A "visitor's guide" tour: a 60-second guided walk through the house for first-time visitors L | No preference given; parked. |
 | 21 | Sound: optional, off by default (muffled bass through the walls, door whoosh, CHOMP), toggled by a speaker icon | Y | Changed from no to yes. Built: a Sound on/off button by Full screen (remembered); door whoosh, chomp, bass kick while music plays. |
 | 22 | Easter eggs found by clicking props (the lid-drumming loo, the pool of oil, the wormhole), with a found-count | | |
-| 23 | Admin: a live preview of the house while you edit agents, rooms and lines | | |
+| 23 | Admin: a live preview of the house while you edit agents, rooms and lines L | No preference given; parked. |
 | 24 | Admin: add rooms and furniture from a picker instead of code | | |
 | 25 | A screenshot / share button that saves the current view as an image with the site name on it | | |
