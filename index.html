@@ -2839,15 +2839,18 @@ function clickEntries() {
   return e;
 }
 // Something is "on" while a routine is playing, a pop-up agent is showing, or the little man himself is mid-move. The button is greyed out and ignores clicks until it's over.
-const routineBusy = () => !musicOn() || chairBusy || $('peek').classList.contains('on') || !!(window.JN_corner && window.JN_corner.busy && window.JN_corner.busy());
+let musicSeen = performance.now(), queuedClick = false;       // between tracks the player reports 'not playing' for a moment: that must not grey the button
+const musicRecent = () => { if (musicOn()) musicSeen = performance.now(); return performance.now() - musicSeen < 25000; };
+const routineBusy = () => !musicRecent() || chairBusy || $('peek').classList.contains('on') || !!(window.JN_corner && window.JN_corner.busy && window.JN_corner.busy());
 let busyAt = 0;
 setInterval(() => {
-  const b = routineBusy(); $('stickBtn').classList.toggle('busy', b); $('stickBtn').setAttribute('aria-disabled', String(b));
+  const b = routineBusy(); $('stickBtn').classList.toggle('busy', b && !queuedClick);
+  if (queuedClick && !b) { queuedClick = false; $('stickBtn').click(); } $('stickBtn').setAttribute('aria-disabled', String(b));
   $('stickBtn').title = musicOn() ? 'Bring on a stick man' : 'Start some music and they’ll turn up';
   if (!chairBusy) busyAt = 0; else if (!busyAt) busyAt = performance.now(); else if (performance.now() - busyAt > 90000) { chairBusy = false; busyAt = 0; }   // never stuck on: if something has been "playing" for 90 seconds it has failed
 }, 150);
 $('stickBtn').addEventListener('click', () => {
-  if (routineBusy()) return;                                                      // wait for the last one to finish
+  if (routineBusy()) { if (musicRecent()) { queuedClick = true; setTimeout(() => { queuedClick = false; }, 60000); } return; }   // a click during another routine is remembered: he comes on as soon as it ends
   const all = clickEntries(); if (!all.length) return;
   // take the next one in the shuffled order; if it can't come on for some reason, move on to the one after rather than doing nothing
   for (let tries = 0; tries < all.length + 1; tries++) {
