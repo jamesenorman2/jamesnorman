@@ -956,6 +956,20 @@ function dayLine(id) { const D = floor.day || {}, r = D[id], t = (r && r.report 
 const res = {};
 // Roaming: an agent's home room is where they mainly stay, but if they are set to roam they now and then wander off round the house
 // (to a work spot in another room, hang about for a bit, say something) and then walk back home.
+// Kate and Becka always hang out together: Becka stays at Kate's side, and goes wherever Kate goes (walking, through the doors)
+const BUDDIES = { BECKA: 'KATE' };
+function buddyRoute(a, name, sm, dt) {
+  const L = res[BUDDIES[name]]; if (!L || raving() || L.duty) return false;
+  const goal = { u: L.u + 11 * sm, v: L.v + 3 * sm }, d = Math.hypot(goal.u - a.u, goal.v - a.v), t = floor.t;
+  if (d < 13 * sm && roomAt(a.u, a.v) === roomAt(L.u, L.v) && !(a.q && a.q.length)) { a.moving = false; return true; }                       // standing together, chatting
+  if (!a.q || !a.q.length || t > (a.rtT || 0)) { a.rtT = t + 1.2; const lr = roomAt(L.u, L.v); a.q = lr ? routeTo(a.u, a.v, lr, goal) : []; }
+  if (a.q && a.q.length) {
+    const g = a.q[0], du = g.u - a.u, dv = g.v - a.v, dd = Math.hypot(du, dv), sp = (d > 80 * sm ? 70 : 52) * sm * dt;
+    if (dd <= sp) { a.u = g.u; a.v = g.v; a.q.shift(); } else { a.u += du / dd * sp; a.v += dv / dd * sp; }
+    a.step = (a.step || 0) + sp * 0.3; a.moving = true; return true;
+  }
+  a.moving = false; return true;
+}
 // Agent Normal (the DJ) comes down off the decks now and then to do cartwheels and rolly-pollies on the dance floor
 function normalStunt(a, r, sm, dt, homeFn) {
   if (r.path !== '/music/') { a.stunt = null; a.trick = null; return false; }
@@ -1084,7 +1098,7 @@ function syncCustomAgents() {
   if (Object.values(E).some(e => e.does || e.name)) { renderCrew(crewL); if (typeof renderDay === 'function') try { renderDay(); } catch (x) {} }
   (SK.cfg.agents || []).filter(a => a.enabled).forEach(a => {
     if (RESIDENTS.some(r => r[0] === a.name)) return;
-    CUSTOM_SAYS[a.name] = a.says; if (a.roam) ROAM[a.name] = a.roam; RESIDENTS.push([a.name, DJ_AGENTS.includes(a.name) ? ['/music/'] : a.room ? [a.room] : ['/music/'], () => '', -1]);
+    CUSTOM_SAYS[a.name] = a.says; if (a.roam) ROAM[a.name] = a.roam; RESIDENTS.push([a.name, BUDDIES[a.name] ? ((RESIDENTS.find(r => r[0] === BUDDIES[a.name]) || [])[1] || ['/music/']) : DJ_AGENTS.includes(a.name) ? ['/music/'] : a.room ? [a.room] : ['/music/'], () => '', -1]);
   });
 }
 
@@ -1591,6 +1605,7 @@ function drawFloor(dt) {
       else if (KIDS.includes(w.name) && famRoute(a, w.name, sm, dt)) { moving = a.moving; pose = a.pose; }
       else if (w.name === 'SANASSI' && sanassiHunt(a, r, sm, dt, () => at(r, st[a.st][0], st[a.st][1]))) { moving = a.moving; pose = a.moving ? 'walk' : 'check'; }
       else if (w.name === 'NORMAL' && normalStunt(a, r, sm, dt, () => at(r, st[a.st][0], st[a.st][1]))) { moving = a.moving; pose = a.moving ? 'walk' : 'dance'; }
+      else if (BUDDIES[w.name] && res[BUDDIES[w.name]] && buddyRoute(a, w.name, sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'check'; }
       else if (roamRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : a.trip.pose; }
       else if (raveRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'rave'; }
       else {
