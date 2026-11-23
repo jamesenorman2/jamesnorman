@@ -2035,7 +2035,15 @@ const THOUGHTS_BY = { SANASSI: ['Teeth are only bones that went outside.', 'I bi
     const q = document.createElement('div'); q.textContent = said ? '“' + said.text + '”' : '…';
     const c = document.createElement('i'); c.textContent = 'A funny thought';
     const f = document.createElement('div'); f.textContent = th[Math.floor(Math.random() * th.length)];
-    card.append(nm, a, q, c, f); box.appendChild(card);
+    card.append(nm, a, q, c, f);
+    const rm = res[best] && res[best].room;                                           // the status is the real result of the last check on the page this agent is working in
+    if (rm) {
+      const st = document.createElement('i'), sv = document.createElement('div'), dot = document.createElement('span');
+      st.textContent = 'Status'; dot.textContent = '● '; dot.style.color = rm.ok === false ? '#ff5a5a' : rm.ok ? '#4ade80' : '#ffb000';
+      sv.append(dot, document.createTextNode(rm.ok === false ? `${rm.name}: last check failed (${rm.status || 'no answer'})` : rm.ok ? `${rm.name}: last check passed${rm.ms != null ? ' · ' + rm.ms + ' ms' : ''}` : `${rm.name}: no check yet`));
+      card.append(st, sv);
+    }
+    box.appendChild(card);
     const bw = card.offsetWidth, bh = card.offsetHeight, br = box.getBoundingClientRect();
     card.style.left = Math.max(4, Math.min(br.width - bw - 4, x + (r.left - br.left) - bw / 2)) + 'px';
     card.style.top = Math.max(4, Math.min(br.height - bh - 4, y + (r.top - br.top) - bh - 40)) + 'px';

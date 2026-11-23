@@ -7,7 +7,7 @@ Answer each with **Y** (do it), **N** (skip), **L** (later) or **M** (do it, but
 | # | Improvement | Answer | Note |
 |---|---|---|---|
 | 1 | Click any agent in the building to open a small card | M: done | James's version: what they've just said, plus a funny thought. Built. |
-| 2 | Show real status on each agent (green/amber/red dot from their latest run), not just their name | | |
+| 2 | Show real status on each agent (green/amber/red dot from their latest run), not just their name | M: card only | Status dot shown on the click card, not in the building. Built. |
 | 3 | A "what just happened" ticker under the building: last five real events (page checked, brief filed, track picked) | | |
 | 4 | Pause button, plus a speed control (normal / slow / fast-forward) for the whole house | | |
 | 5 | Follow-cam: pick an agent and the view stays on them | | |
