@@ -1570,6 +1570,7 @@ function drawFloor(dt) {
 
   // the front door is a nightclub entrance: Codpiece and Mr. Particular are the bouncers. Nobody ever comes in.
   Z.push({ z: floor.Dr + floor.Dc * 0.85, f: () => frontDoor(sm, s) });
+  { const sn = season(); if (sn) Z.push({ z: 1e6 - 1, f: () => drawSeason(sn, sm, s) }); }
   const BOUNCE_JOIN = ['Rules say no dancing on shift. Rules can wait!', 'The door looks after itself. DANCE!', 'Mwah! Even security can’t resist this tune!', 'Podium time, babes! Watch this!', 'Nobody’s getting in anyway. WOO!'];
   [['CODPIECE', 0.2, () => jobLine('gatekeeper')], ['MR. PARTICULAR', 0.8, () => dayLine('teacake')]].forEach(([name, fv, lineFn], bi) => {
     const home = { u: 9 * sm, v: floor.Dr + floor.Dc * fv }, a = res[name] || (res[name] = { u: home.u, v: home.v, step: 0 });
@@ -2018,6 +2019,42 @@ function floorLoop(now) {
 
 function setFloorShift(log) { floor.shift = log; layout(); makeMen(); }
 addEventListener('resize', () => { layout(); makeMen(); });
+// ─── Seasonal decorations, by the real UK date (add ?season=xmas, halloween or summer to the address to preview) ───
+function season() {
+  const q = new URLSearchParams(location.search).get('season'); if (q) return q === 'none' ? null : q;
+  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/London' })), m = d.getMonth() + 1, day = d.getDate();
+  if (m === 12 || (m === 1 && day <= 6)) return 'xmas';
+  if ((m === 10 && day >= 24) || (m === 11 && day <= 1)) return 'halloween';
+  if (m === 7 || m === 8) return 'summer';
+  return null;
+}
+function drawSeason(kind, sm, s) {
+  const t = floor.t, PW = floor.PW, hz = 27 * sm;
+  fx.save(); fx.lineWidth = 1;
+  const swag = (u0, u1, sag, f) => { const n = 14; let prev = null; for (let i = 0; i <= n; i++) { const k = i / n, u = u0 + (u1 - u0) * k, z = hz - Math.sin(k * Math.PI) * sag, q = P(u, 0, z); if (prev) { fx.globalAlpha = 0.55; fx.beginPath(); fx.moveTo(prev[0], prev[1]); fx.lineTo(q[0], q[1]); fx.stroke(); } prev = q; if (f && i > 0 && i < n) f(q, i, k); } };
+  const span = PW / 9;
+  if (kind === 'xmas') {
+    for (let g = 0; g < 9; g++) swag(g * span, (g + 1) * span, 7 * sm, (q, i, k) => { fx.globalAlpha = 0.45 + 0.55 * (Math.sin(t * 3 + i * 1.7 + g) > 0 ? 1 : 0.2); fx.fillStyle = (i + g) % 2 ? '#ff5a5a' : '#4ade80'; fx.beginPath(); fx.arc(q[0], q[1] + 2 * s, 1.7 * s, 0, 7); fx.fill(); });
+    const b = P(PW * 0.06, floor.cv, 0), h = 30 * sm;                                         // a tree in the corridor, by the front door
+    fx.globalAlpha = 0.95; fx.strokeStyle = '#fff';
+    for (let k = 0; k < 3; k++) { const y0 = b[1] - h * (0.12 + k * 0.28), w = (12 - k * 3) * sm; fx.beginPath(); fx.moveTo(b[0] - w, y0); fx.lineTo(b[0], y0 - h * 0.42); fx.lineTo(b[0] + w, y0); fx.closePath(); fx.stroke(); }
+    fx.fillStyle = '#ffd34d'; fx.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 1.6 * s : 3.4 * s, an = k * Math.PI / 5 - Math.PI / 2; fx.lineTo(b[0] + Math.cos(an) * r, b[1] - h * 1.04 + Math.sin(an) * r); } fx.fill();
+    [[-5, .18], [4, .22], [-2, .45], [5, .5], [0, .7]].forEach(([dx, dz], i) => { fx.fillStyle = i % 2 ? '#ff5a5a' : '#6ab7ff'; fx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 2 + i); fx.beginPath(); fx.arc(b[0] + dx * sm, b[1] - h * dz, 1.5 * s, 0, 7); fx.fill(); });
+  } else if (kind === 'summer') {
+    const cols = ['#ff5a5a', '#ffd34d', '#4ade80', '#6ab7ff', '#c58cff'];
+    for (let g = 0; g < 9; g++) swag(g * span, (g + 1) * span, 6 * sm, (q, i, k) => { fx.globalAlpha = 0.85; fx.fillStyle = cols[(i + g) % cols.length]; fx.beginPath(); fx.moveTo(q[0] - 3 * s, q[1]); fx.lineTo(q[0] + 3 * s, q[1]); fx.lineTo(q[0], q[1] + 7 * s + Math.sin(t * 2 + i) * s); fx.closePath(); fx.fill(); });
+  } else if (kind === 'halloween') {
+    for (let g = 0; g < 9; g++) swag(g * span, (g + 1) * span, 6 * sm, (q, i) => { if (i % 4 === 0) { fx.globalAlpha = 0.7; fx.beginPath(); fx.moveTo(q[0], q[1]); fx.lineTo(q[0], q[1] + 9 * s); fx.stroke(); fx.beginPath(); fx.arc(q[0], q[1] + 11 * s, 1.6 * s, 0, 7); fx.stroke(); } });      // cobweb threads and little spiders
+    for (let k = 0; k < 5; k++) {                                                              // pumpkins along the corridor
+      const c = P(PW * (0.12 + k * 0.19), floor.cv + floor.Dc * 0.3, 0), r = 5 * sm, glow = 0.5 + 0.5 * Math.sin(t * 3 + k * 2);
+      fx.globalAlpha = 0.95; fx.strokeStyle = '#ff9a2e'; fx.beginPath(); fx.ellipse(c[0], c[1] - r, r * 1.1, r, 0, 0, 7); fx.stroke(); fx.beginPath(); fx.ellipse(c[0], c[1] - r, r * 0.5, r, 0, 0, 7); fx.stroke();
+      fx.fillStyle = '#ffd34d'; fx.globalAlpha = 0.5 + 0.5 * glow; fx.beginPath(); fx.moveTo(c[0] - 3 * sm, c[1] - r * 1.25); fx.lineTo(c[0] - 1 * sm, c[1] - r * 1.5); fx.lineTo(c[0] + 1 * sm, c[1] - r * 1.25); fx.fill(); fx.beginPath(); fx.moveTo(c[0] + 1 * sm, c[1] - r * 1.25); fx.lineTo(c[0] + 3 * sm, c[1] - r * 1.5); fx.lineTo(c[0] + 5 * sm, c[1] - r * 1.25); fx.fill(); fx.beginPath(); fx.moveTo(c[0] - 3 * sm, c[1] - r * 0.6); fx.lineTo(c[0], c[1] - r * 0.45); fx.lineTo(c[0] + 3 * sm, c[1] - r * 0.6); fx.fill();
+      fx.strokeStyle = '#4ade80'; fx.globalAlpha = 0.9; fx.beginPath(); fx.moveTo(c[0], c[1] - r * 2); fx.lineTo(c[0] + 1.5 * sm, c[1] - r * 2.4); fx.stroke();
+    }
+    for (let k = 0; k < 3; k++) { const b = P(PW * (0.25 + k * 0.28) + Math.sin(t * 0.7 + k) * 20 * sm, floor.cv, 40 * sm + Math.sin(t * 1.3 + k * 2) * 8 * sm), fl = Math.sin(t * 9 + k) * 2 * s; fx.globalAlpha = 0.8; fx.strokeStyle = '#fff'; fx.beginPath(); fx.moveTo(b[0] - 7 * s, b[1] - fl); fx.quadraticCurveTo(b[0] - 3 * s, b[1] - 4 * s, b[0], b[1]); fx.quadraticCurveTo(b[0] + 3 * s, b[1] - 4 * s, b[0] + 7 * s, b[1] - fl); fx.stroke(); }   // bats
+  }
+  fx.restore();
+}
 // Click an agent for a little card: what they've just said, and a funny thought
 const THOUGHTS = ['If I stand very still, does the meeting end sooner?', 'Somebody should check on the printer. Nobody has. Ever.', 'I have 14 tabs open and I can only remember why one of them is.',
   'What if the HTTPS padlock is just a very small, very polite bouncer?', 'Are we sure the cats aren\'t running this place?', 'I\'d like to think I\'d survive a power cut. I would not.',
