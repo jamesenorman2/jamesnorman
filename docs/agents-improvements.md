@@ -25,7 +25,7 @@ Answer each with **Y** (do it), **N** (skip), **L** (later) or **M** (do it, but
 | 17 | Seasonal changes: Christmas lights, Halloween, summer festival flags, driven by the date Y | Built: Christmas (1 Dec to 6 Jan), Halloween (24 Oct to 1 Nov), summer bunting (Jul/Aug). Preview with ?season=xmas / halloween / summer. |
 | 18 | Agents react to real data: more people dancing when the SoundCloud plays go up, nervous when the threat level changes Y | Built: edgy lines when the UK threat level is SUBSTANTIAL or higher; cheerful lines when SoundCloud plays are up. |
 | 19 | Handover note you can read in the house: click the office desk to open the latest written handover Y | Built: click the office table. Also: the bar's prize wheel opens the real spinner (/bar/#spin). |
-| 20 | A "visitor's guide" tour: a 60-second guided walk through the house for first-time visitors | | |
+| 20 | A "visitor's guide" tour: a 60-second guided walk through the house for first-time visitors L | No preference given; parked. |
 | 21 | Sound: optional, off by default (muffled bass through the walls, door whoosh, CHOMP), toggled by a speaker icon | | |
 | 22 | Easter eggs found by clicking props (the lid-drumming loo, the pool of oil, the wormhole), with a found-count | | |
 | 23 | Admin: a live preview of the house while you edit agents, rooms and lines | | |
