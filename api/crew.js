@@ -2,6 +2,7 @@
 // claimed through the database so two visitors can't start the same agent. Triggered by pages (GET),
 // the daily cron (CRON_SECRET), or the admin page (POST + password, optionally { agent } to force one).
 import { CREW } from '../lib/crew.js';
+import { hasAI } from '../lib/models.js';
 
 const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
 const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
@@ -23,7 +24,7 @@ async function authorised(req) {
 
 async function runOne(name, force) {
   const agent = CREW[name], token = process.env.SHIFT_TOKEN;
-  if (agent.ai && !process.env.ANTHROPIC_API_KEY) return { agent: name, ran: false, error: 'no API key' };
+  if (agent.ai && !hasAI()) return { agent: name, ran: false, error: 'no API key' };
   const claimed = await db('rpc/jn_claim_crew', { p_token: token, p_agent: name, p_hours: force ? 0 : agent.every });
   if (claimed !== true) return { agent: name, ran: false };
   const [last] = await db(`jn_crew?select=report&agent=eq.${name}&order=id.desc&limit=1`).catch(() => []);

@@ -79,12 +79,12 @@
       if (saved && typeof saved === 'object') {
         if (Array.isArray(saved.agents)) c.agents = saved.agents.slice(0, 40).map((a, i) => ({
           id: clean(a && a.id, 30) || 'agent' + i, name: clean(a && a.name, 24).toUpperCase(), does: clean(a && a.does, 300), says: cleanLines(a && a.says),
-          room: ROOMS.some(r => r[0] === (a && a.room)) ? a.room : '', enabled: !(a && a.enabled === false)
+          room: ROOMS.some(r => r[0] === (a && a.room)) ? a.room : '', roam: ['sometimes', 'often'].includes(a && a.roam) ? a.roam : '', enabled: !(a && a.enabled === false)
         })).filter(a => a.name && !BASE_AGENTS.includes(a.name));
         if (saved.edits && typeof saved.edits === 'object') for (const n of BASE_AGENTS) {                       // changes to the built-in agents: what they do, what they say, which room
           const e = saved.edits[n]; if (!e || typeof e !== 'object') continue;
-          const o = { does: clean(e.does, 300), says: cleanLines(e.says), room: ROOMS.some(r => r[0] === e.room) ? e.room : '' };
-          if (o.does || o.says.length || o.room) c.edits[n] = o;
+          const o = { does: clean(e.does, 300), says: cleanLines(e.says), room: ROOMS.some(r => r[0] === e.room) ? e.room : '', roam: ['sometimes', 'often'].includes(e.roam) ? e.roam : '' };
+          if (o.does || o.says.length || o.room || o.roam) c.edits[n] = o;
         }
         if (saved.men && typeof saved.men === 'object') for (const id of Object.keys(saved.men)) {
           const m = saved.men[id]; if (!m || typeof m !== 'object') continue;

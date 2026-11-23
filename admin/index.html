@@ -171,14 +171,14 @@
 
     <div class="card" style="margin-top:1rem">
       <div class="k">Agents <span id="agCount" class="badge"></span></div>
-      <div class="v">Everyone who lives in the agents house. Add your own: give them a name, say what they do, write what they say (one line per thing, they pick one at random) and choose the room they work in. They turn up on the Agents page, walking between the stations in that room and saying your words, and you can give them stick men in the list above. The built-in agents are listed underneath.</div>
+      <div class="v">Everyone who lives in the agents house. Add your own: give them a name, say what they do, write what they say (one line per thing, they pick one at random) and choose their home room, the room they mainly stay in (they can also wander round the whole house if you let them). They turn up on the Agents page, walking between the stations in that room and saying your words, and you can give them stick men in the list above. The built-in agents are listed underneath.</div>
       <div class="row">
         <button type="button" class="ghost" id="agAdd">+ Add an agent</button>
         <button type="button" id="agSave">Save agents</button>
       </div>
       <div class="msg" id="agMsg" role="status"></div>
       <div style="overflow-x:auto"><table class="agtab" id="agTable"></table></div>
-      <details class="builtin"><summary id="agBuiltSum">Built-in agents</summary><p class="hint" style="margin-top:.6rem">Change what a built-in agent does (shown on their card), what they say (replaces their usual lines) or which room they work in. Leave a box empty to keep how they are now.</p><div style="overflow-x:auto"><table class="agtab" id="agBuiltTable"></table></div></details>
+      <details class="builtin"><summary id="agBuiltSum">Built-in agents</summary><p class="hint" style="margin-top:.6rem">Change what a built-in agent does (shown on their card), what they say (replaces their usual lines), their home room, or how much they roam round the house. Leave a box empty to keep how they are now.</p><div style="overflow-x:auto"><table class="agtab" id="agBuiltTable"></table></div></details>
     </div>
 
     <div class="card" style="margin-top:1rem">
@@ -199,7 +199,7 @@
 </main>
 
 <script src="https://w.soundcloud.com/player/api.js"></script>
-<script src="/assets/stickmen.js?v=5"></script>
+<script src="/assets/stickmen.js?v=6"></script>
 <script>
 (() => {
 'use strict';
@@ -428,37 +428,38 @@ $('smSave').addEventListener('click', async () => {
 // Agents: the table of people in the house. The ones you add are saved with the stick men, in the same setting.
 let customAgents = [], builtEdits = {};
 const BASE = SM.BASE_AGENTS || SM.AGENTS || [];
+const roamOpts = cur => [['', 'Stays in their home room'], ['sometimes', 'Wanders round the house now and then'], ['often', 'Wanders all over the house']].map(([v, n]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${n}</option>`).join('');
 const roomOpts = cur => '<option value="">Any room</option>' + (SM.ROOMS || []).map(([p, n]) => `<option value="${p}"${p === cur ? ' selected' : ''}>${escH(n)}</option>`).join('');
 function renderAgents() {
   const mine = customAgents.map((a, i) => `<tr data-i="${i}"><td><input type="text" class="an" maxlength="24" value="${escH(a.name)}" placeholder="NAME"></td><td><textarea class="ad" rows="3" placeholder="What do they do?">${escH(a.does)}</textarea></td>` +
-    `<td><textarea class="as" rows="3" placeholder="One thing they say per line">${escH(a.says.join('\n'))}</textarea></td><td><select class="ar">${roomOpts(a.room)}</select></td>` +
+    `<td><textarea class="as" rows="3" placeholder="One thing they say per line">${escH(a.says.join('\n'))}</textarea></td><td><select class="ar">${roomOpts(a.room)}</select></td><td><select class="am">${roamOpts(a.roam)}</select></td>` +
     `<td><label><input type="checkbox" class="ae"${a.enabled ? ' checked' : ''}> On</label><br><button type="button" class="ghost mini" data-del>Remove</button></td></tr>`).join('');
-  $('agTable').innerHTML = `<thead><tr><th>Agent</th><th>What they do</th><th>What they say</th><th>Room</th><th></th></tr></thead><tbody>${mine || '<tr><td colspan="5" style="color:#888">No agents added yet. Press “+ Add an agent”.</td></tr>'}</tbody>`;
+  $('agTable').innerHTML = `<thead><tr><th>Agent</th><th>What they do</th><th>What they say</th><th>Home room</th><th>Roams?</th><th></th></tr></thead><tbody>${mine || '<tr><td colspan="6" style="color:#888">No agents added yet. Press “+ Add an agent”.</td></tr>'}</tbody>`;
   $('agBuiltSum').textContent = `Built-in agents (${BASE.length}): edit them too`;
-  $('agBuiltTable').innerHTML = `<thead><tr><th>Agent</th><th>What they do</th><th>What they say</th><th>Room</th></tr></thead><tbody>` + BASE.map(n => { const e = builtEdits[n] || {};
+  $('agBuiltTable').innerHTML = `<thead><tr><th>Agent</th><th>What they do</th><th>What they say</th><th>Home room</th><th>Roams?</th></tr></thead><tbody>` + BASE.map(n => { const e = builtEdits[n] || {};
     return `<tr data-n="${escH(n)}"><td>${escH(n)}</td><td><textarea class="bd" rows="2" placeholder="(as it is now)">${escH(e.does || '')}</textarea></td><td><textarea class="bs" rows="2" placeholder="(their usual lines)">${escH((e.says || []).join('\n'))}</textarea></td>` +
-      `<td><select class="br">${roomOpts(e.room || '').replace('Any room', 'Keep where they are')}</select></td></tr>`; }).join('') + '</tbody>';
+      `<td><select class="br">${roomOpts(e.room || '').replace('Any room', 'Keep where they are')}</select></td><td><select class="bm">${roamOpts(e.roam || '').replace('Stays in their home room', 'Keep as they are')}</select></td></tr>`; }).join('') + '</tbody>';
   $('agCount').textContent = BASE.length + customAgents.length;
 }
 function readBuilt() {
   const rows = document.querySelectorAll('#agBuiltTable tbody tr[data-n]'); if (!rows.length) return;
   builtEdits = {};
-  rows.forEach(tr => { const o = { does: tr.querySelector('.bd').value.trim(), says: tr.querySelector('.bs').value.split('\n').map(x => x.trim()).filter(Boolean), room: tr.querySelector('.br').value }; if (o.does || o.says.length || o.room) builtEdits[tr.dataset.n] = o; });
+  rows.forEach(tr => { const o = { does: tr.querySelector('.bd').value.trim(), says: tr.querySelector('.bs').value.split('\n').map(x => x.trim()).filter(Boolean), room: tr.querySelector('.br').value, roam: tr.querySelector('.bm').value }; if (o.does || o.says.length || o.room || o.roam) builtEdits[tr.dataset.n] = o; });
 }
 function readAgents() {
   readBuilt();
   document.querySelectorAll('#agTable tbody tr[data-i]').forEach(tr => {
     const a = customAgents[+tr.dataset.i]; if (!a) return;
     a.name = tr.querySelector('.an').value; a.does = tr.querySelector('.ad').value;
-    a.says = tr.querySelector('.as').value.split('\n').map(x => x.trim()).filter(Boolean); a.room = tr.querySelector('.ar').value; a.enabled = tr.querySelector('.ae').checked;
+    a.says = tr.querySelector('.as').value.split('\n').map(x => x.trim()).filter(Boolean); a.room = tr.querySelector('.ar').value; a.roam = tr.querySelector('.am').value; a.enabled = tr.querySelector('.ae').checked;
   });
 }
 (async () => { await SM.ready; builtEdits = JSON.parse(JSON.stringify(SM.cfg.edits || {})); customAgents = SM.cfg.agents.map(a => ({ ...a, says: a.says.slice() })); renderAgents(); })();
-$('agAdd').addEventListener('click', () => { readAgents(); customAgents.push({ id: 'agent' + Date.now().toString(36), name: '', does: '', says: [], room: '', enabled: true }); renderAgents(); const ns = document.querySelectorAll('#agTable .an'), n = ns[ns.length - 1]; if (n) { n.scrollIntoView({ block: 'center' }); n.focus(); } });
+$('agAdd').addEventListener('click', () => { readAgents(); customAgents.push({ id: 'agent' + Date.now().toString(36), name: '', does: '', says: [], room: '', roam: '', enabled: true }); renderAgents(); const ns = document.querySelectorAll('#agTable .an'), n = ns[ns.length - 1]; if (n) { n.scrollIntoView({ block: 'center' }); n.focus(); } });
 $('agTable').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if (b) { readAgents(); customAgents.splice(+b.closest('tr').dataset.i, 1); renderAgents(); } });
 $('agSave').addEventListener('click', async () => {
   const msg = $('agMsg'); readAgents(); const edits = builtEdits;
-  const agents = customAgents.filter(a => a.name.trim()).map(a => ({ id: a.id, name: a.name.trim().toUpperCase(), does: a.does.trim(), says: a.says, room: a.room, enabled: a.enabled }));
+  const agents = customAgents.filter(a => a.name.trim()).map(a => ({ id: a.id, name: a.name.trim().toUpperCase(), does: a.does.trim(), says: a.says, room: a.room, roam: a.roam || '', enabled: a.enabled }));
   const bad = agents.find(a => !a.says.length); if (bad) { say(msg, `${bad.name} needs at least one thing to say.`, 'err'); return; }
   if (agents.some(a => BASE.includes(a.name))) { say(msg, 'That name is already a built-in agent. Pick another.', 'err'); return; }
   say(msg, 'Saving…');

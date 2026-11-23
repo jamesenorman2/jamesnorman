@@ -3,10 +3,11 @@
 // Needs ANTHROPIC_API_KEY and SHIFT_TOKEN, like the Night Shift.
 
 import { runDesk } from '../lib/research.js';
+import { num } from '../lib/models.js';
 
 const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
 const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
-const EVERY_HOURS = 20;
+const EVERY_HOURS = num('DESK_EVERY_HOURS', 24);
 
 async function db(path, body) {
   const r = await fetch(`${DB}/${path}`, {

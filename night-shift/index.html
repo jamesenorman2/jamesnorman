@@ -122,7 +122,7 @@
 
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
-<script src="/assets/stickmen.js?v=5"></script>
+<script src="/assets/stickmen.js?v=6"></script>
 <script>
 (() => {
 'use strict';
@@ -916,8 +916,35 @@ const RESIDENTS = [
 ];
 function dayLine(id) { const D = floor.day || {}, r = D[id], t = (r && r.report && r.report.summary) || 'first report due'; return t.length > 30 ? t.slice(0, 29) + '…' : t; }
 const res = {};
+// Roaming: an agent's home room is where they mainly stay, but if they are set to roam they now and then wander off round the house
+// (to a work spot in another room, hang about for a bit, say something) and then walk back home.
+function roamRoute(a, name, homeFn, sm, dt) {
+  const lvl = ROAM[name], t = floor.t; if (!lvl) return false;
+  if (raving()) { a.trip = null; return false; }
+  if (a.nextTrip == null) a.nextTrip = t + 8 + Math.random() * 20;
+  if (!a.trip) {
+    if (t < a.nextTrip) return false;
+    const rooms = floor.rooms.filter(r => KITS[r.path] && r !== a.room); if (!rooms.length) return false;
+    const r2 = pickOne(rooms), kit = KITS[r2.path], st = (kit.stations || []).filter((x, k) => !(kit.reserved || []).includes(k)), p = st.length ? pickOne(st) : [0.5, 0.5, 'check'];
+    a.trip = { spot: at(r2, p[0], p[1]), pose: p[2] === 'lie' ? 'check' : p[2] || 'check', lines: CUSTOM_SAYS[name] || p[3] || [], until: 0, back: false };
+    a.q = routeTo(a.u, a.v, r2, a.trip.spot); a.raving = false;
+  }
+  const T = a.trip;
+  if (a.q && a.q.length) {
+    const g = a.q[0], du = g.u - a.u, dv = g.v - a.v, d = Math.hypot(du, dv), sp = 52 * sm * dt;
+    if (d <= sp) { a.u = g.u; a.v = g.v; a.q.shift(); } else { a.u += du / d * sp; a.v += dv / d * sp; }
+    a.step = (a.step || 0) + sp * 0.3; a.moving = true; return true;
+  }
+  a.moving = false;
+  if (!T.back) {
+    if (!T.until) { T.until = t + 6 + Math.random() * 8; if (T.lines.length && Math.random() < 0.85) bubbles.push({ who: name, text: pickOne(T.lines), t0: t + 0.3, life: 3.4 }); }
+    if (t < T.until) return true;
+    const h = homeFn(); a.q = routeTo(a.u, a.v, roomAt(h.u, h.v), h); T.back = true; return true;
+  }
+  a.trip = null; a.nextTrip = t + (lvl === 'often' ? 12 + Math.random() * 22 : 45 + Math.random() * 70); return false;       // home again
+}
 // agents added on the admin page: they live in the room that was picked (or the first room) and say what was written for them
-const CUSTOM_SAYS = {}; let customSynced = false;
+const CUSTOM_SAYS = {}, ROAM = {}; let customSynced = false;
 function syncCustomAgents() {
   const SK = window.JN_STICK; if (customSynced || !SK || !SK.loaded) return;
   customSynced = true;
@@ -925,13 +952,14 @@ function syncCustomAgents() {
   Object.keys(E).forEach(n => {
     const e = E[n], r = RESIDENTS.find(x => x[0] === n);
     if (e.says && e.says.length) CUSTOM_SAYS[n] = e.says;
+    if (e.roam) ROAM[n] = e.roam;
     if (e.room && r) r[1] = [e.room];
     if (e.does) { const c = CREW.find(x => x[0] === 'AGENT ' + n), d = DAY.find(x => x[1] === 'AGENT ' + n); if (c) c[1] = e.does; if (d) d[2] = e.does; }
   });
   if (Object.values(E).some(e => e.does)) renderCrew(crewL);
   (SK.cfg.agents || []).filter(a => a.enabled).forEach(a => {
     if (RESIDENTS.some(r => r[0] === a.name)) return;
-    CUSTOM_SAYS[a.name] = a.says; RESIDENTS.push([a.name, a.room ? [a.room] : ['/music/'], () => '', -1]);
+    CUSTOM_SAYS[a.name] = a.says; if (a.roam) ROAM[a.name] = a.roam; RESIDENTS.push([a.name, a.room ? [a.room] : ['/music/'], () => '', -1]);
   });
 }
 
@@ -1352,6 +1380,7 @@ function drawFloor(dt) {
       let moving, pose;
       if (dutyRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'check'; a.famIn = false; }
       else if (KIDS.includes(w.name) && famRoute(a, w.name, sm, dt)) { moving = a.moving; pose = a.pose; }
+      else if (roamRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : a.trip.pose; }
       else if (raveRoute(a, w.name, () => at(r, st[a.st][0], st[a.st][1]), sm, dt)) { moving = a.moving; pose = a.moving ? 'walk' : 'rave'; }
       else {
         const tgt = at(r, st[a.st][0], st[a.st][1]), du = tgt.u - a.u, dvv = tgt.v - a.v, dist = Math.hypot(du, dvv), sp = 34 * sm * dt;
@@ -1411,12 +1440,27 @@ function drawFloor(dt) {
 
   // the front door is a nightclub entrance: Codpiece and Mr. Particular are the bouncers. Nobody ever comes in.
   Z.push({ z: floor.Dr + floor.Dc * 0.85, f: () => frontDoor(sm, s) });
-  [['CODPIECE', 0.12, () => jobLine('gatekeeper')], ['MR. PARTICULAR', 0.88, () => dayLine('teacake')]].forEach(([name, fv, lineFn]) => {
+  const BOUNCE_JOIN = ['Rules say no dancing on shift. Rules can wait!', 'The door looks after itself. DANCE!', 'Mwah! Even security can’t resist this tune!', 'Podium time, babes! Watch this!', 'Nobody’s getting in anyway. WOO!'];
+  [['CODPIECE', 0.12, () => jobLine('gatekeeper')], ['MR. PARTICULAR', 0.88, () => dayLine('teacake')]].forEach(([name, fv, lineFn], bi) => {
     const home = { u: 16 * sm, v: floor.Dr + floor.Dc * fv }, a = res[name] || (res[name] = { u: home.u, v: home.v, step: 0 });
-    const onDuty = dutyRoute(a, name, () => home, sm, dt);
+    const onDuty = dutyRoute(a, name, () => home, sm, dt), ball = floor.rooms.find(r => r.path === '/music/');
+    // when the whole house is raving even the bouncers leave the door, get up on a podium and go absolutely mad
+    if (!onDuty && ball) {
+      const pods = (KITS['/music/'].stations || []).filter(x => x[4] === 8), pod = pods[pods.length - 1 - bi] || pods[0];
+      if (raving() && !a.dj) { a.dj = true; a.q = routeTo(a.u, a.v, ball, at(ball, pod[0], pod[1])); a.moving = true; bubbles.push({ who: name, text: pickOne(BOUNCE_JOIN), t0: t + 0.3, life: 3 }); }
+      else if (!raving() && a.dj) { a.dj = false; a.q = routeTo(a.u, a.v, null, home); bubbles.push({ who: name, text: 'Right. Back on the door. That never happened.', t0: t, life: 3 }); }
+    }
+    if (!onDuty && a.q && a.q.length) {
+      const g = a.q[0], du = g.u - a.u, dvv = g.v - a.v, dd = Math.hypot(du, dvv), sp = 95 * sm * dt;
+      if (dd <= sp) { a.u = g.u; a.v = g.v; a.q.shift(); } else { a.u += du / dd * sp; a.v += dvv / dd * sp; }
+      a.step = (a.step || 0) + sp * 0.3; a.moving = true;
+    } else if (!onDuty) a.moving = false;
+    const mega = !onDuty && a.dj && !a.moving, up = mega ? 8 * sm : 0;
+    if (mega) a.style = ['jump', 'spin', 'fist', 'robot', 'jump', 'shuffle'][Math.floor(t / 2.5 + bi * 2) % 6];
     Z.push({ z: a.v + 0.5, f: () => throughWorm(a, sm, () => { const [x, y] = P(a.u, a.v);
-      stickMan(x, y, sm, onDuty ? a.step : t, onDuty ? (a.moving ? 'walk' : 'check') : 'camp', name);
-      text(name, x, y + 9 * s, 7.5 * s, 0.65); if (!onDuty) text(lineFn(), x + 18 * sm, y - 34 * sm, 8 * s, 0.7, 'left'); }) });
+      if (mega) danceMan(x, y - up, sm * 1.0, a, name, bi + 3);
+      else stickMan(x, y, sm, onDuty || a.moving ? a.step : t, onDuty || a.moving ? (a.moving ? 'walk' : 'check') : 'camp', name);
+      text(name, x, y + 9 * s - up, 7.5 * s, 0.65); if (!onDuty && !a.dj && !a.moving) text(lineFn(), x + 18 * sm, y - 34 * sm, 8 * s, 0.7, 'left'); }) });
   });
 
   // the wormhole at the far end of the corridor: Fish's way out to the sites this one relies on

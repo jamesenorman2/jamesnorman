@@ -21,6 +21,7 @@ import { choreograph, refine } from '../lib/choreo.js';
 import { soundcloudTracks } from '../lib/soundcloud.js';
 import { doodlebug, pendingIdeas } from '../lib/ideas.js';
 import { WHO } from '../lib/profile.js';
+import { FAST, hasAI, num } from '../lib/models.js';
 
 const DB = 'https://ynhyylnsbvmdasyyalcg.supabase.co/rest/v1';
 const DB_KEY = 'sb_publishable_hc4qj9_jLSC388ntEKhaLA_RBlGvA1v';
@@ -132,7 +133,7 @@ MUSIC VOICE (the DJ and the battle only): Voice: the music agents are each a dee
 The ANALYST and every security finding stay calm, professional and accurate: no swearing there. Never describe attack methods or anything that could help someone cause harm. Only use track numbers that appear in the list.`;
 
 async function runAgents(patrolReport, tracks, previous, jobs = {}) {
-  if (!process.env.ANTHROPIC_API_KEY) return { note: 'Analyst and DJ off duty tonight: no Claude API key is set yet.' };
+  if (!hasAI()) return { note: 'Analyst and DJ off duty tonight: no Claude API key is set, or AI is switched off.' };
   const client = new Anthropic();
   const list = tracks.length
     ? tracks.map((t, i) => `${i + 1}. ${t.title}`).join('\n')
@@ -165,8 +166,8 @@ ${list}`;
 
   try {
     const response = await client.messages.parse({
-      model: 'claude-opus-5-5',
-      max_tokens: 16000,
+      model: FAST,
+      max_tokens: 4000,
       output_config: { effort: 'low', format: zodOutputFormat(ShiftSchema) },
       system: SYSTEM,
       messages: [{ role: 'user', content: user }]
@@ -200,18 +201,19 @@ ${list}`;
   }
 }
 
-const SHIFT_EVERY_MINUTES = 60;
+const SHIFT_EVERY_MINUTES = num('SHIFT_EVERY_MINUTES', 360);          // the AI shift: every 6 hours, not every hour
 
 // AGENT MASTERPIECE and AGENT LLOYD: choreograph and light one track that doesn't have a cue sheet yet
 // (or, once every track has one, go back and re-light the one touched longest ago).
 async function pickleShift(tracks) {
-  if (!process.env.ANTHROPIC_API_KEY || !tracks.length) return { ok: false, error: 'off duty' };
+  if (!hasAI() || !tracks.length) return { ok: false, error: 'off duty' };
   try {
     const rows = await db('jn_scores?select=track_url,created_at,score&order=created_at.asc');
     const done = new Set(rows.map(r => r.track_url));
     const todo = tracks.find(t => !done.has(t.url));
     if (!todo) {
-      // every track has a sheet: go back to the one touched longest ago and add a few moments
+      // every track has a sheet: that's the job done. (Going round again and again re-working them costs money and never ends: opt in with REFINE_TRACKS=1.)
+      if (process.env.REFINE_TRACKS !== '1') return { ok: true, scored: done.size, idle: true };
       const row = rows.find(r => tracks.some(t => t.url === r.track_url));
       if (!row) return { ok: true, scored: done.size };
       const track = tracks.find(t => t.url === row.track_url);
