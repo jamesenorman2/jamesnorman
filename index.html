@@ -2626,7 +2626,7 @@ function familyParade(force) {
   const W = innerWidth, G = 100, V = 92, dir = Math.random() < 0.5 ? 1 : -1, startX = dir > 0 ? -70 : W + 70, T0 = performance.now(), stopX = W * (0.3 + 0.4 * Math.random());
   const cast = [{ n: 'AGENT WIFEO', sc: 1, sg: 0, o: { dress: 1, hair: 1 } }, { n: 'FRANKIE', sc: 0.72, sg: 46, o: { tuft: 1 } }, { n: 'JACK MAN', sc: 0.72, sg: 80, o: { cap: 1 } },
     { n: 'OATIE MAN', sc: 0.52, sg: 112, o: { baby: 1 } }, { n: 'ARAGON', cat: 1, sg: 142 }, { n: 'TIGER BABY', cat: 1, sg: 172 },
-    { n: 'DADDY', sc: 1, sg: 0, from: 1, o: { headphones: 1, record: 1 } }];
+    { n: 'AGENT NORMAL', sc: 1, sg: 0, from: 1, o: { headphones: 1, record: 1 } }];
   cast.forEach(c => { c.d = c.sg / V; c.sp = stopX - dir * c.sg; c.arr = Math.abs(c.sp - startX) / V + c.d; });
   const a0 = cast[0].arr, L0 = a0 + 16, END = L0 + (W + 260) / V + 1;
   { const dd = cast[6]; dd.start = dir > 0 ? W + 70 : -70; dd.sp = stopX + dir * 46; dd.arr = a0 + 7.6; }                    // Daddy hurries on from the other side, holding a record, just after they start asking where he is

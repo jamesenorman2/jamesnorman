@@ -220,7 +220,7 @@ const CREW = [
   ['AGENT NORMAL', 'DJ. Picks a track for the hour to suit the time of day, and sets up the DJ battle.', L => {
     const d = L.dj; return [d && d.track ? '♪ ' + d.track.title : '–'];
   }],
-  ['AGENT WIFEO', 'Morale, and Mum. Always on the move round the house with Frankie, Jack Man, baby Oatie Man, Aragon and Tiger Baby trailing after, all having a lovely time. Looks for James (she wants kisses), and takes everyone to watch Daddy DJ.', () => { try { return [fam.phase === 'wait' ? 'Just arriving' : fam.mode === 'daddy' ? 'Watching Daddy DJ' : 'Touring: ' + ((KITS[fam.room.path] || {}).title || 'the house')]; } catch (e) { return ['Touring the house']; } }]
+  ['AGENT WIFEO', 'Morale, and Mum. Always on the move round the house with Frankie, Jack Man, baby Oatie Man, Aragon and Tiger Baby trailing after, all having a lovely time. Looks for James (she wants kisses), and takes everyone to watch Daddy (Agent Normal) DJ.', () => { try { return [fam.phase === 'wait' ? 'Just arriving' : fam.mode === 'daddy' ? 'Watching Daddy DJ' : 'Touring: ' + ((KITS[fam.room.path] || {}).title || 'the house')]; } catch (e) { return ['Touring the house']; } }]
 ];
 function renderCrew(L) {
   const box = document.getElementById('crew');

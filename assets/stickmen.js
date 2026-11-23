@@ -47,7 +47,7 @@
         { key: 'look', when: 'Looking for the cat', lines: ['Where’s my tiger baby?'] },
         { key: 'found', when: 'The cat arrives', lines: ['There’s my tiger baby!'] }
       ] },
-    { id: 'family', agent: 'WIFEO', name: 'The Family (Agent Wifeo, the kids and the cats)', does: 'A main player, on the front screen every few minutes (and on the agents page all the time). Agent Wifeo strolls on looking for James because she wants kisses, with Frankie, Jack Man, baby Oatie Man, Aragon and Tiger Baby trotting along behind her. The little ones ask where Daddy is, and Daddy (the DJ, with his headphones) hurries on holding a record and says he loves them all, with a flurry of hearts. Then off they all go. Not tied to the roster: she turns up whoever is due.',
+    { id: 'family', agent: 'WIFEO', name: 'The Family (Agent Wifeo, the kids and the cats)', does: 'A main player, on the front screen every few minutes (and on the agents page all the time). Agent Wifeo strolls on looking for James because she wants kisses, with Frankie, Jack Man, baby Oatie Man, Aragon and Tiger Baby trotting along behind her. The little ones ask where Daddy is, and Daddy (Agent Normal, the DJ, with his headphones) hurries on holding a record and says he loves them all, with a flurry of hearts. Then off they all go. Not tied to the roster: she turns up whoever is due.',
       slots: [
         { key: 'find', when: 'Wifeo comes on', lines: ['Has anybody seen James? I want kisses!'] },
         { key: 'kisses', when: 'Blowing kisses', lines: ['Mwah! Mwah! Kisses for everyone!', 'Kisses! Come on, James! KISSES!'] },
