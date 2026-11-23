@@ -15,7 +15,7 @@ Answer each with **Y** (do it), **N** (skip), **L** (later) or **M** (do it, but
 | 7 | A proper phone layout: pinch to zoom, drag to pan, tap an agent, instead of a tiny shrunken building N | Skipped. |
 | 8 | Keyboard and screen-reader access: a plain list of who is where, and keyboard focus on agents N | Skipped. |
 | 9 | Stop all animation when the tab is hidden or the user prefers reduced motion (saves battery) L | Parked for later. |
-| 10 | Lower frame rate on slow devices (auto-detect), so it never stutters | | |
+| 10 | Lower frame rate on slow devices (auto-detect), so it never stutters L | Parked for later. |
 | 11 | Room pop-ups: hover a room to see what it does and which page it links to | | |
 | 12 | Failed checks as visible events: a red alarm light and agents running to the room that broke | | |
 | 13 | Sanassi's bite count, shown as a small scoreboard, with victims getting a plaster for the rest of the day | | |
