@@ -20,6 +20,31 @@
   // the rooms an agent you add can live in (the agents page works out which room each page is)
   const ROOMS = [['/music/', 'Ballroom'], ['/night-shift/', 'Control room'], ['/security/layers/', 'Chill-out room'], ['/security/cpted/', 'Office'], ['/security/martyns-law/', 'Kitchen'],
     ['/about/', 'Toilets'], ['/bar/', 'Bar'], ['/blog/', 'Newsroom'], ['/admin/', 'Server room']];
+  // what each built-in agent does and where they mainly live, for the admin table (an agent can be edited there; these are what they are without edits)
+  const INFO = {
+    'NORMAL': ['DJ. Picks a track for the hour to suit the time of day, and sets up the DJ battle. In the ballroom booth, the decks never leave his hands.', '/music/'],
+    'LLOYD': ['Lighting. Plans the lasers, smoke, UV and colour for every track, and runs the lights from the guest deck now and then.', '/music/'],
+    'MASTERPIECE': ['Choreographer. Plans the camera moves and the looks of the visualiser for every track.', '/night-shift/'],
+    'OLD SCHOOL': ['Crate digger. Each week, new records that fit James’s sound, with which set they’d go in. Also a guest DJ.', '/music/'],
+    'FRANKIE': ['Analyst. Reads every report, compares with the last shift, writes the handover and raises findings. One of the family.', '/night-shift/'],
+    'GCHQ': ['Intel. Reads the UK national threat level as published on GOV.UK, and keeps the threat board in the control room.', '/night-shift/'],
+    'QUIZZY RASCAL': ['Question setter. One security question a day on the Security page, and a LinkedIn post for James.', '/security/cpted/'],
+    'OATIE MAN': ['Ideas. Pitches new games and moving diagrams for the Security section; see the Idea Lab. A very intelligent baby, and one of the family.', '/security/layers/'],
+    'ENGINEER': ['Builder. Turns ideas James agreed into build plans and rough working versions on a preview link.', '/security/layers/'],
+    'HANDBOOK': ['Handbook quality: contradictions, broken citations, out-of-date standards and thin pages, ranked to fix next.', '/security/cpted/'],
+    'BORING': ['Clerk. Watches the official Martyn’s Law guidance on GOV.UK for updates.', '/security/martyns-law/'],
+    'HARRY': ['Regulation watcher. New GOV.UK guidance on Martyn’s Law, the SIA, protective security and the Building Regulations. Runs the Bar.', '/bar/'],
+    'MR. PARTICULAR': ['Hostile reconnaissance on this site: exposed files, the database’s public key, the proxy, headers, strobe safety. Also a bouncer on the front door.', ''],
+    'JACK MAN': ['Scout. Watches James’s SoundCloud for new uploads. One of the family.', '/music/'],
+    'SNOOPY': ['Visitor analyst. Reads the week’s privacy-friendly visit counts and suggests improvements.', '/about/'],
+    'BLOG-HEAD': ['Editor. Checks every blog post and incident report against its sources before it goes out.', '/blog/'],
+    'MONKEY MONKEY': ['Patrol. Walks every page it can find from the homepage: status, speed, size, title and security headers. Patrols the corridor.', ''],
+    'FISH FISH': ['Patrol, the other one. Walks the site the other way round, and has strong views on slow pages.', ''],
+    'FISH': ['Links. Checks the outside sites this one relies on: SoundCloud, LinkedIn, GOV.UK, legislation.gov.uk, ProtectUK, MI5.', ''],
+    'CODPIECE': ['Gatekeeper. Checks the HTTPS certificate and that the domain still points where it should. Also a bouncer on the front door.', ''],
+    'ABNORMAL': ['SoundCloud stats: plays, likes and reposts, and what’s climbing. (Not to be confused with Agent Normal, the DJ.)', '/music/'],
+    'WIFEO': ['Morale, and Mum. Always on the move round the house with the little ones and the cats, looking for James (she wants kisses) and taking everyone to watch Daddy DJ.', '']
+  };
   const SLOT = 180000, LEAD = 22000, RETURN = 24000;   // a turn lasts 3 minutes; they set off 22s before, and have 24s to get back to their desk after
   const DEFAULTS = [
     { id: 'peek', agent: '*', name: 'The Agents who pop up', does: 'Now and then an agent pops up in the bottom of the screen with a speech bubble, mostly when you skip, rewind or fast-forward a track, or on a big breakdown. He stays for about three and a half seconds.',
@@ -100,7 +125,7 @@
       AGENTS.length = 0; AGENTS.push(...BASE_AGENTS, ...c.agents.filter(a => a.enabled).map(a => a.name));      // the agents you added can be given stick men too
       SM.cfg = c;
     },
-    AGENTS, BASE_AGENTS, ROOMS, SLOT, LEAD, RETURN, loaded: false,
+    AGENTS, BASE_AGENTS, ROOMS, INFO, SLOT, LEAD, RETURN, loaded: false,
     // which agent a man is: the one you picked on the admin page, or his default
     agentOf(id) { const m = SM.cfg.men[id], d = DEFAULTS.find(x => x.id === id); return (m && m.agent) || (d && d.agent) || '*'; },
     on(id) { const m = SM.cfg.men[id]; return !m || m.enabled !== false; },

@@ -15,7 +15,8 @@
   html,body{min-height:100%}
   body{background:var(--bg);color:var(--fg);font-family:'IBM Plex Mono',monospace;font-weight:300;
     -webkit-font-smoothing:antialiased;display:flex;justify-content:center;padding:4rem 16px}
-  main{width:100%;max-width:560px}
+  main{width:100%;max-width:560px;transition:max-width .2s}
+  main.wide{max-width:min(1180px,96vw)}
   h1{font-family:'Syne',sans-serif;font-weight:500;font-size:1.1rem;letter-spacing:.3em;text-transform:uppercase;margin-bottom:.5rem}
   .sub{color:var(--dim);font-size:.75rem;margin-bottom:2.5rem;line-height:1.6}
   label{display:block;font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;color:var(--dim);margin-bottom:.6rem}
@@ -62,11 +63,18 @@
   .tabs button{padding:.6rem 1rem;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;background:#000;color:#aaa;border:1px solid #333;cursor:pointer;font-family:inherit}
   .tabs button[aria-selected=true]{color:#000;background:#fff;border-color:#fff}
   #panel>.card{margin-top:0!important}
-  .agtab{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:.8rem}
+  .agtab{width:100%;min-width:900px;border-collapse:collapse;font-size:.78rem;margin-top:.8rem}
   .agtab th{text-align:left;font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);font-weight:400;padding:.4rem .5rem;border-bottom:1px solid #333}
   .agtab td{padding:.5rem;border-bottom:1px solid #222;vertical-align:top}
   .agtab input[type=text],.agtab textarea,.agtab select{width:100%;background:#000;color:#fff;border:1px solid #333;font:inherit;font-size:.78rem;padding:.4rem;line-height:1.45}
-  .agtab tr.built td{color:#888;padding:.3rem .5rem}
+  .agtab td.who{width:150px}
+  .agtab td:nth-child(2){width:32%}
+  .agtab td:nth-child(3){width:26%}
+  .agtab td.who b{display:block;font-size:.8rem;letter-spacing:.08em}
+  .agtab td.who small{display:block;margin-top:.3rem;font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim)}
+  .agtab tr.isnew td.who small{color:#4ade80}
+  .agtab tbody tr:nth-child(even){background:#0a0a0a}
+  .agtab th{position:sticky;top:0;background:#000}
   .agtab .mini{padding:.3rem .6rem;font-size:.58rem;margin-top:.4rem}
   .hint{color:var(--dim);font-size:.7rem;margin-top:.3rem;line-height:1.5}
   .snap{border-top:1px solid #222;padding:.8rem 0;font-size:.8rem;line-height:1.6}
@@ -170,15 +178,14 @@
     </div>
 
     <div class="card" style="margin-top:1rem">
-      <div class="k">Agents <span id="agCount" class="badge"></span></div>
-      <div class="v">Everyone who lives in the agents house. Add your own: give them a name, say what they do, write what they say (one line per thing, they pick one at random) and choose their home room, the room they mainly stay in (they can also wander round the whole house if you let them). They turn up on the Agents page, walking between the stations in that room and saying your words, and you can give them stick men in the list above. The built-in agents are listed underneath.</div>
+      <div class="k">Agents in the house <span id="agCount" class="badge"></span></div>
+      <div class="v">Every agent, what they do, what they say and where they live, all in one table. Click into any box to change it, then press <b>Save agents</b>. <b>What they say</b>: one line per thing, they pick one at random (empty = their usual lines). <b>Home room</b> is where they mainly stay; <b>Roams</b> lets them wander round the whole house too. Add your own with “+ Add an agent”: they turn up on the Agents page, and you can give them stick men in the Stick men section.</div>
       <div class="row">
         <button type="button" class="ghost" id="agAdd">+ Add an agent</button>
         <button type="button" id="agSave">Save agents</button>
       </div>
       <div class="msg" id="agMsg" role="status"></div>
       <div style="overflow-x:auto"><table class="agtab" id="agTable"></table></div>
-      <details class="builtin"><summary id="agBuiltSum">Built-in agents</summary><p class="hint" style="margin-top:.6rem">Change what a built-in agent does (shown on their card), what they say (replaces their usual lines), their home room, or how much they roam round the house. Leave a box empty to keep how they are now.</p><div style="overflow-x:auto"><table class="agtab" id="agBuiltTable"></table></div></details>
     </div>
 
     <div class="card" style="margin-top:1rem">
@@ -199,7 +206,7 @@
 </main>
 
 <script src="https://w.soundcloud.com/player/api.js"></script>
-<script src="/assets/stickmen.js?v=6"></script>
+<script src="/assets/stickmen.js?v=7"></script>
 <script>
 (() => {
 'use strict';
@@ -425,37 +432,36 @@ $('smSave').addEventListener('click', async () => {
   } catch (err) { say(msg, 'Couldn’t save. The database may need its stick men update applying first.', 'err'); }
 });
 
-// Agents: the table of people in the house. The ones you add are saved with the stick men, in the same setting.
+// Agents: one table of everyone in the house, built-in and added. Built-in agents show what they do now (and can be changed); only differences are saved.
 let customAgents = [], builtEdits = {};
-const BASE = SM.BASE_AGENTS || SM.AGENTS || [];
+const BASE = SM.BASE_AGENTS || SM.AGENTS || [], INFO = SM.INFO || {};
 const roamOpts = cur => [['', 'Stays in their home room'], ['sometimes', 'Wanders round the house now and then'], ['often', 'Wanders all over the house']].map(([v, n]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${n}</option>`).join('');
-const roomOpts = cur => '<option value="">Any room</option>' + (SM.ROOMS || []).map(([p, n]) => `<option value="${p}"${p === cur ? ' selected' : ''}>${escH(n)}</option>`).join('');
+const roomName = p => ((SM.ROOMS || []).find(r => r[0] === p) || [0, ''])[1];
+const roomOpts = (cur, plain) => `<option value="">${plain}</option>` + (SM.ROOMS || []).map(([p, n]) => `<option value="${p}"${p === cur ? ' selected' : ''}>${escH(n)}</option>`).join('');
 function renderAgents() {
-  const mine = customAgents.map((a, i) => `<tr data-i="${i}"><td><input type="text" class="an" maxlength="24" value="${escH(a.name)}" placeholder="NAME"></td><td><textarea class="ad" rows="3" placeholder="What do they do?">${escH(a.does)}</textarea></td>` +
-    `<td><textarea class="as" rows="3" placeholder="One thing they say per line">${escH(a.says.join('\n'))}</textarea></td><td><select class="ar">${roomOpts(a.room)}</select></td><td><select class="am">${roamOpts(a.roam)}</select></td>` +
+  const built = BASE.map(n => { const e = builtEdits[n] || {}, inf = INFO[n] || ['', ''], asBuilt = inf[1] ? roomName(inf[1]) + ' (as built)' : 'Walks about / at the door (as built)';
+    return `<tr data-n="${escH(n)}" class="isbuilt"><td class="who"><b>${escH(n)}</b><small>Built in</small></td><td><textarea class="bd" rows="3">${escH(e.does || inf[0])}</textarea></td>` +
+      `<td><textarea class="bs" rows="3" placeholder="(their usual lines)">${escH((e.says || []).join('\n'))}</textarea></td><td><select class="br">${roomOpts(e.room || '', asBuilt)}</select></td><td><select class="bm">${roamOpts(e.roam || '').replace('Stays in their home room', 'As built')}</select></td><td></td></tr>`; }).join('');
+  const mine = customAgents.map((a, i) => `<tr data-i="${i}" class="isnew"><td class="who"><input type="text" class="an" maxlength="24" value="${escH(a.name)}" placeholder="NAME"><small>Added by you</small></td><td><textarea class="ad" rows="3" placeholder="What do they do?">${escH(a.does)}</textarea></td>` +
+    `<td><textarea class="as" rows="3" placeholder="One thing they say per line">${escH(a.says.join('\n'))}</textarea></td><td><select class="ar">${roomOpts(a.room, 'Any room')}</select></td><td><select class="am">${roamOpts(a.roam)}</select></td>` +
     `<td><label><input type="checkbox" class="ae"${a.enabled ? ' checked' : ''}> On</label><br><button type="button" class="ghost mini" data-del>Remove</button></td></tr>`).join('');
-  $('agTable').innerHTML = `<thead><tr><th>Agent</th><th>What they do</th><th>What they say</th><th>Home room</th><th>Roams?</th><th></th></tr></thead><tbody>${mine || '<tr><td colspan="6" style="color:#888">No agents added yet. Press “+ Add an agent”.</td></tr>'}</tbody>`;
-  $('agBuiltSum').textContent = `Built-in agents (${BASE.length}): edit them too`;
-  $('agBuiltTable').innerHTML = `<thead><tr><th>Agent</th><th>What they do</th><th>What they say</th><th>Home room</th><th>Roams?</th></tr></thead><tbody>` + BASE.map(n => { const e = builtEdits[n] || {};
-    return `<tr data-n="${escH(n)}"><td>${escH(n)}</td><td><textarea class="bd" rows="2" placeholder="(as it is now)">${escH(e.does || '')}</textarea></td><td><textarea class="bs" rows="2" placeholder="(their usual lines)">${escH((e.says || []).join('\n'))}</textarea></td>` +
-      `<td><select class="br">${roomOpts(e.room || '').replace('Any room', 'Keep where they are')}</select></td><td><select class="bm">${roamOpts(e.roam || '').replace('Stays in their home room', 'Keep as they are')}</select></td></tr>`; }).join('') + '</tbody>';
+  $('agTable').innerHTML = `<thead><tr><th>Agent</th><th>What they do</th><th>What they say</th><th>Home room</th><th>Roams?</th><th></th></tr></thead><tbody>${mine}${built}</tbody>`;
   $('agCount').textContent = BASE.length + customAgents.length;
 }
-function readBuilt() {
-  const rows = document.querySelectorAll('#agBuiltTable tbody tr[data-n]'); if (!rows.length) return;
-  builtEdits = {};
-  rows.forEach(tr => { const o = { does: tr.querySelector('.bd').value.trim(), says: tr.querySelector('.bs').value.split('\n').map(x => x.trim()).filter(Boolean), room: tr.querySelector('.br').value, roam: tr.querySelector('.bm').value }; if (o.does || o.says.length || o.room || o.roam) builtEdits[tr.dataset.n] = o; });
-}
 function readAgents() {
-  readBuilt();
-  document.querySelectorAll('#agTable tbody tr[data-i]').forEach(tr => {
+  document.querySelectorAll('#agTable tbody tr.isbuilt').forEach(tr => {
+    const n = tr.dataset.n, inf = INFO[n] || ['', ''], does = tr.querySelector('.bd').value.trim();
+    const o = { does: does === inf[0] ? '' : does, says: tr.querySelector('.bs').value.split('\n').map(x => x.trim()).filter(Boolean), room: tr.querySelector('.br').value, roam: tr.querySelector('.bm').value };
+    if (o.does || o.says.length || o.room || o.roam) builtEdits[n] = o; else delete builtEdits[n];
+  });
+  document.querySelectorAll('#agTable tbody tr.isnew').forEach(tr => {
     const a = customAgents[+tr.dataset.i]; if (!a) return;
     a.name = tr.querySelector('.an').value; a.does = tr.querySelector('.ad').value;
     a.says = tr.querySelector('.as').value.split('\n').map(x => x.trim()).filter(Boolean); a.room = tr.querySelector('.ar').value; a.roam = tr.querySelector('.am').value; a.enabled = tr.querySelector('.ae').checked;
   });
 }
 (async () => { await SM.ready; builtEdits = JSON.parse(JSON.stringify(SM.cfg.edits || {})); customAgents = SM.cfg.agents.map(a => ({ ...a, says: a.says.slice() })); renderAgents(); })();
-$('agAdd').addEventListener('click', () => { readAgents(); customAgents.push({ id: 'agent' + Date.now().toString(36), name: '', does: '', says: [], room: '', roam: '', enabled: true }); renderAgents(); const ns = document.querySelectorAll('#agTable .an'), n = ns[ns.length - 1]; if (n) { n.scrollIntoView({ block: 'center' }); n.focus(); } });
+$('agAdd').addEventListener('click', () => { readAgents(); customAgents.push({ id: 'agent' + Date.now().toString(36), name: '', does: '', says: [], room: '', roam: '', enabled: true }); renderAgents(); const ns = document.querySelectorAll('#agTable .an'), n = ns[0]; if (n) { n.scrollIntoView({ block: 'center' }); n.focus(); } });
 $('agTable').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if (b) { readAgents(); customAgents.splice(+b.closest('tr').dataset.i, 1); renderAgents(); } });
 $('agSave').addEventListener('click', async () => {
   const msg = $('agMsg'); readAgents(); const edits = builtEdits;
@@ -467,21 +473,26 @@ $('agSave').addEventListener('click', async () => {
     const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men: SM.cfg.men, custom: SM.cfg.custom, agents, edits } });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
     SM.apply({ men: SM.cfg.men, custom: SM.cfg.custom, agents, edits }); builtEdits = JSON.parse(JSON.stringify(SM.cfg.edits)); customAgents = SM.cfg.agents.map(a => ({ ...a, says: a.says.slice() })); renderAgents(); renderStick();
-    say(msg, 'Saved. They will turn up on the Agents page next time it loads.', 'ok');
+    say(msg, 'Saved. The Agents page will use it next time it loads.', 'ok');
   } catch (err) { say(msg, 'Couldn’t save the agents.', 'err'); }
 });
 
 // The sections of this page each sit under their own button.
 (() => {
   const SECTIONS = [['Music', ['Now playing']], ['Blog and ideas', ['Research desk', 'Ideas to review', 'Quizzy Rascal']], ['Crew', ['Night shift', 'Day crew', 'Engineer']], ['Stick men', ['Stick men']], ['Agents in the house', []], ['Back up', ['Back up']]];
-  const cards = [...document.querySelectorAll('#panel > .card')], bar = $('adminTabs');
-  cards.forEach(c => {
-    const t = (c.querySelector('.k') || {}).textContent || '';
-    let i = c.querySelector('#agTable') ? 4 : SECTIONS.findIndex(s => s[1].some(p => t.trim().startsWith(p)));
-    c.dataset.sec = i < 0 ? 0 : i;
+  const bar = $('adminTabs'); let cur = 0;
+  const cards = [...document.querySelectorAll('#panel > *')].filter(c => c !== bar && !c.classList.contains('back'));
+  cards.forEach(c => {                                                   // each card goes with its section; anything between cards goes with the card before it
+    if (c.classList.contains('card')) {
+      const t = (c.querySelector('.k') || {}).textContent || '';
+      const i = c.querySelector('#agTable') ? 4 : SECTIONS.findIndex(s => s[1].some(p => t.trim().startsWith(p)));
+      cur = i < 0 ? cur : i;
+    }
+    c.dataset.sec = cur;
   });
   const show = n => {
     cards.forEach(c => { c.hidden = +c.dataset.sec !== n; });
+    document.querySelector('main').classList.toggle('wide', n === 4);                     // the agents table gets the whole width
     [...bar.children].forEach((b, i) => b.setAttribute('aria-selected', String(i === n)));
     try { sessionStorage.setItem('jn-admin-tab', String(n)); } catch (e) { /* fine */ }
   };
