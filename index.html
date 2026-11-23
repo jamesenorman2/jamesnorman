@@ -114,6 +114,7 @@
   .stickbtn{position:fixed;left:1rem;bottom:.9rem;z-index:6;background:none;border:0;padding:.3rem;cursor:pointer;opacity:.4;transition:opacity .2s,transform .2s}
   .stickbtn svg{width:14px;height:24px;display:block}
   .stickbtn:hover,.stickbtn:focus-visible{opacity:1;transform:translateY(-2px)}
+  .stickbtn.busy{opacity:.15;pointer-events:none;cursor:default;transform:none}
   body.tv .stickbtn,body.shell-on .stickbtn{display:none}
   /* the little man in the corner is a skeleton posed every frame by script (see cornerAct). He stays slightly greyed out and the same small size whatever he is doing */
   .stickbtn svg{overflow:visible}
@@ -2812,7 +2813,7 @@ const cornerAct = (() => {
   // something daft once a minute (the first one a little after the page settles); if he can't right now (the intro, Calm mode), he tries again shortly
   const loop = wait => setTimeout(() => { loop(play() ? 60000 : 5000); }, wait);
   loop(15000);
-  play.list = Object.keys(acts);
+  play.list = Object.keys(acts); play.busy = () => busy;
   return play;
 })();
 window.JN_corner = cornerAct;   // try it from the console: JN_corner('cartwheel'), or JN_corner.list for them all
@@ -2832,16 +2833,28 @@ function clickEntries() {
   SM.customs().forEach(m => e.push(['c:' + m.id, () => { lastPeek = -1e9; peek('idle', m); }]));
   return e;
 }
+// Something is "on" while a routine is playing, a pop-up agent is showing, or the little man himself is mid-move. The button is greyed out and ignores clicks until it's over.
+const routineBusy = () => chairBusy || $('peek').classList.contains('on') || !!(window.JN_corner && window.JN_corner.busy && window.JN_corner.busy());
+let busyAt = 0;
+setInterval(() => {
+  const b = routineBusy(); $('stickBtn').classList.toggle('busy', b); $('stickBtn').setAttribute('aria-disabled', String(b));
+  if (!chairBusy) busyAt = 0; else if (!busyAt) busyAt = performance.now(); else if (performance.now() - busyAt > 90000) { chairBusy = false; busyAt = 0; }   // never stuck on: if something has been "playing" for 90 seconds it has failed
+}, 150);
 $('stickBtn').addEventListener('click', () => {
-  if (chairBusy) return;
+  if (routineBusy()) return;                                                      // wait for the last one to finish
   const all = clickEntries(); if (!all.length) return;
-  clickBag = clickBag.filter(k => all.some(e => e[0] === k));                       // drop any that have been switched off since
-  if (!clickBag.length) {                                                         // a fresh shuffled round, not starting with the one just shown
-    clickBag = all.map(e => e[0]).sort(() => Math.random() - 0.5);
-    if (clickBag.length > 1 && clickBag[0] === lastClick) clickBag.push(clickBag.shift());
+  // take the next one in the shuffled order; if it can't come on for some reason, move on to the one after rather than doing nothing
+  for (let tries = 0; tries < all.length + 1; tries++) {
+    clickBag = clickBag.filter(k => all.some(e => e[0] === k));                       // drop any that have been switched off since
+    if (!clickBag.length) {                                                         // a fresh shuffled round, not starting with the one just shown
+      clickBag = all.map(e => e[0]).sort(() => Math.random() - 0.5);
+      if (clickBag.length > 1 && clickBag[0] === lastClick) clickBag.push(clickBag.shift());
+    }
+    lastClick = clickBag.shift();
+    const was = calm; calm = false;                                                 // he was asked for, so he comes on even in Calm mode
+    try { all.find(e => e[0] === lastClick)[1](); } catch (err) { /* try the next one */ } finally { calm = was; }
+    if (routineBusy()) break;
   }
-  lastClick = clickBag.shift();
-  all.find(e => e[0] === lastClick)[1]();
 });
 window.JN_poo = () => { chairBusy = false; lastPoo = -1e9; pooRun(true); };   // try it from the console
 window.JN_paint = () => { chairBusy = false; lastPaint = -1e9; uvPaint(); };   // try it from the console
