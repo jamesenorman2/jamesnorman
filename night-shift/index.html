@@ -1535,6 +1535,8 @@ function drawFloor(dt) {
         if (w.name === 'SANASSI' && bite.victim) text('★ ★', x, y - 38 * s, 8 * s, 0.9);
         let msg = w.line();
         if (r.path === '/music/' && !moving && beatNow().playing !== true) { const k = Math.floor(floor.t / 7 + i * 3 + w.name.length); msg = QUIET_LINES[k % QUIET_LINES.length]; }      // no music: everyone in the ballroom complains
+        const turn = (Math.floor(floor.t / 6) + i * 5 + w.name.length) % 4 === 0;                     // only about one in four speaks at a time, so the house isn't wall-to-wall speech bubbles
+        if (!turn) msg = '';
         if (msg && !moving && msg.length > 3 && !/^first report/i.test(msg)) lastSaid[w.name] = { text: msg, at: floor.t };
         if (msg && !moving && !raving() && pose !== 'rave' && (QUIET_LINES.includes(msg) || r.w / Math.max(1, who.length) > 60)) text(msg, Math.max(P(r.u, a.v)[0] + 46, Math.min(P(r.u + r.w, a.v)[0] - 46, x)), y - 36 * sm - (i % 2) * 10 * s, 8 * s, 0.8);
       }) });
