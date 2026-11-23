@@ -380,7 +380,7 @@ const KITS = {
   // A proper CCTV control room: a wall of camera feeds, three operator desks with three screens and a joystick each, a laptop each, the DVR rack and the kettle.
   // THE CONTROL ROOM: a big wall of CCTV feeds on the right-hand wall, two operators at desks facing it, the threat-level board, the recorder rack and the kettle
   '/night-shift/': { title: 'CONTROL ROOM', stay: ['GCHQ', 'MASTERPIECE'],
-    items: [[0.93, 0.08, 0.05, 0.86, 58, 'sidewall'], [0.935, 0.45, 0.04, 0.06, 6, 'beacon', 58], [0.05, 0.88, 0.36, 0.08, 28, 'threat'], [0.5, 0.9, 0.2, 0.06, 24, 'rota'],
+    items: [[0.93, 0.04, 0.05, 0.94, 84, 'sidewall'], [0.935, 0.45, 0.04, 0.06, 6, 'beacon', 84], [0.05, 0.88, 0.36, 0.08, 28, 'threat'], [0.5, 0.9, 0.2, 0.06, 24, 'rota'],
       [0.52, 0.12, 0.26, 0.2, 9, 'cctvdesk'], [0.52, 0.5, 0.26, 0.2, 9, 'cctvdesk'], [0.57, 0.17, 0.07, 0.06, 2, 'laptop', 9], [0.57, 0.55, 0.07, 0.06, 2, 'laptop', 9],
       [0.37, 0.2, 0.07, 0.07, 6, 'stool'], [0.37, 0.58, 0.07, 0.07, 6, 'stool'],
       [0.0, 0.34, 0.07, 0.18, 30, 'rack'], [0.06, 0.05, 0.1, 0.1, 12, 'kettle']],
@@ -708,7 +708,7 @@ function drawItem(r, it, busy) {
     if (Math.floor(t * 1.4) % 2 === 0) { fx.save(); fx.fillStyle = '#ff3b3b'; fx.beginPath(); fx.arc(X + W - 5, Y + 3, 1.8, 0, 7); fx.fill(); fx.restore(); text('REC', X + W - 9, Y + 5, 4, 0.7, 'right'); }
   }
   else if (kind === 'sidewall') {                  // a big wall of CCTV feeds on the right-hand wall, facing into the room: corridors with walkers, static, doors, sweeping cameras
-    const n = 4, rows = 2, uf = a.u - 0.4;
+    const n = 5, rows = 3, uf = a.u - 0.4;
     for (let q = 0; q < n * rows; q++) {
       const i2 = q % n, j2 = Math.floor(q / n), v0 = a.v + d * (i2 + 0.07) / n, v1 = a.v + d * (i2 + 0.93) / n, z0c = z0 + h * (j2 + 0.08) / rows, z1c = z0 + h * (j2 + 0.92) / rows;
       const m = (fu2, fv2) => P(uf, v0 + (v1 - v0) * fu2, z0c + (z1c - z0c) * (1 - fv2)), k2 = q % 5;
