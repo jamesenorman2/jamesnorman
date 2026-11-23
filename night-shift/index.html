@@ -1084,7 +1084,7 @@ function syncCustomAgents() {
   if (Object.values(E).some(e => e.does || e.name)) { renderCrew(crewL); if (typeof renderDay === 'function') try { renderDay(); } catch (x) {} }
   (SK.cfg.agents || []).filter(a => a.enabled).forEach(a => {
     if (RESIDENTS.some(r => r[0] === a.name)) return;
-    CUSTOM_SAYS[a.name] = a.says; if (a.roam) ROAM[a.name] = a.roam; RESIDENTS.push([a.name, a.room ? [a.room] : ['/music/'], () => '', -1]);
+    CUSTOM_SAYS[a.name] = a.says; if (a.roam) ROAM[a.name] = a.roam; RESIDENTS.push([a.name, DJ_AGENTS.includes(a.name) ? ['/music/'] : a.room ? [a.room] : ['/music/'], () => '', -1]);
   });
 }
 
@@ -1165,6 +1165,10 @@ const BOUNCER_LINES = ['If your name’s not Dan, you’re not coming in, sweeth
   'If your name’s not Dan, you’re not coming out. Or in. Honestly, I’m confused.', 'Nobody in tonight, lovey. Business is booming.', 'Ooh, hello gorgeous. Are you a Dan? No? Tragic.'];
 const BOUNCER_REPLIES = ['Mwah mwah!', 'Gorgeous!', 'Ugh, iconic.', 'Slay, babes!', 'Hunty, you’re glowing!', 'She’s right, you know!', 'Rules are rules, angel.', 'Still no Dan, darling.'];
 const BOUNCER_PRAISE = [n => `Gorgeous, ${n}!`, n => `Love the look, ${n}!`, n => `${n}, you’re an icon!`, n => `Mwah, ${n}!`, n => `Work it, ${n}!`, n => `That walk, ${n}! Serving!`];
+// More agents who DJ: they live in the ballroom and take turns on the guest deck, along with Old School and Lloyd
+const DJ_AGENTS = ['ROBINO', 'CHEEKY', 'POUTY', 'CARLITO'];
+const DJ_GENERIC = ['Back to back with the boss', 'This one’s going out to the whole house', 'Mind the bass, the walls are listening', 'Wait for the drop… wait for it…', 'Crossfader, don’t fail me now', 'Two tunes in the mix, no pressure', 'Bring it down… and BRING IT BACK', 'You’re welcome, ballroom'];
+const guestPool = () => ['OLD SCHOOL', 'LLOYD', ...DJ_AGENTS.filter(n => RESIDENTS.some(r => r[0] === n))];
 const niceName = n => n.split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ');            // "OLD SCHOOL" -> "Old School"
 const laser = { k: 0, force: -1, mode: 0, start: 0 };
 // the music as the front page sees it: loudness, hits and the track's waveform around the playhead (a steady pulse if this page is on its own)
@@ -1189,10 +1193,10 @@ function partyTick(dt, sm) {
   if (t > djNext) { djNext = t + (raving() ? 4.5 : 7.5) + Math.random() * 4; bubbles.push({ who: 'NORMAL', text: pickOne(DJ_LINES), t0: t, life: 3.4 }); }      // the DJ's patter
   if (guest.name && t > guest.until) { bubbles.push({ who: 'NORMAL', text: 'Give it up for ' + niceName(guest.name) + '!', t0: t, life: 3 }); guest.name = null; }
   if (!guest.name && t > guest.next) {                                                                                                                                     // a guest DJ every few minutes
-    guest.name = pickOne(['OLD SCHOOL', 'LLOYD']); guest.until = t + 70 + Math.random() * 30; guest.next = guest.until + 150 + Math.random() * 150; guest.said = t + 5;
+    guest.name = pickOne(guestPool().filter(n => n !== guest.last)); guest.last = guest.name; guest.until = t + 70 + Math.random() * 30; guest.next = guest.until + 80 + Math.random() * 90; guest.said = t + 5;
     bubbles.push({ who: 'NORMAL', text: 'Please welcome ' + niceName(guest.name) + ' to the decks!', t0: t, life: 3.2 });
   }
-  if (guest.name && t > guest.said) { guest.said = t + 6 + Math.random() * 4; bubbles.push({ who: guest.name, text: pickOne(GUEST_LINES[guest.name]), t0: t + 0.3, life: 3 }); }
+  if (guest.name && t > guest.said) { guest.said = t + 6 + Math.random() * 4; bubbles.push({ who: guest.name, text: pickOne(GUEST_LINES[guest.name] || DJ_GENERIC), t0: t + 0.3, life: 3 }); }
   const want = lightsOn(), k0 = laser.k;                                                                                                                                  // the lights come up with the music and fade when it stops
   laser.k = Math.max(0, Math.min(1, laser.k + (want ? dt / 0.9 : -dt / 0.9)));
   if (want && k0 === 0 && laser.k > 0) { laser.start = t; laser.mode = Math.floor(Math.random() * 3); bubbles.push({ who: 'NORMAL', text: pickOne(['And… LASERS!', 'Music on, lasers on!', 'Eyes up: here come the lasers!', 'Lloyd, hit the lights!']), t0: t, life: 2.8 }); }
