@@ -16,6 +16,10 @@
   // every agent on the agents page, in the order they are listed
   const AGENTS = ['NORMAL', 'LLOYD', 'MASTERPIECE', 'OLD SCHOOL', 'FRANKIE', 'GCHQ', 'QUIZZY RASCAL', 'OATIE MAN', 'ENGINEER', 'HANDBOOK', 'BORING', 'BIN LID',
     'MR. PARTICULAR', 'JACK MAN', 'SNOOPY', 'BLOG-HEAD', 'MONKEY MONKEY', 'FISH FISH', 'FISH', 'CODPIECE', 'ABNORMAL', 'WIFEO'];
+  const BASE_AGENTS = AGENTS.slice();   // the built-in ones; any you add on the admin page are put on the end of AGENTS
+  // the rooms an agent you add can live in (the agents page works out which room each page is)
+  const ROOMS = [['/music/', 'Ballroom'], ['/night-shift/', 'Control room'], ['/security/layers/', 'Chill-out room'], ['/security/cpted/', 'Office'], ['/security/martyns-law/', 'Kitchen'],
+    ['/about/', 'Toilets'], ['/bar/', 'Bar'], ['/blog/', 'Newsroom'], ['/admin/', 'Server room']];
   const SLOT = 180000, LEAD = 22000, RETURN = 24000;   // a turn lasts 3 minutes; they set off 22s before, and have 24s to get back to their desk after
   const DEFAULTS = [
     { id: 'peek', agent: '*', name: 'The Agents who pop up', does: 'Now and then an agent pops up in the bottom of the screen with a speech bubble, mostly when you skip, rewind or fast-forward a track, or on a big breakdown. He stays for about three and a half seconds.',
@@ -68,11 +72,15 @@
 
   const SM = {
     DEFAULTS,
-    cfg: { men: {}, custom: [] },
+    cfg: { men: {}, custom: [], agents: [] },
     // Lay the saved edits over the defaults. Anything missing or broken falls back to the defaults.
     apply(saved) {
-      const c = { men: {}, custom: [] };
+      const c = { men: {}, custom: [], agents: [] };
       if (saved && typeof saved === 'object') {
+        if (Array.isArray(saved.agents)) c.agents = saved.agents.slice(0, 40).map((a, i) => ({
+          id: clean(a && a.id, 30) || 'agent' + i, name: clean(a && a.name, 24).toUpperCase(), does: clean(a && a.does, 300), says: cleanLines(a && a.says),
+          room: ROOMS.some(r => r[0] === (a && a.room)) ? a.room : '', enabled: !(a && a.enabled === false)
+        })).filter(a => a.name && !BASE_AGENTS.includes(a.name));
         if (saved.men && typeof saved.men === 'object') for (const id of Object.keys(saved.men)) {
           const m = saved.men[id]; if (!m || typeof m !== 'object') continue;
           const o = { enabled: m.enabled !== false, agent: cleanAgent(m.agent), slots: {} };
@@ -84,9 +92,10 @@
           enabled: !(m && m.enabled === false), lines: cleanLines(m && m.lines)
         }));
       }
+      AGENTS.length = 0; AGENTS.push(...BASE_AGENTS, ...c.agents.filter(a => a.enabled).map(a => a.name));      // the agents you added can be given stick men too
       SM.cfg = c;
     },
-    AGENTS, SLOT, LEAD, RETURN, loaded: false,
+    AGENTS, BASE_AGENTS, ROOMS, SLOT, LEAD, RETURN, loaded: false,
     // which agent a man is: the one you picked on the admin page, or his default
     agentOf(id) { const m = SM.cfg.men[id], d = DEFAULTS.find(x => x.id === id); return (m && m.agent) || (d && d.agent) || '*'; },
     on(id) { const m = SM.cfg.men[id]; return !m || m.enabled !== false; },

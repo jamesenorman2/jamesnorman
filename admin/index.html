@@ -58,6 +58,12 @@
   .duty{border:1px solid var(--line);padding:.7rem .9rem;margin:1rem 0;font-size:.78rem;line-height:1.6}
   .duty b{font-weight:500}
   .man .mini{padding:.4rem .7rem;font-size:.6rem}
+  .agtab{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:.8rem}
+  .agtab th{text-align:left;font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);font-weight:400;padding:.4rem .5rem;border-bottom:1px solid #333}
+  .agtab td{padding:.5rem;border-bottom:1px solid #222;vertical-align:top}
+  .agtab input[type=text],.agtab textarea,.agtab select{width:100%;background:#000;color:#fff;border:1px solid #333;font:inherit;font-size:.78rem;padding:.4rem;line-height:1.45}
+  .agtab tr.built td{color:#888;padding:.3rem .5rem}
+  .agtab .mini{padding:.3rem .6rem;font-size:.58rem;margin-top:.4rem}
   .hint{color:var(--dim);font-size:.7rem;margin-top:.3rem;line-height:1.5}
   .snap{border-top:1px solid #222;padding:.8rem 0;font-size:.8rem;line-height:1.6}
   .snap .when{font-weight:500}
@@ -156,6 +162,17 @@
         <button type="button" id="smSave">Save stick men</button>
       </div>
       <div class="msg" id="smMsg" role="status"></div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="k">Agents <span id="agCount" class="badge"></span></div>
+      <div class="v">Everyone who lives in the agents house. Add your own: give them a name, say what they do, write what they say (one line per thing, they pick one at random) and choose the room they work in. They turn up on the Agents page, walking between the stations in that room and saying your words, and you can give them stick men in the list above. The built-in agents are listed underneath.</div>
+      <div style="overflow-x:auto"><table class="agtab" id="agTable"></table></div>
+      <div class="row">
+        <button type="button" class="ghost" id="agAdd">+ Add an agent</button>
+        <button type="button" id="agSave">Save agents</button>
+      </div>
+      <div class="msg" id="agMsg" role="status"></div>
     </div>
 
     <div class="card" style="margin-top:1rem">
@@ -395,11 +412,46 @@ $('smSave').addEventListener('click', async () => {
   if (noWords) { say(msg, `${noWords.name} needs at least one thing to say.`, 'err'); return; }
   say(msg, 'Saving…');
   try {
-    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men, custom } });
+    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men, custom, agents: SM.cfg.agents } });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
-    SM.apply({ men, custom }); customMen = SM.cfg.custom.map(m => ({ ...m })); renderStick(); showDuty();
+    SM.apply({ men, custom, agents: SM.cfg.agents }); customMen = SM.cfg.custom.map(m => ({ ...m })); renderStick(); showDuty();
     say(msg, 'Saved. The homepage will use it next time it loads.', 'ok');
   } catch (err) { say(msg, 'Couldn’t save. The database may need its stick men update applying first.', 'err'); }
+});
+
+// Agents: the table of people in the house. The ones you add are saved with the stick men, in the same setting.
+let customAgents = [];
+const roomOpts = cur => '<option value="">Any room</option>' + SM.ROOMS.map(([p, n]) => `<option value="${p}"${p === cur ? ' selected' : ''}>${escH(n)}</option>`).join('');
+function renderAgents() {
+  const mine = customAgents.map((a, i) => `<tr data-i="${i}"><td><input type="text" class="an" maxlength="24" value="${escH(a.name)}" placeholder="NAME"></td><td><textarea class="ad" rows="3" placeholder="What do they do?">${escH(a.does)}</textarea></td>` +
+    `<td><textarea class="as" rows="3" placeholder="One thing they say per line">${escH(a.says.join('\n'))}</textarea></td><td><select class="ar">${roomOpts(a.room)}</select></td>` +
+    `<td><label><input type="checkbox" class="ae"${a.enabled ? ' checked' : ''}> On</label><br><button type="button" class="ghost mini" data-del>Remove</button></td></tr>`).join('');
+  const built = SM.BASE_AGENTS.map(n => `<tr class="built"><td>${escH(n)}</td><td colspan="4">Built in: see them on the Agents page</td></tr>`).join('');
+  $('agTable').innerHTML = `<thead><tr><th>Agent</th><th>What they do</th><th>What they say</th><th>Room</th><th></th></tr></thead><tbody>${mine}${built}</tbody>`;
+  $('agCount').textContent = SM.BASE_AGENTS.length + customAgents.length;
+}
+function readAgents() {
+  document.querySelectorAll('#agTable tbody tr[data-i]').forEach(tr => {
+    const a = customAgents[+tr.dataset.i]; if (!a) return;
+    a.name = tr.querySelector('.an').value; a.does = tr.querySelector('.ad').value;
+    a.says = tr.querySelector('.as').value.split('\n').map(x => x.trim()).filter(Boolean); a.room = tr.querySelector('.ar').value; a.enabled = tr.querySelector('.ae').checked;
+  });
+}
+(async () => { await SM.ready; customAgents = SM.cfg.agents.map(a => ({ ...a, says: a.says.slice() })); renderAgents(); })();
+$('agAdd').addEventListener('click', () => { readAgents(); customAgents.push({ id: 'agent' + Date.now().toString(36), name: '', does: '', says: [], room: '', enabled: true }); renderAgents(); const n = document.querySelector('#agTable tbody tr[data-i]:first-child .an'); if (n) n.focus(); });
+$('agTable').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if (b) { readAgents(); customAgents.splice(+b.closest('tr').dataset.i, 1); renderAgents(); } });
+$('agSave').addEventListener('click', async () => {
+  const msg = $('agMsg'); readAgents();
+  const agents = customAgents.filter(a => a.name.trim()).map(a => ({ id: a.id, name: a.name.trim().toUpperCase(), does: a.does.trim(), says: a.says, room: a.room, enabled: a.enabled }));
+  const bad = agents.find(a => !a.says.length); if (bad) { say(msg, `${bad.name} needs at least one thing to say.`, 'err'); return; }
+  if (agents.some(a => SM.BASE_AGENTS.includes(a.name))) { say(msg, 'That name is already a built-in agent. Pick another.', 'err'); return; }
+  say(msg, 'Saving…');
+  try {
+    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men: SM.cfg.men, custom: SM.cfg.custom, agents } });
+    if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
+    SM.apply({ men: SM.cfg.men, custom: SM.cfg.custom, agents }); customAgents = SM.cfg.agents.map(a => ({ ...a, says: a.says.slice() })); renderAgents(); renderStick();
+    say(msg, 'Saved. They will turn up on the Agents page next time it loads.', 'ok');
+  } catch (err) { say(msg, 'Couldn’t save the agents.', 'err'); }
 });
 
 async function loadCrewBits() {

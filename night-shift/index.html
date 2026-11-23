@@ -887,6 +887,16 @@ const RESIDENTS = [
 ];
 function dayLine(id) { const D = floor.day || {}, r = D[id], t = (r && r.report && r.report.summary) || 'first report due'; return t.length > 30 ? t.slice(0, 29) + '…' : t; }
 const res = {};
+// agents added on the admin page: they live in the room that was picked (or the first room) and say what was written for them
+const CUSTOM_SAYS = {}; let customSynced = false;
+function syncCustomAgents() {
+  const SK = window.JN_STICK; if (customSynced || !SK || !SK.loaded) return;
+  customSynced = true;
+  (SK.cfg.agents || []).filter(a => a.enabled).forEach(a => {
+    if (RESIDENTS.some(r => r[0] === a.name)) return;
+    CUSTOM_SAYS[a.name] = a.says; RESIDENTS.push([a.name, a.room ? [a.room] : ['/music/'], () => '', -1]);
+  });
+}
 
 /* ─── The rave: when the tune changes, everyone runs to the music room and dances to the beat ─── */
 const RAVE_LINES = ['Great tune!', 'Are you having a good night?', 'Are you having a fun day?', 'Wow, I love raving!', 'TUNE!', 'Rewind! Rewind!', 'Hands in the air!',
@@ -1201,7 +1211,7 @@ function danceMan(x, y, s, a, name, k) {
 }
 
 function drawFloor(dt) {
-  floor.t += dt;
+  floor.t += dt; syncCustomAgents();
   const t = floor.t, s = Math.max(0.6, Math.min(1.8, FW / 1100)), sm = SM, PW = floor.PW, PD = floor.PD;
   fx.clearRect(0, 0, FW, FH);
   fx.strokeStyle = '#fff'; fx.lineWidth = 1; fx.lineCap = 'round'; fx.lineJoin = 'round';
@@ -1273,7 +1283,7 @@ function drawFloor(dt) {
           a.said = true;
           if (Math.random() < (beatNow().playing ? 0.45 : 0.25)) { a.groove = floor.t + 3 + Math.random() * 4; a.style = DANCES[Math.floor(Math.random() * DANCES.length)];
             bubbles.push({ who: w.name, text: GROOVE_LINES[Math.floor(Math.random() * GROOVE_LINES.length)], t0: floor.t + 0.2, life: 2.8 }); }
-          else { const acts = st[a.st][3]; if (acts && acts.length && Math.random() < 0.8) bubbles.push({ who: w.name, text: acts[Math.floor(Math.random() * acts.length)], t0: floor.t + 0.2, life: 3.4, act: true }); }
+          else { const acts = CUSTOM_SAYS[w.name] || st[a.st][3]; if (acts && acts.length && Math.random() < 0.8) bubbles.push({ who: w.name, text: acts[Math.floor(Math.random() * acts.length)], t0: floor.t + 0.2, life: 3.4, act: true }); }
         }
         if (!moving && a.groove > floor.t) pose = 'rave';
         if (w.name === 'FRANKIE' && cat && cat.phase === 'sit' && !moving) pose = 'stroke';   // stroking the tiger baby
