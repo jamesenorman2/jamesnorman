@@ -13,7 +13,7 @@ Answer each with **Y** (do it), **N** (skip), **L** (later) or **M** (do it, but
 | 5 | Follow-cam: pick an agent and the view stays on them N | Skipped. |
 | 6 | Day and night lighting that follows the real UK time, so the house is dim at 3am N | Skipped. |
 | 7 | A proper phone layout: pinch to zoom, drag to pan, tap an agent, instead of a tiny shrunken building N | Skipped. |
-| 8 | Keyboard and screen-reader access: a plain list of who is where, and keyboard focus on agents | | |
+| 8 | Keyboard and screen-reader access: a plain list of who is where, and keyboard focus on agents N | Skipped. |
 | 9 | Stop all animation when the tab is hidden or the user prefers reduced motion (saves battery) | | |
 | 10 | Lower frame rate on slow devices (auto-detect), so it never stutters | | |
 | 11 | Room pop-ups: hover a room to see what it does and which page it links to | | |
