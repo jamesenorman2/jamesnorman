@@ -1911,6 +1911,11 @@ function stickMan(x, y, s, phase, pose, name) {
       fx.moveTo(x, y - 23.6 * s); fx.lineTo(x - 2.8 * s, y - 25 * s); fx.lineTo(x - 2.8 * s, y - 22.2 * s); fx.closePath(); fx.moveTo(x, y - 23.6 * s); fx.lineTo(x + 2.8 * s, y - 25 * s); fx.lineTo(x + 2.8 * s, y - 22.2 * s); fx.closePath(); fx.stroke();   // bow tie
       const tw = floor.t * 2 + x; fx.globalAlpha = 0.4 + 0.5 * Math.abs(Math.sin(tw)); const sx = x + 9 * s, sy = hy - 2 * s + Math.sin(tw * 0.7) * 3 * s;
       fx.beginPath(); fx.moveTo(sx - 2.4 * s, sy); fx.lineTo(sx + 2.4 * s, sy); fx.moveTo(sx, sy - 2.4 * s); fx.lineTo(sx, sy + 2.4 * s); fx.stroke(); fx.globalAlpha = 1;
+    } else if (name === 'LEX' || name === 'MOLLY') {   // really blonde, short, curly hair: a cap of little curls
+      fx.save(); fx.fillStyle = '#f7dc6f'; fx.strokeStyle = '#f7dc6f'; fx.lineWidth = 1;
+      for (let k = 0; k < 11; k++) { const an = Math.PI * (0.92 + k * 0.116), r = 4.2 * s + (k % 2) * 0.5 * s; fx.beginPath(); fx.arc(x + Math.cos(an) * r, hy + Math.sin(an) * r, 1.7 * s, 0, 7); fx.fill(); }
+      for (let k = 0; k < 4; k++) { const an = Math.PI * (1.2 + k * 0.2); fx.beginPath(); fx.arc(x + Math.cos(an) * 2.6 * s, hy + Math.sin(an) * 2.6 * s, 1.5 * s, 0, 7); fx.fill(); }
+      fx.restore();
     } else if (name === 'SANASSI') {                  // red shorts, always
       fx.save(); fx.beginPath(); fx.moveTo(x - 4 * s, y - 13 * s); fx.lineTo(x + 4 * s, y - 13 * s); fx.lineTo(x + 4.6 * s, y - 7.5 * s); fx.lineTo(x + 0.6 * s, y - 7.5 * s); fx.lineTo(x, y - 10 * s); fx.lineTo(x - 0.6 * s, y - 7.5 * s); fx.lineTo(x - 4.6 * s, y - 7.5 * s); fx.closePath();
       fx.fillStyle = '#e11d2e'; fx.strokeStyle = '#ff4d5e'; fx.fill(); fx.stroke(); fx.restore();
