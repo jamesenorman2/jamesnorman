@@ -14,7 +14,7 @@
    An agent of "*" means whoever is due. */
 (() => {
   // every agent on the agents page, in the order they are listed
-  const AGENTS = ['NORMAL', 'LLOYD', 'MASTERPIECE', 'OLD SCHOOL', 'FRANKIE', 'GCHQ', 'QUIZZY RASCAL', 'OATIE MAN', 'ENGINEER', 'HANDBOOK', 'BORING', 'BIN LID',
+  const AGENTS = ['NORMAL', 'LLOYD', 'MASTERPIECE', 'OLD SCHOOL', 'FRANKIE', 'GCHQ', 'QUIZZY RASCAL', 'OATIE MAN', 'ENGINEER', 'HANDBOOK', 'BORING', 'HARRY',
     'MR. PARTICULAR', 'JACK MAN', 'SNOOPY', 'BLOG-HEAD', 'MONKEY MONKEY', 'FISH FISH', 'FISH', 'CODPIECE', 'ABNORMAL', 'WIFEO'];
   const BASE_AGENTS = AGENTS.slice();   // the built-in ones; any you add on the admin page are put on the end of AGENTS
   // the rooms an agent you add can live in (the agents page works out which room each page is)
@@ -35,7 +35,7 @@
       slots: [{ key: 'say', when: 'Once he is dancing on the chair', lines: ['I just don’t care!', 'I JUST DON’T CARE!', 'I just don’t caaaare!'] }] },
     { id: 'uv', agent: 'OLD SCHOOL', name: 'UV Painter', does: 'Pops up, pulls a pot of UV paint out of his pocket, paints glowing stripes on his face one at a time, then jumps about with his arms up.',
       slots: [{ key: 'say', when: 'Once the paint is on', lines: ['Woohoo!', 'WOOHOO!', 'Woooohooo!'] }] },
-    { id: 'poo', agent: 'BIN LID', name: 'Loo Dasher', does: 'Dances without a care in the world, then it hits him. He sprints for the toilet, runs straight past it, skids, and turns to the screen. Little brown bits drop out of his bottom onto the floor, he dances over the evidence, then runs off shouting about the perfect crime.',
+    { id: 'poo', agent: 'HARRY', name: 'Loo Dasher', does: 'Dances without a care in the world, then it hits him. He sprints for the toilet, runs straight past it, skids, and turns to the screen. Little brown bits drop out of his bottom onto the floor, he dances over the evidence, then runs off shouting about the perfect crime.',
       slots: [
         { key: 'panic', when: 'The moment it hits him', lines: ['Oh no, I need a poo!'] },
         { key: 'late', when: 'After he has missed the loo', lines: ['Oops, too late.'] },
@@ -72,15 +72,20 @@
 
   const SM = {
     DEFAULTS,
-    cfg: { men: {}, custom: [], agents: [] },
+    cfg: { men: {}, custom: [], agents: [], edits: {} },
     // Lay the saved edits over the defaults. Anything missing or broken falls back to the defaults.
     apply(saved) {
-      const c = { men: {}, custom: [], agents: [] };
+      const c = { men: {}, custom: [], agents: [], edits: {} };
       if (saved && typeof saved === 'object') {
         if (Array.isArray(saved.agents)) c.agents = saved.agents.slice(0, 40).map((a, i) => ({
           id: clean(a && a.id, 30) || 'agent' + i, name: clean(a && a.name, 24).toUpperCase(), does: clean(a && a.does, 300), says: cleanLines(a && a.says),
           room: ROOMS.some(r => r[0] === (a && a.room)) ? a.room : '', enabled: !(a && a.enabled === false)
         })).filter(a => a.name && !BASE_AGENTS.includes(a.name));
+        if (saved.edits && typeof saved.edits === 'object') for (const n of BASE_AGENTS) {                       // changes to the built-in agents: what they do, what they say, which room
+          const e = saved.edits[n]; if (!e || typeof e !== 'object') continue;
+          const o = { does: clean(e.does, 300), says: cleanLines(e.says), room: ROOMS.some(r => r[0] === e.room) ? e.room : '' };
+          if (o.does || o.says.length || o.room) c.edits[n] = o;
+        }
         if (saved.men && typeof saved.men === 'object') for (const id of Object.keys(saved.men)) {
           const m = saved.men[id]; if (!m || typeof m !== 'object') continue;
           const o = { enabled: m.enabled !== false, agent: cleanAgent(m.agent), slots: {} };

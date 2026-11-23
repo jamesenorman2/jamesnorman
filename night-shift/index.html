@@ -122,7 +122,7 @@
 
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
-<script src="/assets/stickmen.js?v=4"></script>
+<script src="/assets/stickmen.js?v=5"></script>
 <script>
 (() => {
 'use strict';
@@ -224,7 +224,9 @@ const CREW = [
   }],
   ['AGENT WIFEO', 'Morale, and Mum. Always on the move round the house with Frankie, Jack Man, baby Oatie Man, Aragon and Tiger Baby trailing after, all having a lovely time. Looks for James (she wants kisses), and takes everyone to watch Daddy (Agent Normal) DJ.', () => { try { return [fam.phase === 'wait' ? 'Just arriving' : fam.mode === 'daddy' ? 'Watching Daddy DJ' : 'Touring: ' + ((KITS[fam.room.path] || {}).title || 'the house')]; } catch (e) { return ['Touring the house']; } }]
 ];
+let crewL = null;
 function renderCrew(L) {
+  crewL = L;
   const box = document.getElementById('crew');
   box.innerHTML = '';
   CREW.forEach(([name, job, result]) => {
@@ -240,7 +242,7 @@ renderCrew(null);
 // The day crew: one report each, read from the database.
 const DAY = [
   ['grumble', 'AGENT BLOG-HEAD', 'Editor. Checks every blog post and incident report against its sources before it goes out.'],
-  ['binlid', 'AGENT BIN LID', 'Regulation watcher. New GOV.UK guidance on Martyn’s Law, the SIA, protective security and the Building Regulations.'],
+  ['binlid', 'AGENT HARRY', 'Regulation watcher. New GOV.UK guidance on Martyn’s Law, the SIA, protective security and the Building Regulations.'],
   ['teacake', 'AGENT MR. PARTICULAR', 'Hostile reconnaissance on this site: exposed files, the database’s public key, the proxy, headers, strobe safety.'],
   ['pigeon', 'AGENT SNOOPY', 'Visitor analyst. Reads the week’s privacy-friendly visit counts and suggests improvements.'],
   ['bunsen', 'AGENT QUIZZY RASCAL', 'Question setter. One security question a day on the Security page, and a LinkedIn post for James.'],
@@ -429,7 +431,7 @@ const KITS = {
       [0.65, 0.1, 'lie', ['Lounging with a view of the dance floor', 'Spacious in here now, isn’t it?']],
       [0.53, 0.72, 'dance', ['Spinning round on the turntable podium!', 'Whoa, I’m going round and round!', 'Look at me go: 360 degrees!'], 8, 0.14]] },
   // THE BAR: a proper pub. A long counter with stools and a barman, bottles and a neon OPEN sign, a pool table, a jukebox, a dartboard on the wall and a spin-for-a-drink wheel.
-  '/bar/': { title: 'BAR', stay: ['BIN LID'],
+  '/bar/': { title: 'BAR', stay: ['HARRY'],
     items: [[0.04, 0.9, 0.5, 0.05, 24, 'bottles'], [0.6, 0.86, 0.36, 0.1, 22, 'spinwheel'], [0.04, 0.08, 0.3, 0.05, 22, 'neon'], [0.84, 0.1, 0.12, 0.1, 30, 'jukebox'],
       [0.08, 0.52, 0.56, 0.12, 13, 'barcounter'], [0.12, 0.72, 0.05, 0.05, 8, 'stool'], [0.27, 0.72, 0.05, 0.05, 8, 'stool'], [0.42, 0.72, 0.05, 0.05, 8, 'stool'], [0.57, 0.72, 0.05, 0.05, 8, 'stool'],
       [0.62, 0.3, 0.3, 0.17, 9, 'pooltable'], [0.95, 0.56, 0.03, 0.18, 16, 'dartboard', 14], [0.0, 0.3, 0.05, 0.07, 10, 'plant']],
@@ -908,7 +910,7 @@ const RESIDENTS = [
   ['GCHQ', ['/night-shift/'], () => jobLine('intel'), 0], ['QUIZZY RASCAL', ['/security/cpted/'], () => dayLine('bunsen'), 5],
   ['OATIE MAN', ['/security/layers/', '/security/'], () => jobLine('ideas'), 0], ['ENGINEER', ['/security/layers/', '/security/'], () => dayLine('spanner'), 2],
   ['HANDBOOK', ['/security/cpted/', '/security/'], () => dayLine('crumpet'), -1],
-  ['BORING', ['/security/martyns-law/', '/security/'], () => jobLine('clerk'), 0], ['BIN LID', ['/bar/', '/security/martyns-law/'], () => dayLine('binlid'), 0],
+  ['BORING', ['/security/martyns-law/', '/security/'], () => jobLine('clerk'), 0], ['HARRY', ['/bar/', '/security/martyns-law/'], () => dayLine('binlid'), 0],
   ['JACK MAN', ['/music/'], () => jobLine('scout'), 10], ['SNOOPY', ['/about/', '/blog/'], () => dayLine('pigeon'), 1],
   ['BLOG-HEAD', ['/blog/', '/'], () => dayLine('grumble'), 0]
 ];
@@ -919,6 +921,14 @@ const CUSTOM_SAYS = {}; let customSynced = false;
 function syncCustomAgents() {
   const SK = window.JN_STICK; if (customSynced || !SK || !SK.loaded) return;
   customSynced = true;
+  const E = SK.cfg.edits || {};                                                       // changes made to the built-in agents
+  Object.keys(E).forEach(n => {
+    const e = E[n], r = RESIDENTS.find(x => x[0] === n);
+    if (e.says && e.says.length) CUSTOM_SAYS[n] = e.says;
+    if (e.room && r) r[1] = [e.room];
+    if (e.does) { const c = CREW.find(x => x[0] === 'AGENT ' + n), d = DAY.find(x => x[1] === 'AGENT ' + n); if (c) c[1] = e.does; if (d) d[2] = e.does; }
+  });
+  if (Object.values(E).some(e => e.does)) renderCrew(crewL);
   (SK.cfg.agents || []).filter(a => a.enabled).forEach(a => {
     if (RESIDENTS.some(r => r[0] === a.name)) return;
     CUSTOM_SAYS[a.name] = a.says; RESIDENTS.push([a.name, a.room ? [a.room] : ['/music/'], () => '', -1]);
