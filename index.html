@@ -218,6 +218,10 @@
   }
   /* nothing may make the page wider than the screen (Chrome on Android lays the page out wider and shifts it) */
   html,body{max-width:100%;overflow-x:clip}
+/* no page scrollbar: scrolling still works with the wheel, trackpad, touch and keys */
+html{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
+
   @media(max-width:700px),(hover:none){nav.site .sub{display:none}}
   .chairman:not(.on){visibility:hidden}
   /* phones: tuck the player down so the visualiser gets the screen. The track name and status sit tight

@@ -73,6 +73,10 @@ footer.site a:hover{color:var(--fg)}
 /* the quiet ridge-line banner behind a page's heading (see /assets/hero.js) */
 /* the full-width ridge banner is 100vw, which is wider than the page when a scrollbar is showing: never scroll sideways because of it */
 html,body{max-width:100%;overflow-x:clip}
+/* no page scrollbar: scrolling still works with the wheel, trackpad, touch and keys */
+html{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
+
 .hero-wrap{position:relative;z-index:0;padding-bottom:4.5rem}
 .hero-wrap .ridge{position:absolute;left:50%;top:0;transform:translateX(-50%);width:100vw;height:100%;z-index:-1;pointer-events:none;opacity:.45;
   -webkit-mask-image:linear-gradient(to bottom,transparent,#000 35%,#000 70%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 35%,#000 70%,transparent)}
