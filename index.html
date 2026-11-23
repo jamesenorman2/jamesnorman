@@ -2927,7 +2927,7 @@ const cornerAct = (() => {
 window.JN_corner = cornerAct;   // try it from the console: JN_corner('cartwheel'), or JN_corner.list for them all
 // the little stick man in the corner: click him and one of the others comes on
 // Each click brings on a different one: everyone takes a turn in a shuffled order before anyone repeats, so the toilet comes round too.
-let clickBag = [], lastClick = '';
+let clickIdx = 0, lastClick = '';
 function clickEntries() {
   const e = [];
   if (SM.on('chair')) e.push(['chair', () => chairDance(true)]);
@@ -2940,6 +2940,7 @@ function clickEntries() {
   if (sansHere()) e.push(['sanassi', () => sansRun(true)]);
   if (SM.on('family')) e.push(['family', () => familyParade(true)]);
   SM.customs().forEach(m => e.push(['c:' + m.id, () => { lastPeek = -1e9; peek('idle', m); }]));
+  (cornerAct.list || []).forEach(k => e.push(['k:' + k, () => cornerAct(k)]));            // and all of the little corner man's own dances
   return e;
 }
 // Something is "on" while a routine is playing, a pop-up agent is showing, or the little man himself is mid-move. The button is greyed out and ignores clicks until it's over.
@@ -2956,16 +2957,13 @@ setInterval(() => {
 $('stickBtn').addEventListener('click', () => {
   if (routineBusy()) { queuedClick = true; setTimeout(() => { queuedClick = false; }, 60000); return; }   // a click during another routine is remembered: he comes on as soon as it ends
   const all = clickEntries(); if (!all.length) return;
-  // take the next one in the shuffled order; if it can't come on for some reason, move on to the one after rather than doing nothing
-  for (let tries = 0; tries < all.length + 1; tries++) {
-    clickBag = clickBag.filter(k => all.some(e => e[0] === k));                       // drop any that have been switched off since
-    if (!clickBag.length) {                                                         // a fresh shuffled round, not starting with the one just shown
-      clickBag = all.map(e => e[0]).sort(() => Math.random() - 0.5);
-      if (clickBag.length > 1 && clickBag[0] === lastClick) clickBag.push(clickBag.shift());
-    }
-    lastClick = clickBag.shift();
+  // one by one through ALL of them, in a fixed order, then round again; if one can't come on for some reason, move on to the next rather than doing nothing
+  for (let tries = 0; tries < all.length; tries++) {
+    clickIdx = clickIdx % all.length;
+    const entry = all[clickIdx++];
     const was = calm; calm = false;                                                 // he was asked for, so he comes on even in Calm mode
-    try { all.find(e => e[0] === lastClick)[1](); } catch (err) { /* try the next one */ } finally { calm = was; }
+    try { entry[1](); } catch (err) { /* try the next one */ } finally { calm = was; }
+    lastClick = entry[0];
     if (routineBusy()) break;
   }
 });
