@@ -1167,7 +1167,7 @@ function famNext(sm, force) {
   if (force === 'daddy' || raving() || F.stops % 3 === 0 || (playing && F.stops % 2 === 0)) { mode = 'daddy'; room = ball; spot = at(ball, 0.76, 0.58); F.daddyAt = t; }
   else if (!F.with && !F.first && Math.random() < 0.35) { mode = 'podium'; room = ball; spot = at(ball, 0.88, 0.71); }          // Wifeo, on her own, goes to dance on the turning podium
   else { mode = 'room'; room = pickOne(floor.rooms.filter(r => r !== F.room && r !== ball && KITS[r.path])) || ball; spot = famSpot(room); }
-  if (mode === 'daddy' && !F.with && Math.random() < 0.5) { F.with = true; F.withUntil = t + 26 + Math.random() * 10; }          // sometimes the little ones come along to watch Daddy
+  if (mode === 'daddy' && !F.with && Math.random() < 0.1) { F.with = true; F.withUntil = t + 10 + Math.random() * 6; }          // sometimes the little ones come along to watch Daddy
   F.mode = mode; F.room = room; F.q = routeTo(F.u, F.v, room, spot);
   FOLLOW.forEach(f => { F.style[f.n] = pickOne(DANCES); });
   if (mode === 'daddy') { famSay('FRANKIE', 'Where’s Daddy? Is he playing?', 0.4); famSay('JACK MAN', 'Is he DJing?', 2.6); famSay('WIFEO', 'Let’s go watch Daddy!', 4.6); }
@@ -1182,7 +1182,7 @@ function famTick(dt, sm) {
   if (!ball) return;
   if (F.phase === 'wait') {
     if (t < F.next) return;
-    F.phase = 'tour'; F.u = -8; F.v = floor.cv; F.step = 0; F.mode = 'enter'; F.room = ball; F.stopK = 0; F.stopUntil = 0; F.first = true; F.spawn = t; F.catWith = true; F.catUntil = t + 30; F.catMeet = t + 100; F.with = true; F.withUntil = t + 28; F.meetAt = t + 28 + 110;
+    F.phase = 'tour'; F.u = -8; F.v = floor.cv; F.step = 0; F.mode = 'enter'; F.room = ball; F.stopK = 0; F.stopUntil = 0; F.first = true; F.spawn = t; F.catWith = true; F.catUntil = t + 30; F.catMeet = t + 100; F.with = true; F.withUntil = t + 12; F.meetAt = t + 12 + 480;
     F.trail = []; for (let d = 240; d >= 0; d -= 3) F.trail.push({ u: F.u - d * sm, v: F.v });
     F.q = routeTo(F.u, F.v, ball, at(ball, 0.45, 0.6)); F.said = t + 3.2;
     famSay('CODPIECE', 'Ooh! It’s Wifeo! And all the little ones! In you come, gorgeous!', 0, 3.4); famSay('MR. PARTICULAR', 'Always, always, darlings. Rope’s open for you!', 1.6, 3);
@@ -1205,8 +1205,8 @@ function famTick(dt, sm) {
     }
   } else if (t > F.stopUntil) famNext(sm);
   // the little ones only meet up now and then: called over for a while, then sent off to get on with their day
-  if (F.with && t > F.withUntil && !F.first && !raving()) { F.with = false; F.meetAt = t + 120 + Math.random() * 120; famSay('WIFEO', pickOne(['Off you go, my beauties. Be good!', 'Go and play! I’ll find you later!', 'Right, you lot: scoot!']), 0, 3); famSay(pickOne(KIDS), 'Bye, Mum!', 1.4, 2); }
-  else if (!F.with && t > F.meetAt && !F.first && F.mode !== 'podium') { F.with = true; F.withUntil = t + 22 + Math.random() * 16; famSay('WIFEO', pickOne(['Where are my little ones? COME HERE!', 'Family meeting! Everybody to Mummy!', 'Who wants a cuddle? Come on!']), 0, 3); famSay(pickOne(KIDS), 'Coming, Mum!', 1.6, 2); }
+  if (F.with && t > F.withUntil && !F.first) { F.with = false; F.meetAt = t + 480 + Math.random() * 300; famSay('WIFEO', pickOne(['Off you go, my beauties. Be good!', 'Go and play! I’ll find you later!', 'Right, you lot: scoot!']), 0, 3); famSay(pickOne(KIDS), 'Bye, Mum!', 1.4, 2); }
+  else if (!F.with && t > F.meetAt && !F.first && F.mode !== 'podium') { F.with = true; F.withUntil = t + 9 + Math.random() * 6; famSay('WIFEO', pickOne(['Where are my little ones? COME HERE!', 'Family meeting! Everybody to Mummy!', 'Who wants a cuddle? Come on!']), 0, 3); famSay(pickOne(KIDS), 'Coming, Mum!', 1.6, 2); }
   else if (raving() && F.mode !== 'daddy' && t - F.daddyAt > 45 && !F.first) famNext(sm, 'daddy');                  // the music's on: off to watch Daddy
   // the cats only tag along now and then too; the rest of the time they potter about wherever they were
   if (F.catWith && t > F.catUntil && !F.first) { F.catWith = false; F.catMeet = t + 70 + Math.random() * 80; }
