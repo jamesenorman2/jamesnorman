@@ -108,8 +108,9 @@
         })).filter(a => a.name && !BASE_AGENTS.includes(a.name));
         if (saved.edits && typeof saved.edits === 'object') for (const n of BASE_AGENTS) {                       // changes to the built-in agents: what they do, what they say, which room
           const e = saved.edits[n]; if (!e || typeof e !== 'object') continue;
-          const o = { does: clean(e.does, 300), says: cleanLines(e.says), room: ROOMS.some(r => r[0] === e.room) ? e.room : '', roam: ['sometimes', 'often'].includes(e.roam) ? e.roam : '' };
-          if (o.does || o.says.length || o.room || o.roam) c.edits[n] = o;
+          const o = { name: clean(e.name, 24).toUpperCase(), does: clean(e.does, 300), says: cleanLines(e.says), room: ROOMS.some(r => r[0] === e.room) ? e.room : '', roam: ['sometimes', 'often'].includes(e.roam) ? e.roam : '' };
+          if (o.name === n) o.name = '';
+          if (o.name || o.does || o.says.length || o.room || o.roam) c.edits[n] = o;
         }
         if (saved.men && typeof saved.men === 'object') for (const id of Object.keys(saved.men)) {
           const m = saved.men[id]; if (!m || typeof m !== 'object') continue;
@@ -181,6 +182,8 @@
     // is this man allowed on the homepage right now? (switched on, and his agent is the one due)
     here(id) { return SM.on(id) && (SM.agentOf(id) === '*' || SM.agentOf(id) === SM.duty().agent); },
     // the agent whose name is shown on a man: his own agent, or whoever is due if he is set to "*"
+    // the name to show for an agent: the one chosen on the admin page, or the built-in one
+    shown(n) { const e = SM.cfg.edits && SM.cfg.edits[n]; return (e && e.name) || n; },
     who(id) { const a = SM.agentOf(id); return a === '*' ? SM.duty().agent : a; },
     customsHere() { const a = SM.duty().agent; return SM.customs().filter(m => m.agent === a); },
     async load() {

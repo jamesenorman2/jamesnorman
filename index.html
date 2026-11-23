@@ -298,7 +298,7 @@
 <div class="drop">Release to play</div>
 <input type="file" id="file" accept="audio/*">
 
-<script src="/assets/stickmen.js?v=7"></script>
+<script src="/assets/stickmen.js?v=8"></script>
 <script>
 (() => {
 'use strict';
@@ -2283,7 +2283,7 @@ function peek(kind, forced) {
   if (forced) { custom = forced === 'plain' ? null : forced; plain = forced === 'plain'; }        // a click picks exactly who comes on
   if (!custom && !plain) { lastPeek = -1e9; return; }
   el.querySelector('.bub').textContent = custom ? pickOne(custom.lines) : (SM.say('peek', kind) || '…');
-  el.querySelector('.nm').textContent = 'AGENT ' + (custom ? custom.agent : SM.who('peek'));
+  el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(custom ? custom.agent : SM.who('peek'));
   el.style.left = (20 + Math.random() * 60) + 'vw';
   el.classList.add('on'); clearTimeout(peekTimer); peekTimer = setTimeout(() => el.classList.remove('on'), 3600);
 }
@@ -2305,7 +2305,7 @@ function onBigBreak() {
 function chairDance(force) {
   if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman'); if (!el || chairBusy || !(force ? SM.on('chair') : SM.here('chair'))) return;
-  chairBusy = true; lastChair = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('chair');
+  chairBusy = true; lastChair = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(SM.who('chair'));
   const ch = el.querySelector('.ch'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), bub = el.querySelector('.bub');
   el.querySelector('.pt').setAttribute('d', ''); el.querySelector('.fx').setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   const from = Math.random() < 0.5 ? -1 : 1;                                  // walks in from the left or the right
@@ -2355,7 +2355,7 @@ function uvPaint(force) {
   if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman');
   if (!el || chairBusy || !(force ? SM.on('uv') : SM.here('uv')) || calm || (!force && (!document.body.classList.contains('intro-done') || performance.now() - lastPaint < 120000))) return;
-  chairBusy = true; lastPaint = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('uv');
+  chairBusy = true; lastPaint = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(SM.who('uv'));
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub');
   ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   el.style.left = (18 + Math.random() * 55) + 'vw'; el.classList.add('on');
@@ -2400,7 +2400,7 @@ function pooRun(force) {
   if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman'), loo = $('loo');
   if (!el || !loo || chairBusy || !(force ? SM.on('poo') : SM.here('poo')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
-  chairBusy = true; lastPoo = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.who('poo');
+  chairBusy = true; lastPoo = performance.now(); el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(SM.who('poo'));
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub');
   ch.setAttribute('d', ''); pt.setAttribute('d', ''); fx.setAttribute('d', ''); el.querySelector('.tx').textContent = '';
   const vw = innerWidth / 100, start = 8 + Math.random() * 20, looAt = Math.min(start + 30, 70);
@@ -2463,7 +2463,7 @@ function potDrum(force) {
   if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman');
   if (!el || chairBusy || !(force ? SM.on('pot') : SM.here('pot')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
-  chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.who('pot');
+  chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(SM.who('pot'));
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), pn = el.querySelector('.pn'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub'), tx = el.querySelector('.tx');
   ch.setAttribute('d', ''); fx.setAttribute('d', '');
   // a saucepan, drawn about its own middle: upside down on his head, so a flat base on top for the spoon and the long handle out to the left
@@ -2529,7 +2529,7 @@ function catStroke(force) {
   if (!force && !musicOn()) return;                     // the visitors only turn up while the music is playing
   const el = $('chairman');
   if (!el || chairBusy || !(force ? SM.on('cat') : SM.here('cat')) || calm || (!force && !document.body.classList.contains('intro-done'))) return;
-  chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.who('cat');
+  chairBusy = true; el.querySelector('.nm').textContent = 'AGENT ' + SM.shown(SM.who('cat'));
   const ch = el.querySelector('.ch'), pt = el.querySelector('.pt'), hd = el.querySelector('.hd'), bd = el.querySelector('.bd'), fx = el.querySelector('.fx'), bub = el.querySelector('.bub'), tx = el.querySelector('.tx');
   pt.setAttribute('d', ''); fx.setAttribute('d', ''); tx.textContent = '';
   el.style.left = (12 + Math.random() * 50) + 'vw'; el.classList.add('on');

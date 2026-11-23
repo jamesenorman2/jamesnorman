@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agents — James Norman</title>
-<meta name="description" content="While I sleep, a crew of AI agents patrols this site, writes the handover and picks the music.">
+<meta name="description" content="A crew of AI agents patrols this site, writes the handover and picks the music.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="canonical" href="https://www.jamesnorman.co.uk/night-shift/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="James Norman">
 <meta property="og:title" content="Agents — James Norman">
-<meta property="og:description" content="While I sleep, a crew of AI agents patrols this site, writes the handover and picks the music.">
+<meta property="og:description" content="A crew of AI agents patrols this site, writes the handover and picks the music.">
 <meta property="og:url" content="https://www.jamesnorman.co.uk/night-shift/">
 <meta property="og:image" content="https://www.jamesnorman.co.uk/og.png">
 <meta property="og:image:width" content="1200">
@@ -86,9 +86,9 @@
 <main class="wrap">
   <div class="hero-wrap">
     <canvas class="ridge" id="ridge" aria-hidden="true"></canvas>
-  <div class="kicker">AI agents on duty · round the clock</div>
+  <div class="kicker">AI agents at work</div>
   <h1>Agents</h1>
-  <p class="lede">This site is run by a team of AI agents, organised like a security control room. The day shift each carry out one task a day; the night shift patrols the whole site every hour. They check real things: every page, the certificate and domain, outbound links, the official Martyn’s Law guidance, the UK threat level and new music. Each shift ends with a written handover, and findings that need action come to me.</p>
+  <p class="lede">This site is run by a team of AI agents, organised like a security control room. The daily agents each carry out one job a day (Old School once a week); the site patrol checks the whole site every six hours. They check real things: every page, the certificate and domain, outbound links, the official Martyn’s Law guidance, the UK threat level and new music. Each shift ends with a written handover, and findings that need action come to me.</p>
   </div>
 
   <section class="floor" aria-label="The crew at work: stick men walking the site, checking each page">
@@ -98,14 +98,14 @@
   </section>
 
   <section aria-labelledby="day-h">
-    <h2 id="day-h">The day shift</h2>
-    <p class="small">Once a day (Old School weekly), each of these agents does one job and files a report. Open a card for the detail.</p>
-    <div class="daycrew" id="daycrew"><p class="small">Waking the day crew…</p></div>
+    <h2 id="day-h">The daily agents</h2>
+    <p class="small">About once a day (Old School once a week), each of these agents does one job and files a report. Open a card for the detail.</p>
+    <div class="daycrew" id="daycrew"><p class="small">Waking the daily agents…</p></div>
   </section>
 
   <section aria-labelledby="night-h">
-    <h2 id="night-h">The night shift</h2>
-    <p class="small">Every hour, round the clock: these agents walk the site, check what it depends on and write the handover.</p>
+    <h2 id="night-h">The site patrol</h2>
+    <p class="small">Every six hours: these agents walk the site, check what it depends on and write the handover.</p>
   <div class="crew" id="crew" aria-live="polite"></div>
   </section>
 
@@ -122,11 +122,14 @@
 
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
-<script src="/assets/stickmen.js?v=7"></script>
+<script src="/assets/stickmen.js?v=8"></script>
 <script>
 (() => {
 'use strict';
 const SC_URL_RE = /^https:\/\/(www\.|m\.)?soundcloud\.com\/[^\s"<>]+$/;
+// the name shown for an agent: the one chosen on the admin page, or the built-in one (NORMAL~STATS shows as NORMAL)
+const AGENT_NAMES = {};
+const shown = n => AGENT_NAMES[n] || String(n).replace(/~\w+$/, '');
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
 function renderShift(row) {
@@ -233,13 +236,13 @@ function renderCrew(L) {
     const card = el('div', 'card');
     const [txt, cls] = L ? result(L) : ['–'];
     const plural = /&/.test(name);
-    card.append(el('span', 'agent-k', plural ? 'Agents' : 'Agent'), el('b', null, name.replace(/\bAGENT /g, '')), el('span', 'small', job), el('span', 'res ' + (cls || ''), txt));
+    card.append(el('span', 'agent-k', plural ? 'Agents' : 'Agent'), el('b', null, (AGENT_NAMES[name.replace(/^AGENT /, '')] || name.replace(/\bAGENT /g, '')).replace(/~\w+$/, '')), el('span', 'small', job), el('span', 'res ' + (cls || ''), txt));
     box.append(card);
   });
 }
 renderCrew(null);
 
-// The day crew: one report each, read from the database.
+// The daily agents: one report each, read from the database.
 const DAY = [
   ['grumble', 'AGENT BLOG-HEAD', 'Editor. Checks every blog post and incident report against its sources before it goes out.'],
   ['binlid', 'AGENT HARRY', 'Regulation watcher. New GOV.UK guidance on Martyn’s Law, the SIA, protective security and the Building Regulations.'],
@@ -273,10 +276,11 @@ async function loadDayCrew() {
   const latest = {};
   for (const r of rows) if (!latest[r.agent]) latest[r.agent] = r;
   floor.day = latest;
-  box.innerHTML = DAY.map(([id, name, job]) => {
+  window.renderDay = () => { box.innerHTML = DAY.map(([id, name, job]) => {
     const r = latest[id], rep = r ? r.report || {} : null;
-    return `<details><summary><span class="agent-k">Agent</span><b>${escD(name.replace(/^AGENT /, ''))}</b><span class="job">${escD(job)}</span><span class="sum">${rep ? escD(rep.summary || '') : 'First report due soon'}</span>${r ? `<span class="when">${escD(new Date(r.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>` : ''}</summary>${rep ? crewDetail(id, rep) + (rep.note ? `<p class="note">“${escD(rep.note)}”</p>` : '') : ''}</details>`;
-  }).join('');
+    return `<details><summary><span class="agent-k">Agent</span><b>${escD(shown(name.replace(/^AGENT /, '')))}</b><span class="job">${escD(job)}</span><span class="sum">${rep ? escD(rep.summary || '') : 'First report due soon'}</span>${r ? `<span class="when">${escD(new Date(r.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>` : ''}</summary>${rep ? crewDetail(id, rep) + (rep.note ? `<p class="note">“${escD(rep.note)}”</p>` : '') : ''}</details>`;
+  }).join(''); };
+  renderDay();
 }
 loadDayCrew();
 
@@ -951,12 +955,13 @@ function syncCustomAgents() {
   const E = SK.cfg.edits || {};                                                       // changes made to the built-in agents
   Object.keys(E).forEach(n => {
     const e = E[n], r = RESIDENTS.find(x => x[0] === n);
+    if (e.name) AGENT_NAMES[n] = e.name;
     if (e.says && e.says.length) CUSTOM_SAYS[n] = e.says;
     if (e.roam) ROAM[n] = e.roam;
     if (e.room && r) r[1] = [e.room];
     if (e.does) { const c = CREW.find(x => x[0] === 'AGENT ' + n), d = DAY.find(x => x[1] === 'AGENT ' + n); if (c) c[1] = e.does; if (d) d[2] = e.does; }
   });
-  if (Object.values(E).some(e => e.does)) renderCrew(crewL);
+  if (Object.values(E).some(e => e.does || e.name)) { renderCrew(crewL); if (typeof renderDay === 'function') try { renderDay(); } catch (x) {} }
   (SK.cfg.agents || []).filter(a => a.enabled).forEach(a => {
     if (RESIDENTS.some(r => r[0] === a.name)) return;
     CUSTOM_SAYS[a.name] = a.says; if (a.roam) ROAM[a.name] = a.roam; RESIDENTS.push([a.name, a.room ? [a.room] : ['/music/'], () => '', -1]);
@@ -1410,7 +1415,7 @@ function drawFloor(dt) {
         const [x, y] = P(a.u, a.v, up);
         if (pose === 'rave') danceMan(x, y, sm, a, w.name, i);
         else stickMan(x, y, sm, moving ? a.step : t * 2 + i, pose, w.name);
-        text(w.name, x, y + 9 * s, 7.5 * s, 0.65);
+        text(shown(w.name), x, y + 9 * s, 7.5 * s, 0.65);
         const msg = w.line();
         if (msg && !moving && !raving() && pose !== 'rave' && r.w / Math.max(1, who.length) > 60) text(msg, Math.max(P(r.u, a.v)[0] + 46, Math.min(P(r.u + r.w, a.v)[0] - 46, x)), y - 36 * sm - (i % 2) * 10 * s, 8 * s, 0.8);
       }) });
@@ -1461,7 +1466,7 @@ function drawFloor(dt) {
     Z.push({ z: a.v + 0.5, f: () => throughWorm(a, sm, () => { const [x, y] = P(a.u, a.v);
       if (mega) danceMan(x, y - up, sm * 1.0, a, name, bi + 3);
       else stickMan(x, y, sm, onDuty || a.moving ? a.step : t, onDuty || a.moving ? (a.moving ? 'walk' : 'check') : 'camp', name);
-      text(name, x, y + 9 * s - up, 7.5 * s, 0.65); if (!onDuty && !a.dj && !a.moving) text(lineFn(), x + 18 * sm, y - 34 * sm, 8 * s, 0.7, 'left'); }) });
+      text(shown(name), x, y + 9 * s - up, 7.5 * s, 0.65); if (!onDuty && !a.dj && !a.moving) text(lineFn(), x + 18 * sm, y - 34 * sm, 8 * s, 0.7, 'left'); }) });
   });
 
   // the wormhole at the far end of the corridor: Fish's way out to the sites this one relies on
@@ -1844,7 +1849,7 @@ function banter(s) {
     const others = names.filter(n => n !== a).sort((p, q) => Math.hypot(seenAt[p].x - seenAt[a].x, seenAt[p].y - seenAt[a].y) - Math.hypot(seenAt[q].x - seenAt[a].x, seenAt[q].y - seenAt[a].y));
     const b = others[0], near = Math.hypot(seenAt[b].x - seenAt[a].x, seenAt[b].y - seenAt[a].y) < 260 * s;
     const news = Math.random() < 0.35 ? newsLine(a) : null;
-    const said = news || (near && Math.random() < 0.45 ? pick(AT).replace(/\{B\}/g, b.replace(/~\w+$/, '').split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ')) : pick(LINES[ma] || LINES.fine));
+    const said = news || (near && Math.random() < 0.45 ? pick(AT).replace(/\{B\}/g, shown(b).split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ')) : pick(LINES[ma] || LINES.fine));
     bubbles.push({ who: a, text: said, t0: floor.t, life: 3.2 });
     if (near && Math.random() < 0.6) bubbles.push({ who: b, text: pick(REPLIES[moodOf(b).kind] || REPLIES.fine), t0: floor.t + 1.4, life: 2.6 });
   }

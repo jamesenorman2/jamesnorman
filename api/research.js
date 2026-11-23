@@ -52,8 +52,15 @@ export default async function handler(req, res) {
   try { recent = (await db('jn_blog?select=title&order=id.desc&limit=8')).map(p => p.title).join(' | '); } catch (e) { /* first run */ }
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/London' });
 
+  // GCHQ's terrorism incident round-up is weekly (Mondays, UK time, or whenever there isn't one yet);
+  // the rest of the desk, and the daily post, run every day. On other days the last round-up carries forward.
+  let previousIncidents = [];
+  try { const [last] = await db('jn_desk?select=incidents&order=id.desc&limit=1'); previousIncidents = (last && Array.isArray(last.incidents)) ? last.incidents : []; } catch (e) { /* none yet */ }
+  const monday = new Date().toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Europe/London' }) === 'Monday';
+  const weekly = monday || !previousIncidents.length;
+
   let desk;
-  try { desk = await runDesk({ today, recent }); }
+  try { desk = await runDesk({ today, recent, weekly, previousIncidents }); }
   catch (e) { return res.status(502).json({ ok: false, error: 'The research desk failed: ' + (e && e.status ? `API ${e.status}` : 'error') }); }
   if (!desk.ok) return res.status(200).json({ ok: false, ran: true, error: desk.error });
 
