@@ -396,7 +396,7 @@ const KITS = {
   // stations: [fu, fv, pose, lines, standing height, depth nudge]; station 0 is the DJ's, 1 is the guest DJ's (kept for guests)
   '/music/': { title: 'BALLROOM', reserved: [1],
     items: [[0.0, 0.95, 1.0, 0.02, 1, 'bunting', 36], [0.24, 0.9, 0.07, 0.06, 58, 'rig'], [0.69, 0.9, 0.07, 0.06, 58, 'rig'],
-      [0.067, 0.9, 0.147, 0.06, 30, 'recordwall'], [0.32, 0.91, 0.17, 0.06, 38, 'trippy'], [0.51, 0.91, 0.17, 0.06, 38, 'trippy'],
+      [0.067, 0.9, 0.147, 0.06, 30, 'recordwall'], [0.32, 0.91, 0.17, 0.06, 38, 'trippy'], [0.51, 0.91, 0.17, 0.06, 38, 'trippy'], [0.79, 0.91, 0.15, 0.05, 30, 'nowplaying', 6], [0.5, 0.64, 0.06, 0.16, 8, 'spinpodium'],
       [0.84, 0.34, 0.115, 0.12, 15, 'booth'],
       [0.107, 0.58, 0.047, 0.1, 8, 'podium'], [0.36, 0.58, 0.047, 0.1, 8, 'podium'], [0.147, 0.2, 0.047, 0.1, 8, 'podium'], [0.4, 0.22, 0.047, 0.1, 8, 'podium'], [0.62, 0.55, 0.047, 0.1, 8, 'podium'], [0.7, 0.18, 0.047, 0.1, 8, 'podium'],
       [0.485, 0.42, 0.027, 0.06, 4, 'discoball', 64],
@@ -424,7 +424,8 @@ const KITS = {
       [0.095, 0.4, 'type', ['Counting the plays. Statistically abnormal.', 'Another thousand plays. Is that normal? No. That’s why I’m Abnormal.']],
       [0.645, 0.6, 'dance', ['Podium by the lounge: the best view of the booth', 'Hands up, everyone!'], 8, 0.14],
       [0.725, 0.23, 'dance', ['Up on the podium, loving life', 'Somebody wave back'], 8, 0.14],
-      [0.65, 0.1, 'lie', ['Lounging with a view of the dance floor', 'Spacious in here now, isn’t it?']]] },
+      [0.65, 0.1, 'lie', ['Lounging with a view of the dance floor', 'Spacious in here now, isn’t it?']],
+      [0.53, 0.72, 'dance', ['Spinning round on the turntable podium!', 'Whoa, I’m going round and round!', 'Look at me go: 360 degrees!'], 8, 0.14]] },
   // THE BAR: a proper pub. A long counter with stools and a barman, bottles and a neon OPEN sign, a pool table, a jukebox, a dartboard on the wall and a spin-for-a-drink wheel.
   '/bar/': { title: 'BAR', stay: ['BIN LID'],
     items: [[0.04, 0.9, 0.5, 0.05, 24, 'bottles'], [0.6, 0.86, 0.36, 0.1, 22, 'spinwheel'], [0.04, 0.08, 0.3, 0.05, 22, 'neon'], [0.84, 0.1, 0.12, 0.1, 30, 'jukebox'],
@@ -563,6 +564,14 @@ function drawItem(r, it, busy) {
     fx.save(); fx.beginPath(); fx.moveTo(c[0] - bw * 1.1, c[1]); fx.lineTo(c[0] - bw * 0.55, c[1] - bh); fx.lineTo(c[0] + bw * 0.55, c[1] - bh); fx.lineTo(c[0] + bw * 1.1, c[1]); fx.closePath(); fx.fillStyle = '#000'; fx.fill(); fx.stroke();
     for (let k = 0; k < 3; k++) { const ph = (Math.sin(t * 0.7 + k * 2.1) * 0.5 + 0.5); fx.globalAlpha = 0.85; fx.beginPath(); fx.ellipse(c[0] + Math.sin(t * 0.4 + k) * bw * 0.25, c[1] - 2.5 * s - ph * (bh - 6 * s), (1.6 + k * 0.3) * s, (1.8 + k * 0.3) * s, 0, 0, 7); fx.stroke(); }
     fx.globalAlpha = 0.35; seg([c[0] - bw * 0.5, c[1] - bh - 2 * s], [c[0] + bw * 0.5, c[1] - bh - 2 * s]); fx.restore(); return; }
+  if (kind === 'spinpodium') {                    // a round podium that turns slowly (faster with the music), with lights round the rim and a dancer on top
+    const cu = a.u + w / 2, cv = a.v + d / 2, R = Math.min(w, d) / 2, on = laser.k > 0.02, ang = t * (0.5 + 1.6 * laser.k * (0.5 + mus.e));
+    const ring = (rr, z) => { fx.beginPath(); for (let k = 0; k <= 28; k++) { const an = k / 28 * Math.PI * 2, q = P(cu + Math.cos(an) * rr, cv + Math.sin(an) * rr, z); k ? fx.lineTo(q[0], q[1]) : fx.moveTo(q[0], q[1]); } fx.closePath(); fx.fillStyle = '#000'; fx.fill(); fx.stroke(); };
+    fx.save(); ring(R, 0); for (let k = 0; k < 10; k++) { const an = k * Math.PI / 5 + 0.3; seg(P(cu + Math.cos(an) * R, cv + Math.sin(an) * R, 0), P(cu + Math.cos(an) * R, cv + Math.sin(an) * R, h)); }
+    ring(R, h); ring(R * 0.72, h);
+    for (let k = 0; k < 6; k++) { const an = ang + k * Math.PI / 3; fx.globalAlpha = 0.8; seg(P(cu, cv, h), P(cu + Math.cos(an) * R, cv + Math.sin(an) * R, h)); }
+    for (let k = 0; k < 12; k++) { const an = -ang * 1.5 + k * Math.PI / 6, q = P(cu + Math.cos(an) * R * 0.86, cv + Math.sin(an) * R * 0.86, h); fx.globalAlpha = on ? 0.5 + 0.5 * Math.sin(t * 6 + k) : 0.35; fx.fillStyle = on ? `hsl(${(k * 30 + t * 90) % 360} 100% 60%)` : '#fff'; fx.beginPath(); fx.arc(q[0], q[1], 1.3 * s, 0, 7); fx.fill(); }
+    fx.restore(); return; }
   const B = block(a.u, a.v, w, d, h, z0), X = B.x, Y = B.y, W = B.w;
   const lines = (n, pad, f) => { for (let k = 1; k <= n; k++) { const yy = Y + (B.h - pad * 2) * k / (n + 1) + pad, len = f(k); seg([X + 3, yy], [X + 3 + len, yy]); } };
   fx.save(); fx.globalAlpha = 0.85;
@@ -788,6 +797,14 @@ function drawItem(r, it, busy) {
     fx.globalAlpha = 0.5 + 0.4 * Math.sin(t * 5); seg([X + W * 0.1, Y + B.h * 0.1], [X + W * 0.9, Y + B.h * 0.1]); fx.globalAlpha = 0.85;
     const j = [X + W * 0.3, Y + B.h * 0.7]; seg(j, [j[0] + (busy ? Math.sin(t * 6) * 2 : 0), j[1] - 4 * s]); [0.55, 0.7, 0.85].forEach(f => { fx.beginPath(); fx.arc(X + W * f, Y + B.h * 0.7, 1.1 * s, 0, 7); fx.stroke(); });
     if (busy && Math.floor(t * 2) % 2 === 0) text('HIGH SCORE!', X + W / 2, Y - 3 * s, 5.5 * s, 0.9);
+  }
+  else if (kind === 'nowplaying') {                // a little sign: what's playing now, scrolling along if the name is long
+    const b = beatNow(), title = b.playing && b.title ? b.title : '', str = title || 'DJ ON A BREAK';
+    fx.strokeRect(X + 2, Y + 2, W - 4, B.h - 4); text('NOW PLAYING', X + W / 2, Y + B.h * 0.32, Math.max(3.8, 4.4 * s), 0.6);
+    fx.save(); fx.beginPath(); fx.rect(X + 4, Y + B.h * 0.4, W - 8, B.h * 0.5); fx.clip();
+    fx.font = `600 ${Math.max(5, 6.4 * s)}px "Syne", sans-serif`; fx.textAlign = 'left'; fx.fillStyle = '#fff'; fx.globalAlpha = title ? 1 : 0.5;
+    const tw = fx.measureText(str).width, long = tw > W - 10, x0 = long ? X + 4 - ((t * 16) % (tw + 30)) : X + W / 2 - tw / 2;
+    fx.fillText(str, x0, Y + B.h * 0.8); if (long) fx.fillText(str, x0 + tw + 30, Y + B.h * 0.8); fx.restore();
   }
   else if (kind === 'trippy') {                    // a big screen on the dance floor wall playing a psychedelic video in colour: a tunnel, a kaleidoscope, or drifting plasma
     const mode = Math.max(0, Math.min(2, Math.round((fu - 0.32) / 0.19) * 2)), on = laser.k > 0.02, k = laser.k, cx = X + W / 2, cy = Y + B.h / 2, R = Math.hypot(W, B.h) / 2, sp = 0.6 + 1.2 * mus.e;
@@ -1085,22 +1102,38 @@ function famTick(dt, sm) {
     const l = F.trail[F.trail.length - 1];
     if (!l || Math.hypot(F.u - l.u, F.v - l.v) > 1.5 * sm) { F.trail.push({ u: F.u, v: F.v }); if (F.trail.length > 900) F.trail.shift(); }
     if (!F.q.length) {                                                                    // they've got there
+      F.anchor = { u: F.u, v: F.v }; F.lwt = 0;
       F.first = false; F.stopUntil = t + (F.mode === 'daddy' ? 22 + Math.random() * 6 : 8 + Math.random() * 4); F.said = t + 0.8; F.said2 = 0;
       if (F.mode === 'room') F.roomSaid = false;
     }
   } else if (t > F.stopUntil) famNext(sm);
   else if (raving() && F.mode !== 'daddy' && t - F.daddyAt > 45 && !F.first) famNext(sm, 'daddy');                  // the music's on: off to watch Daddy
+  // when they've stopped nobody stands in a clump: Wifeo drifts about a bit, and the little ones and the cats each wander off to their own bit of floor, dancing where they stop
+  const rm = F.room, cl = (u, v) => rm ? { u: Math.max(rm.u + 6, Math.min(rm.u + rm.w - 6, u)), v: Math.max(rm.v + 6, Math.min(rm.v + rm.d - 6, v)) } : { u, v };
+  F.lm = false;
+  if (!moving && F.stopK > 0.8 && F.anchor) {
+    if (t > F.lwt) { F.lwt = t + 3 + Math.random() * 3; const rr = (F.mode === 'daddy' ? 42 : 24) * sm; F.lt = cl(F.anchor.u + (Math.random() - 0.5) * 2 * rr, F.anchor.v + (Math.random() - 0.5) * 1.2 * rr); }
+    if (F.lt) { const du = F.lt.u - F.u, dv = F.lt.v - F.v, d0 = Math.hypot(du, dv), sp = 20 * sm * dt; if (d0 > sp) { F.u += du / d0 * sp; F.v += dv / d0 * sp; F.lm = true; F.step += sp * 0.3; } }
+  }
   F.stopK = moving ? Math.max(0, F.stopK - dt * 2.5) : Math.min(1, F.stopK + dt * 1.2);
   // everyone behind her follows her trail, or settles round her when she stops
   const k = F.stopK * F.stopK * (3 - 2 * F.stopK), head = { u: F.u, v: F.v };
   FOLLOW.forEach((f, i) => {
     const lag = f.lag * sm; let acc = 0, prev = head, pt = F.trail.length ? F.trail[0] : head;
     for (let j = F.trail.length - 1; j >= 0; j--) { const c = F.trail[j], l = Math.hypot(prev.u - c.u, prev.v - c.v); if (acc + l >= lag) { const e = (lag - acc) / (l || 1); pt = { u: prev.u + (c.u - prev.u) * e, v: prev.v + (c.v - prev.v) * e }; break; } acc += l; prev = c; pt = c; }
-    const an = i * 1.26 + 0.5, R = (f.cat ? 12 : 17) * sm, cu = F.u + Math.cos(an) * R, cv = F.v + Math.sin(an) * R * 0.62;
-    const nu = pt.u + (cu - pt.u) * k, nv = pt.v + (cv - pt.v) * k, o = F.pos[f.n] || { u: nu, v: nv, step: 0, dir: 1 };
-    const dd = Math.hypot(nu - o.u, nv - o.v);
+    const o = F.pos[f.n] || { u: pt.u, v: pt.v, step: 0, dir: 1 };
+    o.cm = false;
+    if (moving) o.cinit = false;
+    else if (F.stopK > 0.3) {
+      if (!o.cinit) { o.cu = o.u; o.cv = o.v; o.cinit = true; o.wt = 0; }
+      if (t > o.wt) { o.wt = t + 2.5 + Math.random() * 3; const an = i * 1.26 + 0.5 + (Math.random() - 0.5) * 1.2, R = (F.mode === 'daddy' ? 26 + Math.random() * 46 : 15 + Math.random() * 26) * sm * (f.cat ? 1.2 : 1), tg = cl(F.u + Math.cos(an) * R, F.v + Math.sin(an) * R * 0.62); o.tu = tg.u; o.tv = tg.v; }
+      const du = o.tu - o.cu, dv = o.tv - o.cv, d0 = Math.hypot(du, dv), sp = (f.cat ? 34 : 24) * sm * dt;
+      if (d0 > sp) { o.cu += du / d0 * sp; o.cv += dv / d0 * sp; o.cm = true; } else { o.cu = o.tu; o.cv = o.tv; }
+    }
+    const cu = o.cinit ? o.cu : pt.u, cv = o.cinit ? o.cv : pt.v;
+    const nu = pt.u + (cu - pt.u) * k, nv = pt.v + (cv - pt.v) * k, dd = Math.hypot(nu - o.u, nv - o.v);
     if (dd > 0.01) o.dir = nu >= o.u ? 1 : -1;
-    o.step += dd * 0.35; o.moving = F.stopK < 0.97 || dd > 0.02; o.u = nu; o.v = nv; F.pos[f.n] = o;
+    o.step += dd * 0.35; o.moving = F.stopK < 0.97 || o.cm; o.u = nu; o.v = nv; F.pos[f.n] = o;
     if (f.n === 'ARAGON' && o.moving && roomAt(o.u, o.v) === ball) {                       // a few pale paw prints across the dance floor, fading quickly
       o.walked = (o.walked || 0) + dd; if (o.walked > 17 * sm) { o.walked = 0; o.side = -(o.side || 1); prints.push({ u: o.u, v: o.v + o.side * 1.2 * sm, t0: t, ang: Math.atan2(nv - (o.pv || nv), nu - (o.pu || nu)) }); if (prints.length > 36) prints.shift(); }
     }
@@ -1324,7 +1357,7 @@ function drawFloor(dt) {
   if (fam.phase !== 'wait') {
     const F = fam, stopped = F.q.length === 0 && F.stopK > 0.5;
     Z.push({ z: F.v + 0.5, f: () => { const [x, y] = P(F.u, F.v);
-      stickMan(x, y, sm, stopped ? t * 2 : F.step, stopped ? 'dance' : 'walk', 'WIFEO'); text('WIFEO', x, y + 9 * s, 7.5 * s, 0.75);
+      stickMan(x, y, sm, stopped && !F.lm ? t * 2 : F.step, stopped && !F.lm ? 'dance' : 'walk', 'WIFEO'); text('WIFEO', x, y + 9 * s, 7.5 * s, 0.75);
       for (let k = 0; k < 3; k++) { const ph = (t * 0.4 + k / 3) % 1; text('♥', x + Math.sin(ph * 5 + k * 2) * 12 * s, y - 36 * s - ph * 26 * s, (7 + k) * s, (stopped ? 1 : 0.6) * (1 - ph)); } } });
     ['ARAGON', 'TIGER BABY'].forEach(n => { const c = F.pos[n]; if (!c) return;
       Z.push({ z: c.v + 0.4, f: () => { drawCat({ u: c.u, v: c.v, dir: c.dir || 1, phase: stopped && !c.moving ? 'sit' : 'walk', step: c.step || 0, wild: n === 'ARAGON' }, sm); const [x, y] = P(c.u, c.v); seenAt[n] = { x, y, at: floor.t, s: sm }; text(n, x, y + 8 * s, 6.5 * s, 0.6); } }); });
