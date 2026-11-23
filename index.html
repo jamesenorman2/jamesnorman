@@ -2606,8 +2606,14 @@ function famFig(x, G, sc, step, o) {
   if (o.hair) d += `M${x - hr} ${hdY}q${-3 * sc} ${9 * sc} ${-1 * sc} ${20 * sc}M${x + hr} ${hdY}q${3 * sc} ${9 * sc} ${1 * sc} ${20 * sc}M${x - hr * 0.5} ${hdY - hr}q${-2 * sc} ${6 * sc} ${-5 * sc} ${14 * sc}`;
   if (o.tuft) d += `M${x - 1.5 * sc} ${hdY - hr}l${-1 * sc} ${-3.5 * sc}M${x} ${hdY - hr}v${-4 * sc}M${x + 1.5 * sc} ${hdY - hr}l${1 * sc} ${-3.5 * sc}`;
   if (o.cap) d += `M${x - hr - 0.5 * sc} ${hdY - hr * 0.35}H${x + hr + 4 * sc}M${x - hr} ${hdY - hr * 0.35}a${hr} ${hr} 0 0 1 ${2 * hr} 0`;
+  if (o.headphones) d += `M${x - hr - 1} ${hdY}a${hr + 1} ${hr + 1} 0 0 1 ${2 * hr + 2} 0M${x - hr - 1.8} ${hdY - 1.6 * sc}v${3.4 * sc}M${x + hr + 1.8} ${hdY - 1.6 * sc}v${3.4 * sc}`;
   const a = o.arms;                                           // what the arms are doing
-  if (a === 'kiss') d += `M${x} ${shY + 2 * sc}L${x + 6 * sc} ${shY + 7 * sc}L${x + 3 * sc} ${hdY + hr * 0.7}M${x} ${shY + 2 * sc}L${x - 7 * sc} ${shY + 9 * sc}`;
+  if (o.record) {                                             // holding a record up beside his head: a disc, a groove, a label and a turning mark
+    const hx2 = x + 9 * sc, hy2 = shY - 5 * sc, rx = hx2 + sc, ry = hy2 - 5.5 * sc, an = step * 0.5;
+    d += `M${x} ${shY + 2 * sc}L${x + 6 * sc} ${shY - sc}L${hx2} ${hy2}` + c(rx, ry, 5.5 * sc) + c(rx, ry, 3.6 * sc) + c(rx, ry, 1.4 * sc) + `M${rx + Math.cos(an) * 2 * sc} ${ry + Math.sin(an) * 2 * sc}L${rx + Math.cos(an) * 3.4 * sc} ${ry + Math.sin(an) * 3.4 * sc}` +
+      `M${x} ${shY + 2 * sc}L${x - sw * 0.9} ${shY + 12 * sc}`;
+  }
+  else if (a === 'kiss') d += `M${x} ${shY + 2 * sc}L${x + 6 * sc} ${shY + 7 * sc}L${x + 3 * sc} ${hdY + hr * 0.7}M${x} ${shY + 2 * sc}L${x - 7 * sc} ${shY + 9 * sc}`;
   else if (a === 'up') d += `M${x} ${shY + 2 * sc}L${x - 8 * sc} ${shY - 8 * sc}M${x} ${shY + 2 * sc}L${x + 8 * sc} ${shY - 8 * sc}`;
   else d += `M${x} ${shY + 2 * sc}L${x + sw * 0.9} ${shY + 12 * sc}M${x} ${shY + 2 * sc}L${x - sw * 0.9} ${shY + 12 * sc}`;
   return { d, top: hdY - hr };
@@ -2619,15 +2625,17 @@ function familyParade(force) {
   chairBusy = true; lastFam = performance.now();
   const W = innerWidth, G = 100, V = 92, dir = Math.random() < 0.5 ? 1 : -1, startX = dir > 0 ? -70 : W + 70, T0 = performance.now(), stopX = W * (0.3 + 0.4 * Math.random());
   const cast = [{ n: 'AGENT WIFEO', sc: 1, sg: 0, o: { dress: 1, hair: 1 } }, { n: 'FRANKIE', sc: 0.72, sg: 46, o: { tuft: 1 } }, { n: 'JACK MAN', sc: 0.72, sg: 80, o: { cap: 1 } },
-    { n: 'OATIE MAN', sc: 0.52, sg: 112, o: { baby: 1 } }, { n: 'ARAGON', cat: 1, sg: 142 }, { n: 'TIGER BABY', cat: 1, sg: 172 }];
+    { n: 'OATIE MAN', sc: 0.52, sg: 112, o: { baby: 1 } }, { n: 'ARAGON', cat: 1, sg: 142 }, { n: 'TIGER BABY', cat: 1, sg: 172 },
+    { n: 'DADDY', sc: 1, sg: 0, from: 1, o: { headphones: 1, record: 1 } }];
   cast.forEach(c => { c.d = c.sg / V; c.sp = stopX - dir * c.sg; c.arr = Math.abs(c.sp - startX) / V + c.d; });
-  const a0 = cast[0].arr, L0 = a0 + 13.6, END = L0 + (W + 260) / V + 1;
-  const S = { find: SM.say('family', 'find'), kiss: SM.say('family', 'kisses'), d1: SM.say('family', 'daddy1'), d2: SM.say('family', 'daddy2'), d3: SM.say('family', 'daddy3'), love: SM.say('family', 'love'), silly: SM.say('family', 'silly'), baby: SM.say('family', 'baby') };
-  const talk = [[0, a0 + 0.2, a0 + 3.4, S.find], [0, a0 + 3.6, a0 + 6, S.kiss], [1, a0 + 6.1, a0 + 8.3, S.d1], [2, a0 + 8.4, a0 + 10, S.d2], [0, a0 + 10.1, a0 + 12.3, S.d3],
-    [3, a0 + 11, a0 + 13, S.baby], [1, a0 + 12.5, a0 + 15, S.love], [4, a0 + 10, a0 + 11.4, '♥'], [5, a0 + 13.2, a0 + 14.6, '♥'], [2, cast[2].arr - 2.2, cast[2].arr - 0.2, S.silly]];
+  const a0 = cast[0].arr, L0 = a0 + 16, END = L0 + (W + 260) / V + 1;
+  { const dd = cast[6]; dd.start = dir > 0 ? W + 70 : -70; dd.sp = stopX + dir * 46; dd.arr = a0 + 7.6; }                    // Daddy hurries on from the other side, holding a record, just after they start asking where he is
+  const S = { find: SM.say('family', 'find'), kiss: SM.say('family', 'kisses'), d1: SM.say('family', 'daddy1'), d2: SM.say('family', 'daddy2'), d3: SM.say('family', 'daddy3'), love: SM.say('family', 'love'), silly: SM.say('family', 'silly'), baby: SM.say('family', 'baby'), rec: SM.say('family', 'record') };
+  const talk = [[0, a0 + 0.2, a0 + 3.4, S.find], [0, a0 + 3.6, a0 + 6, S.kiss], [1, a0 + 4.2, a0 + 6.2, S.d1], [2, a0 + 6.3, a0 + 7.9, S.d2], [0, a0 + 8, a0 + 9.6, S.d3],
+    [6, a0 + 9.8, a0 + 13.4, S.rec], [3, a0 + 13.5, a0 + 15.3, S.baby], [1, a0 + 13.8, a0 + 16, S.love], [4, a0 + 11, a0 + 12.4, '♥'], [5, a0 + 14.2, a0 + 15.6, '♥'], [2, cast[2].arr - 2.2, cast[2].arr - 0.2, S.silly]];
   el.innerHTML = `<svg viewBox="0 0 ${W} 120" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">` + cast.map((c, i) => `<path class="p${i}"/><text class="n${i}" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".55">${c.n}</text>`).join('') +
-    Array.from({ length: 6 }, (_, k) => `<text class="h${k}" fill="#fff" stroke="none" font-size="11" text-anchor="middle"></text>`).join('') + '</svg>' + cast.map((c, i) => `<div class="fb b${i}"></div>`).join('');
-  const P = cast.map((c, i) => el.querySelector('.p' + i)), N = cast.map((c, i) => el.querySelector('.n' + i)), B = cast.map((c, i) => el.querySelector('.b' + i)), Hh = Array.from({ length: 6 }, (_, k) => el.querySelector('.h' + k));
+    Array.from({ length: 16 }, (_, k) => `<text class="h${k}" fill="#fff" stroke="none" font-size="11" text-anchor="middle"></text>`).join('') + '</svg>' + cast.map((c, i) => `<div class="fb b${i}"></div>`).join('');
+  const P = cast.map((c, i) => el.querySelector('.p' + i)), N = cast.map((c, i) => el.querySelector('.n' + i)), B = cast.map((c, i) => el.querySelector('.b' + i)), Hh = Array.from({ length: 16 }, (_, k) => el.querySelector('.h' + k));
   el.classList.add('on');
   const tick = () => {
     const t = (performance.now() - T0) / 1000;
@@ -2635,7 +2643,13 @@ function familyParade(force) {
     const xs = [], tops = [];
     cast.forEach((c, i) => {
       const tt = t - c.d, leave = L0 + i * 0.3; let x, mv;
-      if (t >= leave) { x = c.sp + dir * V * (t - leave); mv = true; }
+      if (c.from) {                                                                         // Daddy: a quick trot on from the far side
+        if (t >= leave) { x = c.sp + dir * V * (t - leave); mv = true; }
+        else if (t <= 0.5) { x = c.start; mv = false; }
+        else if (t < c.arr) { x = c.start + (c.sp - c.start) * ((t - 0.5) / (c.arr - 0.5)); mv = true; }
+        else { x = c.sp; mv = false; }
+      }
+      else if (t >= leave) { x = c.sp + dir * V * (t - leave); mv = true; }
       else if (tt <= 0) { x = startX; mv = false; }
       else if (t - c.d < c.arr - c.d) { x = startX + dir * V * tt; mv = true; }
       else { x = c.sp; mv = false; }
@@ -2651,9 +2665,13 @@ function familyParade(force) {
     B.forEach(b => b.classList.remove('on'));
     talk.forEach(([w, from, to, txt]) => { if (t > from && t < to && txt) { const b = B[w]; if (b.textContent !== txt) b.textContent = txt; b.style.left = Math.max(95, Math.min(W - 95, xs[w])) + 'px'; b.style.top = (tops[w] - 9) + 'px'; b.classList.add('on'); } });
     const wx = xs[0], kissT = t - (a0 + 3.6);                                                   // the kisses float off towards wherever James might be
+    const dT = t - (a0 + 9.8);                                                                   // Daddy: "I love you boys, I love you babe!", and hearts for everyone
     Hh.forEach((h, k) => {
-      if (kissT > 0 && kissT < 2.4) { const ph = ((kissT * 0.9 + k / 6) % 1); h.setAttribute('x', wx + dir * (12 + ph * 46) + Math.sin(ph * 7 + k) * 5); h.setAttribute('y', tops[0] + 8 - ph * 34); h.setAttribute('opacity', 1 - ph); h.textContent = '♥'; }
-      else if (t > a0 && t < L0 && k < 3) { const ph = ((t * 0.5 + k / 3) % 1); h.setAttribute('x', wx + Math.sin(ph * 5 + k * 2) * 12); h.setAttribute('y', tops[0] - 6 - ph * 24); h.setAttribute('opacity', 0.8 * (1 - ph)); h.textContent = '♥'; }
+      const show = (x, y, o) => { h.setAttribute('x', x); h.setAttribute('y', y); h.setAttribute('opacity', o); h.textContent = '♥'; };
+      if (k < 6 && kissT > 0 && kissT < 2.4) { const ph = ((kissT * 0.9 + k / 6) % 1); show(wx + dir * (12 + ph * 46) + Math.sin(ph * 7 + k) * 5, tops[0] + 8 - ph * 34, 1 - ph); }
+      else if (k < 3 && t > a0 && t < L0) { const ph = ((t * 0.5 + k / 3) % 1); show(wx + Math.sin(ph * 5 + k * 2) * 12, tops[0] - 6 - ph * 24, 0.8 * (1 - ph)); }
+      else if (k >= 6 && k < 12 && dT > 0 && dT < 4.4) { const ph = ((dT * 0.8 + (k - 6) / 6) % 1); show(xs[6] + Math.sin(ph * 6 + k * 1.3) * 18, tops[6] + 4 - ph * 42, 1 - ph); }
+      else if (k >= 12 && dT > 0.6 && dT < 4.4) { const who = k - 12, ph = ((dT * 0.6 + who * 0.23) % 1); show(xs[who], tops[who] - 4 - ph * 26, 1 - ph); }
       else h.textContent = '';
     });
     requestAnimationFrame(tick);
