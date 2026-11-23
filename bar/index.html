@@ -437,12 +437,13 @@ function drawWheel() {
   cx.fillStyle = '#fff'; cx.beginPath(); cx.moveTo(size - 2, size / 2); cx.lineTo(size - 20, size / 2 - 9); cx.lineTo(size - 20, size / 2 + 9); cx.closePath(); cx.fill();   // the pointer, on the right
 }
 function openSpin() {
-  const list = visible(); if (!list.length) return;
+  const all = visible(); if (!all.length) return;
+  const list = all.length > 50 ? all.map(d => [Math.random(), d]).sort((x, y) => x[0] - y[0]).slice(0, 50).map(x => x[1]) : all;      // the wheel takes 50 drinks at random
   wheel = { list, rot: Math.random() * Math.PI * 2, spinning: false, win: -1, vel: 0, drag: false };
   lastFocus = document.activeElement; $('sheet').hidden = true;
   $('spin').hidden = false; document.body.classList.add('noscroll');
   $('pick').innerHTML = ''; $('pick').dataset.i = ''; $('spMake').hidden = true; $('spGo').textContent = 'Spin';
-  $('spNote').textContent = (fLen || fMeth || fAF || $('q').value) ? 'Spinning through the ' + list.length + ' drinks that match your filters.' : 'Spinning through all ' + list.length + ' drinks.';
+  $('spNote').textContent = all.length > list.length ? 'Spinning 50 drinks picked at random from ' + all.length + (fLen || fMeth || fAF || $('q').value ? ' that match your filters.' : '.') : ((fLen || fMeth || fAF || $('q').value) ? 'Spinning through the ' + list.length + ' drinks that match your filters.' : 'Spinning through all ' + list.length + ' drinks.');
   drawWheel(); $('spGo').focus({ preventScroll: true });
   setTimeout(() => { if (!$('spin').hidden && !wheel.spinning) spinIt(); }, 350);        // it spins as soon as it opens
 }
