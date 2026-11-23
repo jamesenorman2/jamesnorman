@@ -125,7 +125,7 @@
 
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
-<script src="/assets/stickmen.js?v=8"></script>
+<script src="/assets/stickmen.js?v=9"></script>
 <script>
 (() => {
 'use strict';
@@ -1096,6 +1096,8 @@ function syncCustomAgents() {
     if (e.does) { const c = CREW.find(x => x[0] === 'AGENT ' + n), d = DAY.find(x => x[1] === 'AGENT ' + n); if (c) c[1] = e.does; if (d) d[2] = e.does; }
   });
   if (Object.values(E).some(e => e.does || e.name)) { renderCrew(crewL); if (typeof renderDay === 'function') try { renderDay(); } catch (x) {} }
+  { const tmpl = {}; Object.values(KITS).forEach(k => (k.items || []).forEach(it => { if (!tmpl[it[5]]) tmpl[it[5]] = it; }));              // furniture placed from the admin picker, sized like the existing pieces of that kind
+    (SK.cfg.props || []).forEach(p => { const kit = KITS[p.room], t = tmpl[p.kind]; if (kit && kit.items && t) kit.items.push([p.fu, p.fv, t[2], t[3], t[4], p.kind, t[6]]); }); }
   (SK.cfg.agents || []).filter(a => a.enabled).forEach(a => {
     if (RESIDENTS.some(r => r[0] === a.name)) return;
     CUSTOM_SAYS[a.name] = a.says; if (a.roam) ROAM[a.name] = a.roam; RESIDENTS.push([a.name, BUDDIES[a.name] ? ((RESIDENTS.find(r => r[0] === BUDDIES[a.name]) || [])[1] || ['/music/']) : DJ_AGENTS.includes(a.name) ? ['/music/'] : a.room ? [a.room] : ['/music/'], () => '', -1]);
@@ -1201,6 +1203,7 @@ let djNext = 6, bqNext = 5, bqWho = 0;
 function startLasers(secs) { laser.force = floor.t + secs; }                  // switch the lights on by hand (for testing)
 window.JN_lasers = () => startLasers(14);                    // try it from the console
 window.JN_house = () => ({ kidsWith: fam.with, kidsFollowing: KIDS.filter(n => res[n] && res[n].famIn).length, family: fam.phase + ' / ' + fam.mode + (fam.room ? ' / ' + fam.room.path : ''), prints: prints.length, guest: guest.name, lasers: laser.k > 0.01, music: beatNow().playing === true, where: Object.fromEntries(Object.entries(res).map(([k, v]) => [k, v.duty === 'away' ? 'on the main page' : v.room ? v.room.path + ' station ' + v.st : 'door'])) });   // what is going on in the house, from the console
+window.JN_items = path => (KITS[path] && KITS[path].items || []).length;      // how many pieces of furniture a room has (check from the console)
 window.JN_guest = n => { guest.name = n || 'LLOYD'; guest.until = floor.t + 70; guest.said = floor.t + 3; };
 function partyTick(dt, sm) {
   const t = floor.t; musicTick(dt); famTick(dt, sm);
