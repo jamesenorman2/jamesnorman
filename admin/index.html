@@ -172,12 +172,13 @@
     <div class="card" style="margin-top:1rem">
       <div class="k">Agents <span id="agCount" class="badge"></span></div>
       <div class="v">Everyone who lives in the agents house. Add your own: give them a name, say what they do, write what they say (one line per thing, they pick one at random) and choose the room they work in. They turn up on the Agents page, walking between the stations in that room and saying your words, and you can give them stick men in the list above. The built-in agents are listed underneath.</div>
-      <div style="overflow-x:auto"><table class="agtab" id="agTable"></table></div>
       <div class="row">
         <button type="button" class="ghost" id="agAdd">+ Add an agent</button>
         <button type="button" id="agSave">Save agents</button>
       </div>
       <div class="msg" id="agMsg" role="status"></div>
+      <div style="overflow-x:auto"><table class="agtab" id="agTable"></table></div>
+      <details class="builtin"><summary id="agBuiltSum">Built-in agents</summary><p class="hint" id="agBuilt" style="margin-top:.6rem"></p></details>
     </div>
 
     <div class="card" style="margin-top:1rem">
@@ -431,8 +432,8 @@ function renderAgents() {
   const mine = customAgents.map((a, i) => `<tr data-i="${i}"><td><input type="text" class="an" maxlength="24" value="${escH(a.name)}" placeholder="NAME"></td><td><textarea class="ad" rows="3" placeholder="What do they do?">${escH(a.does)}</textarea></td>` +
     `<td><textarea class="as" rows="3" placeholder="One thing they say per line">${escH(a.says.join('\n'))}</textarea></td><td><select class="ar">${roomOpts(a.room)}</select></td>` +
     `<td><label><input type="checkbox" class="ae"${a.enabled ? ' checked' : ''}> On</label><br><button type="button" class="ghost mini" data-del>Remove</button></td></tr>`).join('');
-  const built = SM.BASE_AGENTS.map(n => `<tr class="built"><td>${escH(n)}</td><td colspan="4">Built in: see them on the Agents page</td></tr>`).join('');
-  $('agTable').innerHTML = `<thead><tr><th>Agent</th><th>What they do</th><th>What they say</th><th>Room</th><th></th></tr></thead><tbody>${mine}${built}</tbody>`;
+  $('agTable').innerHTML = `<thead><tr><th>Agent</th><th>What they do</th><th>What they say</th><th>Room</th><th></th></tr></thead><tbody>${mine || '<tr><td colspan="5" style="color:#888">No agents added yet. Press “+ Add an agent”.</td></tr>'}</tbody>`;
+  $('agBuiltSum').textContent = `Built-in agents (${SM.BASE_AGENTS.length})`; $('agBuilt').textContent = SM.BASE_AGENTS.join(' · ');
   $('agCount').textContent = SM.BASE_AGENTS.length + customAgents.length;
 }
 function readAgents() {
@@ -443,7 +444,7 @@ function readAgents() {
   });
 }
 (async () => { await SM.ready; customAgents = SM.cfg.agents.map(a => ({ ...a, says: a.says.slice() })); renderAgents(); })();
-$('agAdd').addEventListener('click', () => { readAgents(); customAgents.push({ id: 'agent' + Date.now().toString(36), name: '', does: '', says: [], room: '', enabled: true }); renderAgents(); const n = document.querySelector('#agTable tbody tr[data-i]:first-child .an'); if (n) n.focus(); });
+$('agAdd').addEventListener('click', () => { readAgents(); customAgents.push({ id: 'agent' + Date.now().toString(36), name: '', does: '', says: [], room: '', enabled: true }); renderAgents(); const ns = document.querySelectorAll('#agTable .an'), n = ns[ns.length - 1]; if (n) { n.scrollIntoView({ block: 'center' }); n.focus(); } });
 $('agTable').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if (b) { readAgents(); customAgents.splice(+b.closest('tr').dataset.i, 1); renderAgents(); } });
 $('agSave').addEventListener('click', async () => {
   const msg = $('agMsg'); readAgents();

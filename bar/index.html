@@ -61,7 +61,7 @@
   .msg{font-size:.72rem;color:var(--ok);min-height:1.2em;margin-top:.8rem}
 
   .wheelwrap{display:flex;flex-direction:column;align-items:center;gap:1.4rem}
-  #wheel{width:min(88vw,440px);height:min(88vw,440px);display:block;touch-action:none;cursor:grab}
+  #wheel{width:min(94vw,640px);height:min(94vw,640px);display:block;touch-action:none;cursor:grab}
   #wheel:active{cursor:grabbing}
   .pick{text-align:center;min-height:6.5rem}
   .pick .lead{font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
@@ -420,7 +420,7 @@ function drawWheel() {
   cx.strokeStyle = '#fff'; cx.lineWidth = 1.2; cx.lineJoin = 'round';
   cx.beginPath(); cx.arc(0, 0, R, 0, 7); cx.stroke();
   cx.beginPath(); cx.arc(0, 0, R * 0.14, 0, 7); cx.stroke();
-  const labels = n <= 36, font = Math.max(9, Math.min(14, R * 2.4 / n * 0.62 + 4));
+  const labels = n <= 36, font = Math.max(9, Math.min(18, R * 2.4 / n * 0.62 + 4));
   cx.font = `300 ${font}px "IBM Plex Mono", monospace`; cx.textBaseline = 'middle';
   for (let i = 0; i < n; i++) {
     const a = wheel.rot + i * step;
