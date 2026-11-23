@@ -395,8 +395,8 @@ const KITS = {
   // a trippy frame and the record wall along the back, six podiums round a big dance floor under the mirror ball, boxes of records, two lounges and plants.
   // stations: [fu, fv, pose, lines, standing height, depth nudge]; station 0 is the DJ's, 1 is the guest DJ's (kept for guests)
   '/music/': { title: 'BALLROOM', reserved: [1],
-    items: [[0.0, 0.95, 1.0, 0.02, 1, 'bunting', 36], [0.006, 0.62, 0.04, 0.2, 58, 'rig'], [0.948, 0.66, 0.045, 0.2, 58, 'rig'],
-      [0.067, 0.9, 0.147, 0.06, 30, 'recordwall'], [0.23, 0.91, 0.17, 0.06, 38, 'trippy'], [0.42, 0.91, 0.17, 0.06, 38, 'trippy'], [0.61, 0.91, 0.17, 0.06, 38, 'trippy'],
+    items: [[0.0, 0.95, 1.0, 0.02, 1, 'bunting', 36], [0.24, 0.9, 0.07, 0.06, 58, 'rig'], [0.69, 0.9, 0.07, 0.06, 58, 'rig'],
+      [0.067, 0.9, 0.147, 0.06, 30, 'recordwall'], [0.32, 0.91, 0.17, 0.06, 38, 'trippy'], [0.51, 0.91, 0.17, 0.06, 38, 'trippy'],
       [0.84, 0.34, 0.115, 0.12, 15, 'booth'],
       [0.107, 0.58, 0.047, 0.1, 8, 'podium'], [0.36, 0.58, 0.047, 0.1, 8, 'podium'], [0.147, 0.2, 0.047, 0.1, 8, 'podium'], [0.4, 0.22, 0.047, 0.1, 8, 'podium'], [0.62, 0.55, 0.047, 0.1, 8, 'podium'], [0.7, 0.18, 0.047, 0.1, 8, 'podium'],
       [0.485, 0.42, 0.027, 0.06, 4, 'discoball', 64],
@@ -790,7 +790,7 @@ function drawItem(r, it, busy) {
     if (busy && Math.floor(t * 2) % 2 === 0) text('HIGH SCORE!', X + W / 2, Y - 3 * s, 5.5 * s, 0.9);
   }
   else if (kind === 'trippy') {                    // a big screen on the dance floor wall playing a psychedelic video in colour: a tunnel, a kaleidoscope, or drifting plasma
-    const mode = Math.max(0, Math.min(2, Math.round((fu - 0.23) / 0.19))), on = laser.k > 0.02, k = laser.k, cx = X + W / 2, cy = Y + B.h / 2, R = Math.hypot(W, B.h) / 2, sp = 0.7 + 0.8 * laser.k;
+    const mode = Math.max(0, Math.min(2, Math.round((fu - 0.32) / 0.19) * 2)), on = laser.k > 0.02, k = laser.k, cx = X + W / 2, cy = Y + B.h / 2, R = Math.hypot(W, B.h) / 2, sp = 0.7 + 0.8 * laser.k;
     fx.save(); fx.beginPath(); fx.rect(X + 1.5, Y + 1.5, W - 3, B.h - 3); fx.clip(); fx.fillStyle = '#000'; fx.fillRect(X, Y, W, B.h); fx.globalAlpha = k;
     if (!on) { /* the music's off: the screen is off */ } else if (mode === 0) {                              // a tunnel: rings in every colour rushing out of the middle
       for (let i = 0; i < 16; i++) { const f = ((i / 16) + t * 0.22 * sp) % 1, rr = R * f * f * 1.15 + 1;
