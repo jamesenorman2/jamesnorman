@@ -380,7 +380,7 @@ const KITS = {
   // A proper CCTV control room: a wall of camera feeds, three operator desks with three screens and a joystick each, a laptop each, the DVR rack and the kettle.
   // THE CONTROL ROOM: a big wall of CCTV feeds on the right-hand wall, two operators at desks facing it, the threat-level board, the recorder rack and the kettle
   '/night-shift/': { title: 'CONTROL ROOM', stay: ['GCHQ', 'MASTERPIECE'],
-    items: [[0.93, 0.04, 0.05, 0.94, 84, 'sidewall'], [0.935, 0.45, 0.04, 0.06, 6, 'beacon', 84], [0.05, 0.88, 0.36, 0.08, 28, 'threat'], [0.5, 0.9, 0.2, 0.06, 24, 'rota'],
+    items: [[0.93, 0.3, 0.05, 0.66, 58, 'sidewall'], [0.935, 0.58, 0.04, 0.06, 6, 'beacon', 58], [0.05, 0.88, 0.36, 0.08, 28, 'threat'], [0.5, 0.9, 0.2, 0.06, 24, 'rota'],
       [0.52, 0.12, 0.26, 0.2, 9, 'cctvdesk'], [0.52, 0.5, 0.26, 0.2, 9, 'cctvdesk'], [0.57, 0.17, 0.07, 0.06, 2, 'laptop', 9], [0.57, 0.55, 0.07, 0.06, 2, 'laptop', 9],
       [0.37, 0.2, 0.07, 0.07, 6, 'stool'], [0.37, 0.58, 0.07, 0.07, 6, 'stool'],
       [0.0, 0.34, 0.07, 0.18, 30, 'rack'], [0.06, 0.05, 0.1, 0.1, 12, 'kettle']],
@@ -396,7 +396,7 @@ const KITS = {
   // stations: [fu, fv, pose, lines, standing height, depth nudge]; station 0 is the DJ's, 1 is the guest DJ's (kept for guests)
   '/music/': { title: 'BALLROOM', reserved: [1],
     items: [[0.0, 0.95, 1.0, 0.02, 1, 'bunting', 36], [0.006, 0.62, 0.04, 0.2, 58, 'rig'], [0.948, 0.66, 0.045, 0.2, 58, 'rig'],
-      [0.067, 0.9, 0.147, 0.06, 30, 'recordwall'], [0.24, 0.91, 0.173, 0.06, 32, 'tv'], [0.44, 0.93, 0.073, 0.03, 18, 'frame', 14],
+      [0.067, 0.9, 0.147, 0.06, 30, 'recordwall'], [0.23, 0.91, 0.17, 0.06, 38, 'trippy'], [0.42, 0.91, 0.17, 0.06, 38, 'trippy'], [0.61, 0.91, 0.17, 0.06, 38, 'trippy'],
       [0.84, 0.34, 0.115, 0.12, 15, 'booth'],
       [0.107, 0.58, 0.047, 0.1, 8, 'podium'], [0.36, 0.58, 0.047, 0.1, 8, 'podium'], [0.147, 0.2, 0.047, 0.1, 8, 'podium'], [0.4, 0.22, 0.047, 0.1, 8, 'podium'], [0.62, 0.55, 0.047, 0.1, 8, 'podium'], [0.7, 0.18, 0.047, 0.1, 8, 'podium'],
       [0.485, 0.42, 0.027, 0.06, 4, 'discoball', 64],
@@ -708,7 +708,7 @@ function drawItem(r, it, busy) {
     if (Math.floor(t * 1.4) % 2 === 0) { fx.save(); fx.fillStyle = '#ff3b3b'; fx.beginPath(); fx.arc(X + W - 5, Y + 3, 1.8, 0, 7); fx.fill(); fx.restore(); text('REC', X + W - 9, Y + 5, 4, 0.7, 'right'); }
   }
   else if (kind === 'sidewall') {                  // a big wall of CCTV feeds on the right-hand wall, facing into the room: corridors with walkers, static, doors, sweeping cameras
-    const n = 5, rows = 3, uf = a.u - 0.4;
+    const n = 4, rows = 3, uf = a.u - 0.4;
     for (let q = 0; q < n * rows; q++) {
       const i2 = q % n, j2 = Math.floor(q / n), v0 = a.v + d * (i2 + 0.07) / n, v1 = a.v + d * (i2 + 0.93) / n, z0c = z0 + h * (j2 + 0.08) / rows, z1c = z0 + h * (j2 + 0.92) / rows;
       const m = (fu2, fv2) => P(uf, v0 + (v1 - v0) * fu2, z0c + (z1c - z0c) * (1 - fv2)), k2 = q % 5;
@@ -788,6 +788,27 @@ function drawItem(r, it, busy) {
     fx.globalAlpha = 0.5 + 0.4 * Math.sin(t * 5); seg([X + W * 0.1, Y + B.h * 0.1], [X + W * 0.9, Y + B.h * 0.1]); fx.globalAlpha = 0.85;
     const j = [X + W * 0.3, Y + B.h * 0.7]; seg(j, [j[0] + (busy ? Math.sin(t * 6) * 2 : 0), j[1] - 4 * s]); [0.55, 0.7, 0.85].forEach(f => { fx.beginPath(); fx.arc(X + W * f, Y + B.h * 0.7, 1.1 * s, 0, 7); fx.stroke(); });
     if (busy && Math.floor(t * 2) % 2 === 0) text('HIGH SCORE!', X + W / 2, Y - 3 * s, 5.5 * s, 0.9);
+  }
+  else if (kind === 'trippy') {                    // a big screen on the dance floor wall playing a psychedelic video in colour: a tunnel, a kaleidoscope, or drifting plasma
+    const mode = Math.max(0, Math.min(2, Math.round((fu - 0.23) / 0.19))), k = 0.7 + 0.3 * laser.k, cx = X + W / 2, cy = Y + B.h / 2, R = Math.hypot(W, B.h) / 2, sp = 0.7 + 0.8 * laser.k;
+    fx.save(); fx.beginPath(); fx.rect(X + 1.5, Y + 1.5, W - 3, B.h - 3); fx.clip(); fx.fillStyle = '#000'; fx.fillRect(X, Y, W, B.h); fx.globalAlpha = k;
+    if (mode === 0) {                              // a tunnel: rings in every colour rushing out of the middle
+      for (let i = 0; i < 16; i++) { const f = ((i / 16) + t * 0.22 * sp) % 1, rr = R * f * f * 1.15 + 1;
+        fx.strokeStyle = `hsl(${(f * 330 + t * 70) % 360} 100% ${45 + 18 * f}%)`; fx.lineWidth = 0.7 + 2.6 * f; fx.beginPath();
+        fx.ellipse(cx + Math.sin(t * 1.3 + i * 0.5) * W * 0.05 * f, cy + Math.cos(t * 1.1 + i * 0.5) * B.h * 0.07 * f, rr * 1.25, rr * 0.85, Math.sin(t * 0.4) * 0.4, 0, 7); fx.stroke(); }
+    } else if (mode === 1) {                       // a kaleidoscope: coloured petals spinning round and round
+      for (let j = 0; j < 8; j++) { const an = t * 0.5 * sp + j * Math.PI / 4; fx.strokeStyle = `hsl(${(j * 45 + t * 90) % 360} 100% 60%)`; fx.lineWidth = 1.7; fx.beginPath();
+        for (let u = 0; u <= 22; u++) { const f = u / 22, r2 = R * f * (0.55 + 0.45 * Math.sin(f * 7 + t * 2 * sp + j)), a2 = an + f * 2.4, x = cx + Math.cos(a2) * r2 * 1.25, y = cy + Math.sin(a2) * r2 * 0.85; u ? fx.lineTo(x, y) : fx.moveTo(x, y); }
+        fx.stroke(); }
+      fx.fillStyle = `hsl(${(t * 120) % 360} 100% 65%)`; fx.beginPath(); fx.arc(cx, cy, R * (0.1 + 0.05 * Math.sin(t * 5)), 0, 7); fx.fill();
+    } else {                                       // plasma: big soft blobs of colour drifting through each other, with wobbling lines over the top
+      fx.globalCompositeOperation = 'lighter';
+      for (let j = 0; j < 5; j++) { const bx = cx + Math.sin(t * 0.7 * sp + j * 1.9) * W * 0.38, by = cy + Math.cos(t * 0.9 * sp + j * 2.3) * B.h * 0.38, rr = Math.max(W, B.h) * 0.5, g = fx.createRadialGradient(bx, by, 0, bx, by, rr), h = (j * 72 + t * 55) % 360;
+        g.addColorStop(0, `hsla(${h},100%,55%,.8)`); g.addColorStop(1, `hsla(${h},100%,50%,0)`); fx.fillStyle = g; fx.fillRect(X, Y, W, B.h); }
+      fx.globalCompositeOperation = 'source-over'; fx.lineWidth = 1.1;
+      for (let j = 0; j < 6; j++) { fx.strokeStyle = `hsla(${(j * 60 + t * 80) % 360},100%,75%,.8)`; fx.beginPath(); for (let u = 0; u <= 24; u++) { const x = X + W * u / 24, y = Y + B.h * (0.12 + j * 0.15) + Math.sin(u * 0.7 + t * 2.2 * sp + j) * B.h * 0.12; u ? fx.lineTo(x, y) : fx.moveTo(x, y); } fx.stroke(); }
+    }
+    fx.restore(); fx.strokeStyle = '#fff'; fx.strokeRect(X + 1.5, Y + 1.5, W - 3, B.h - 3);
   }
   else if (kind === 'laptop') {                    // a laptop with its screen glowing, lines scrolling when someone is working at it
     const c = B.top(0.5, 0.5), lw = Math.max(8 * s, W * 1.1);
@@ -1425,7 +1446,7 @@ function catTick(dt, sm) {
   cat.u += du / d * sp; cat.v += dv / d * sp; cat.step += sp * 0.5; cat.dir = du >= 0 ? 1 : -1;
 }
 function drawCat(c, s) {
-  const wild = c.wild; if (wild) s *= 1.55;                   // Aragon is a big, wild male cat
+  const wild = c.wild; if (wild) s *= 1.25;                   // Aragon is a big, wild male cat
   const [x, y] = P(c.u, c.v), f = c.dir, sit = c.phase === 'sit', w = Math.sin(c.step) * 1.6 * s;
   fx.save(); fx.globalAlpha = 0.95; fx.beginPath();
   if (sit) {
