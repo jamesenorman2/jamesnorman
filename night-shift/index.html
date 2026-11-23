@@ -1802,6 +1802,7 @@ function stickMan(x, y, s, phase, pose, name) {
       if (Math.floor(t * 2) % 3 === 0) { fx.beginPath(); fx.moveTo(cx, cy + 2 * s); fx.lineTo(cx - 2 * s, cy + 6 * s); fx.lineTo(cx + 1 * s, cy + 6 * s); fx.lineTo(cx - 1 * s, cy + 10 * s); fx.stroke(); }
     }
     if (name === 'OATIE MAN') { headK = 1.7; drawMan(x, y, s * 0.58, phase, pose); headK = 1; }   // a very intelligent baby
+    else if (name === 'FRANKIE' || name === 'JACK MAN') { headK = 1.18; drawMan(x, y, s * 0.72, phase, pose); headK = 1; }   // seven-year-old boys: smaller than the grown-ups, with a slightly bigger head for their body
     else drawMan(x, y, s, phase, pose);
     const hy = y - 27 * s;
     if (name === 'NORMAL') {                         // the DJ's headphones
