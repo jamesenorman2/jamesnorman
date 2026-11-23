@@ -123,6 +123,15 @@
   /* Argon the cat, chasing a mouse along the bottom of the screen */
   .argon{position:fixed;left:0;right:0;bottom:calc(4.2rem + 4rem + .5rem);height:64px;z-index:6;pointer-events:none;opacity:0;transition:opacity .3s}
   .argon.on{opacity:1}
+  /* the family: Agent Wifeo, the kids and the cats, strolling across the bottom of the screen */
+  .family{position:fixed;left:0;right:0;bottom:calc(4.2rem + 4rem + .5rem);height:120px;z-index:6;pointer-events:none;opacity:0;transition:opacity .3s}
+  .family.on{opacity:1}
+  .family:not(.on){visibility:hidden}
+  .family svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+  .family .fb{position:absolute;font-size:.72rem;letter-spacing:.04em;color:#fff;background:#000;border:1px solid #fff;border-radius:6px;padding:.32rem .6rem;white-space:nowrap;opacity:0;transition:opacity .2s;transform:translate(-50%,-100%)}
+  .family .fb.on{opacity:1}
+  body.shell-on .family{bottom:4.8rem}
+  body.tv .family{display:none!important}
   .argon:not(.on){visibility:hidden}
   .argon svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
   body.shell-on .argon{bottom:4.8rem}
@@ -222,7 +231,7 @@
     .pp{width:42px;height:42px}
     .pp.sk{width:34px;height:34px}
     .hush{bottom:calc(var(--scrubB) + var(--scrubH) + .35rem + 42px + .2rem)}
-    .peek,.chairman{bottom:calc(var(--scrubB) + var(--scrubH) + .5rem)}
+    .peek,.chairman,.family{bottom:calc(var(--scrubB) + var(--scrubH) + .5rem)}
   }
 </style>
 </head>
@@ -284,7 +293,8 @@
 <button class="stickbtn" id="stickBtn" type="button" title="Bring on a stick man" aria-label="Bring on a stick man"><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="sh" cx="13" cy="6" r="4.5"/><path class="sb" d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-8-6M13 15l8-6"/></svg></button>
 <div class="chairman loo" id="loo" aria-hidden="true"><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><g transform="translate(51 92) scale(.5) translate(-51 -92)"><path vector-effect="non-scaling-stroke" d="M40 92h18M44 92l2-14h8l2 14M34 70h30q0 10-10 10H44q-10 0-10-10zM34 70h30M60 70V50h8v20M58 50h12"/></g><path class="br" stroke="#8b5a2b" stroke-width="3" fill="none"/></svg></div>
 <div class="chairman" id="chairman" aria-live="polite"><div class="bub"></div><div class="nm"></div><svg viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ch"/><path class="pt"/><path class="pn"/><circle class="hd" r="4.5"/><path class="bd"/><path class="fx" stroke="#c07bff" stroke-width="1.4"/><text class="tx" fill="#fff" stroke="none" font-size="8" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text></svg></div>
-<div class="argon" id="argon" aria-hidden="true"><svg viewBox="0 0 400 64" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path class="ac"/><path class="am"/><text class="at" fill="#fff" stroke="none" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text><text class="al" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".55"></text></svg></div>
+<div class="argon" id="argon" aria-hidden="true"><svg viewBox="0 0 400 64" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path class="ac"/><path class="am"/><path class="ab" fill="#000"/><text class="at" fill="#fff" stroke="none" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text><text class="al" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".55"></text></svg></div>
+<div class="family" id="family" aria-hidden="true"></div>
 <div class="peek" id="peek" aria-live="polite"><div class="bub"></div><svg viewBox="0 0 26 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="13" cy="6" r="4.5"/><path d="M13 10.5V27M13 27l-6 15M13 27l6 15M13 15l-7 8"/><path class="arm" d="M13 15l8-6"/></svg><div class="nm"></div></div>
 <canvas id="scrub" hidden aria-label="Track waveform: click or drag to jump to a point in the track"></canvas>
 <div class="drop">Release to play</div>
@@ -2536,30 +2546,32 @@ function argonChase(force) {
   const el = $('argon');
   if (!el || chairBusy || calm || (!force && !document.body.classList.contains('intro-done'))) return;
   chairBusy = true; lastArgon = performance.now();
-  const svg = el.querySelector('svg'), ac = el.querySelector('.ac'), am = el.querySelector('.am'), at = el.querySelector('.at'), al = el.querySelector('.al');
+  const svg = el.querySelector('svg'), ac = el.querySelector('.ac'), am = el.querySelector('.am'), at = el.querySelector('.at'), al = el.querySelector('.al'), ab = el.querySelector('.ab');
+  const bubble = (x, y, str) => { if (!str) { ab.setAttribute('d', ''); at.textContent = ''; return; } const w = Math.max(20, str.length * 7 + 12), h = 17, l = x - w / 2, r = x + w / 2, b = y, tp = y - h; ab.setAttribute('d', `M${l + 4} ${tp}H${r - 4}q4 0 4 4V${b - 4}q0 4 -4 4H${x + 3}L${x} ${b + 5}L${x - 3} ${b}H${l + 4}q-4 0 -4 -4V${tp + 4}q0 -4 4 -4Z`); at.setAttribute('x', x); at.setAttribute('y', b - 4.5); at.textContent = str; };   // a speech bubble
   const W = innerWidth, G = 56, T0 = performance.now(), dir = Math.random() < 0.5 ? -1 : 1, startX = dir < 0 ? W + 40 : -40;
   const catchX = W * (0.3 + Math.random() * 0.4), V = 170, T1 = Math.abs(startX - catchX) / V, TP = T1 + 0.9, TD = TP + 9, END = TD + 3.2;
   svg.setAttribute('viewBox', `0 0 ${W} 64`); el.classList.add('on');
   const tick = () => {
     const t = (performance.now() - T0) / 1000, beat = Math.max(0.3, Math.min(1, music.beat || 0.47));
-    if (t > END) { el.classList.remove('on'); ac.setAttribute('d', ''); am.setAttribute('d', ''); at.textContent = ''; al.textContent = ''; chairBusy = false; return; }
-    let cx, my, mx, f = dir, sit = false, up = false, say = '', hop = 0, sway = 0;
+    if (t > END) { el.classList.remove('on'); ac.setAttribute('d', ''); am.setAttribute('d', ''); bubble(0, 0, ''); al.textContent = ''; chairBusy = false; return; }
+    let cx, my, mx, f = dir, sit = false, up = false, say = '', hop = 0, sway = 0, hx = null;
     if (t < T1) {                                                               // the chase: the mouse zig-zags ahead, the cat gains on it
       mx = startX + dir * V * t; hop = Math.abs(Math.sin(t * 16)) * 4; cx = mx - dir * (120 - 105 * (t / T1)); say = '';
     } else if (t < TP) {                                                        // the pounce
       const k = (t - T1) / 0.9; mx = catchX; hop = 0; cx = mx - dir * 15 * (1 - k); my = 0;
       ac.setAttribute('d', catPath(cx, G - Math.sin(Math.PI * k) * 16, f, false, t * 14)); am.setAttribute('d', mousePath(mx, G, -f, t * 20, false));
-      at.setAttribute('x', mx); at.setAttribute('y', G - 26); at.textContent = k > 0.5 ? 'squeak!' : ''; al.setAttribute('x', cx); al.setAttribute('y', 63); al.textContent = 'ARGON';
+      bubble(0, 0, ''); al.setAttribute('x', cx); al.setAttribute('y', 63); al.textContent = 'ARGON';
       requestAnimationFrame(tick); return;
     } else if (t < TD) {                                                        // caught, and then they dance: the cat sits up swaying, the mouse on its hind legs
       const ph = (t - TP) / beat * Math.PI; sway = Math.sin(ph / 2) * 4; sit = true; up = true; cx = catchX - dir * 14 + sway; mx = catchX + dir * 8 - sway * 0.8; hop = Math.abs(Math.sin(ph)) * 3;
-      say = t < TP + 2.6 ? 'Gotcha. …Fancy a dance?' : '♪';
+      // cats can't talk: Argon says a love heart, the mouse says one back, and then they dance
+      hx = t < TP + 0.4 ? null : t < TP + 2.1 ? cx : t < TP + 3.8 ? mx : (cx + mx) / 2; say = t < TP + 0.4 ? '' : t < TP + 3.8 ? '♥' : '♪';
     } else {                                                                     // and off they trot together
       const k = t - TD; mx = catchX + dir * 8 + dir * 60 * k; cx = catchX - dir * 14 + dir * 60 * k; sit = false; up = false; hop = Math.abs(Math.sin(t * 16)) * 2;
     }
     ac.setAttribute('d', catPath(cx, G, sit ? -dir : f, sit, t * 14) + (sit && up ? `M${cx - 3} ${G - 7}l${-3} ${-4 - Math.sin(t * 8) * 2}M${cx + 3} ${G - 7}l${3} ${-4 + Math.sin(t * 8) * 2}` : ''));   // paws in the air
     am.setAttribute('d', mousePath(mx, G - hop, up ? 0 : -f, t * 20, up));
-    at.setAttribute('x', (cx + mx) / 2); at.setAttribute('y', G - 30); at.textContent = say;
+    bubble(hx == null ? (cx + mx) / 2 : hx, G - 22 - (up ? 6 : 0), say);
     al.setAttribute('x', cx); al.setAttribute('y', 63); al.textContent = 'ARGON';
     requestAnimationFrame(tick);
   };
@@ -2567,6 +2579,71 @@ function argonChase(force) {
 }
 setInterval(() => { if (!chairBusy && performance.now() - lastArgon > 300000 && performance.now() - lastPeek > 20000 && Math.random() < 0.1) argonChase(); }, 30000);   // every so often
 window.JN_argon = () => { chairBusy = false; argonChase(true); };
+// The family: Agent Wifeo strolls on looking for James (she wants kisses), her three little ones and the two cats trot along behind her,
+// the little ones ask where Daddy is, and off they all go to watch him DJ. A main player: every few minutes, whoever is due on the roster.
+function famFig(x, G, sc, step, o) {
+  const y0 = G - (o.hop || 0), hipY = y0 - 19 * sc, shY = y0 - 32 * sc, hr = (o.baby ? 7 : 4.6) * sc, hdY = shY - hr - 0.8 * sc, sw = Math.sin(step) * 6 * sc, c = (cx, cy, r) => `M${cx + r} ${cy}a${r} ${r} 0 1 0 ${-2 * r} 0a${r} ${r} 0 1 0 ${2 * r} 0`;
+  let d = c(x, hdY, hr) + `M${x} ${hdY + hr}V${hipY}`;
+  if (o.dress) d += `M${x} ${shY + 5 * sc}L${x - 8 * sc} ${hipY + 4 * sc}H${x + 8 * sc}Z` + `M${x - 3 * sc} ${hipY + 4 * sc}L${x - 3 * sc + sw * 0.5} ${y0}M${x + 3 * sc} ${hipY + 4 * sc}L${x + 3 * sc - sw * 0.5} ${y0}`;
+  else d += `M${x} ${hipY}L${x + sw} ${y0}M${x} ${hipY}L${x - sw} ${y0}`;
+  if (o.hair) d += `M${x - hr} ${hdY}q${-3 * sc} ${9 * sc} ${-1 * sc} ${20 * sc}M${x + hr} ${hdY}q${3 * sc} ${9 * sc} ${1 * sc} ${20 * sc}M${x - hr * 0.5} ${hdY - hr}q${-2 * sc} ${6 * sc} ${-5 * sc} ${14 * sc}`;
+  if (o.tuft) d += `M${x - 1.5 * sc} ${hdY - hr}l${-1 * sc} ${-3.5 * sc}M${x} ${hdY - hr}v${-4 * sc}M${x + 1.5 * sc} ${hdY - hr}l${1 * sc} ${-3.5 * sc}`;
+  if (o.cap) d += `M${x - hr - 0.5 * sc} ${hdY - hr * 0.35}H${x + hr + 4 * sc}M${x - hr} ${hdY - hr * 0.35}a${hr} ${hr} 0 0 1 ${2 * hr} 0`;
+  const a = o.arms;                                           // what the arms are doing
+  if (a === 'kiss') d += `M${x} ${shY + 2 * sc}L${x + 6 * sc} ${shY + 7 * sc}L${x + 3 * sc} ${hdY + hr * 0.7}M${x} ${shY + 2 * sc}L${x - 7 * sc} ${shY + 9 * sc}`;
+  else if (a === 'up') d += `M${x} ${shY + 2 * sc}L${x - 8 * sc} ${shY - 8 * sc}M${x} ${shY + 2 * sc}L${x + 8 * sc} ${shY - 8 * sc}`;
+  else d += `M${x} ${shY + 2 * sc}L${x + sw * 0.9} ${shY + 12 * sc}M${x} ${shY + 2 * sc}L${x - sw * 0.9} ${shY + 12 * sc}`;
+  return { d, top: hdY - hr };
+}
+let lastFam = -1e9;
+function familyParade(force) {
+  const el = $('family');
+  if (!el || chairBusy || calm || !SM.on('family') || (!force && !document.body.classList.contains('intro-done'))) return;
+  chairBusy = true; lastFam = performance.now();
+  const W = innerWidth, G = 100, V = 92, dir = Math.random() < 0.5 ? 1 : -1, startX = dir > 0 ? -70 : W + 70, T0 = performance.now(), stopX = W * (0.3 + 0.4 * Math.random());
+  const cast = [{ n: 'AGENT WIFEO', sc: 1, sg: 0, o: { dress: 1, hair: 1 } }, { n: 'FRANKIE', sc: 0.72, sg: 46, o: { tuft: 1 } }, { n: 'JACK MAN', sc: 0.72, sg: 80, o: { cap: 1 } },
+    { n: 'OATIE MAN', sc: 0.52, sg: 112, o: { baby: 1 } }, { n: 'ARGON', cat: 1, sg: 142 }, { n: 'TIGER BABY', cat: 1, sg: 172 }];
+  cast.forEach(c => { c.d = c.sg / V; c.sp = stopX - dir * c.sg; c.arr = Math.abs(c.sp - startX) / V + c.d; });
+  const a0 = cast[0].arr, L0 = a0 + 13.6, END = L0 + (W + 260) / V + 1;
+  const S = { find: SM.say('family', 'find'), kiss: SM.say('family', 'kisses'), d1: SM.say('family', 'daddy1'), d2: SM.say('family', 'daddy2'), d3: SM.say('family', 'daddy3'), love: SM.say('family', 'love'), silly: SM.say('family', 'silly'), baby: SM.say('family', 'baby') };
+  const talk = [[0, a0 + 0.2, a0 + 3.4, S.find], [0, a0 + 3.6, a0 + 6, S.kiss], [1, a0 + 6.1, a0 + 8.3, S.d1], [2, a0 + 8.4, a0 + 10, S.d2], [0, a0 + 10.1, a0 + 12.3, S.d3],
+    [3, a0 + 11, a0 + 13, S.baby], [1, a0 + 12.5, a0 + 15, S.love], [4, a0 + 10, a0 + 11.4, '♥'], [5, a0 + 13.2, a0 + 14.6, '♥'], [2, cast[2].arr - 2.2, cast[2].arr - 0.2, S.silly]];
+  el.innerHTML = `<svg viewBox="0 0 ${W} 120" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">` + cast.map((c, i) => `<path class="p${i}"/><text class="n${i}" fill="#fff" stroke="none" font-size="7" font-family="IBM Plex Mono, monospace" text-anchor="middle" opacity=".55">${c.n}</text>`).join('') +
+    Array.from({ length: 6 }, (_, k) => `<text class="h${k}" fill="#fff" stroke="none" font-size="11" text-anchor="middle"></text>`).join('') + '</svg>' + cast.map((c, i) => `<div class="fb b${i}"></div>`).join('');
+  const P = cast.map((c, i) => el.querySelector('.p' + i)), N = cast.map((c, i) => el.querySelector('.n' + i)), B = cast.map((c, i) => el.querySelector('.b' + i)), Hh = Array.from({ length: 6 }, (_, k) => el.querySelector('.h' + k));
+  el.classList.add('on');
+  const tick = () => {
+    const t = (performance.now() - T0) / 1000;
+    if (t > END) { el.classList.remove('on'); chairBusy = false; el.innerHTML = ''; return; }
+    const xs = [], tops = [];
+    cast.forEach((c, i) => {
+      const tt = t - c.d, leave = L0 + i * 0.3; let x, mv;
+      if (t >= leave) { x = c.sp + dir * V * (t - leave); mv = true; }
+      else if (tt <= 0) { x = startX; mv = false; }
+      else if (t - c.d < c.arr - c.d) { x = startX + dir * V * tt; mv = true; }
+      else { x = c.sp; mv = false; }
+      xs[i] = x;
+      const hop = !mv && t > c.arr ? Math.abs(Math.sin(t * 7 + i * 1.3)) * (c.cat ? 2 : 4) : mv ? Math.abs(Math.sin(t * 9 + i)) * 1.5 : 0, step = t * 9 + i * 2;
+      const kissing = i === 0 && t > a0 + 3.6 && t < a0 + 6, dancing = i > 0 && !mv && t > c.arr;
+      if (c.cat) { const sit = !mv && t > c.arr + 0.3; P[i].setAttribute('d', catPath(x, G - hop, mv ? dir : -dir, sit, step)); tops[i] = G - (sit ? 14 : 12); }
+      else { const f = famFig(x, G, c.sc, mv ? step : 0, { ...c.o, hop, arms: kissing ? 'kiss' : (i === 0 && !mv && t > a0) || dancing ? 'up' : 'swing' }); P[i].setAttribute('d', f.d); tops[i] = f.top; }
+      N[i].setAttribute('x', x); N[i].setAttribute('y', 114 + (i % 2) * 7);
+    });
+    B.forEach(b => b.classList.remove('on'));
+    talk.forEach(([w, from, to, txt]) => { if (t > from && t < to && txt) { const b = B[w]; if (b.textContent !== txt) b.textContent = txt; b.style.left = Math.max(95, Math.min(W - 95, xs[w])) + 'px'; b.style.top = (tops[w] - 9) + 'px'; b.classList.add('on'); } });
+    const wx = xs[0], kissT = t - (a0 + 3.6);                                                   // the kisses float off towards wherever James might be
+    Hh.forEach((h, k) => {
+      if (kissT > 0 && kissT < 2.4) { const ph = ((kissT * 0.9 + k / 6) % 1); h.setAttribute('x', wx + dir * (12 + ph * 46) + Math.sin(ph * 7 + k) * 5); h.setAttribute('y', tops[0] + 8 - ph * 34); h.setAttribute('opacity', 1 - ph); h.textContent = '♥'; }
+      else if (t > a0 && t < L0 && k < 3) { const ph = ((t * 0.5 + k / 3) % 1); h.setAttribute('x', wx + Math.sin(ph * 5 + k * 2) * 12); h.setAttribute('y', tops[0] - 6 - ph * 24); h.setAttribute('opacity', 0.8 * (1 - ph)); h.textContent = '♥'; }
+      else h.textContent = '';
+    });
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+setInterval(() => { if (!chairBusy && performance.now() - lastFam > 150000 && performance.now() - lastPeek > 20000 && Math.random() < 0.35) familyParade(); }, 20000);   // every few minutes
+window.JN_family = () => { chairBusy = false; familyParade(true); };
+
 window.JN_cat = () => { chairBusy = false; catStroke(true); };
 window.JN_pot = () => { chairBusy = false; potDrum(true); };
 // ─── The little stick man in the corner: every so often he does something daft ───
@@ -2691,6 +2768,7 @@ function clickEntries() {
   if (SM.on('cat')) e.push(['cat', () => catStroke(true)]);
   if (SM.on('peek')) e.push(['peek', () => { lastPeek = -1e9; peek(pickOne(['idle', 'break']), 'plain'); }]);
   e.push(['argon', () => argonChase(true)]);
+  if (SM.on('family')) e.push(['family', () => familyParade(true)]);
   SM.customs().forEach(m => e.push(['c:' + m.id, () => { lastPeek = -1e9; peek('idle', m); }]));
   return e;
 }

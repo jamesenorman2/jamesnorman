@@ -47,6 +47,17 @@
         { key: 'look', when: 'Looking for the cat', lines: ['Where’s my tiger baby?'] },
         { key: 'found', when: 'The cat arrives', lines: ['There’s my tiger baby!'] }
       ] },
+    { id: 'family', agent: 'WIFEO', name: 'The Family (Agent Wifeo, the kids and the cats)', does: 'A main player, on the front screen every few minutes (and on the agents page all the time). Agent Wifeo strolls on looking for James because she wants kisses, with Frankie, Jack Man, baby Oatie Man, Argon and Tiger Baby trotting along behind her. The little ones ask where Daddy is, and off they all go to watch him DJ. Not tied to the roster: she turns up whoever is due.',
+      slots: [
+        { key: 'find', when: 'Wifeo comes on', lines: ['Has anybody seen James? I want kisses!'] },
+        { key: 'kisses', when: 'Blowing kisses', lines: ['Mwah! Mwah! Kisses for everyone!', 'Kisses! Come on, James! KISSES!'] },
+        { key: 'daddy1', when: 'The first little one asks', lines: ['Where’s Daddy? Is he playing?'] },
+        { key: 'daddy2', when: 'The second little one asks', lines: ['Is he DJing?'] },
+        { key: 'daddy3', when: 'Wifeo has an idea', lines: ['Let’s go watch Daddy!'] },
+        { key: 'love', when: 'A little one, as they leave', lines: ['I love you, Mum.', 'I love you, Mum. A LOT.', 'Love you, Mum!'] },
+        { key: 'silly', when: 'While they trot along', lines: ['Mum, wait for us!', 'Are we nearly there?', 'I’m a train! Choo choo!', 'Mum, Argon’s eating my sock'] },
+        { key: 'baby', when: 'The baby', lines: ['Da-da! DA-DA!', 'Goo goo! Mama!', 'Ba ba ba!'] }
+      ] },
     { id: 'corner', name: 'The little stick man in the corner', does: 'The small white stick man at the bottom left of the screen. Click him and one of the others above (or one of your own below) comes on at random. He doesn’t say anything himself.', slots: [] }
   ];
 
@@ -92,7 +103,7 @@
     // Who can be due: every agent that has at least one stick man switched on. If nobody does, everybody can be.
     candidates() {
       const set = new Set();
-      DEFAULTS.forEach(d => { const a = SM.agentOf(d.id); if (d.id !== 'corner' && SM.on(d.id) && a !== '*') set.add(a); });
+      DEFAULTS.forEach(d => { const a = SM.agentOf(d.id); if (d.id !== 'corner' && d.id !== 'family' && SM.on(d.id) && a !== '*') set.add(a); });   // the family is always about: it doesn't take a turn
       SM.customs().forEach(m => set.add(m.agent));
       const c = AGENTS.filter(a => set.has(a));
       return c.length ? c : AGENTS.slice();
