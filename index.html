@@ -449,7 +449,7 @@ function loadScript(src) {
 let listing = false, choice = null;
 // arriving from another page's play button: start the picked track the same way the play button does (so its waveform, artwork and cues load too)
 function startFromPage() {
-  if (!document.body.classList.contains('needs-tap') || !sc || !scReady) return false;
+  if (!autoPlayOk || !document.body.classList.contains('needs-tap') || !sc || !scReady) return false;
   try { if (!startPending()) sc.play(); } catch (e) { return false; }
   return true;
 }
@@ -2102,7 +2102,7 @@ $('bigPlay').addEventListener('click', () => {
 });
 
 function tapToPlay() {
-  if (document.body.classList.contains('needs-tap') && sc) { if (!startFromPage()) sc.play(); return true; }
+  if (document.body.classList.contains('needs-tap') && sc) { if (!startFromPage() && !startPending()) sc.play(); return true; }
   return false;
 }
 
@@ -2245,7 +2245,8 @@ addEventListener('popstate', () => {
   else if (!shellOn) openShell(location.pathname + location.search + location.hash, false);
 });
 // arriving from another page's play button: open that page over the player, ready to play
-{ const then = new URLSearchParams(location.search).get('then');
+let autoPlayOk = false;                                       // music only starts by itself when somebody pressed the play button on another page, never on a reload or a plain visit
+{ const qs = new URLSearchParams(location.search), then = qs.get('then'); autoPlayOk = qs.get('play') === '1';
   if (then && /^\/[^/]/.test(then) && !/^\/admin/.test(then)) { window.history.replaceState(null, '', '/'); openShell(then); document.body.classList.add('needs-tap'); } }
 
 /* ─── Casting to a TV ───

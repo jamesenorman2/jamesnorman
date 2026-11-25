@@ -41,6 +41,6 @@
   b.className = 'jn-play'; b.type = 'button';
   b.title = 'Play music while you look round the site'; b.setAttribute('aria-label', 'Play music');
   b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="6,4 20,12 6,20" fill="currentColor"/></svg>';
-  b.addEventListener('click', () => { location.href = '/?then=' + encodeURIComponent(location.pathname + location.search + location.hash); });
+  b.addEventListener('click', () => { location.href = '/?play=1&then=' + encodeURIComponent(location.pathname + location.search + location.hash); });   // play=1: this was an explicit press of play, so the music may start
   (document.readyState === 'loading' ? addEventListener.bind(window, 'DOMContentLoaded') : f => f())(() => document.body.appendChild(b));
 })();
