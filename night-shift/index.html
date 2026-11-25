@@ -559,6 +559,7 @@ function drawEggs(s) {
 function drawItem(r, it, busy) {
   const [fu, fv, fw, fd, h0, kind, zz, label] = it, t = floor.t, s = SM, h = h0 * s, z0 = (zz || 0) * s;
   const a = at(r, fu, r.upper ? fv + fd : fv), w = fw * r.w, d = fd * r.d;
+  if (r.path === '/admin/' && (kind === 'rack' || kind === 'stack')) { const c2 = P(a.u + w / 2, a.v + d / 2, z0 + h / 2), e2 = P(a.u + w, a.v + d / 2, z0 + h / 2); hot.eggs.push({ kind: '__admin', x: c2[0], y: c2[1], r: Math.max(16, Math.abs(e2[0] - c2[0]) * 1.2, h * 0.6), at: t }); }      // the server racks: click one to go to the admin page
   if (EGGS[kind]) { const c1 = P(a.u + w / 2, a.v + d / 2, z0 + h / 2), e1 = P(a.u + w, a.v + d / 2, z0 + h / 2); hot.eggs.push({ kind, x: c1[0], y: c1[1], r: Math.max(14, Math.abs(e1[0] - c1[0]) * 1.1, h * 0.55), at: t }); }
   if (kind === 'model') { const c0 = P(a.u + w / 2, a.v + d / 2, h + z0), e0 = P(a.u + w, a.v + d / 2, h + z0); hot.desk = { x: c0[0], y: c0[1], r: Math.max(22, Math.abs(e0[0] - c0[0]) * 1.1), at: t }; }       // the office desk
   if (kind === 'sign') {                          // a sign on the back wall with its own words (the 8th value of the item)
@@ -2366,6 +2367,7 @@ const THOUGHTS_BY = { 'SMILEY JO': ['Hula hooping is just standing still, but ha
       if (hit('spin')) { location.href = '/bar/#spin'; return; }                               // the bar's prize wheel opens the real spinner on the Bar page
       if (hit('desk')) { openHandover(); return; }
       const eg = hot.eggs.filter(h => floor.t - h.at < 0.5 && Math.hypot(h.x - x, h.y - y) < h.r).sort((p, q) => Math.hypot(p.x - x, p.y - y) - Math.hypot(q.x - x, q.y - y))[0];
+      if (eg && eg.kind === '__admin') { location.href = '/admin/'; return; }
       if (eg) { popEgg(eg.kind, eg.x, eg.y); return; }
       return;
     }
