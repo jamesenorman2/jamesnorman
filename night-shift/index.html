@@ -96,7 +96,7 @@
   </div>
 
   <section class="floor" aria-label="The crew at work: stick men walking the site, checking each page">
-    <div class="floorbar"><span id="eggCount" class="small" hidden style="margin-right:auto;align-self:center;letter-spacing:.15em"></span><button type="button" class="ghost fsbtn" id="sndBtn" aria-pressed="false" title="Sound effects: door whoosh, chomp, muffled bass through the walls" style="margin-right:.5rem">Sound: off</button><button type="button" class="ghost fsbtn" id="fsBtn" aria-pressed="false" title="See the whole house full screen (Esc to leave)">Full screen</button></div>
+    <div class="floorbar"><span id="eggCount" class="small" hidden style="margin-right:auto;align-self:center;letter-spacing:.15em"></span><button type="button" class="ghost fsbtn" id="fsBtn" aria-pressed="false" title="See the whole house full screen (Esc to leave)">Full screen</button></div>
     <canvas id="floor"></canvas>
     <div class="fshint">Turn your phone sideways for a bigger view</div>
   </section>
@@ -1027,25 +1027,6 @@ function roamRoute(a, name, homeFn, sm, dt) {
 // agents added on the admin page: they live in the room that was picked (or the first room) and say what was written for them
 const CUSTOM_SAYS = {}, ROAM = {}; let customSynced = false;
 // Sanassi goes round biting people: every so often he picks someone in his room, lunges, CHOMP, and they hop and yelp
-// Optional sound effects, off until you press the speaker button: small synthesised sounds, nothing is downloaded
-const sfx = (() => {
-  let ac = null, on = false, nb = null, lastDoor = 0, bassTimer = 0;
-  try { on = localStorage.getItem('jn-sfx') === '1'; } catch (e) { /* no storage */ }
-  const ctx = () => { try { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); const n = ac.createBuffer(1, ac.sampleRate * 0.6, ac.sampleRate), d = n.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; nb = n; } if (ac.state === 'suspended') ac.resume(); return ac; } catch (e) { return null; } };
-  const noise = (dur, f0, f1, q, g) => { const a = ctx(); if (!a) return; const src = a.createBufferSource(); src.buffer = nb; const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = q; bp.frequency.setValueAtTime(f0, a.currentTime); bp.frequency.exponentialRampToValueAtTime(f1, a.currentTime + dur); const gn = a.createGain(); gn.gain.setValueAtTime(0.0001, a.currentTime); gn.gain.exponentialRampToValueAtTime(g, a.currentTime + dur * 0.3); gn.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur); src.connect(bp); bp.connect(gn); gn.connect(a.destination); src.start(); src.stop(a.currentTime + dur + 0.05); };
-  const tone = (f0, f1, dur, g, type, lp) => { const a = ctx(); if (!a) return; const o = a.createOscillator(), gn = a.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime); o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + dur); gn.gain.setValueAtTime(g, a.currentTime); gn.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur); let out = gn; if (lp) { const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; gn.connect(f); out = f; } o.connect(gn); out.connect(a.destination); o.start(); o.stop(a.currentTime + dur + 0.05); };
-  const api = {
-    get on() { return on; },
-    set(v) { on = !!v; try { localStorage.setItem('jn-sfx', on ? '1' : '0'); } catch (e) { /* fine */ } if (on) { ctx(); api.bass(); tone(440, 660, 0.12, 0.05); } else clearTimeout(bassTimer); },
-    whoosh() { if (!on || floor.t - lastDoor < 0.7) return; lastDoor = floor.t; noise(0.38, 500, 2200, 0.9, 0.07); },
-    chomp() { if (!on) return; noise(0.07, 2500, 1800, 3, 0.18); setTimeout(() => { noise(0.08, 2200, 1500, 3, 0.2); tone(120, 60, 0.12, 0.18, 'sine'); }, 110); },
-    bass() { clearTimeout(bassTimer); const b = beatNow(); if (on && b.playing === true) tone(95, 42, 0.22, 0.2, 'sine', 160); bassTimer = setTimeout(api.bass, Math.max(250, (b.period || 0.48) * 1000)); }       // a kick drum heard through the walls
-  };
-  return api;
-})();
-{ const sb = document.getElementById('sndBtn'), show = () => { sb.textContent = 'Sound: ' + (sfx.on ? 'on' : 'off'); sb.setAttribute('aria-pressed', String(sfx.on)); };
-  sb.addEventListener('click', () => { sfx.set(!sfx.on); show(); }); show();
-  document.addEventListener('pointerdown', () => { if (sfx.on) sfx.bass(); }, { once: true }); }                  // a remembered 'on' needs one tap before the browser lets it play
 const bite = { next: 20, victim: null, t0: 0, from: null };
 const dayKey = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
 const bites = (() => { try { const j = JSON.parse(localStorage.getItem('jn-bites') || 'null'); if (j && j.d === dayKey()) return j; } catch (e) { /* no storage */ } return { d: dayKey(), n: 0, who: {} }; })();
@@ -1069,7 +1050,7 @@ function sanassiHunt(a, r, sm, dt, homeFn) {
     if (!q || q.moving && Math.hypot(q.u - a.u, q.v - a.v) > 90 * sm * 2) { H.phase = 'home'; a.q = routeTo(a.u, a.v, roomAt(homeFn().u, homeFn().v), homeFn()); return true; }
     if (t > H.re) { H.re = t + 1.5; a.q = routeTo(a.u, a.v, roomAt(q.u, q.v), { u: q.u - 10, v: q.v }); }               // the victim wanders: keep following them
     if (Math.hypot(q.u - a.u, q.v - a.v) < 15 * sm && roomAt(q.u, q.v) === roomAt(a.u, a.v)) {                         // close enough: CHOMP
-      H.phase = 'bite'; H.t0 = t; a.q = []; a.moving = false; bite.victim = H.who; bite.t0 = t; bite.from = { u: a.u, v: a.v }; setTimeout(() => sfx.chomp(), 650);
+      H.phase = 'bite'; H.t0 = t; a.q = []; a.moving = false; bite.victim = H.who; bite.t0 = t; bite.from = { u: a.u, v: a.v };
       if (bites.d !== dayKey()) { bites.d = dayKey(); bites.n = 0; bites.who = {}; }
       bites.n++; bites.who[H.who] = 1; saveBites(); q.biteMsg = BITE_YELP[Math.floor(Math.random() * BITE_YELP.length)]; return true;
     }
@@ -1776,7 +1757,6 @@ function drawDoor(r, sm) {
   const t = floor.t, dt = Math.min(0.1, Math.max(0, t - (r.dT || t))); r.dT = t;
   const near = Object.keys(res).some(n => { const q = res[n]; return q && q.moving && Math.hypot(q.u - du, q.v - dv) < 24 * sm; }) || (fam.phase !== 'wait' && fam.q && fam.q.length && Math.hypot(fam.u - du, fam.v - dv) < 24 * sm);
   r.dO = (r.dO || 0) + ((near ? 1 : 0) - (r.dO || 0)) * Math.min(1, dt * 4);
-  if (r.dO > 0.5 && !r.dSnd) { r.dSnd = true; sfx.whoosh(); } else if (r.dO < 0.2) r.dSnd = false;
   const o = r.dO;
   fx.save(); fx.globalAlpha = 0.95;
   block(du - gap / 2 - 2.2, dv - 2.6, 2.4, 3.2, h); block(du + gap / 2 - 0.2, dv - 2.6, 2.4, 3.2, h); block(du - gap / 2 - 2.2, dv - 2.6, gap + 4.4, 3.2, 3 * sm, h - 3 * sm);   // posts and lintel

@@ -26,7 +26,7 @@ Answer each with **Y** (do it), **N** (skip), **L** (later) or **M** (do it, but
 | 18 | Agents react to real data: more people dancing when the SoundCloud plays go up, nervous when the threat level changes Y | Built: edgy lines when the UK threat level is SUBSTANTIAL or higher; cheerful lines when SoundCloud plays are up. |
 | 19 | Handover note you can read in the house: click the office desk to open the latest written handover Y | Built: click the office table. Also: the bar's prize wheel opens the real spinner (/bar/#spin). |
 | 20 | A "visitor's guide" tour: a 60-second guided walk through the house for first-time visitors L | No preference given; parked. |
-| 21 | Sound: optional, off by default (muffled bass through the walls, door whoosh, CHOMP), toggled by a speaker icon | Y | Changed from no to yes. Built: a Sound on/off button by Full screen (remembered); door whoosh, chomp, bass kick while music plays. |
+| 21 | Sound: optional, off by default (muffled bass through the walls, door whoosh, CHOMP), toggled by a speaker icon | Removed | Changed from no to yes. Built: a Sound on/off button by Full screen (remembered); door whoosh, chomp, bass kick while music plays. |
 | 22 | Easter eggs found by clicking props (the lid-drumming loo, the pool of oil, the wormhole), with a found-count | | |
 | 23 | Admin: a live preview of the house while you edit agents, rooms and lines L | No preference given; parked. |
 | 24 | Admin: add rooms and furniture from a picker instead of code Y | Built the furniture picker (admin: Furniture in the house). Rooms themselves are the site's real pages, so only furniture can be added. |
