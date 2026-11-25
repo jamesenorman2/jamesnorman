@@ -1,6 +1,7 @@
 // The day crew runner. Each call runs agents that are due (each at most once per its interval),
 // claimed through the database so two visitors can't start the same agent. Triggered by pages (GET),
 // the daily cron (CRON_SECRET), or the admin page (POST + password, optionally { agent } to force one).
+import { switchedOff } from '../lib/switches.js';
 import { CREW } from '../lib/crew.js';
 import { hasAI } from '../lib/models.js';
 
@@ -46,6 +47,7 @@ export default async function handler(req, res) {
   if (!process.env.SHIFT_TOKEN) return res.status(500).json({ ok: false, error: 'SHIFT_TOKEN is not set' });
   let who;
   try { who = await authorised(req); } catch (e) { return res.status(503).json({ ok: false, error: 'Database unavailable' }); }
+  if (who !== 'admin' && await switchedOff('crew')) return res.status(200).json({ ok: true, ran: false, off: true });      // switched off on the admin page
   if (req.method === 'POST' && !who) return res.status(401).json({ ok: false, error: 'Not authorised' });
   const only = who === 'admin' && req.body && CREW[req.body.agent] ? [req.body.agent] : null;
   // a visitor's kick runs at most two due agents (keeps each request short); cron and admin run them all

@@ -13,6 +13,7 @@
 //   SITE_URL           optional, defaults to https://www.jamesnorman.co.uk
 //   SOUNDCLOUD_URL     optional, defaults to https://soundcloud.com/jamesnormal
 
+import { switchedOff } from '../lib/switches.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
@@ -249,6 +250,7 @@ export default async function handler(req, res) {
   // only lets one shift start per hour, however many visitors ask at once.
   let who;
   try { who = await authorised(req); } catch (e) { return res.status(503).json({ ok: false, error: 'Database unavailable' }); }
+  if (who !== 'admin' && await switchedOff('patrol')) return res.status(200).json({ ok: true, ran: false, off: true });      // switched off on the admin page
   if (!who) {
     if (req.method !== 'GET') return res.status(401).json({ ok: false, error: 'Not authorised' });
     try {

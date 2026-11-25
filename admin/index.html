@@ -189,6 +189,18 @@
     </div>
 
     <div class="card" style="margin-top:1rem">
+      <div class="k">Agent processes: on and off</div>
+      <div class="v">Switch a whole agent process off here and it stops running by itself (the automatic runs from the daily cron and from visitors). The Run now buttons still work when you press them. Press <b>Save switches</b> to apply.</div>
+      <div style="display:grid;gap:.5rem;margin:.6rem 0">
+        <label><input type="checkbox" id="swPatrol"> Site patrol and the daily agents (the shifts, handover and idea pitches)</label>
+        <label><input type="checkbox" id="swDesk"> Research desk and blog (the news briefs, incident round-up and the daily post)</label>
+        <label><input type="checkbox" id="swCrew"> Day crew (the small daily agents: quiz, pigeon, grumble and the rest)</label>
+      </div>
+      <div class="row"><button type="button" id="swSave">Save switches</button></div>
+      <div class="msg" id="swMsg" role="status"></div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
       <div class="k">Furniture in the house <span id="fuCount" class="badge"></span></div>
       <div class="v">Pick a room and a piece of furniture, say roughly where it goes (0 is the left or back, 100 is the right or front), and press <b>Add</b>. It appears on the Agents page the next time it loads. The rooms themselves are the site’s real pages, so they can’t be added here.</div>
       <div class="row" style="flex-wrap:wrap;gap:.6rem">
@@ -218,7 +230,7 @@
 </main>
 
 <script src="https://w.soundcloud.com/player/api.js"></script>
-<script src="/assets/stickmen.js?v=9"></script>
+<script src="/assets/stickmen.js?v=10"></script>
 <script>
 (() => {
 'use strict';
@@ -437,9 +449,9 @@ $('smSave').addEventListener('click', async () => {
   if (noWords) { say(msg, `${noWords.name} needs at least one thing to say.`, 'err'); return; }
   say(msg, 'Saving…');
   try {
-    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men, custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props } });
+    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men, custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props, switches: SM.cfg.switches } });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
-    SM.apply({ men, custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props }); customMen = SM.cfg.custom.map(m => ({ ...m })); renderStick(); showDuty();
+    SM.apply({ men, custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props, switches: SM.cfg.switches }); customMen = SM.cfg.custom.map(m => ({ ...m })); renderStick(); showDuty();
     say(msg, 'Saved. The homepage will use it next time it loads.', 'ok');
   } catch (err) { say(msg, 'Couldn’t save. The database may need its stick men update applying first.', 'err'); }
 });
@@ -474,6 +486,19 @@ function readAgents() {
 }
 (async () => { await SM.ready; builtEdits = JSON.parse(JSON.stringify(SM.cfg.edits || {})); customAgents = SM.cfg.agents.map(a => ({ ...a, says: a.says.slice() })); renderAgents(); })();
 
+// ─── Switches: turn the agent processes on and off ───
+(async () => { await SM.ready; const sw = SM.cfg.switches || {}; $('swPatrol').checked = sw.patrol !== false; $('swDesk').checked = sw.desk !== false; $('swCrew').checked = sw.crew !== false; })();
+$('swSave').addEventListener('click', async () => {
+  const msg = $('swMsg'); say(msg, 'Saving…');
+  const switches = {}; if (!$('swPatrol').checked) switches.patrol = false; if (!$('swDesk').checked) switches.desk = false; if (!$('swCrew').checked) switches.crew = false;
+  try {
+    const value = { men: SM.cfg.men, custom: SM.cfg.custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props, switches };
+    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: value });
+    if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
+    SM.apply(value); say(msg, 'Saved. ' + (Object.keys(switches).length ? 'Switched off: ' + Object.keys(switches).map(k => ({ patrol: 'site patrol', desk: 'research desk', crew: 'day crew' })[k]).join(', ') + '.' : 'Everything is on.'), 'ok');
+  } catch (err) { say(msg, 'Couldn’t save the switches.', 'err'); }
+});
+
 // ─── Furniture: choose a room and a piece of furniture from lists and place it ───
 let props = [];
 const fuName = k => (SM.PROP_KINDS.find(x => x[0] === k) || [k, k])[1], fuRoom = p => (SM.ROOMS.find(x => x[0] === p) || [p, p])[1];
@@ -487,7 +512,7 @@ $('fuList').addEventListener('click', e => { const b = e.target.closest('[data-f
 $('fuSave').addEventListener('click', async () => {
   const msg = $('fuMsg'); say(msg, 'Saving…');
   try {
-    const value = { men: SM.cfg.men, custom: SM.cfg.custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props };
+    const value = { men: SM.cfg.men, custom: SM.cfg.custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props, switches: SM.cfg.switches };
     const res = await rpc('jn_set_stickmen', { p_password: password, p_value: value });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
     SM.apply(value); props = SM.cfg.props.map(p => ({ ...p })); renderProps(); say(msg, 'Saved. The Agents page will show it next time it loads.', 'ok');
@@ -503,9 +528,9 @@ $('agSave').addEventListener('click', async () => {
   const shown = Object.keys(edits).map(k => edits[k].name).filter(Boolean).concat(agents.map(a => a.name)); if (new Set(shown).size !== shown.length) { say(msg, 'Two agents have the same name. Make them different.', 'err'); return; }
   say(msg, 'Saving…');
   try {
-    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men: SM.cfg.men, custom: SM.cfg.custom, agents, edits, props: SM.cfg.props } });
+    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men: SM.cfg.men, custom: SM.cfg.custom, agents, edits, props: SM.cfg.props, switches: SM.cfg.switches } });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
-    SM.apply({ men: SM.cfg.men, custom: SM.cfg.custom, agents, edits, props: SM.cfg.props }); builtEdits = JSON.parse(JSON.stringify(SM.cfg.edits)); customAgents = SM.cfg.agents.map(a => ({ ...a, says: a.says.slice() })); renderAgents(); renderStick();
+    SM.apply({ men: SM.cfg.men, custom: SM.cfg.custom, agents, edits, props: SM.cfg.props, switches: SM.cfg.switches }); builtEdits = JSON.parse(JSON.stringify(SM.cfg.edits)); customAgents = SM.cfg.agents.map(a => ({ ...a, says: a.says.slice() })); renderAgents(); renderStick();
     say(msg, 'Saved. The Agents page will use it next time it loads.', 'ok');
   } catch (err) { say(msg, 'Couldn’t save the agents.', 'err'); }
 });

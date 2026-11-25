@@ -2,6 +2,7 @@
 // by the daily Vercel Cron (CRON_SECRET), or forced from the admin page (POST + password).
 // Needs ANTHROPIC_API_KEY and SHIFT_TOKEN, like the Night Shift.
 
+import { switchedOff } from '../lib/switches.js';
 import { runDesk } from '../lib/research.js';
 import { num } from '../lib/models.js';
 
@@ -39,6 +40,7 @@ export default async function handler(req, res) {
 
   let who;
   try { who = await authorised(req); } catch (e) { return res.status(503).json({ ok: false, error: 'Database unavailable' }); }
+  if (who !== 'admin' && await switchedOff('desk')) return res.status(200).json({ ok: true, ran: false, off: true });      // switched off on the admin page
   if (!who) {
     if (req.method !== 'GET') return res.status(401).json({ ok: false, error: 'Not authorised' });
     try {
