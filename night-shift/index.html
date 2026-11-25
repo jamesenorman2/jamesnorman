@@ -513,11 +513,17 @@ const KITS = {
       [0.27, 0.42, 'bench', ['Eating lunch at the kitchen table', 'Reading the guidance over a sandwich', 'Working lunch. Mostly lunch.']],
       [0.55, 0.62, 'point', ['Reading the Act out loud. Nobody’s listening.', 'Tea? I’ll make a pot']]] },
   '/admin/': { title: 'SERVER ROOM',
-    items: [[0.04, 0.78, 0.16, 0.16, 36, 'rack'], [0.22, 0.78, 0.16, 0.16, 36, 'rack'], [0.4, 0.42, 0.3, 0.16, 9, 'desk'], [0.48, 0.5, 0.12, 0.04, 8, 'monitor', 9], [0.8, 0.74, 0.15, 0.16, 16, 'safe'], [0.84, 0.14, 0.1, 0.08, 18, 'fan'], [0.58, 0.46, 0.07, 0.06, 2, 'laptop', 9]],
-    stations: [[0.2, 0.62, 'kick', ['Turning the server off and on again', 'Kicking the server. It’s a fix.']],
-      [0.37, 0.5, 'type', ['Running the site tests', 'Checking every page in a browser']],
-      [0.87, 0.6, 'think', ['Listening to the safe dial', 'Cracking the safe. For science.']],
-      [0.82, 0.3, 'lean', ['Standing in front of the fan', 'Cooling the servers. And me.']]] },
+    // a proper server room: two long rows of racks down the middle with a cold aisle between them, extractor fans on the back wall, and an ops desk and the safe by the door
+    items: [[0.14, 0.64, 0.12, 0.14, 36, 'rack'], [0.28, 0.64, 0.12, 0.14, 36, 'rack'], [0.42, 0.64, 0.12, 0.14, 36, 'rack'], [0.56, 0.64, 0.12, 0.14, 36, 'rack'], [0.7, 0.64, 0.12, 0.14, 36, 'rack'],
+      [0.14, 0.26, 0.12, 0.14, 36, 'rack'], [0.28, 0.26, 0.12, 0.14, 36, 'rack'], [0.42, 0.26, 0.12, 0.14, 36, 'rack'], [0.56, 0.26, 0.12, 0.14, 36, 'rack'], [0.7, 0.26, 0.12, 0.14, 36, 'rack'],
+      [0.08, 0.92, 0.12, 0.05, 18, 'fan'], [0.44, 0.92, 0.12, 0.05, 18, 'fan'], [0.8, 0.92, 0.12, 0.05, 18, 'fan'],
+      [0.02, 0.06, 0.2, 0.13, 9, 'desk'], [0.06, 0.1, 0.1, 0.04, 8, 'monitor', 9], [0.17, 0.09, 0.05, 0.05, 2, 'laptop', 9], [0.86, 0.06, 0.11, 0.14, 16, 'safe']],
+    stations: [[0.2, 0.5, 'kick', ['Turning the server off and on again', 'Kicking the server. It’s a fix.']],
+      [0.5, 0.5, 'type', ['Running the site tests', 'Checking every page in a browser', 'Hot aisle, cold aisle. I have no idea which is which.']],
+      [0.78, 0.5, 'check', ['Counting the blinking lights', 'That one is amber. Is amber bad?', 'Reseating a cable. Gently.']],
+      [0.12, 0.2, 'type', ['At the ops desk, watching the dashboards', 'Everything is green. Suspicious.']],
+      [0.86, 0.3, 'think', ['Listening to the safe dial', 'Cracking the safe. For science.']],
+      [0.5, 0.8, 'lean', ['Standing in front of the fan', 'Cooling the servers. And me.']]] },
   '/blog/': { title: 'NEWSROOM',
     items: [[0.3, 0.42, 0.32, 0.16, 9, 'typewriter'], [0.74, 0.58, 0.17, 0.15, 13, 'printer'], [0.05, 0.9, 0.3, 0.06, 24, 'notice'], [0.86, 0.12, 0.1, 0.1, 16, 'coffee'], [0.52, 0.47, 0.07, 0.06, 2, 'laptop', 9]],
     stations: [[0.27, 0.5, 'type', ['Editing today’s blog post', 'Red pen on the draft. Lots of red pen.']],
@@ -559,6 +565,7 @@ function drawEggs(s) {
 function drawItem(r, it, busy) {
   const [fu, fv, fw, fd, h0, kind, zz, label] = it, t = floor.t, s = SM, h = h0 * s, z0 = (zz || 0) * s;
   const a = at(r, fu, r.upper ? fv + fd : fv), w = fw * r.w, d = fd * r.d;
+  if (r.path === '/admin/' && kind === 'rack') { const c2 = P(a.u + w / 2, a.v + d / 2, z0 + h / 2), e2 = P(a.u + w, a.v + d / 2, z0 + h / 2); hot.eggs.push({ kind: '__admin', x: c2[0], y: c2[1], r: Math.max(16, Math.abs(e2[0] - c2[0]) * 1.2, h * 0.6), at: t }); }      // the server racks: click one to go to the admin page
   if (EGGS[kind]) { const c1 = P(a.u + w / 2, a.v + d / 2, z0 + h / 2), e1 = P(a.u + w, a.v + d / 2, z0 + h / 2); hot.eggs.push({ kind, x: c1[0], y: c1[1], r: Math.max(14, Math.abs(e1[0] - c1[0]) * 1.1, h * 0.55), at: t }); }
   if (kind === 'model') { const c0 = P(a.u + w / 2, a.v + d / 2, h + z0), e0 = P(a.u + w, a.v + d / 2, h + z0); hot.desk = { x: c0[0], y: c0[1], r: Math.max(22, Math.abs(e0[0] - c0[0]) * 1.1), at: t }; }       // the office desk
   if (kind === 'sign') {                          // a sign on the back wall with its own words (the 8th value of the item)
