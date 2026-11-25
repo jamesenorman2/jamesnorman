@@ -559,7 +559,6 @@ function drawEggs(s) {
 function drawItem(r, it, busy) {
   const [fu, fv, fw, fd, h0, kind, zz, label] = it, t = floor.t, s = SM, h = h0 * s, z0 = (zz || 0) * s;
   const a = at(r, fu, r.upper ? fv + fd : fv), w = fw * r.w, d = fd * r.d;
-  if (r.path === '/admin/' && (kind === 'rack' || kind === 'stack')) { const c2 = P(a.u + w / 2, a.v + d / 2, z0 + h / 2), e2 = P(a.u + w, a.v + d / 2, z0 + h / 2); hot.eggs.push({ kind: '__admin', x: c2[0], y: c2[1], r: Math.max(16, Math.abs(e2[0] - c2[0]) * 1.2, h * 0.6), at: t }); }      // the server racks: click one to go to the admin page
   if (EGGS[kind]) { const c1 = P(a.u + w / 2, a.v + d / 2, z0 + h / 2), e1 = P(a.u + w, a.v + d / 2, z0 + h / 2); hot.eggs.push({ kind, x: c1[0], y: c1[1], r: Math.max(14, Math.abs(e1[0] - c1[0]) * 1.1, h * 0.55), at: t }); }
   if (kind === 'model') { const c0 = P(a.u + w / 2, a.v + d / 2, h + z0), e0 = P(a.u + w, a.v + d / 2, h + z0); hot.desk = { x: c0[0], y: c0[1], r: Math.max(22, Math.abs(e0[0] - c0[0]) * 1.1), at: t }; }       // the office desk
   if (kind === 'sign') {                          // a sign on the back wall with its own words (the 8th value of the item)
@@ -567,6 +566,7 @@ function drawItem(r, it, busy) {
     const flick = /what/i.test(label || '') ? (Math.sin(t * 13) > 0.93 || Math.sin(t * 4.1) > 0.985 ? 0.3 : 0.95) : 0.95;
     fx.save(); fx.globalAlpha = flick; poly(q, '#000'); fx.globalAlpha = flick * 0.5; poly([P(u0 + 1.2, vv, z0 + 1.2), P(u1 - 1.2, vv, z0 + 1.2), P(u1 - 1.2, vv, z0 + h - 1.2), P(u0 + 1.2, vv, z0 + h - 1.2)]); fx.restore();
     const cxm = (q[0][0] + q[1][0]) / 2, cym = (q[0][1] + q[2][1]) / 2, px = Math.abs(q[1][0] - q[0][0]), size = Math.min(12 * s, px / Math.max(5, (label || '').length * 0.57));
+    if (/surreal bakery/i.test(label || '')) hot.eggs.push({ kind: '__admin', x: cxm, y: cym, r: Math.max(18, px * 0.55), at: t });      // click the Surreal Bakery sign to go to the admin page
     text(label || '', cxm, cym + size * 0.35, size, flick); return;
   }
   if (kind === 'bunting') {                       // a string of little flags along the back wall: friendly
