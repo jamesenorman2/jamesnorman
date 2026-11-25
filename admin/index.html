@@ -99,6 +99,12 @@
     <div class="row"><button type="submit">Sign in</button></div>
     <div class="msg" id="loginMsg" role="status"></div>
   </form>
+  <div id="emailLogin" style="margin-top:1.4rem">
+    <label for="em">Or sign in with your email</label>
+    <input id="em" type="email" autocomplete="email" placeholder="you@example.com">
+    <div class="row"><button type="button" class="ghost" id="emSend">Email me a sign-in link</button><button type="button" class="ghost" id="emGoogle">Sign in with Google</button></div>
+    <div class="msg" id="emMsg" role="status"></div>
+  </div>
 
   <section id="panel" hidden>
     <div class="tabs" id="adminTabs" role="tablist" aria-label="Admin sections"></div>
@@ -279,17 +285,39 @@ $('login').addEventListener('submit', async e => {
   try {
     const res = await rpc('jn_admin_login', { p_password: $('pw').value });
     if (!res.ok) { say(msg, res.error || 'Wrong password', 'err'); return; }
-    password = $('pw').value;
-    $('login').hidden = true;
-    $('panel').hidden = false;
-    showCurrent();
-    loadIdeas();
-    loadCrewBits();
-    loadStick();
-    loadBackups();
-    $('url').focus();
+    enter($('pw').value);
   } catch (err) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
 });
+function enter(pw) {
+  password = pw;
+  $('login').hidden = true; $('emailLogin').hidden = true;
+  $('panel').hidden = false;
+  showCurrent();
+  loadIdeas();
+  loadCrewBits();
+  loadStick();
+  loadBackups();
+  $('url').focus();
+}
+// Signing in with an email link or Google: the page comes back with a token in the address; the site checks it and, for your address only, lets you in
+$('emSend').addEventListener('click', async () => {
+  const msg = $('emMsg'), email = $('em').value.trim(); if (!email) { say(msg, 'Type your email address first.', 'err'); return; }
+  say(msg, 'Sending…');
+  try { const r = await fetch('/api/admin-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'send', email }) }); const j = await r.json();
+    if (j.setup) { say(msg, j.error, 'err'); return; }
+    say(msg, 'If that address is allowed in, a sign-in link is on its way. Open it on this device.', 'ok'); } catch (e) { say(msg, 'Couldn’t send it. Try again.', 'err'); }
+});
+$('emGoogle').addEventListener('click', () => { location.href = 'https://ynhyylnsbvmdasyyalcg.supabase.co/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(location.origin + '/admin/'); });
+(async () => {
+  const h = new URLSearchParams(location.hash.replace(/^#/, '')), token = h.get('access_token'); if (!token) return;
+  history.replaceState(null, '', location.pathname);                                             // take the token out of the address bar straight away
+  const msg = $('emMsg'); say(msg, 'Signing you in…');
+  try { const r = await fetch('/api/admin-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'session', token }) }); const j = await r.json();
+    if (!j.ok) { say(msg, j.error || 'Couldn’t sign you in.', 'err'); return; }
+    const res = await rpc('jn_admin_login', { p_password: j.password }); if (!res.ok) { say(msg, 'The sign-in worked but the stored password was refused. Check ADMIN_PASSWORD on Vercel.', 'err'); return; }
+    enter(j.password);
+  } catch (e) { say(msg, 'Couldn’t reach the server. Try again.', 'err'); }
+})();
 
 // Oatie Man's ideas, waiting ones first, with Agree / Disagree and a note.
 const escH = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
