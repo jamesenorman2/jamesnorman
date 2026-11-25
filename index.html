@@ -893,7 +893,9 @@ function direct(dt) {
 }
 
 // The drop: punch, change shot, loop round the rectangle; a big break (4 bars+) earns the strobe.
+let lastDropAt = -1e9;                                          // when the last drop landed, for the Agents page's ballroom lights
 function onDrop(breakLen) {
+  lastDropAt = performance.now();
   hit = 1;
   const sheet = source === 'sc' && score && Array.isArray(score.moments) && score.moments.length;
   if (breakLen >= Math.max(6, 16 * music.beat) && !sheet) strobe();
@@ -2219,7 +2221,7 @@ window.JN_SEEK = (url, ms) => {
 };
 // the music as the picture sees it, for the agents page's lasers and screens: how loud it is now, the last big hit, and the track's waveform around the playhead
 window.JN_WAVE = () => {
-  const o = { playing: !!musicOn(), energy, hit, peaks: null };
+  const o = { playing: !!musicOn(), energy, hit, peaks: null, brk: inBreak, build: music.buildUp || 0, dropAgo: (performance.now() - lastDropAt) / 1000 };
   if (wave && scDuration) {
     const pos = scPos + (scPlaying ? performance.now() - scPosAt : 0), n = wave.length, c = (pos / scDuration) * n, half = Math.max(8, Math.round((14000 / scDuration) * n)), out = new Array(56);
     for (let i = 0; i < 56; i++) { const k = Math.max(0, Math.min(n - 1, Math.round(c - half + (i / 55) * 2 * half))); out[i] = Math.max(0, Math.min(1, (wave[k] - waveLo) / (waveHi - waveLo || 1))); }

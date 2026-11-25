@@ -1256,16 +1256,32 @@ const guestPool = () => ['OLD SCHOOL', 'LLOYD', ...DJ_AGENTS.filter(n => RESIDEN
 const niceName = n => n.split(' ').map(w => w[0] + w.slice(1).toLowerCase()).join(' ');            // "OLD SCHOOL" -> "Old School"
 const laser = { k: 0, force: -1, mode: 0, start: 0 };
 // the music as the front page sees it: loudness, hits and the track's waveform around the playhead (a steady pulse if this page is on its own)
-const mus = { e: 0.35, hit: 0, peaks: null, ph: 0 };
+const mus = { e: 0.35, hit: 0, peaks: null, ph: 0, brk: 0, build: 0, drop: 0 };
 function musicTick(dt) {
   let w = null; try { if (window.parent !== window && window.parent.JN_WAVE) w = window.parent.JN_WAVE(); } catch (e) { w = null; }
   const target = w && w.playing ? (w.energy == null ? 0.4 : w.energy) : 0.45 + 0.25 * Math.abs(Math.sin(beatPhase() * Math.PI));
   mus.peaks = w && w.playing ? w.peaks : null;
   mus.hit = Math.max(mus.hit * Math.exp(-dt * 5), w && w.playing ? Math.min(1, w.hit || 0) : 0);
   mus.e += (target - mus.e) * Math.min(1, dt * 9);
-  mus.ph += dt * (0.5 + 2.6 * mus.e + mus.hit);
+  const tb = w && w.playing ? (w.brk || 0) : 0; mus.brk += (tb - mus.brk) * Math.min(1, dt * 3); mus.build = w && w.playing ? (w.build || 0) : 0;      // breaks, build-ups and drops, from the front page
+  mus.drop = Math.max(mus.drop * Math.exp(-dt * 3.5), w && w.playing && w.dropAgo < 0.5 ? 1 : 0);
+  mus.ph += dt * (0.5 + 2.6 * mus.e + mus.hit + 2.2 * mus.build);
 }                                // k: how far the light show is up (0 off, 1 full)
 const lightsOn = () => floor.t < laser.force || beatNow().playing === true;          // the lasers and the mirror ball run while the music does
+// Every five minutes or so: the lights go OUT and the whole ballroom goes UV, for 20 bars
+const uv = { k: 0, until: -1, next: 140 + Math.random() * 120 };
+function uvTick(dt) {
+  const t = floor.t, b = beatNow();
+  if (uv.until < 0 && b.playing === true && !raving() && t > uv.next) {
+    uv.until = t + 20 * 4 * (b.period || 0.484);                                         // 20 bars of four beats
+    bubbles.push({ who: 'NORMAL', text: 'LIGHTS OUT! UV TIME!', t0: t, life: 3 });
+  } else if (uv.until > 0 && (t > uv.until || b.playing !== true)) {
+    uv.until = -1; uv.next = t + 270 + Math.random() * 60;
+    bubbles.push({ who: 'NORMAL', text: 'Lights back up!', t0: t, life: 2.4 });
+  }
+  uv.k += ((uv.until > 0 ? 1 : 0) - uv.k) * Math.min(1, dt * 3);
+}
+window.JN_uv = () => { uv.next = 0; };                                                 // try it from the console
 const guest = { name: null, until: -1, next: 55 + Math.random() * 45, said: 0 };
 let djNext = 6, bqNext = 5, bqWho = 0;
 function startLasers(secs) { laser.force = floor.t + secs; }                  // switch the lights on by hand (for testing)
@@ -1522,7 +1538,7 @@ function drawSmoke(r, sm, s) {
 }
 
 function drawBallroom(r, sm, s) {
-  const k = laser.k, on = k > 0.01, zc = 40 * sm;
+  const dim = 1 - 0.78 * mus.brk, k = laser.k * dim * (1 - uv.k), on = k > 0.01, zc = 40 * sm;      // in a break the lasers pull right back; in the UV all the lights are off
   const corners = [[r.u + 4, r.v + 3], [r.u + r.w - 4, r.v + 3], [r.u + 4, r.v + r.d - 4], [r.u + r.w - 4, r.v + r.d - 4]];
   fx.save(); fx.lineCap = 'round';
   corners.forEach(c => { const q = P(c[0], c[1], zc); fx.globalAlpha = 0.7; fx.strokeRect(q[0] - 2.5 * sm, q[1] - 2 * sm, 5 * sm, 3.5 * sm); });                              // the four laser heads
@@ -1546,8 +1562,30 @@ function drawBallroom(r, sm, s) {
     for (let i = 0; i < 10; i++) { const an = mus.ph * 0.9 + i * Math.PI / 5, q = P(b.u + Math.cos(an) * r.w * (0.1 + 0.12 * mus.e + 0.05 * Math.min(1, mus.hit)), b.v + Math.sin(an) * r.d * (0.18 + 0.2 * mus.e), 0);
       fx.globalAlpha = (0.15 + 0.3 * mus.e + 0.3 * Math.min(1, mus.hit)) * k; fx.beginPath(); fx.moveTo(bc[0], bc[1]); fx.lineTo(q[0], q[1]); fx.stroke(); fx.globalAlpha = 0.7 * k; fx.beginPath(); fx.arc(q[0], q[1], 1.6 * s, 0, 7); fx.fill(); }
   }
+  if (laser.k > 0.01 && !uv.k) {                                                           // a build-up strobes faster and faster, and the drop is a white flash
+    if (mus.build > 0.5 && Math.sin(floor.t * (14 + 10 * ((floor.t * 0.7) % 1))) > 0.2) { fx.globalAlpha = 0.16 * laser.k; fx.fillStyle = '#fff'; fx.beginPath(); [[r.u, r.v], [r.u + r.w, r.v], [r.u + r.w, r.v + r.d], [r.u, r.v + r.d]].forEach(([u, v], i) => { const q = P(u, v, 0); i ? fx.lineTo(q[0], q[1]) : fx.moveTo(q[0], q[1]); }); fx.fill(); }
+    if (mus.drop > 0.03) { fx.globalAlpha = 0.5 * mus.drop * laser.k; fx.fillStyle = '#fff'; fx.beginPath(); [[r.u, r.v], [r.u + r.w, r.v], [r.u + r.w, r.v + r.d], [r.u, r.v + r.d]].forEach(([u, v], i) => { const q = P(u, v, 0); i ? fx.lineTo(q[0], q[1]) : fx.moveTo(q[0], q[1]); }); fx.fill(); }
+  }
   fx.restore();
   drawSmoke(r, sm, s);
+}
+// UV: the room lights are off, the UV tubes glow, and everything in the ballroom goes violet
+function drawUv(r, sm, s) {
+  if (uv.k < 0.01) return;
+  const t = floor.t, top = 62 * sm;
+  fx.save();
+  const quad = () => { fx.beginPath(); [P(r.u - 4, r.v - 2, top), P(r.u + r.w + 4, r.v - 2, top), P(r.u + r.w + 4, r.v + r.d + 3, 0), P(r.u - 4, r.v + r.d + 3, 0)].forEach((q, i) => { i ? fx.lineTo(q[0], q[1]) : fx.moveTo(q[0], q[1]); }); };
+  fx.globalCompositeOperation = 'destination-over'; fx.globalAlpha = 1; fx.fillStyle = '#000'; quad(); fx.fill();                       // black behind everything first, so the tint has something to multiply
+  fx.globalCompositeOperation = 'multiply'; fx.globalAlpha = uv.k; fx.fillStyle = '#9a62ff'; quad(); fx.fill();
+  fx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 5; i++) {                                                                 // the UV tubes along the back wall, and the glow they throw down
+    const u = r.u + r.w * (0.1 + i * 0.2), a = P(u - 14 * sm, r.upper ? r.v : r.v + r.d, 36 * sm), b2 = P(u + 14 * sm, r.upper ? r.v : r.v + r.d, 36 * sm), fl = 0.85 + 0.15 * Math.sin(t * 9 + i * 2);
+    fx.globalAlpha = uv.k * fl; fx.strokeStyle = '#d8b6ff'; fx.lineWidth = 3 * s; fx.beginPath(); fx.moveTo(a[0], a[1]); fx.lineTo(b2[0], b2[1]); fx.stroke();
+    const g = fx.createRadialGradient((a[0] + b2[0]) / 2, a[1] + 26 * s, 0, (a[0] + b2[0]) / 2, a[1] + 26 * s, 58 * s); g.addColorStop(0, 'rgba(150,90,255,0.55)'); g.addColorStop(1, 'rgba(150,90,255,0)');
+    fx.globalAlpha = uv.k * 0.8; fx.fillStyle = g; fx.fillRect((a[0] + b2[0]) / 2 - 58 * s, a[1] - 30 * s, 116 * s, 112 * s);
+  }
+  fx.restore();
+  text('UV', P(r.u + r.w * 0.5, r.upper ? r.v : r.v + r.d, 50 * sm)[0], P(r.u + r.w * 0.5, r.upper ? r.v : r.v + r.d, 50 * sm)[1], 9 * s, 0.5 * uv.k);
 }
 
 // ─── The chill-out room's oil lights: slow coloured oils floating, thrown onto the floor and the back wall ───
@@ -1619,7 +1657,7 @@ function danceMan(x, y, s, a, name, k) {
 
 function drawFloor(dt) {
   hot.eggs.length = 0; sayBudget = floor.t < 6 ? 0 : 3;                   // a quiet first few seconds, then never more than three speech bubbles at once
-  floor.t += dt; syncCustomAgents(); whimPartyTick();
+  floor.t += dt; syncCustomAgents(); whimPartyTick(); uvTick(dt);
   const t = floor.t, s = Math.max(0.6, Math.min(1.8, FW / 1100)), sm = SM, PW = floor.PW, PD = floor.PD;
   fx.clearRect(0, 0, FW, FH);
   fx.strokeStyle = '#fff'; fx.lineWidth = 1; fx.lineCap = 'round'; fx.lineJoin = 'round';
@@ -1733,7 +1771,7 @@ function drawFloor(dt) {
     });
   });
 
-  { const ball = floor.rooms.find(r => r.path === '/music/'); if (ball) { smokeTick(ball, sm, dt); Z.push({ z: ball.v + ball.d + 3, f: () => drawBallroom(ball, sm, s) }); } }
+  { const ball = floor.rooms.find(r => r.path === '/music/'); if (ball) { smokeTick(ball, sm, dt); Z.push({ z: ball.v + ball.d + 3, f: () => drawBallroom(ball, sm, s) }); Z.push({ z: 1e6 - 2, f: () => drawUv(ball, sm, s) }); } }
   { const chill = floor.rooms.find(r => r.path === '/security/layers/'); if (chill) { Z.push({ z: chill.v - 0.5, f: () => drawChillOut(chill, sm, s, 'floor') }); Z.push({ z: (chill.upper ? chill.v : chill.v + chill.d) + 0.2, f: () => drawChillOut(chill, sm, s, 'wall') }); } }
 
   if (fam.phase !== 'wait') {
