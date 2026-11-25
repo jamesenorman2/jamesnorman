@@ -322,7 +322,10 @@ function layout() {
   const r = fcv.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
   FW = r.width; FH = r.height; fcv.width = FW * d; fcv.height = FH * d; fx.setTransform(d, 0, 0, d, 0, 0);
   const pages = (floor.shift && floor.shift.patrol || []).filter(p => !/\.(css|js|json)$/.test(p.path)).slice(0, 12);
-  const list = pages.length ? pages : Object.keys(NAMES).map(path => ({ path, ok: true }));
+  const list0 = pages.length ? pages : Object.keys(NAMES).map(path => ({ path, ok: true }));
+  // the floor plan: the Bar sits at the top, to the right of the chill-out room, and the Office takes the Bar's old place on the bottom row
+  const ORDER = ['/', '/music/', '/security/', '/security/layers/', '/bar/', '/security/martyns-law/', '/night-shift/', '/admin/', '/blog/', '/security/cpted/', '/about/'];
+  const list = list0.slice().sort((a, b) => { const i = ORDER.indexOf(a.path), j = ORDER.indexOf(b.path); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
   ISO.sh = FW < 700 ? 0.06 : 0.16;
   const m = 10, wallH = layout.wh || 34, lab = 26;                       // lab: a strip above and below for the room names
   const PD = (FH - 2 * m - wallH - 2 * lab) / ISO.sq, PW = FW - 2 * m - PD * ISO.sh;
@@ -444,16 +447,21 @@ const KITS = {
       [0.76, 0.71, 'dance', ['Spinning round on the turntable podium!', 'Whoa, I’m going round and round!', 'Look at me go: 360 degrees!'], 8, 0.14, 'spin']] },
   // THE BAR: a proper pub. A long counter with stools and a barman, bottles and a green neon OPEN sign, a jukebox, a dartboard on the wall and a spin-for-a-drink wheel.
   '/bar/': { title: 'BAR', stay: ['HARRY'],
-    items: [[0.04, 0.9, 0.5, 0.05, 24, 'bottles'], [0.6, 0.86, 0.36, 0.1, 22, 'spinwheel'], [0.04, 0.08, 0.3, 0.05, 22, 'neon'], [0.84, 0.1, 0.12, 0.1, 30, 'jukebox'],
-      [0.08, 0.52, 0.56, 0.12, 13, 'barcounter'], [0.12, 0.72, 0.05, 0.05, 8, 'stool'], [0.27, 0.72, 0.05, 0.05, 8, 'stool'], [0.42, 0.72, 0.05, 0.05, 8, 'stool'], [0.57, 0.72, 0.05, 0.05, 8, 'stool'],
-      [0.95, 0.56, 0.03, 0.18, 16, 'dartboard', 14], [0.0, 0.3, 0.05, 0.07, 10, 'plant']],
-    stations: [[0.36, 0.42, 'check', ['Shaking a Negroni. Stirring it. Whatever.', 'Spin for a drink? SPIN FOR A DRINK.', 'Two olives or three?', 'Flipping the shaker. Nailed it.', 'Last orders! …I’m joking. It’s always early.']],
-      [0.15, 0.78, 'bench', ['Just the one. Possibly four.', 'Tonic. With a tiny umbrella.', 'This stool is the best stool', 'Barman, surprise me!'], 5],
-      [0.45, 0.78, 'bench', ['I’ll have what the DJ’s having', 'Cheers! Everyone’s lovely!', 'Is it cocktail o’clock? It is now.'], 5],
-      [0.88, 0.3, 'check', ['Picking a tune on the jukebox', 'B7. Always B7.', 'Putting on something we can all sing to']],
-      [0.78, 0.8, 'point', ['Spinning the wheel!', 'It landed on tequila. Of course.', 'Round and round she goes!']],
-      [0.86, 0.66, 'point', ['Bullseye!', 'Double top. Or the wall.', 'Darts: where skill meets guesswork']],
-      [0.55, 0.42, 'dance', ['Dancing behind the bar. Nobody’s watching.', 'Jukebox is ON. Dance break!']]] },
+    items: [[0.04, 0.9, 0.92, 0.05, 26, 'bottles'], [0.6, 0.8, 0.3, 0.1, 22, 'spinwheel'], [0.04, 0.08, 0.3, 0.05, 22, 'neon'], [0.86, 0.1, 0.1, 0.1, 30, 'jukebox'],
+      [0.06, 0.58, 0.88, 0.12, 14, 'barcounter'],
+      [0.1, 0.4, 0.05, 0.05, 8, 'stool'], [0.24, 0.4, 0.05, 0.05, 8, 'stool'], [0.38, 0.4, 0.05, 0.05, 8, 'stool'], [0.52, 0.4, 0.05, 0.05, 8, 'stool'], [0.66, 0.4, 0.05, 0.05, 8, 'stool'], [0.8, 0.4, 0.05, 0.05, 8, 'stool'],
+      [0.12, 0.2, 0.12, 0.1, 7, 'table'], [0.4, 0.2, 0.12, 0.1, 7, 'table'], [0.68, 0.2, 0.12, 0.1, 7, 'table'],
+      [0.96, 0.4, 0.03, 0.18, 16, 'dartboard', 14], [0.0, 0.3, 0.05, 0.07, 10, 'plant']],
+    stations: [[0.3, 0.76, 'check', ['Shaking a Negroni. Stirring it. Whatever.', 'Spin for a drink? SPIN FOR A DRINK.', 'Two olives or three?', 'Flipping the shaker. Nailed it.', 'Last orders! …I’m joking. It’s always early.']],
+      [0.12, 0.34, 'bench', ['Just the one. Possibly four.', 'Tonic. With a tiny umbrella.', 'This stool is the best stool', 'Barman, surprise me!'], 5],
+      [0.26, 0.34, 'bench', ['I’ll have what the DJ’s having', 'Cheers! Everyone’s lovely!', 'Is it cocktail o’clock? It is now.'], 5],
+      [0.54, 0.34, 'bench', ['Another round, please', 'Whose round is it? Not mine.'], 5],
+      [0.82, 0.34, 'bench', ['A tiny umbrella in every drink. Why?', 'Barman: you’re doing great'], 5],
+      [0.9, 0.3, 'check', ['Picking a tune on the jukebox', 'B7. Always B7.', 'Putting on something we can all sing to']],
+      [0.78, 0.72, 'point', ['Spinning the wheel!', 'It landed on tequila. Of course.', 'Round and round she goes!']],
+      [0.9, 0.5, 'point', ['Bullseye!', 'Double top. Or the wall.', 'Darts: where skill meets guesswork']],
+      [0.16, 0.12, 'think', ['Nursing a drink at the table', 'Table for one. And a drink for one.']],
+      [0.62, 0.76, 'dance', ['Dancing behind the bar. Nobody’s watching.', 'Jukebox is ON. Dance break!']]] },
   // THE TOILETS: communal, and rather grand: cubicles down both sides, a row of basins with mirrors along the back, and a fountain in the middle.
   '/about/': { title: 'TOILETS',
     items: [[0.02, 0.04, 0.2, 0.3, 15, 'cubicle'], [0.24, 0.04, 0.2, 0.3, 15, 'cubicle'], [0.56, 0.04, 0.2, 0.3, 15, 'cubicle'], [0.78, 0.04, 0.2, 0.3, 15, 'cubicle'],
@@ -656,12 +664,22 @@ function drawItem(r, it, busy) {
     const wt = 2;
     block(a.u, a.v, wt, d, h); block(a.u + w - wt, a.v, wt, d, h);                                   // side partitions
     block(a.u, r.upper ? a.v : a.v + d - wt, w, wt, h);                                                // back wall
-    const tw = w * 0.42, td = d * 0.3, tu = a.u + w / 2 - tw / 2, tv = r.upper ? a.v + 2 : a.v + d - td - 2;
-    const T = block(tu, tv, tw, td, 7 * s);                                                           // the toilet
+    // a proper toilet: a cistern against the back wall with a flush handle, a pedestal bowl in front with the seat ring and water, and a loo roll on the partition
+    const tw = w * 0.5, td = d * 0.36, tu = a.u + w / 2 - tw / 2, cdep = td * 0.3, bdep = td * 0.7;
+    const cv0 = r.upper ? a.v + 2 : a.v + d - 2 - cdep, bv0 = r.upper ? a.v + 2 + cdep : a.v + d - 2 - cdep - bdep;
+    block(tu + tw * 0.1, cv0, tw * 0.8, cdep, 15 * s);                                                  // the cistern
+    block(tu + tw * 0.2, bv0, tw * 0.6, bdep, 6 * s);                                                   // the pedestal
+    const sc = P(tu + tw / 2, bv0 + bdep * 0.5, 6.5 * s), rx = tw * 0.42, ry = bdep * ISO.sq * 0.5;
+    fx.beginPath(); fx.ellipse(sc[0], sc[1], rx, ry, 0, 0, 7); fx.fillStyle = '#000'; fx.fill(); fx.stroke();       // the seat ring
+    fx.beginPath(); fx.ellipse(sc[0], sc[1] + ry * 0.05, rx * 0.62, ry * 0.62, 0, 0, 7); fx.stroke();                // the bowl
+    const hd = P(tu + tw * 0.78, cv0 + cdep * 0.5, 15 * s); seg(hd, [hd[0] + 4 * s, hd[1] - 1.5 * s]);                  // the flush handle
     if (busy) {                                                                                       // lid down, and being drummed
-      const c = T.top(0.5, 0.5, 0.5 * s); fx.beginPath(); fx.ellipse(c[0], c[1], tw * 0.45, td * 0.45 * ISO.sq * 2, 0, 0, 7); fx.stroke();
-      if (Math.floor(t * 4) % 2 === 0) text(['BANG', 'ba-dum', 'tss'][Math.floor(t * 4) % 3], c[0] + 10 * s, c[1] - 14 * s, 7 * s, 0.8);
-    } else { const c = T.top(0.5, r.upper ? 0.1 : 0.9); seg(c, [c[0], c[1] - 9 * s]); seg([c[0] - tw * 0.35, c[1] - 9 * s], [c[0] + tw * 0.35, c[1] - 9 * s]); }   // lid up
+      fx.beginPath(); fx.ellipse(sc[0], sc[1] - 1.5 * s, rx * 0.98, ry * 0.98, 0, 0, 7); fx.fillStyle = '#000'; fx.fill(); fx.stroke();
+      if (Math.floor(t * 4) % 2 === 0) text(['BANG', 'ba-dum', 'tss'][Math.floor(t * 4) % 3], sc[0] + 12 * s, sc[1] - 16 * s, 7 * s, 0.8);
+    } else {                                                                                          // lid up, leaning on the cistern
+      const lc = P(tu + tw / 2, bv0 + 1, 12.5 * s); fx.beginPath(); fx.ellipse(lc[0], lc[1], rx * 0.78, 5.5 * s, 0, 0, 7); fx.stroke();
+    }
+    const rl = P(a.u + wt, a.v + d * (r.upper ? 0.5 : 0.5), 9 * s); fx.beginPath(); fx.arc(rl[0], rl[1], 1.7 * s, 0, 7); fx.stroke(); seg([rl[0], rl[1] + 1.7 * s], [rl[0] + 1.5 * s, rl[1] + 5 * s]);     // the loo roll
     const door = P(a.u + w * 0.1, r.upper ? a.v + d : a.v, 0), dt2 = P(a.u + w * 0.55, r.upper ? a.v + d + d * 0.25 : a.v - d * 0.25, 0);
     fx.beginPath(); fx.moveTo(door[0], door[1]); fx.lineTo(dt2[0], dt2[1]); fx.lineTo(dt2[0], dt2[1] - h); fx.lineTo(door[0], door[1] - h); fx.closePath(); fx.fillStyle = '#000'; fx.fill(); fx.stroke();   // door ajar
     fx.restore(); return; }
