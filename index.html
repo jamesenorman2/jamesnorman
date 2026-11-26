@@ -411,9 +411,9 @@ async function chosenTrack() {
 }
 
 // Choose at random from a list, avoiding what this browser played recently.
-// Every track in the catalogue can come up; the newest are only slightly more likely (the newest about
-// 1.4 times as likely as the oldest), so old tracks still turn up often.
-const trackWeight = (p, n) => 1 + 0.4 * (1 - (p.rank || 0) / Math.max(1, n - 1));
+// Every track in the catalogue can come up; the newest ten lean a little more likely (about 1.7 times each),
+// so the rest of the discography still turns up plenty.
+const trackWeight = (p, n) => (p.rank || 0) < 10 ? 1.7 : 1;                   // the newest ten are a bit more likely (about 1.7 times); everything older is equal
 function weightedPick(list, n) {
   let total = 0; for (const p of list) total += trackWeight(p, n);
   let r = Math.random() * total;
