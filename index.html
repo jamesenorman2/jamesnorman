@@ -1247,7 +1247,7 @@ function autoGlow() {
 // The light director: effects take turns a phrase at a time (16 beats), so the show has a shape.
 // Each phrase gets one scene, which runs for the first part of the phrase and then leaves space.
 let scene = 'rest', sceneEnd = 0, nextPhrase = 0, sceneI = 0, sceneColour = 'green';
-const SCENES = ['mounted', 'fan', 'delaunay', 'web', 'mounted', 'rivers', 'scan', 'rgb', 'mounted', 'uv', 'fan', 'contour', 'web', 'shine', 'lissajous', 'glow', 'fan', 'fourier'];   // the RGB laser: one phrase in eleven
+const SCENES = ['mounted', 'fan', 'delaunay', 'web', 'mounted', 'rivers', 'scan', 'rgb', 'mounted', 'uv', 'fan', 'contour', 'web', 'shine', 'glow', 'fan', 'fourier'];   // the RGB laser: one phrase in eleven
 function playScene(name, colour) {
   scene = name; sceneColour = colour;
   if (name === 'mounted' || name === 'fan' || name === 'rgb') fireMoment({ type: 'laser', mount: name === 'mounted' || (name === 'rgb' && Math.random() < 0.5), rgb: name === 'rgb', colour });
@@ -1582,7 +1582,7 @@ window.JN_lightning = n => { lastBolt = -99; strikeLightning(n || 1); };   // tr
 // fourier: spinning circles (a Fourier series) tracing a ridge line, sharpening as harmonics join
 // lissajous: a 3D Lissajous knot above a peak, turning with the tempo
 // rivers: light running downhill along the steepest descent from the peaks
-const MATH = ['contour', 'delaunay', 'fourier', 'lissajous', 'rivers'];
+const MATH = ['contour', 'delaunay', 'fourier', 'rivers'];   // (the red Lissajous knot was taken out: it looked messy over the terrain)
 let math = null;
 function startMath(kind, colour, life) {
   math = { kind, t0: clockT, life: life || 9, colour: PALETTE[colour] || colour || PALETTE.cyan, beatI: -1 };
