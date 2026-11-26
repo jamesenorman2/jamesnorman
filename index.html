@@ -300,7 +300,7 @@ html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
 <div class="drop">Release to play</div>
 <input type="file" id="file" accept="audio/*">
 
-<script src="/assets/stickmen.js?v=13"></script>
+<script src="/assets/stickmen.js?v=14"></script>
 <script>
 (() => {
 'use strict';
@@ -2892,7 +2892,7 @@ window.JN_family = () => { chairBusy = false; familyParade(true); };
 
 // ─── Agent Sanassi: runs on in his red shorts, does a daft kneeling, bending-down, stabbing-hands dance, shouts "Seven more.", runs off and climbs a building ───
 let lastSans = -1e9;
-const sansHere = () => (SM.cfg.agents || []).some(a => a.enabled && a.name === 'SANASSI');
+const sansHere = () => SM.on('sanassi') && (SM.cfg.agents || []).some(a => a.enabled && a.name === 'SANASSI');
 function sansRun(force) {
   if (!force && !musicOn()) return;
   const el = $('sansRun');
@@ -2921,10 +2921,10 @@ function sansRun(force) {
       const sh = [hip[0] + S(lean) * 14, hip[1] - C(lean) * 14 + bob], hd = [sh[0] + S(lean) * 6.5, sh[1] - C(lean) * 6.5], st = ph => [sh[0] + 7 + 5 * C(ph), G - 3 - 7 * (0.5 + 0.5 * S(ph))];
       const hA = st(u * 11), hB = st(u * 11 + Math.PI), eA = [(sh[0] + hA[0]) / 2 + 3, (sh[1] + hA[1]) / 2 - 3], eB = [(sh[0] + hB[0]) / 2 + 3, (sh[1] + hB[1]) / 2 - 3];
       d = circ(hd[0], hd[1], 5) + `M${pt(...hip)}L${pt(...sh)}` + limb(hip, kn, ft) + limb(hip, k2, f2) + limb(sh, eA, hA) + limb(sh, eB, hB); hx = hip[0]; hy = hip[1]; nx = cx; top = hd[1] - 6;
-      if (u > 0.6 && u < 2.6) msg = pickOneStable(['Stab stab stab stab!', 'Eat that, floor!']);
-      if (u > 3 && u < 5.2) msg = 'Stab. Stab. Stab. Stab.';
+      if (u > 0.6 && u < 2.6) msg = pickOneStable(SM.lines('sanassi', 'dance'));
+      if (u > 3 && u < 5.2) msg = SM.say('sanassi', 'stab') || 'Stab.';
     } else if (t < tShout) {                                                     // standing up to shout
-      const f = famFig(cx, G, 1, 0, { arms: 'up', idle: true, t, hop: Math.abs(S(t * 14)) * 2 }); d = f.d; hx = cx; hy = G - 19 - Math.abs(S(t * 14)) * 2; top = f.top; msg = 'SEVEN MORE.';
+      const f = famFig(cx, G, 1, 0, { arms: 'up', idle: true, t, hop: Math.abs(S(t * 14)) * 2 }); d = f.d; hx = cx; hy = G - 19 - Math.abs(S(t * 14)) * 2; top = f.top; msg = SM.say('sanassi', 'shout') || 'SEVEN MORE.';
     } else if (t < tGo) {                                                        // and off he runs, to the building
       const k = (t - tShout) / (tGo - tShout), x = cx + (xw - 9 - cx) * k, f = famFig(x, G, 1, t * 22, { walking: true, arms: 'swing', hop: Math.abs(S(t * 22)) * 2 }); d = f.d; hx = x; hy = G - 19 - Math.abs(S(t * 22)) * 2; nx = x; top = f.top;
     } else if (t < tClimb) {                                                     // up the wall, hand over hand
@@ -2936,7 +2936,7 @@ function sansRun(force) {
     } else {                                                                      // on the roof, waving
       const roof = G - BH, x = xw + bw * 0.5, w = S((t - tClimb) * 9) * 4, hip = [x, roof - 20], sh = [x, roof - 34], hd = [x, roof - 40];
       d = circ(hd[0], hd[1], 5) + `M${pt(...hip)}L${pt(...sh)}` + limb(hip, [x - 4, roof - 10], [x - 5, roof]) + limb(hip, [x + 4, roof - 10], [x + 5, roof]) + limb(sh, [x - 8, sh[1] + 2], [x - 12, sh[1] + 11]) + limb(sh, [x + 8, sh[1] - 4], [x + 11 + w, sh[1] - 15]);
-      hx = hip[0]; hy = hip[1]; nx = x; top = hd[1] - 6; if (t - tClimb < 1.6) msg = 'Seven more floors!';
+      hx = hip[0]; hy = hip[1]; nx = x; top = hd[1] - 6; if (t - tClimb < 1.6) msg = SM.say('sanassi', 'climb') || 'Seven more floors!';
       if (t > tRoof) el.style.opacity = Math.max(0, 1 - (t - tRoof) / 1.2);
     }
     F.setAttribute('d', d); SH.setAttribute('d', shorts(hx, hy)); N.setAttribute('x', nx); N.setAttribute('y', 258);

@@ -126,7 +126,7 @@
 
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
-<script src="/assets/stickmen.js?v=13"></script>
+<script src="/assets/stickmen.js?v=14"></script>
 <script src="/assets/housefx.js?v=3"></script>
 <script>
 (() => {
@@ -1546,27 +1546,37 @@ function drawPrints(sm) {                          // small pale paw prints (a p
 // lasers in the corners, beams from the mirror ball, and a wash of colour: only in the ballroom, and only while the music is playing
 let spinAng = 0;
 // The smoke machine in the ballroom corner: a burst of smoke every five minutes (the first one soon after the page opens)
-const smoke = { next: 25, burst: 0, last: 0, emit: 0, puffs: [] };
+// Four smoke machines, one in each corner of the ballroom. Only one is ever on at a time: every so often a different corner puffs for a few seconds, then they all rest.
+const smoke = { next: 25, burst: 0, last: -1, cur: -1, emit: 0, puffs: [] };
+const MACHINES = [{ cu: 1, cv: 1 }, { cu: -1, cv: 1 }, { cu: 1, cv: -1 }, { cu: -1, cv: -1 }];            // which side of the room each one is on (right/left, back/front)
+const machinePos = (r, m, sm) => ({ u: m.cu > 0 ? r.u + r.w - 16 * sm : r.u + 7 * sm, v: m.cv > 0 ? r.v + r.d - 14 * sm : r.v + 7 * sm });
 function smokeTick(r, sm, dt) {
   const t = floor.t;
-  if (t > smoke.next) { smoke.burst = t + 7; smoke.next = t + 300; }
-  if (t < smoke.burst && t > smoke.emit) {
+  if (t > smoke.burst && t > smoke.next) {                                                                  // only when no machine is running
+    let k; do k = Math.floor(Math.random() * 4); while (k === smoke.last);
+    smoke.cur = smoke.last = k; smoke.burst = t + 6 + Math.random() * 3; smoke.next = smoke.burst + 45 + Math.random() * 75;
+  }
+  if (t < smoke.burst && smoke.cur >= 0 && t > smoke.emit) {
+    const m = MACHINES[smoke.cur], p = machinePos(r, m, sm), toU = -m.cu, toV = -m.cv;                     // the smoke is pushed out towards the middle of the room
     smoke.emit = t + 0.11;
-    for (let i = 0; i < 2; i++) smoke.puffs.push({ u: r.u + r.w - 12 * sm + (Math.random() - 0.5) * 4 * sm, v: r.v + r.d - 10 * sm + (Math.random() - 0.5) * 4 * sm, z: 7 * sm, vu: (-0.4 - Math.random() * 1.2) * 14 * sm, vv: (Math.random() - 0.5) * 14 * sm, vz: (9 + Math.random() * 8) * sm, t0: t, life: 7 + Math.random() * 3, r0: 3 + Math.random() * 2, spin: Math.random() * 6 });
+    for (let i = 0; i < 2; i++) smoke.puffs.push({ u: p.u + 4.5 * sm + (Math.random() - 0.5) * 4 * sm, v: p.v + 3.5 * sm + (Math.random() - 0.5) * 4 * sm, z: 7 * sm, vu: toU * (0.4 + Math.random() * 1.2) * 14 * sm, vv: toV * (0.2 + Math.random() * 0.8) * 8 * sm + (Math.random() - 0.5) * 8 * sm, vz: (9 + Math.random() * 8) * sm, t0: t, life: 7 + Math.random() * 3, r0: 3 + Math.random() * 2, spin: Math.random() * 6 });
     if (smoke.puffs.length > 90) smoke.puffs.splice(0, smoke.puffs.length - 90);
   }
   smoke.puffs = smoke.puffs.filter(q => t - q.t0 < q.life);
   for (const q of smoke.puffs) { q.u += q.vu * dt; q.v += q.vv * dt; q.z += q.vz * dt; q.vu *= 1 - 0.25 * dt; q.vz *= 1 - 0.18 * dt; }
 }
+window.JN_smoke = () => ({ on: floor.t < smoke.burst ? smoke.cur : -1, puffs: smoke.puffs.length });       // which corner machine is puffing (-1: none), to check from the console
 const laserLit = { k: 0, rgb: [1, 1, 1] };                                       // the colour the lasers are throwing, so the smoke can catch it
 const hexRgb = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
 function drawSmoke(r, sm, s) {
   const t = floor.t;
-  // the machine itself: a small box with a nozzle and a pilot light
-  fx.save(); fx.globalAlpha = 0.9;
-  const mu = r.u + r.w - 16 * sm, mv = r.v + r.d - 14 * sm, B = block(mu, mv, 9 * sm, 7 * sm, 6 * sm);
-  const nz = B.top(0.5, 0.5, 1 * sm); fx.beginPath(); fx.arc(nz[0], nz[1], 1.4 * sm, 0, 7); fx.stroke();
-  if (t < smoke.burst) { fx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 25); fx.beginPath(); fx.arc(B.x + B.w * 0.8, B.y + B.h * 0.5, 0.9 * sm, 0, 7); fx.fillStyle = '#ff4a3a'; fx.fill(); }
+  // the machines themselves, one in each corner: a small box with a nozzle and a pilot light (red while that one is puffing)
+  fx.save();
+  MACHINES.forEach((m, k) => {
+    fx.globalAlpha = 0.9; const p = machinePos(r, m, sm), B = block(p.u, p.v, 9 * sm, 7 * sm, 6 * sm);
+    const nz = B.top(0.5, 0.5, 1 * sm); fx.beginPath(); fx.arc(nz[0], nz[1], 1.4 * sm, 0, 7); fx.stroke();
+    if (t < smoke.burst && smoke.cur === k) { fx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 25); fx.beginPath(); fx.arc(B.x + B.w * 0.8, B.y + B.h * 0.5, 0.9 * sm, 0, 7); fx.fillStyle = '#ff4a3a'; fx.fill(); }
+  });
   fx.restore();
   if (!smoke.puffs.length) return;
   if (HFX.ok) {                                                                        // wispy puffs that glow with whatever the lasers are throwing through them

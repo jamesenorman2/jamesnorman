@@ -89,6 +89,13 @@
         { key: 'silly', when: 'While they trot along', lines: ['Mum, wait for us!', 'Are we nearly there?', 'I’m a train! Choo choo!', 'Mum, Aragon’s eating my sock'] },
         { key: 'baby', when: 'The baby', lines: ['Da-da! DA-DA!', 'Goo goo! Mama!', 'Ba ba ba!'] }
       ] },
+    { id: 'sanassi', agent: 'SANASSI', name: 'Sanassi (red shorts, the stabbing dance)', does: 'A main player, now and then while music plays. Agent Sanassi runs on in his red shorts, does a daft kneeling, bending-down, stabbing-hands dance, shouts “SEVEN MORE.”, runs off and climbs a building. He only appears while the agent called Sanassi is switched on.',
+      slots: [
+        { key: 'dance', when: 'While he stabs the floor', lines: ['Stab stab stab stab!', 'Eat that, floor!'] },
+        { key: 'stab', when: 'The long stabbing bit', lines: ['Stab. Stab. Stab. Stab.'] },
+        { key: 'shout', when: 'He leaps up and shouts', lines: ['SEVEN MORE.'] },
+        { key: 'climb', when: 'Climbing the building', lines: ['Seven more floors!'] }
+      ] },
     { id: 'corner', name: 'The little stick man in the corner', does: 'The small white stick man at the bottom left of the screen. Click him and one of the others above (or one of your own below) comes on at random. He doesn’t say anything himself.', slots: [] }
   ];
 
@@ -152,7 +159,7 @@
     // Who can be due: every agent that has at least one stick man switched on. If nobody does, everybody can be.
     candidates() {
       const set = new Set();
-      DEFAULTS.forEach(d => { const a = SM.agentOf(d.id); if (d.id !== 'corner' && d.id !== 'family' && SM.on(d.id) && a !== '*') set.add(a); });   // the family is always about: it doesn't take a turn
+      DEFAULTS.forEach(d => { const a = SM.agentOf(d.id); if (d.id !== 'corner' && d.id !== 'family' && d.id !== 'sanassi' && SM.on(d.id) && a !== '*') set.add(a); });   // the family is always about: it doesn't take a turn
       SM.customs().forEach(m => set.add(m.agent));
       const c = AGENTS.filter(a => set.has(a));
       return c.length ? c : AGENTS.slice();
