@@ -107,7 +107,8 @@
           id: clean(a && a.id, 30) || 'agent' + i, name: clean(a && a.name, 24).toUpperCase(), does: clean(a && a.does, 300), says: cleanLines(a && a.says),
           room: ROOMS.some(r => r[0] === (a && a.room)) ? a.room : '', roam: ['sometimes', 'often'].includes(a && a.roam) ? a.roam : '', enabled: !(a && a.enabled === false)
         })).filter(a => a.name && !BASE_AGENTS.includes(a.name));
-        if (saved.switches && typeof saved.switches === 'object') for (const k of ['patrol', 'desk', 'crew']) if (saved.switches[k] === false) c.switches[k] = false;      // the agent processes switched off on the admin page
+        if (saved.switches && typeof saved.switches === 'object') for (const k of ['patrol', 'desk', 'crew']) if (saved.switches[k] === false) c.switches[k] = false;
+        if (saved.switches && saved.switches.gl === true) c.switches.gl = true;                                   // the front visual drawn on the graphics chip (admin switch, off unless set)      // the agent processes switched off on the admin page
         if (Array.isArray(saved.props)) c.props = saved.props.slice(0, 60).map((p, i) => ({                       // furniture you placed from the admin picker
           id: clean(p && p.id, 30) || 'prop' + i, room: ROOMS.some(r => r[0] === (p && p.room)) ? p.room : '', kind: PROP_KINDS.some(k => k[0] === (p && p.kind)) ? p.kind : '',
           fu: Math.max(0.02, Math.min(0.95, Number(p && p.fu) || 0.5)), fv: Math.max(0.02, Math.min(0.95, Number(p && p.fv) || 0.5))

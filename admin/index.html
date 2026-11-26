@@ -209,6 +209,7 @@
       <div style="display:grid;gap:.5rem;margin:.6rem 0">
         <label><input type="checkbox" id="swPatrol"> Site patrol and the daily agents (the shifts, handover and idea pitches)</label>
         <label><input type="checkbox" id="swDesk"> Research desk and blog (the news briefs, incident round-up and the daily post)</label>
+        <label><input type="checkbox" id="swGl"> Front visual drawn on the graphics chip (WebGL, with a soft glow): experimental, switch it on to try it</label>
         <label><input type="checkbox" id="swCrew"> Day crew (the small daily agents: quiz, pigeon, grumble and the rest)</label>
       </div>
       <div class="row"><button type="button" id="swSave">Save switches</button></div>
@@ -245,7 +246,7 @@
 </main>
 
 <script src="https://w.soundcloud.com/player/api.js"></script>
-<script src="/assets/stickmen.js?v=11"></script>
+<script src="/assets/stickmen.js?v=12"></script>
 <script>
 (() => {
 'use strict';
@@ -552,10 +553,10 @@ $('catAdd').addEventListener('click', async () => {
 $('catList').addEventListener('click', async e => { const b = e.target.closest('[data-curl]'); if (!b) return; const res = await rpc('jn_catalogue_remove', { p_password: password, p_url: b.dataset.curl }); if (res.ok) loadCatalogue(); });
 
 // ─── Switches: turn the agent processes on and off ───
-(async () => { await SM.ready; const sw = SM.cfg.switches || {}; $('swPatrol').checked = sw.patrol !== false; $('swDesk').checked = sw.desk !== false; $('swCrew').checked = sw.crew !== false; })();
+(async () => { await SM.ready; const sw = SM.cfg.switches || {}; $('swPatrol').checked = sw.patrol !== false; $('swDesk').checked = sw.desk !== false; $('swCrew').checked = sw.crew !== false; $('swGl').checked = sw.gl === true; })();
 $('swSave').addEventListener('click', async () => {
   const msg = $('swMsg'); say(msg, 'Saving…');
-  const switches = {}; if (!$('swPatrol').checked) switches.patrol = false; if (!$('swDesk').checked) switches.desk = false; if (!$('swCrew').checked) switches.crew = false;
+  const switches = {}; if (!$('swPatrol').checked) switches.patrol = false; if (!$('swDesk').checked) switches.desk = false; if (!$('swCrew').checked) switches.crew = false; if ($('swGl').checked) switches.gl = true;
   try {
     const value = { men: SM.cfg.men, custom: SM.cfg.custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props, switches };
     const res = await rpcStick({ p_password: password, p_value: value });
