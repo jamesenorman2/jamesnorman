@@ -94,7 +94,7 @@
 <main>
   <a class="home" href="/">&larr; Home</a>
   <h1>Admin</h1>
-  <p class="sub">Normally the homepage plays a random pick from the agents. Set a song here to play that instead for everyone; “Use my latest uploads” clears it and goes back to the agents’ picks.</p>
+  <p class="sub">You have entered the secret domain. Enter at your own risk.</p>
 
   <form id="login">
     <label for="pw">Password</label>
@@ -221,7 +221,11 @@
     <div class="card" style="margin-top:1rem">
       <div class="k">3D front visual (WebGL)</div>
       <div class="v">Draws the front-page lines on the graphics chip with a soft glow that pulses on the kicks. Experimental and off by default. If a visitor's device doesn't support it, they get the normal drawing. Tick it and press Save to turn it on for everyone, or untick it to go back.</div>
-      <div style="margin:.6rem 0"><label><input type="checkbox" id="swGl"> Turn the 3D front visual on</label></div>
+      <div style="display:grid;gap:.5rem;margin:.6rem 0">
+        <label><input type="checkbox" id="swGl"> Front visual: glow (soft bloom round the lines, a colour fringe on the hits)</label>
+        <label><input type="checkbox" id="swGlTerrain"> Front visual: 3D terrain (needs the glow on: solid ridges that hide the lines behind, peaks that take the colour, a camera that drifts with the music, soft out-of-focus lines)</label>
+        <label><input type="checkbox" id="swGlHouse"> Agents house: light effects (beams, smoke that catches the lasers, UV tube glow)</label>
+      </div>
       <div class="v" id="glState" style="margin:.2rem 0"></div>
       <div class="row"><button type="button" id="glSave">Save 3D switch</button></div>
       <div class="msg" id="glMsg" role="status"></div>
@@ -266,7 +270,7 @@
 </main>
 
 <script src="https://w.soundcloud.com/player/api.js"></script>
-<script src="/assets/stickmen.js?v=12"></script>
+<script src="/assets/stickmen.js?v=13"></script>
 <script>
 (() => {
 'use strict';
@@ -573,18 +577,18 @@ $('catAdd').addEventListener('click', async () => {
 $('catList').addEventListener('click', async e => { const b = e.target.closest('[data-curl]'); if (!b) return; const res = await rpc('jn_catalogue_remove', { p_password: password, p_url: b.dataset.curl }); if (res.ok) loadCatalogue(); });
 
 // ─── Switches: turn the agent processes on and off ───
-(async () => { await SM.ready; const sw = SM.cfg.switches || {}; $('swPatrol').checked = sw.patrol !== false; $('swDesk').checked = sw.desk !== false; $('swCrew').checked = sw.crew !== false; $('swGl').checked = sw.gl === true; showGl(); })();
-const showGl = () => { $('glState').textContent = 'Right now the 3D is ' + ((SM.cfg.switches || {}).gl === true ? 'ON' : 'OFF') + ' for visitors. When it is on, a small “3D on” label shows beside Full screen on the homepage.'; };
+(async () => { await SM.ready; const sw = SM.cfg.switches || {}; $('swPatrol').checked = sw.patrol !== false; $('swDesk').checked = sw.desk !== false; $('swCrew').checked = sw.crew !== false; $('swGl').checked = sw.gl === true; $('swGlTerrain').checked = sw.glterrain === true; $('swGlHouse').checked = sw.glhouse === true; showGl(); })();
+const showGl = () => { const w = SM.cfg.switches || {}, o = v => v === true ? 'ON' : 'OFF'; $('glState').textContent = `Right now for visitors: glow ${o(w.gl)}, terrain ${o(w.glterrain)}, Agents house ${o(w.glhouse)}. On the homepage a small label beside Full screen says “3D on” or “3D terrain on” while it is drawing.`; };
 const saveSwitches = async msg => {
   say(msg, 'Saving…');
-  const switches = {}; if (!$('swPatrol').checked) switches.patrol = false; if (!$('swDesk').checked) switches.desk = false; if (!$('swCrew').checked) switches.crew = false; if ($('swGl').checked) switches.gl = true;
+  const switches = {}; if (!$('swPatrol').checked) switches.patrol = false; if (!$('swDesk').checked) switches.desk = false; if (!$('swCrew').checked) switches.crew = false; if ($('swGl').checked) switches.gl = true; if ($('swGlTerrain').checked) switches.glterrain = true; if ($('swGlHouse').checked) switches.glhouse = true;
   try {
     const value = { men: SM.cfg.men, custom: SM.cfg.custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props, switches };
     const res = await rpcStick({ p_password: password, p_value: value });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
-    SM.apply(value); const off = Object.keys(switches).filter(k => k !== 'gl').map(k => ({ patrol: 'site patrol', desk: 'research desk', crew: 'day crew' })[k]);
+    SM.apply(value); const off = Object.keys(switches).filter(k => !/^gl/.test(k)).map(k => ({ patrol: 'site patrol', desk: 'research desk', crew: 'day crew' })[k]);
     showGl();
-    say(msg, 'Saved. ' + (off.length ? 'Switched off: ' + off.join(', ') + '. ' : 'Every agent process is on. ') + '3D front visual: ' + (switches.gl ? 'on.' : 'off.'), 'ok');
+    say(msg, 'Saved. ' + (off.length ? 'Switched off: ' + off.join(', ') + '. ' : 'Every agent process is on. ') + '3D: front glow ' + (switches.gl ? 'on' : 'off') + ', terrain ' + (switches.glterrain ? 'on' : 'off') + ', Agents house ' + (switches.glhouse ? 'on' : 'off') + '.', 'ok');
   } catch (err) { say(msg, 'Couldn’t save the switches.', 'err'); }
 };
 $('swSave').addEventListener('click', () => saveSwitches($('swMsg')));
