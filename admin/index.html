@@ -209,11 +209,18 @@
       <div style="display:grid;gap:.5rem;margin:.6rem 0">
         <label><input type="checkbox" id="swPatrol"> Site patrol and the daily agents (the shifts, handover and idea pitches)</label>
         <label><input type="checkbox" id="swDesk"> Research desk and blog (the news briefs, incident round-up and the daily post)</label>
-        <label><input type="checkbox" id="swGl"> Front visual drawn on the graphics chip (WebGL, with a soft glow): experimental, switch it on to try it</label>
         <label><input type="checkbox" id="swCrew"> Day crew (the small daily agents: quiz, pigeon, grumble and the rest)</label>
       </div>
       <div class="row"><button type="button" id="swSave">Save switches</button></div>
       <div class="msg" id="swMsg" role="status"></div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="k">3D front visual (WebGL)</div>
+      <div class="v">Draws the front-page lines on the graphics chip with a soft glow that pulses on the kicks. Experimental and off by default. If a visitor's device doesn't support it, they get the normal drawing. Tick it and press Save to turn it on for everyone, or untick it to go back.</div>
+      <div style="margin:.6rem 0"><label><input type="checkbox" id="swGl"> Turn the 3D front visual on</label></div>
+      <div class="row"><button type="button" id="glSave">Save 3D switch</button></div>
+      <div class="msg" id="glMsg" role="status"></div>
     </div>
 
     <div class="card" style="margin-top:1rem">
@@ -554,16 +561,19 @@ $('catList').addEventListener('click', async e => { const b = e.target.closest('
 
 // ─── Switches: turn the agent processes on and off ───
 (async () => { await SM.ready; const sw = SM.cfg.switches || {}; $('swPatrol').checked = sw.patrol !== false; $('swDesk').checked = sw.desk !== false; $('swCrew').checked = sw.crew !== false; $('swGl').checked = sw.gl === true; })();
-$('swSave').addEventListener('click', async () => {
-  const msg = $('swMsg'); say(msg, 'Saving…');
+const saveSwitches = async msg => {
+  say(msg, 'Saving…');
   const switches = {}; if (!$('swPatrol').checked) switches.patrol = false; if (!$('swDesk').checked) switches.desk = false; if (!$('swCrew').checked) switches.crew = false; if ($('swGl').checked) switches.gl = true;
   try {
     const value = { men: SM.cfg.men, custom: SM.cfg.custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props, switches };
     const res = await rpcStick({ p_password: password, p_value: value });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
-    SM.apply(value); say(msg, 'Saved. ' + (Object.keys(switches).length ? 'Switched off: ' + Object.keys(switches).map(k => ({ patrol: 'site patrol', desk: 'research desk', crew: 'day crew' })[k]).join(', ') + '.' : 'Everything is on.'), 'ok');
+    SM.apply(value); const off = Object.keys(switches).filter(k => k !== 'gl').map(k => ({ patrol: 'site patrol', desk: 'research desk', crew: 'day crew' })[k]);
+    say(msg, 'Saved. ' + (off.length ? 'Switched off: ' + off.join(', ') + '. ' : 'Every agent process is on. ') + '3D front visual: ' + (switches.gl ? 'on.' : 'off.'), 'ok');
   } catch (err) { say(msg, 'Couldn’t save the switches.', 'err'); }
-});
+};
+$('swSave').addEventListener('click', () => saveSwitches($('swMsg')));
+$('glSave').addEventListener('click', () => saveSwitches($('glMsg')));
 
 // ─── Furniture: choose a room and a piece of furniture from lists and place it ───
 let props = [];
