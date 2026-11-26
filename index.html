@@ -505,7 +505,7 @@ async function startSoundCloud() {
   sc.bind(E.PLAY, () => {
     startedSinceLoad = true;
     if (!window._homePlayed && window.JN) { window._homePlayed = 1; JN.event('home-play'); }
-    scPlaying = true; try { sessionStorage.setItem('jn-playing', '1'); } catch (e) { /* private mode */ }
+    scPlaying = true; try { sessionStorage.setItem('jn-playing', '1'); sessionStorage.setItem('jn-playing-at', String(Date.now())); } catch (e) { /* private mode */ }
     document.body.classList.remove('needs-tap');
     if (audioEl && !audioEl.paused) audioEl.pause();
     stopMic();
@@ -515,10 +515,13 @@ async function startSoundCloud() {
     setPlayIcon(true);
   });
   sc.bind(E.PAUSE, () => { scPlaying = false; try { sessionStorage.setItem('jn-playing', '0'); } catch (e) { /* private mode */ } if (lastMedia === 'sc') { setPlayIcon(false); setStatus('Paused'); } });
-  sc.bind(E.FINISH, () => { scPlaying = false; if (queue.length) skip(1); });   // carry on with another agent pick
+  sc.bind(E.FINISH, () => { scPlaying = false; if (queue.length) skip(1); else { try { sessionStorage.setItem('jn-playing', '0'); } catch (e) { /* private mode */ } } });   // carry on with another agent pick
   sc.bind(E.PLAY_PROGRESS, e => { scPos = e.currentPosition; scPosAt = performance.now(); });
   sc.bind(E.ERROR, () => setStatus('Couldn’t load that SoundCloud track'));
 }
+
+// while music really is playing, keep saying so every couple of seconds; a refresh only carries the music on if that was said just now (a leftover from earlier in the session doesn't count)
+setInterval(() => { if (scPlaying) { try { sessionStorage.setItem('jn-playing-at', String(Date.now())); } catch (e) { /* private mode */ } } }, 2000);
 
 /* ─── Choreography: Agent Masterpiece's cue sheet for this track ── */
 const PALETTE = { red: '#ff3b3b', amber: '#ffb000', cyan: '#22d3ee', violet: '#a78bfa', green: '#4ade80' };

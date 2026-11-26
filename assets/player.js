@@ -27,7 +27,7 @@
   try {
     const nav = performance.getEntriesByType('navigation')[0];
     if (sessionStorage.getItem('jn-shell') && nav && (nav.type === 'reload' || nav.type === 'back_forward')) {
-      const was = sessionStorage.getItem('jn-playing') === '1';                       // music was playing before the refresh: carry it on
+      const was = sessionStorage.getItem('jn-playing') === '1' && Date.now() - Number(sessionStorage.getItem('jn-playing-at') || 0) < 15000;                       // music was playing before the refresh: carry it on
       location.replace('/?then=' + encodeURIComponent(location.pathname + location.search + location.hash) + (was ? '&resume=1' : '')); return;
     }
   } catch (e) { /* no storage: fall through to the button */ }
