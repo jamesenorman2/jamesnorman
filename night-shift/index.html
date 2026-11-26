@@ -127,7 +127,7 @@
 <script src="/assets/config.js"></script>
 <script src="/assets/konami.js"></script>
 <script src="/assets/stickmen.js?v=13"></script>
-<script src="/assets/housefx.js?v=2"></script>
+<script src="/assets/housefx.js?v=3"></script>
 <script>
 (() => {
 'use strict';
@@ -1603,8 +1603,8 @@ function drawBallroom(r, sm, s) {
         const ph = mus.ph * (0.8 + j * 0.25) + i * 1.7 + j * 2.3, q = P(cu + Math.sin(ph) * r.w * 0.32 * reach, cv + Math.cos(ph * 1.3) * r.d * 0.34 * reach, 0);
         const col = mode === 0 ? COL[0] : mode === 1 ? COL[1 + (i + j) % 2] : COL[(i + j) % COL.length];
         if (HFX.ok) {                                                                                                   // on the graphics chip: a cone of light that widens away from the head, with a hot core and a glowing spot where it lands
-          const rgb = hexRgb(col); HFX.beam(e[0], e[1], q[0], q[1], rgb, (1.2 + 0.8 * E) * s, (5 + 7 * E + 6 * H) * s, Math.min(1, 0.55 + 0.5 * E + 0.4 * H) * k);
-          HFX.glow(q[0], q[1], (9 + 8 * E + 10 * H) * s, rgb, (0.5 + 0.5 * H) * k); HFX.glow(e[0], e[1], 5 * s, rgb, 0.6 * k); continue;
+          const rgb = hexRgb(col); HFX.beam(e[0], e[1], q[0], q[1], rgb, (1 + 0.5 * E) * s, (2.5 + 3 * E + 2.5 * H) * s, Math.min(1, 0.5 + 0.4 * E + 0.3 * H) * k);
+          HFX.glow(q[0], q[1], (4 + 3 * E + 4 * H) * s, rgb, (0.3 + 0.3 * H) * k); HFX.glow(e[0], e[1], 3 * s, rgb, 0.4 * k); continue;
         }
         fx.strokeStyle = col; fx.fillStyle = col; fx.lineWidth = 1 + 0.6 * E + 1.4 * H; fx.globalAlpha = Math.min(1, 0.4 + 0.5 * E + 0.4 * H) * k; fx.beginPath(); fx.moveTo(e[0], e[1]); fx.lineTo(q[0], q[1]); fx.stroke();
         fx.globalAlpha = (0.3 + 0.4 * H) * k; fx.beginPath(); fx.ellipse(q[0], q[1], (3 + 3 * E + 3 * H) * s, (1.5 + 1.5 * E + 1.5 * H) * s, 0, 0, 7); fx.fill();
@@ -1613,7 +1613,7 @@ function drawBallroom(r, sm, s) {
     const b = at(r, 0.5, 0.45), bc = P(b.u, b.v, 62 * sm);                                                                                                               // the mirror ball throws its beams down
     fx.strokeStyle = '#fff'; fx.fillStyle = '#fff'; fx.lineWidth = 1;
     for (let i = 0; i < 10; i++) { const an = mus.ph * 0.9 + i * Math.PI / 5, q = P(b.u + Math.cos(an) * r.w * (0.1 + 0.12 * mus.e + 0.05 * Math.min(1, mus.hit)), b.v + Math.sin(an) * r.d * (0.18 + 0.2 * mus.e), 0);
-      if (HFX.ok) { HFX.beam(bc[0], bc[1], q[0], q[1], [1, 1, 1], 0.8 * s, 3.5 * s, (0.2 + 0.35 * mus.e + 0.3 * Math.min(1, mus.hit)) * k); HFX.glow(q[0], q[1], 5 * s, [1, 1, 1], 0.55 * k); continue; }
+      if (HFX.ok) { HFX.beam(bc[0], bc[1], q[0], q[1], [1, 1, 1], 0.7 * s, 2 * s, (0.2 + 0.35 * mus.e + 0.3 * Math.min(1, mus.hit)) * k); HFX.glow(q[0], q[1], 5 * s, [1, 1, 1], 0.55 * k); continue; }
       fx.globalAlpha = (0.15 + 0.3 * mus.e + 0.3 * Math.min(1, mus.hit)) * k; fx.beginPath(); fx.moveTo(bc[0], bc[1]); fx.lineTo(q[0], q[1]); fx.stroke(); fx.globalAlpha = 0.7 * k; fx.beginPath(); fx.arc(q[0], q[1], 1.6 * s, 0, 7); fx.fill(); }
   }
   if (laser.k > 0.01 && !uv.k) {                                                           // a build-up strobes faster and faster, and the drop is a white flash
@@ -1843,7 +1843,7 @@ function drawFloor(dt) {
       Z.push({ z: c.v + 0.4, f: () => { drawCat({ u: c.u, v: c.v, dir: c.dir || 1, phase: stopped && !c.moving ? 'sit' : 'walk', step: c.step || 0, wild: n === 'ARAGON' }, sm); const [x, y] = P(c.u, c.v); seenAt[n] = { x, y, at: floor.t, s: sm }; text(n, x, y + 8 * s, 6.5 * s, 0.6); } }); });
   }
 
-  Z.push({ z: 1e9, f: () => HFX.flush(fx, FW, FH, 0.5 + 0.8 * mus.e + 0.6 * Math.min(1, mus.hit)) });         // the graphics-chip lights go on top of everything, last
+  Z.push({ z: 1e9, f: () => HFX.flush(fx, FW, FH, 0.12 + 0.2 * mus.e + 0.2 * Math.min(1, mus.hit)) });         // the graphics-chip lights go on top of everything, last
 
   // the handover being typed in the control room, on its back wall
   const c = floor.control;

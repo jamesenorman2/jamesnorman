@@ -37,7 +37,7 @@ float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); 
 float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
 void main(){ float I;
   if (v_kind < 0.5) { float w = max(mix(v_w.x, v_w.y, v_t), 0.5) * 0.5, g = exp(-(v_d.x * v_d.x) / (2.0 * w * w)), core = exp(-(v_d.x * v_d.x) / (2.0 * w * w * 0.05));
-    I = (g * 0.7 + core * 0.8) * pow(max(v_w.x, 0.5) / max(mix(v_w.x, v_w.y, v_t), 0.5), 0.6) * (1.0 - 0.3 * v_t) * smoothstep(0.0, 0.04, v_t); }
+    I = (g * 0.3 + core * 0.9) * pow(max(v_w.x, 0.5) / max(mix(v_w.x, v_w.y, v_t), 0.5), 0.6) * (1.0 - 0.3 * v_t) * smoothstep(0.0, 0.04, v_t); }
   else { float r = length(v_d); if (r > 1.0) discard; I = exp(-r * r * (v_kind > 1.5 ? 2.6 : 5.0)) * (1.0 - smoothstep(0.7, 1.0, r));
     if (v_kind > 1.5) I *= 0.45 + 1.1 * noise(v_d * 3.0 + v_seed * 17.0); }
   float a = clamp(I * v_c.a, 0.0, 1.0); o = vec4(v_c.rgb * a, a); }`, 'spr');
