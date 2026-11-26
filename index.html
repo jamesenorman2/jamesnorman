@@ -1304,9 +1304,8 @@ function fireMoment(m) {
   if (m.type === 'strobe') strobe();
   else if (m.type === 'laser') {
     lastLaser = clockT; web = null;                 // lasers and the web take turns
-    const mounted = (m.mount ?? Math.random() < 0.55) && mountPeaks();      // JN_moment({type:'laser', mount:true}) to try it
+    const mounted = mountPeaks();      // every laser is attached to the waveform: it rides the peaks, and with no peaks to ride there is no laser
     if (mounted && lasers.length < 2) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, mount: mounted, life: 2.6, scissor: 0.25 + Math.random() * 0.35 });
-    else if (lasers.length < 2) lasers.push({ t0: clockT, colour: colour || PALETTE.green, rgb: !!m.rgb, n: 4 + Math.floor(Math.random() * 4), base: (Math.random() - 0.5) * 0.9, u: (Math.random() - 0.5) * 1.4, spin: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 1.6) });
   }
   else if (m.type === 'flash') flash = { t0: clockT, colour: colour || PALETTE.amber };
   else if (m.type === 'web') { if (!web && !lasers.length) { lastWeb = clockT; web = { t0: clockT, life: 9 + Math.random() * 3, colour: colour || PALETTE.cyan, anchors: [], snapAt: -99 }; snapWeb(); } }
