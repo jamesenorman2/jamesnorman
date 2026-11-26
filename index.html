@@ -1080,9 +1080,9 @@ void main(){ vec2 c = v_uv - 0.5; float r2 = dot(c, c); vec2 off = c * u_ca * r2
     gl.disable(gl.DEPTH_TEST);
     gl.bindFramebuffer(gl.FRAMEBUFFER, T.s.f); gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
     if (g.n) {
-      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.useProgram(pSeg); gl.bindVertexArray(g.vao);
+      gl.enable(gl.BLEND); gl.blendEquation(gl.MAX); gl.useProgram(pSeg); gl.bindVertexArray(g.vao);       // MAX, not add: where two segments of one line overlap at a joint they don't double up into dots
       gl.bindBuffer(gl.ARRAY_BUFFER, ibuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, data, 0, g.n * STRIDE); gl.uniform2f(loc(pSeg, 'u_res'), w, h);
-      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, g.n); gl.disable(gl.BLEND);
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, g.n); gl.disable(gl.BLEND); gl.blendEquation(gl.FUNC_ADD);
     }
     pass(pBlur, T.s, T.a, [1, 0]); pass(pBlur, T.a, T.b, [0, 1]); pass(pBlur, T.b, T.c, [1, 0]); pass(pBlur, T.c, T.d, [0, 1]);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h); gl.useProgram(pOut); gl.bindVertexArray(g.empty);
@@ -1186,10 +1186,6 @@ function draw(phase) {
       let col = G.rgb(ctx.strokeStyle), al = ctx.globalAlpha, lw = ctx.lineWidth * DPR, soft = 1, pi = -1;
       if (terrain) {                                                               // out-of-focus lines, wider and softer, away from the middle of the terrain
         const dz = Math.min(1, Math.abs(zc - fogFar * 0.42) / (fogFar * 0.4)); soft = 1 + 5 * dz * dz; lw *= 1 + 1.2 * dz; al /= 1 + 0.9 * dz;
-        if (!flat) for (let i = 0; ; i = Math.min(i + step, POINTS - 1)) {            // the solid under the line first, so nearer ridges hide the lines behind them
-          if (PZ[i] < 0 || !(PBX[i] === PBX[i])) pi = -1; else { if (pi >= 0 && (PBY[i] - PY[i] > 0.4 || PBY[pi] - PY[pi] > 0.4)) G.fill(PX[pi] * DPR, PY[pi] * DPR, PX[i] * DPR, PY[i] * DPR, PBX[pi] * DPR, PBY[pi] * DPR, PBX[i] * DPR, PBY[i] * DPR, 1); pi = i; }
-          if (i === POINTS - 1) break;
-        }
         pi = -1;
       }
       const acc = G.rgb(lookColour || '#33e6ff');
@@ -1197,7 +1193,6 @@ function draw(phase) {
         if (PZ[i] < 0) pi = -1; else {
           if (pi >= 0) {
             let c2 = col, a2 = al;
-            if (terrain) { const hn = Math.max(0, Math.min(1, (PH[i] + PH[pi]) * 0.5 / (AMP * 0.85))); if (hn > 0.02) { const m = hn * hn * (0.45 + 0.55 * Math.min(1, energy + kickGlow)); c2 = [col[0] + (acc[0] - col[0]) * m, col[1] + (acc[1] - col[1]) * m, col[2] + (acc[2] - col[2]) * m]; a2 = Math.min(1, al * (1 + 0.7 * hn)); } }
             G.seg(PX[pi] * DPR, PY[pi] * DPR, PX[i] * DPR, PY[i] * DPR, lw, c2, a2, soft);
           }
           pi = i;
@@ -1215,8 +1210,8 @@ function draw(phase) {
     ctx.stroke();
     }
   }
-  if (useGL && !G.tagged) { G.tagged = true; const t = document.getElementById('glTag'); if (t) { t.hidden = false; t.textContent = terrain ? '3D terrain on' : '3D on'; } }
-  if (useGL) { G.end(0, 0, terrain ? 0.012 * (0.4 + kickGlow * 1.6) : 0, terrain ? 0.55 : 0); ctx.globalAlpha = 1; ctx.drawImage(G.canvas, 0, 0, W, H); }
+  if (useGL && !G.tagged) { G.tagged = true; const t = document.getElementById('glTag'); if (t) { t.hidden = false; t.textContent = terrain ? '3D depth on' : '3D on'; } }
+  if (useGL) { G.end(0, 0, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(G.canvas, 0, 0, W, H); }
   // the rectangle's two long sides, so it reads as a shape when you fly out
   ctx.globalAlpha = 0.45; ctx.lineWidth = 1;
   for (const side of [-1, 1]) {

@@ -223,7 +223,7 @@
       <div class="v">Draws the front-page lines on the graphics chip, crisp and with no glow. Experimental and off by default. If a visitor's device doesn't support it, they get the normal drawing. Tick it and press Save to turn it on for everyone, or untick it to go back.</div>
       <div style="display:grid;gap:.5rem;margin:.6rem 0">
         <label><input type="checkbox" id="swGl"> Front visual: draw on the graphics chip (crisp lines, no glow; the base for the terrain below)</label>
-        <label><input type="checkbox" id="swGlTerrain"> Front visual: 3D terrain (needs the drawing switch above on: solid ridges that hide the lines behind, peaks that take the colour, a camera that drifts with the music, soft out-of-focus lines)</label>
+        <label><input type="checkbox" id="swGlTerrain"> Front visual: 3D depth (needs the drawing switch above on: the camera drifts slowly with the music, and lines away from the middle go soft and out of focus; stays black and white)</label>
         <label><input type="checkbox" id="swGlHouse"> Agents house: light effects (beams, smoke that catches the lasers, UV tube glow)</label>
       </div>
       <div class="v" id="glState" style="margin:.2rem 0"></div>
@@ -578,7 +578,7 @@ $('catList').addEventListener('click', async e => { const b = e.target.closest('
 
 // ─── Switches: turn the agent processes on and off ───
 (async () => { await SM.ready; const sw = SM.cfg.switches || {}; $('swPatrol').checked = sw.patrol !== false; $('swDesk').checked = sw.desk !== false; $('swCrew').checked = sw.crew !== false; $('swGl').checked = sw.gl === true; $('swGlTerrain').checked = sw.glterrain === true; $('swGlHouse').checked = sw.glhouse === true; showGl(); })();
-const showGl = () => { const w = SM.cfg.switches || {}, o = v => v === true ? 'ON' : 'OFF'; $('glState').textContent = `Right now for visitors: graphics-chip drawing ${o(w.gl)}, terrain ${o(w.glterrain)}, Agents house ${o(w.glhouse)}. On the homepage a small label beside Full screen says “3D on” or “3D terrain on” while it is drawing.`; };
+const showGl = () => { const w = SM.cfg.switches || {}, o = v => v === true ? 'ON' : 'OFF'; $('glState').textContent = `Right now for visitors: graphics-chip drawing ${o(w.gl)}, depth ${o(w.glterrain)}, Agents house ${o(w.glhouse)}. On the homepage a small label beside Full screen says “3D on” or “3D terrain on” while it is drawing.`; };
 const saveSwitches = async msg => {
   say(msg, 'Saving…');
   const switches = {}; if (!$('swPatrol').checked) switches.patrol = false; if (!$('swDesk').checked) switches.desk = false; if (!$('swCrew').checked) switches.crew = false; if ($('swGl').checked) switches.gl = true; if ($('swGlTerrain').checked) switches.glterrain = true; if ($('swGlHouse').checked) switches.glhouse = true;
@@ -588,7 +588,7 @@ const saveSwitches = async msg => {
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
     SM.apply(value); const off = Object.keys(switches).filter(k => !/^gl/.test(k)).map(k => ({ patrol: 'site patrol', desk: 'research desk', crew: 'day crew' })[k]);
     showGl();
-    say(msg, 'Saved. ' + (off.length ? 'Switched off: ' + off.join(', ') + '. ' : 'Every agent process is on. ') + '3D: front drawing ' + (switches.gl ? 'on' : 'off') + ', terrain ' + (switches.glterrain ? 'on' : 'off') + ', Agents house ' + (switches.glhouse ? 'on' : 'off') + '.', 'ok');
+    say(msg, 'Saved. ' + (off.length ? 'Switched off: ' + off.join(', ') + '. ' : 'Every agent process is on. ') + '3D: front drawing ' + (switches.gl ? 'on' : 'off') + ', depth ' + (switches.glterrain ? 'on' : 'off') + ', Agents house ' + (switches.glhouse ? 'on' : 'off') + '.', 'ok');
   } catch (err) { say(msg, 'Couldn’t save the switches.', 'err'); }
 };
 $('swSave').addEventListener('click', () => saveSwitches($('swMsg')));
