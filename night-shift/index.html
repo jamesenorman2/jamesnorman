@@ -96,7 +96,7 @@
   </div>
 
   <section class="floor" aria-label="The crew at work: stick men walking the site, checking each page">
-    <div class="floorbar"><span id="eggCount" class="small" hidden style="margin-right:auto;align-self:center;letter-spacing:.15em"></span><button type="button" class="ghost fsbtn" id="fsBtn" aria-pressed="false" title="See the whole house full screen (Esc to leave)">Full screen</button></div>
+    <div class="floorbar"><span id="eggCount" class="small" hidden style="margin-right:auto;align-self:center;letter-spacing:.15em"></span><button type="button" class="ghost fsbtn" id="pmBtn" aria-label="Play or pause the music" style="margin-right:.5rem">▶ Play music</button><button type="button" class="ghost fsbtn" id="fsBtn" aria-pressed="false" title="See the whole house full screen (Esc to leave)">Full screen</button></div>
     <canvas id="floor"></canvas>
     <div class="fshint">Turn your phone sideways for a bigger view</div>
   </section>
@@ -2409,6 +2409,16 @@ const THOUGHTS_BY = { 'SMILEY JO': ['Hula hooping is just standing still, but ha
     cardTimer = setTimeout(close, 12000);
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+}
+// A play button on the house itself (it is there in full screen too): plays and pauses the front page's music, or starts it from here
+{
+  const pm = document.getElementById('pmBtn'), refresh = () => { pm.textContent = beatNow().playing === true ? '❚❚ Pause music' : '▶ Play music'; };
+  pm.addEventListener('click', () => {
+    let done = false; try { if (window.parent !== window && window.parent.JN_PLAYPAUSE) done = window.parent.JN_PLAYPAUSE(); } catch (e) { done = false; }
+    if (!done) location.href = '/?play=1&then=' + encodeURIComponent(location.pathname);           // on its own: go via the front page, which starts the music and brings this page back
+    setTimeout(refresh, 400);
+  });
+  refresh(); setInterval(refresh, 1000);
 }
 // Full screen: the whole house fills the screen, on a computer or a phone. Where the browser can't do real full screen (iPhone), it covers the page instead.
 {

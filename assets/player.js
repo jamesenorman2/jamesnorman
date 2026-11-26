@@ -20,13 +20,15 @@
     }, true);
     return;
   }
+  if (window.parent !== window) return;                      // never inside a frame
   if (location.pathname === '/' || window.JN_SHELL) return;   // the homepage has the player itself (JN_SHELL is its marker: its address changes to /music/ and so on while a page is open over it)
   // A reload (or Back/Forward) of a page that was open over the player lands here on its own: put it back over the player,
   // instead of showing the stray play button. Only within a session that has used the player, never for a first visit.
   try {
     const nav = performance.getEntriesByType('navigation')[0];
     if (sessionStorage.getItem('jn-shell') && nav && (nav.type === 'reload' || nav.type === 'back_forward')) {
-      location.replace('/?then=' + encodeURIComponent(location.pathname + location.search + location.hash)); return;
+      const was = sessionStorage.getItem('jn-playing') === '1';                       // music was playing before the refresh: carry it on
+      location.replace('/?then=' + encodeURIComponent(location.pathname + location.search + location.hash) + (was ? '&resume=1' : '')); return;
     }
   } catch (e) { /* no storage: fall through to the button */ }
 
