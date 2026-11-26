@@ -68,7 +68,7 @@ begin
     'top', coalesce((select jsonb_agg(t) from (select path, count(*) views from jn_private.views where at >= since and path not like 'event:%' group by path order by 2 desc limit 15) t), '[]'),
     'events', coalesce((select jsonb_agg(t) from (select path event, count(*) times from jn_private.views where at >= since and path like 'event:%' group by path order by 2 desc) t), '[]'),
     'referrers', coalesce((select jsonb_agg(t) from (select ref, count(*) visits from jn_private.views where at >= since and ref is not null group by ref order by 2 desc limit 10) t), '[]'),
-    'by_day', coalesce((select jsonb_agg(t order by day) from (select to_char(at, 'YYYY-MM-DD') day, count(*) views from jn_private.views where at >= since and path not like 'event:%' group by 1) t), '[]'));
+    'by_day', coalesce((select jsonb_agg(t order by t."day") from (select to_char(at, 'YYYY-MM-DD') as "day", count(*) views from jn_private.views where at >= since and path not like 'event:%' group by 1) t), '[]'));
 end $$;
 
 -- Agent Bunsen's question of the day: the answer stays private until someone answers
