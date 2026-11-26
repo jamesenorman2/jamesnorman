@@ -813,7 +813,19 @@ function currentSource() {
 }
 
 /* ─── 3D: a floating rectangle of ridge lines, and a camera that can go anywhere ── */
-const RECT_W = 3.2, RECT_D = 4.6, AMP = 0.95, SHOW = Math.round(100 * DENSE);    // width, depth, peak height, lines on the rectangle
+const RECT_W = 3.2, RECT_D0 = 4.6, AMP = 0.95, SHOW = Math.round(100 * DENSE);    // width, depth, peak height, lines on the rectangle
+let RECT_D = RECT_D0;                    // the length of the waveform: usually RECT_D0, now and then it stretches out to three times that and comes back (stretchTick)
+const stretch = { k: 0, phase: 'rest', t0: 0, next: 25 };
+function stretchTick() {
+  if (reduceMotion) { RECT_D = RECT_D0; return; }
+  const t = clockT - stretch.t0, ease = x => x * x * (3 - 2 * x);
+  if (stretch.phase === 'rest') { stretch.k = 0; if (clockT > stretch.next) { stretch.phase = 'out'; stretch.t0 = clockT; } }
+  else if (stretch.phase === 'out') { stretch.k = ease(Math.min(1, t / 5)); if (t >= 5) { stretch.phase = 'hold'; stretch.t0 = clockT; stretch.hold = 6 + Math.random() * 8; } }
+  else if (stretch.phase === 'hold') { stretch.k = 1; if (t >= stretch.hold) { stretch.phase = 'in'; stretch.t0 = clockT; } }
+  else { stretch.k = 1 - ease(Math.min(1, t / 5)); if (t >= 5) { stretch.phase = 'rest'; stretch.next = clockT + 40 + Math.random() * 50; } }
+  RECT_D = RECT_D0 * (1 + 2 * stretch.k);
+}
+window.JN_long = () => { if (stretch.phase === 'rest') { stretch.phase = 'out'; stretch.t0 = clockT; } };       // try it from the console
 const TAU = Math.PI * 2;
 const keys = new Set();
 let lastInput = -1e9, calm = reduceMotion, clockT = 0, inBreak = 0, autoNow = false, lastLoop = 0, lastRoll = 0;
@@ -834,7 +846,7 @@ function surfInto(u, v, h) {
   y += ny * h; z += nz * h;
   const tw = shape.twist * (v - 0.5) * Math.PI;
   if (tw) { const c = Math.cos(tw), sn = Math.sin(tw), X = x, Y = y; x = X * c - Y * sn; y = X * sn + Y * c; }
-  SX = x; SY = y; SZ = z - RECT_D / 2;
+  SX = x; SY = y; SZ = z - RECT_D0 / 2;
 }
 function surf(u, v, h) { surfInto(u, v, h); return [SX, SY, SZ]; }
 
@@ -984,6 +996,7 @@ function frame(now) {
   last = now;
   source = currentSource();
   analyse(dt);
+  stretchTick();
   updateView(dt);
   followScore();
   autoLasers();
@@ -1161,8 +1174,8 @@ function draw(phase) {
       h *= AMP;
       let x = UX[i], y = y0 + (rip ? rc * S3[i] + rs * C3[i] : 0) + ny * h;
       if (tw) { const X = x; x = X * tc - y * ts; y = X * ts + y * tc; }
-      projectXYZ(x, y, z0 + nz * h - RECT_D / 2, i);
-      if (terrain) { PH[i] = h; let bx = UX[i], by = y0 + (rip ? rc * S3[i] + rs * C3[i] : 0); if (tw) { const X = bx; bx = X * tc - by * ts; by = X * ts + by * tc; } projectB(bx, by, z0 - RECT_D / 2, i); }
+      projectXYZ(x, y, z0 + nz * h - RECT_D0 / 2, i);
+      if (terrain) { PH[i] = h; let bx = UX[i], by = y0 + (rip ? rc * S3[i] + rs * C3[i] : 0); if (tw) { const X = bx; bx = X * tc - by * ts; by = X * ts + by * tc; } projectB(bx, by, z0 - RECT_D0 / 2, i); }
       if (PZ[i] > 0) { zsum += PZ[i]; n++; }
       if (i === POINTS - 1) break;
     }
