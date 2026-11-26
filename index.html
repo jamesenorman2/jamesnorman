@@ -266,7 +266,7 @@ html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
     </nav>
   </header>
   <footer class="bottom">
-    <div class="hush"><button id="fullBtn" type="button" title="Full screen: just the visuals (Esc to leave)">Full screen</button></div>
+    <div class="hush"><button id="fullBtn" type="button" title="Full screen: just the visuals (Esc to leave)">Full screen</button><button id="glTag" type="button" hidden title="The 3D front visual is on" style="margin-left:.8rem">3D on</button></div>
     <div class="controls" hidden>
       <button id="loadBtn" title="Play an audio file from your device instead (L)">Load file</button>
       <button id="micBtn" title="Use your microphone (M)" aria-pressed="false">Mic</button>
@@ -1178,6 +1178,7 @@ function draw(phase) {
     ctx.stroke();
     }
   }
+  if (useGL && !G.tagged) { G.tagged = true; const t = document.getElementById('glTag'); if (t) t.hidden = false; }
   if (useGL) { G.end(0.5 + 0.9 * kickGlow + 0.25 * Math.min(1, energy), 0.35 + 0.6 * kickGlow); ctx.globalAlpha = 1; ctx.drawImage(G.canvas, 0, 0, W, H); }
   // the rectangle's two long sides, so it reads as a shape when you fly out
   ctx.globalAlpha = 0.45; ctx.lineWidth = 1;

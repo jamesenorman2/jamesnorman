@@ -84,12 +84,15 @@
   .snap .links a{color:var(--fg)} .snap .links .dim{color:var(--dim)}
   .setup{border:1px solid var(--line);padding:.9rem 1rem;margin-top:1rem;font-size:.75rem;line-height:1.7;color:#ccc}
   .setup b{font-weight:500;color:#fff}
+  .home{display:inline-block;margin:0 0 1.2rem;color:var(--dim);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;border:1px solid #333;padding:.5rem .8rem}
+  .home:hover{color:#000;background:#fff;border-color:#fff}
   .back{display:inline-block;margin-top:3rem;color:var(--dim);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;text-decoration:none}
   .back:hover{color:var(--fg)}
 </style>
 </head>
 <body>
 <main>
+  <a class="home" href="/">&larr; Home</a>
   <h1>Admin</h1>
   <p class="sub">Normally the homepage plays a random pick from the agents. Set a song here to play that instead for everyone; “Use my latest uploads” clears it and goes back to the agents’ picks.</p>
 
@@ -219,8 +222,18 @@
       <div class="k">3D front visual (WebGL)</div>
       <div class="v">Draws the front-page lines on the graphics chip with a soft glow that pulses on the kicks. Experimental and off by default. If a visitor's device doesn't support it, they get the normal drawing. Tick it and press Save to turn it on for everyone, or untick it to go back.</div>
       <div style="margin:.6rem 0"><label><input type="checkbox" id="swGl"> Turn the 3D front visual on</label></div>
+      <div class="v" id="glState" style="margin:.2rem 0"></div>
       <div class="row"><button type="button" id="glSave">Save 3D switch</button></div>
       <div class="msg" id="glMsg" role="status"></div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="k">AI usage and daily budget</div>
+      <div class="v">Every Claude call the site makes is logged here with its token count. Once the day's total (UTC) reaches the budget, the agents stop calling Claude until tomorrow. Set it to 0 for no limit. The Run now buttons obey it too.</div>
+      <div id="usToday" class="v" style="margin:.6rem 0"></div>
+      <div class="row" style="align-items:center;gap:.6rem"><label for="usBudget" style="margin:0">Daily budget (tokens)</label><input id="usBudget" type="number" min="0" step="10000" style="max-width:10rem"><button type="button" id="usSave">Save budget</button><button type="button" class="ghost" id="usReload">Refresh</button></div>
+      <div class="msg" id="usMsg" role="status"></div>
+      <div id="usTable" class="v" style="margin-top:.8rem"></div>
     </div>
 
     <div class="card" style="margin-top:1rem">
@@ -321,7 +334,7 @@ function enter(pw) {
   $('panel').hidden = false;
   showCurrent();
   loadIdeas();
-  loadCrewBits();
+  loadCrewBits(); loadUsage();
   loadStick();
   loadBackups();
   $('url').focus();
@@ -560,7 +573,8 @@ $('catAdd').addEventListener('click', async () => {
 $('catList').addEventListener('click', async e => { const b = e.target.closest('[data-curl]'); if (!b) return; const res = await rpc('jn_catalogue_remove', { p_password: password, p_url: b.dataset.curl }); if (res.ok) loadCatalogue(); });
 
 // ─── Switches: turn the agent processes on and off ───
-(async () => { await SM.ready; const sw = SM.cfg.switches || {}; $('swPatrol').checked = sw.patrol !== false; $('swDesk').checked = sw.desk !== false; $('swCrew').checked = sw.crew !== false; $('swGl').checked = sw.gl === true; })();
+(async () => { await SM.ready; const sw = SM.cfg.switches || {}; $('swPatrol').checked = sw.patrol !== false; $('swDesk').checked = sw.desk !== false; $('swCrew').checked = sw.crew !== false; $('swGl').checked = sw.gl === true; showGl(); })();
+const showGl = () => { $('glState').textContent = 'Right now the 3D is ' + ((SM.cfg.switches || {}).gl === true ? 'ON' : 'OFF') + ' for visitors. When it is on, a small “3D on” label shows beside Full screen on the homepage.'; };
 const saveSwitches = async msg => {
   say(msg, 'Saving…');
   const switches = {}; if (!$('swPatrol').checked) switches.patrol = false; if (!$('swDesk').checked) switches.desk = false; if (!$('swCrew').checked) switches.crew = false; if ($('swGl').checked) switches.gl = true;
@@ -569,11 +583,31 @@ const saveSwitches = async msg => {
     const res = await rpcStick({ p_password: password, p_value: value });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
     SM.apply(value); const off = Object.keys(switches).filter(k => k !== 'gl').map(k => ({ patrol: 'site patrol', desk: 'research desk', crew: 'day crew' })[k]);
+    showGl();
     say(msg, 'Saved. ' + (off.length ? 'Switched off: ' + off.join(', ') + '. ' : 'Every agent process is on. ') + '3D front visual: ' + (switches.gl ? 'on.' : 'off.'), 'ok');
   } catch (err) { say(msg, 'Couldn’t save the switches.', 'err'); }
 };
 $('swSave').addEventListener('click', () => saveSwitches($('swMsg')));
 $('glSave').addEventListener('click', () => saveSwitches($('glMsg')));
+
+// ─── AI usage and the daily budget ───
+const fmtN = n => Number(n || 0).toLocaleString('en-GB');
+async function loadUsage() {
+  const res = await rpc('jn_usage_report', { p_password: password, p_days: 7 });
+  if (!res.ok) { say($('usMsg'), res.error || 'Couldn’t load the usage', 'err'); return; }
+  const used = (res.today.input || 0) + (res.today.output || 0), b = res.budget || 0;
+  $('usBudget').value = b;
+  $('usToday').textContent = `Today: ${fmtN(used)} tokens in ${fmtN(res.today.calls)} calls (${fmtN(res.today.input)} in, ${fmtN(res.today.output)} out)` + (b ? ` · ${Math.round(used / b * 100)}% of the ${fmtN(b)} budget${used >= b ? ' — BUDGET REACHED, the agents are paused until tomorrow' : ''}` : ' · no limit set');
+  const rows = res.by_agent.map(a => `<tr><td>${escH(a.label)}</td><td>${fmtN(a.calls)}</td><td>${fmtN(a.input)}</td><td>${fmtN(a.output)}</td><td>${fmtN(a.tokens)}</td></tr>`).join('');
+  const days = res.by_day.map(d => `<tr><td>${escH(d.day)}</td><td>${fmtN(d.calls)}</td><td>${fmtN(d.tokens)}</td></tr>`).join('');
+  $('usTable').innerHTML = (rows ? `<b>Last 7 days, by agent</b><table style="width:100%;margin:.4rem 0 1rem"><tr><th align="left">Agent</th><th align="left">Calls</th><th align="left">In</th><th align="left">Out</th><th align="left">Total</th></tr>${rows}</table><b>By day</b><table style="width:100%;margin:.4rem 0"><tr><th align="left">Day</th><th align="left">Calls</th><th align="left">Tokens</th></tr>${days}</table>` : 'Nothing logged yet. Calls are recorded from now on.');
+}
+$('usReload').addEventListener('click', loadUsage);
+$('usSave').addEventListener('click', async () => {
+  const res = await rpc('jn_set_budget', { p_password: password, p_tokens: Math.max(0, Math.floor(+$('usBudget').value || 0)) });
+  if (!res.ok) { say($('usMsg'), res.error || 'Couldn’t save', 'err'); return; }
+  say($('usMsg'), 'Budget saved.', 'ok'); loadUsage();
+});
 
 // ─── Furniture: choose a room and a piece of furniture from lists and place it ───
 let props = [];
@@ -613,7 +647,7 @@ $('agSave').addEventListener('click', async () => {
 
 // The sections of this page each sit under their own button.
 (() => {
-  const SECTIONS = [['Music', ['Now playing', 'Track catalogue']], ['Blog and ideas', ['Research desk', 'Ideas to review', 'Quizzy Rascal']], ['Crew', ['Night shift', 'Day crew', 'Engineer', 'Agent processes']], ['Stick men', ['Stick men']], ['Agents in the house', ['Furniture']], ['Back up', ['Back up']]];
+  const SECTIONS = [['Music', ['Now playing', 'Track catalogue']], ['Blog and ideas', ['Research desk', 'Ideas to review', 'Quizzy Rascal']], ['Crew', ['Night shift', 'Day crew', 'Engineer', 'Agent processes']], ['Stick men', ['Stick men']], ['Agents in the house', ['Furniture']], ['Back up', ['Back up']], ['Settings', ['3D front visual', 'AI usage']]];
   const bar = $('adminTabs'); let cur = 0;
   const cards = [...document.querySelectorAll('#panel > *')].filter(c => c !== bar && !c.classList.contains('back'));
   cards.forEach(c => {                                                   // each card goes with its section; anything between cards goes with the card before it

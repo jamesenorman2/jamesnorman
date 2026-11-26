@@ -15,6 +15,7 @@
 
 import { switchedOff } from '../lib/switches.js';
 import Anthropic from '@anthropic-ai/sdk';
+import { tracked } from '../lib/usage.js';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
 import { gatekeeper, links, clerk, intel, scout } from '../lib/jobs.js';
@@ -135,7 +136,7 @@ The ANALYST and every security finding stay calm, professional and accurate: no 
 
 async function runAgents(patrolReport, tracks, previous, jobs = {}) {
   if (!hasAI()) return { note: 'Analyst and DJ off duty tonight: no Claude API key is set, or AI is switched off.' };
-  const client = new Anthropic();
+  const client = await tracked('night shift');
   const list = tracks.length
     ? tracks.map((t, i) => `${i + 1}. ${t.title}`).join('\n')
     : '(the track list could not be read tonight; use track_number 0 for every pick and joke that the crate is empty)';
@@ -198,6 +199,7 @@ ${list}`;
     if (e instanceof Anthropic.AuthenticationError) return { note: 'Analyst off duty: the Claude API key was rejected.' };
     if (e instanceof Anthropic.RateLimitError) return { note: 'Analyst off duty: Claude was busy, try again later.' };
     if (e instanceof Anthropic.APIError) return { note: `Analyst off duty: Claude API error ${e.status}.` };
+    if (/budget reached/i.test(e.message || '')) return { note: 'Analyst off duty: the daily AI budget has been reached.' };
     return { note: 'Analyst off duty: something went wrong.' };
   }
 }
