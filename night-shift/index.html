@@ -1779,7 +1779,7 @@ function drawFloor(dt) {
         if (turning) { fx.save(); fx.translate(x, 0); fx.scale(Math.cos(spinAng), 1); fx.translate(-x, 0); }       // turning round with the podium
         const trick = w.name === 'NORMAL' && a.trick;
         if (trick) { const cy = y - 14 * sm; fx.save(); fx.translate(x, cy); fx.rotate(trick.dir * trick.ph * Math.PI * 2); if (trick.kind === 'roll') fx.scale(1, 0.62); fx.translate(-x, -cy); }       // a cartwheel (arms and legs out) or a forward roll (tucked up)
-        const hoop = w.name === 'SMILEY JO' && !moving;                                           // Smiley Jo is always hula hooping
+        const hoop = (w.name === 'SMILEY JO' || w.name === 'AMS') && !moving;                                           // Smiley Jo is always hula hooping
         if (pose === 'rave') danceMan(x, y, sm, a, w.name, i);
         else stickMan(x, y, sm, moving ? a.step : t * 2 + i, hoop ? 'dance' : pose, w.name);
         if (trick) fx.restore();
@@ -2365,7 +2365,7 @@ const THOUGHTS = ['If I stand very still, does the meeting end sooner?', 'Somebo
   'I wonder what the main page looks like from the wormhole side.', 'One day I\'ll get a promotion. Or at least a hat.', 'Why is it always the quiet agent who knows where the biscuits are?',
   'Technically I\'m always on a break between two other breaks.', 'I tried to think of a joke about latency. It arrived late.', 'My handover notes are 40% facts and 60% sighing.',
   'Do other buildings have a bar, or have we been misled?', 'I have a feeling the smoke machine is just showing off.'];
-const THOUGHTS_BY = { 'SMILEY JO': ['Hula hooping is just standing still, but harder.', 'I have been going for eleven minutes. Do not stop me.', 'The hoop knows things.'], SANASSI: ['Teeth are only bones that went outside.', 'I bite because I care. Mostly about ankles.', 'Today: ankles. Tomorrow: possibly knees.'], WIFEO: ['Where did I put my little ones? Oh, there they are, doing something loud.', 'I should dance more. I am dancing right now. I should dance more.'],
+const THOUGHTS_BY = { AMS: ['Hula hooping: the only exercise I enjoy.', 'Round and round. Never stopping.', 'The hoop and I have an understanding.'], 'SMILEY JO': ['Hula hooping is just standing still, but harder.', 'I have been going for eleven minutes. Do not stop me.', 'The hoop knows things.'], SANASSI: ['Teeth are only bones that went outside.', 'I bite because I care. Mostly about ankles.', 'Today: ankles. Tomorrow: possibly knees.'], WIFEO: ['Where did I put my little ones? Oh, there they are, doing something loud.', 'I should dance more. I am dancing right now. I should dance more.'],
   CODPIECE: ['The certificate is fine. I\'m checking it again anyway.', 'Nobody gets in. Except Wifeo. And whoever Wifeo says.'], 'MR. PARTICULAR': ['The rope is a state of mind.', 'I am extremely discreet. I\'ve told nobody.'] };
 {
   const box = document.querySelector('.floor'); let card = null, cardTimer = 0;
