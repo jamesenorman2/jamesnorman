@@ -129,6 +129,7 @@
           enabled: !(m && m.enabled === false), lines: cleanLines(m && m.lines)
         }));
       }
+      c.rev = saved && saved.rev != null ? Number(saved.rev) || 0 : (SM.cfg.rev || 0);                                  // a counter that goes up on every admin save, so an out-of-date admin page can't overwrite newer changes
       AGENTS.length = 0; AGENTS.push(...BASE_AGENTS, ...c.agents.filter(a => a.enabled).map(a => a.name));      // the agents you added can be given stick men too
       SM.cfg = c;
     },

@@ -236,7 +236,7 @@
 </main>
 
 <script src="https://w.soundcloud.com/player/api.js"></script>
-<script src="/assets/stickmen.js?v=10"></script>
+<script src="/assets/stickmen.js?v=11"></script>
 <script>
 (() => {
 'use strict';
@@ -248,6 +248,16 @@ const $ = id => document.getElementById(id);
 let password = '';           // kept in memory only, for this tab
 let previewed = null;        // { url, title } once the preview has loaded
 
+// Saving the house settings: refuse to overwrite changes made somewhere else (another tab or device) since this page loaded, so nothing already saved can be wiped by an old copy
+async function rpcStick(args) {
+  try {
+    const r = await fetch(`${API}/jn_site_settings?key=eq.stickmen&select=value`, { headers: { apikey: KEY }, cache: 'no-store' }), [row] = r.ok ? await r.json() : [];
+    const serverRev = (row && row.value && Number(row.value.rev)) || 0;
+    if (serverRev !== (Number(SM.cfg.rev) || 0)) return { ok: false, error: 'The settings were changed somewhere else since you opened this page. Reload the page and try again, so nothing you added is lost.' };
+    args.p_value.rev = serverRev + 1;
+  } catch (e) { /* if the check can't run, save as before */ }
+  const res = await rpc('jn_set_stickmen', args); if (res && res.ok) SM.cfg.rev = args.p_value.rev; return res;
+}
 async function rpc(fn, body) {
   const r = await fetch(`${API}/rpc/${fn}`, {
     method: 'POST',
@@ -477,7 +487,7 @@ $('smSave').addEventListener('click', async () => {
   if (noWords) { say(msg, `${noWords.name} needs at least one thing to say.`, 'err'); return; }
   say(msg, 'Saving…');
   try {
-    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men, custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props, switches: SM.cfg.switches } });
+    const res = await rpcStick({ p_password: password, p_value: { men, custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props, switches: SM.cfg.switches } });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
     SM.apply({ men, custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props, switches: SM.cfg.switches }); customMen = SM.cfg.custom.map(m => ({ ...m })); renderStick(); showDuty();
     say(msg, 'Saved. The homepage will use it next time it loads.', 'ok');
@@ -521,7 +531,7 @@ $('swSave').addEventListener('click', async () => {
   const switches = {}; if (!$('swPatrol').checked) switches.patrol = false; if (!$('swDesk').checked) switches.desk = false; if (!$('swCrew').checked) switches.crew = false;
   try {
     const value = { men: SM.cfg.men, custom: SM.cfg.custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props: SM.cfg.props, switches };
-    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: value });
+    const res = await rpcStick({ p_password: password, p_value: value });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
     SM.apply(value); say(msg, 'Saved. ' + (Object.keys(switches).length ? 'Switched off: ' + Object.keys(switches).map(k => ({ patrol: 'site patrol', desk: 'research desk', crew: 'day crew' })[k]).join(', ') + '.' : 'Everything is on.'), 'ok');
   } catch (err) { say(msg, 'Couldn’t save the switches.', 'err'); }
@@ -541,7 +551,7 @@ $('fuSave').addEventListener('click', async () => {
   const msg = $('fuMsg'); say(msg, 'Saving…');
   try {
     const value = { men: SM.cfg.men, custom: SM.cfg.custom, agents: SM.cfg.agents, edits: SM.cfg.edits, props, switches: SM.cfg.switches };
-    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: value });
+    const res = await rpcStick({ p_password: password, p_value: value });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
     SM.apply(value); props = SM.cfg.props.map(p => ({ ...p })); renderProps(); say(msg, 'Saved. The Agents page will show it next time it loads.', 'ok');
   } catch (err) { say(msg, 'Couldn’t save the furniture.', 'err'); }
@@ -556,7 +566,7 @@ $('agSave').addEventListener('click', async () => {
   const shown = Object.keys(edits).map(k => edits[k].name).filter(Boolean).concat(agents.map(a => a.name)); if (new Set(shown).size !== shown.length) { say(msg, 'Two agents have the same name. Make them different.', 'err'); return; }
   say(msg, 'Saving…');
   try {
-    const res = await rpc('jn_set_stickmen', { p_password: password, p_value: { men: SM.cfg.men, custom: SM.cfg.custom, agents, edits, props: SM.cfg.props, switches: SM.cfg.switches } });
+    const res = await rpcStick({ p_password: password, p_value: { men: SM.cfg.men, custom: SM.cfg.custom, agents, edits, props: SM.cfg.props, switches: SM.cfg.switches } });
     if (!res.ok) { say(msg, res.error || 'Couldn’t save', 'err'); return; }
     SM.apply({ men: SM.cfg.men, custom: SM.cfg.custom, agents, edits, props: SM.cfg.props, switches: SM.cfg.switches }); builtEdits = JSON.parse(JSON.stringify(SM.cfg.edits)); customAgents = SM.cfg.agents.map(a => ({ ...a, says: a.says.slice() })); renderAgents(); renderStick();
     say(msg, 'Saved. The Agents page will use it next time it loads.', 'ok');
