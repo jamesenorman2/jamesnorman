@@ -195,6 +195,15 @@
     </div>
 
     <div class="card" style="margin-top:1rem">
+      <div class="k">Track catalogue <span id="catCount" class="badge"></span></div>
+      <div class="v">The homepage can only find tracks that SoundCloud puts in its public feed. Paste links to the rest of your tracks here (one per line, from the track’s Share button) and they join the pool the homepage picks from. Titles are looked up for you.</div>
+      <textarea id="catUrls" rows="5" placeholder="https://soundcloud.com/jamesnormal/track-name" style="width:100%"></textarea>
+      <div class="row"><button type="button" id="catAdd">Add to the catalogue</button></div>
+      <div class="msg" id="catMsg" role="status"></div>
+      <ul id="catList" style="list-style:none;padding:0;margin:.6rem 0 0"></ul>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
       <div class="k">Agent processes: on and off</div>
       <div class="v">Switch a whole agent process off here and it stops running by itself (the automatic runs from the daily cron and from visitors). The Run now buttons still work when you press them. Press <b>Save switches</b> to apply.</div>
       <div style="display:grid;gap:.5rem;margin:.6rem 0">
@@ -524,6 +533,24 @@ function readAgents() {
 }
 (async () => { await SM.ready; builtEdits = JSON.parse(JSON.stringify(SM.cfg.edits || {})); customAgents = SM.cfg.agents.map(a => ({ ...a, says: a.says.slice() })); renderAgents(); })();
 
+// ─── The track catalogue ───
+async function loadCatalogue() {
+  try {
+    const rows = await fetch(`${API}/jn_catalogue?select=url,title&order=added_at.desc&limit=1000`, { headers: { apikey: KEY }, cache: 'no-store' }).then(r => r.ok ? r.json() : []);
+    $('catCount').textContent = rows.length;
+    $('catList').innerHTML = rows.slice(0, 60).map(t => `<li style="display:flex;gap:.8rem;align-items:center;padding:.3rem 0;border-top:1px solid #222"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escH(t.title || t.url)}</span><button type="button" class="ghost mini" data-curl="${escH(t.url)}">Remove</button></li>`).join('') + (rows.length > 60 ? `<li class="small">…and ${rows.length - 60} more</li>` : '') || '<li class="small">Nothing added yet.</li>';
+  } catch (e) { $('catList').innerHTML = '<li class="small">Couldn’t load the catalogue.</li>'; }
+}
+loadCatalogue();
+$('catAdd').addEventListener('click', async () => {
+  const msg = $('catMsg'), urls = $('catUrls').value.split(/\s+/).filter(Boolean); if (!urls.length) { say(msg, 'Paste some SoundCloud links first.', 'err'); return; }
+  say(msg, 'Adding…');
+  try { const r = await fetch('/api/catalogue', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password, urls }) }), j = await r.json();
+    if (!j.ok) { say(msg, j.error || 'Couldn’t add them', 'err'); return; }
+    $('catUrls').value = ''; say(msg, `Added ${j.added} (${j.titled} with titles). The homepage will pick them up within the hour.`, 'ok'); loadCatalogue(); } catch (e) { say(msg, 'Couldn’t reach the server.', 'err'); }
+});
+$('catList').addEventListener('click', async e => { const b = e.target.closest('[data-curl]'); if (!b) return; const res = await rpc('jn_catalogue_remove', { p_password: password, p_url: b.dataset.curl }); if (res.ok) loadCatalogue(); });
+
 // ─── Switches: turn the agent processes on and off ───
 (async () => { await SM.ready; const sw = SM.cfg.switches || {}; $('swPatrol').checked = sw.patrol !== false; $('swDesk').checked = sw.desk !== false; $('swCrew').checked = sw.crew !== false; })();
 $('swSave').addEventListener('click', async () => {
@@ -575,7 +602,7 @@ $('agSave').addEventListener('click', async () => {
 
 // The sections of this page each sit under their own button.
 (() => {
-  const SECTIONS = [['Music', ['Now playing']], ['Blog and ideas', ['Research desk', 'Ideas to review', 'Quizzy Rascal']], ['Crew', ['Night shift', 'Day crew', 'Engineer']], ['Stick men', ['Stick men']], ['Agents in the house', []], ['Back up', ['Back up']]];
+  const SECTIONS = [['Music', ['Now playing', 'Track catalogue']], ['Blog and ideas', ['Research desk', 'Ideas to review', 'Quizzy Rascal']], ['Crew', ['Night shift', 'Day crew', 'Engineer', 'Agent processes']], ['Stick men', ['Stick men']], ['Agents in the house', ['Furniture']], ['Back up', ['Back up']]];
   const bar = $('adminTabs'); let cur = 0;
   const cards = [...document.querySelectorAll('#panel > *')].filter(c => c !== bar && !c.classList.contains('back'));
   cards.forEach(c => {                                                   // each card goes with its section; anything between cards goes with the card before it
