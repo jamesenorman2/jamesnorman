@@ -1216,7 +1216,7 @@ function draw(phase) {
     }
   }
   if (useGL && !G.tagged) { G.tagged = true; const t = document.getElementById('glTag'); if (t) { t.hidden = false; t.textContent = terrain ? '3D terrain on' : '3D on'; } }
-  if (useGL) { G.end(0.5 + 0.9 * kickGlow + 0.25 * Math.min(1, energy), 0.35 + 0.6 * kickGlow, terrain ? 0.012 * (0.4 + kickGlow * 1.6) : 0, terrain ? 0.55 : 0); ctx.globalAlpha = 1; ctx.drawImage(G.canvas, 0, 0, W, H); }
+  if (useGL) { G.end(0, 0, terrain ? 0.012 * (0.4 + kickGlow * 1.6) : 0, terrain ? 0.55 : 0); ctx.globalAlpha = 1; ctx.drawImage(G.canvas, 0, 0, W, H); }
   // the rectangle's two long sides, so it reads as a shape when you fly out
   ctx.globalAlpha = 0.45; ctx.lineWidth = 1;
   for (const side of [-1, 1]) {
